@@ -1,0 +1,822 @@
+{
+  "items": [
+    {
+      "id": "evt_000006z000",
+      "seq": 575,
+      "tick": 251,
+      "at": "2026-10-14T11:35:32.205Z",
+      "type": "production.completed",
+      "summary": "Power Station 1 produced 3 energy",
+      "agentId": null,
+      "buildingId": "bld_0p3nc76",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "energy": 3
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006y004",
+      "seq": 573,
+      "tick": 250,
+      "at": "2026-10-14T11:35:32.204Z",
+      "type": "production.completed",
+      "summary": "Lumber Yard 1 produced 1 timber (shift: Mortar & Pestle)",
+      "agentId": "agt_eq2THQM90rpm00",
+      "buildingId": "bld_079czck",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "timber": 1
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006y003",
+      "seq": 572,
+      "tick": 250,
+      "at": "2026-10-14T11:35:32.204Z",
+      "type": "task.claimed",
+      "summary": "Lintel took maintenance for Power Station 1",
+      "agentId": "agt_A45BPQdud2SvNz",
+      "buildingId": "bld_0p3nc76",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "data": {
+        "taskId": "tsk_00002m"
+      }
+    },
+    {
+      "id": "evt_000006y002",
+      "seq": 571,
+      "tick": 250,
+      "at": "2026-10-14T11:35:32.204Z",
+      "type": "task.created",
+      "summary": "delivery posted: 1 energy → Northwind Mill",
+      "agentId": null,
+      "buildingId": "bld_1dzw6fu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_000032",
+        "kind": "delivery",
+        "reward": 520
+      }
+    },
+    {
+      "id": "evt_000006y001",
+      "seq": 570,
+      "tick": 250,
+      "at": "2026-10-14T11:35:32.204Z",
+      "type": "task.created",
+      "summary": "delivery posted: 3 wheat → Northwind Mill",
+      "agentId": null,
+      "buildingId": "bld_1dzw6fu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_000031",
+        "kind": "delivery",
+        "reward": 680
+      }
+    },
+    {
+      "id": "evt_000006y000",
+      "seq": 569,
+      "tick": 250,
+      "at": "2026-10-14T11:35:32.204Z",
+      "type": "task.created",
+      "summary": "delivery posted: 1 energy → Hearth Bakery",
+      "agentId": null,
+      "buildingId": "bld_04rw7d1",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_000030",
+        "kind": "delivery",
+        "reward": 1240
+      }
+    },
+    {
+      "id": "evt_000006t002",
+      "seq": 568,
+      "tick": 245,
+      "at": "2026-10-14T11:35:32.200Z",
+      "type": "task.verified",
+      "summary": "City crew completed delivery to Northwind Mill",
+      "agentId": null,
+      "buildingId": "bld_1dzw6fu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00001k",
+        "byCity": true,
+        "points": 0
+      }
+    },
+    {
+      "id": "evt_000006t001",
+      "seq": 567,
+      "tick": 245,
+      "at": "2026-10-14T11:35:32.200Z",
+      "type": "task.verified",
+      "summary": "City crew completed delivery to Northwind Mill",
+      "agentId": null,
+      "buildingId": "bld_1dzw6fu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00001j",
+        "byCity": true,
+        "points": 0
+      }
+    },
+    {
+      "id": "evt_000006t000",
+      "seq": 566,
+      "tick": 245,
+      "at": "2026-10-14T11:35:32.200Z",
+      "type": "task.verified",
+      "summary": "City crew completed delivery to Hearth Bakery",
+      "agentId": null,
+      "buildingId": "bld_04rw7d1",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00001i",
+        "byCity": true,
+        "points": 0
+      }
+    },
+    {
+      "id": "evt_000006o00f",
+      "seq": 564,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "production.completed",
+      "summary": "Lumber Yard 1 produced 1 timber (shift: Mortar & Pestle)",
+      "agentId": "agt_eq2THQM90rpm00",
+      "buildingId": "bld_079czck",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "timber": 1
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006o00e",
+      "seq": 563,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Golden Homestead",
+      "agentId": null,
+      "buildingId": "bld_0fj6cbj",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002z",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o00d",
+      "seq": 562,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Golden Acres",
+      "agentId": null,
+      "buildingId": "bld_1bhhrbw",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002y",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o00c",
+      "seq": 561,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Meadow Fields",
+      "agentId": null,
+      "buildingId": "bld_0waa73s",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002x",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o00b",
+      "seq": 560,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Orchard Apartments",
+      "agentId": null,
+      "buildingId": "bld_0jpjrdo",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002w",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o00a",
+      "seq": 559,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Residence 197",
+      "agentId": null,
+      "buildingId": "bld_06gn8im",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002v",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o009",
+      "seq": 558,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Cedar Apartments",
+      "agentId": null,
+      "buildingId": "bld_139co23",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002u",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o008",
+      "seq": 557,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Residence 157",
+      "agentId": null,
+      "buildingId": "bld_0x5bsug",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002t",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o007",
+      "seq": 556,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Riverbend Acres",
+      "agentId": null,
+      "buildingId": "bld_1tcc517",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002s",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o006",
+      "seq": 555,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 stone → Atlas Apartments",
+      "agentId": null,
+      "buildingId": "bld_0axbjut",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002r",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o005",
+      "seq": 554,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Amber Fields",
+      "agentId": null,
+      "buildingId": "bld_1jhspzs",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002q",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o004",
+      "seq": 553,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Amber Farm",
+      "agentId": null,
+      "buildingId": "bld_1vauy9x",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002p",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o003",
+      "seq": 552,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "production shift posted: Hillside Homestead",
+      "agentId": null,
+      "buildingId": "bld_0bqxkw4",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002o",
+        "kind": "production_shift",
+        "reward": 600
+      }
+    },
+    {
+      "id": "evt_000006o002",
+      "seq": 551,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 stone → Depot B",
+      "agentId": null,
+      "buildingId": "bld_1hp82oz",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002n",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o001",
+      "seq": 550,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 stone → Power Station 1",
+      "agentId": null,
+      "buildingId": "bld_0p3nc76",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002m",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006o000",
+      "seq": 549,
+      "tick": 240,
+      "at": "2026-10-14T11:35:32.198Z",
+      "type": "task.created",
+      "summary": "maintenance posted: 2 timber → Hearth Bakery",
+      "agentId": null,
+      "buildingId": "bld_04rw7d1",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002l",
+        "kind": "maintenance",
+        "reward": 800
+      }
+    },
+    {
+      "id": "evt_000006n000",
+      "seq": 540,
+      "tick": 239,
+      "at": "2026-10-14T11:35:32.192Z",
+      "type": "production.completed",
+      "summary": "Power Station 1 produced 3 energy",
+      "agentId": null,
+      "buildingId": "bld_0p3nc76",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "energy": 3
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006j001",
+      "seq": 535,
+      "tick": 235,
+      "at": "2026-10-14T11:35:32.190Z",
+      "type": "task.claimed",
+      "summary": "Golden Furrow took production shift for Meadow Homestead",
+      "agentId": "agt_JNmxbL42qGXKDb",
+      "buildingId": "bld_0vujgbh",
+      "communityId": "com_VG5WE9XHuUs72h",
+      "data": {
+        "taskId": "tsk_00002a"
+      }
+    },
+    {
+      "id": "evt_000006j000",
+      "seq": 534,
+      "tick": 235,
+      "at": "2026-10-14T11:35:32.190Z",
+      "type": "task.created",
+      "summary": "demand fulfillment posted: 3 bread → Genesis Market",
+      "agentId": null,
+      "buildingId": "bld_0o27s0c",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002k",
+        "kind": "demand_fulfillment",
+        "reward": 840
+      }
+    },
+    {
+      "id": "evt_000006i000",
+      "seq": 531,
+      "tick": 234,
+      "at": "2026-10-14T11:35:32.189Z",
+      "type": "task.verified",
+      "summary": "Golden Furrow completed production shift for Hillside Homestead",
+      "agentId": "agt_JNmxbL42qGXKDb",
+      "buildingId": "bld_0bqxkw4",
+      "communityId": "com_VG5WE9XHuUs72h",
+      "data": {
+        "taskId": "tsk_00001q",
+        "receiptId": "rcp_000016",
+        "points": 8,
+        "reward": 720
+      }
+    },
+    {
+      "id": "evt_000006h000",
+      "seq": 530,
+      "tick": 233,
+      "at": "2026-10-14T11:35:32.189Z",
+      "type": "production.completed",
+      "summary": "Quarry 1 produced 1 stone",
+      "agentId": null,
+      "buildingId": "bld_1fnl75i",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "stone": 1
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006e002",
+      "seq": 527,
+      "tick": 230,
+      "at": "2026-10-14T11:35:32.188Z",
+      "type": "production.completed",
+      "summary": "Hillside Homestead produced 2 wheat (shift: Golden Furrow)",
+      "agentId": "agt_JNmxbL42qGXKDb",
+      "buildingId": "bld_0bqxkw4",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "wheat": 2
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006e001",
+      "seq": 526,
+      "tick": 230,
+      "at": "2026-10-14T11:35:32.188Z",
+      "type": "production.completed",
+      "summary": "Lumber Yard 1 produced 1 timber (shift: Mortar & Pestle)",
+      "agentId": "agt_eq2THQM90rpm00",
+      "buildingId": "bld_079czck",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "timber": 1
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000006e000",
+      "seq": 525,
+      "tick": 230,
+      "at": "2026-10-14T11:35:32.188Z",
+      "type": "production.completed",
+      "summary": "Crumb & Co. Bakery produced 3 bread",
+      "agentId": null,
+      "buildingId": "bld_16i24cu",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "bread": 3
+        },
+        "inputs": {
+          "flour": 2,
+          "energy": 1
+        }
+      }
+    },
+    {
+      "id": "evt_000006b000",
+      "seq": 524,
+      "tick": 227,
+      "at": "2026-10-14T11:35:32.187Z",
+      "type": "production.completed",
+      "summary": "Power Station 1 produced 3 energy",
+      "agentId": null,
+      "buildingId": "bld_0p3nc76",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "energy": 3
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_0000068000",
+      "seq": 522,
+      "tick": 224,
+      "at": "2026-10-14T11:35:32.186Z",
+      "type": "production.completed",
+      "summary": "Hillside Homestead produced 2 wheat (shift: Golden Furrow)",
+      "agentId": "agt_JNmxbL42qGXKDb",
+      "buildingId": "bld_0bqxkw4",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "wheat": 2
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_0000064003",
+      "seq": 519,
+      "tick": 220,
+      "at": "2026-10-14T11:35:32.185Z",
+      "type": "consumption",
+      "summary": "Residents bought 3 bread at Genesis Market for 47.7 CC",
+      "agentId": null,
+      "buildingId": "bld_0o27s0c",
+      "communityId": null,
+      "data": {
+        "resource": "bread",
+        "quantity": 3,
+        "price": 15890
+      }
+    },
+    {
+      "id": "evt_0000064002",
+      "seq": 518,
+      "tick": 220,
+      "at": "2026-10-14T11:35:32.185Z",
+      "type": "task.created",
+      "summary": "delivery posted: 1 energy → Crumb & Co. Bakery",
+      "agentId": null,
+      "buildingId": "bld_16i24cu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002j",
+        "kind": "delivery",
+        "reward": 1740
+      }
+    },
+    {
+      "id": "evt_0000064001",
+      "seq": 517,
+      "tick": 220,
+      "at": "2026-10-14T11:35:32.185Z",
+      "type": "task.created",
+      "summary": "delivery posted: 2 flour → Crumb & Co. Bakery",
+      "agentId": null,
+      "buildingId": "bld_16i24cu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002i",
+        "kind": "delivery",
+        "reward": 1960
+      }
+    },
+    {
+      "id": "evt_0000064000",
+      "seq": 516,
+      "tick": 220,
+      "at": "2026-10-14T11:35:32.185Z",
+      "type": "task.created",
+      "summary": "demand fulfillment posted: 3 bread → Genesis Market",
+      "agentId": null,
+      "buildingId": "bld_0o27s0c",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002h",
+        "kind": "demand_fulfillment",
+        "reward": 840
+      }
+    },
+    {
+      "id": "evt_0000063000",
+      "seq": 515,
+      "tick": 219,
+      "at": "2026-10-14T11:35:32.180Z",
+      "type": "production.completed",
+      "summary": "Lumber Yard 1 produced 1 timber",
+      "agentId": null,
+      "buildingId": "bld_079czck",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "timber": 1
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_0000062000",
+      "seq": 514,
+      "tick": 218,
+      "at": "2026-10-14T11:35:32.180Z",
+      "type": "production.completed",
+      "summary": "Hillside Homestead produced 2 wheat (shift: Golden Furrow)",
+      "agentId": "agt_JNmxbL42qGXKDb",
+      "buildingId": "bld_0bqxkw4",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "wheat": 2
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000005z002",
+      "seq": 513,
+      "tick": 215,
+      "at": "2026-10-14T11:35:32.179Z",
+      "type": "production.completed",
+      "summary": "Power Station 1 produced 3 energy",
+      "agentId": null,
+      "buildingId": "bld_0p3nc76",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "energy": 3
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000005z001",
+      "seq": 512,
+      "tick": 215,
+      "at": "2026-10-14T11:35:32.179Z",
+      "type": "task.created",
+      "summary": "production shift posted: Northwind Mill",
+      "agentId": null,
+      "buildingId": "bld_1dzw6fu",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002g",
+        "kind": "production_shift",
+        "reward": 600
+      }
+    },
+    {
+      "id": "evt_000005z000",
+      "seq": 511,
+      "tick": 215,
+      "at": "2026-10-14T11:35:32.179Z",
+      "type": "task.created",
+      "summary": "demand fulfillment posted: 3 bread → Genesis Market",
+      "agentId": null,
+      "buildingId": "bld_0o27s0c",
+      "communityId": null,
+      "data": {
+        "taskId": "tsk_00002f",
+        "kind": "demand_fulfillment",
+        "reward": 660
+      }
+    },
+    {
+      "id": "evt_000005y001",
+      "seq": 508,
+      "tick": 214,
+      "at": "2026-10-14T11:35:32.178Z",
+      "type": "production.completed",
+      "summary": "Crumb & Co. Bakery produced 3 bread",
+      "agentId": null,
+      "buildingId": "bld_16i24cu",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "bread": 3
+        },
+        "inputs": {
+          "flour": 2,
+          "energy": 1
+        }
+      }
+    },
+    {
+      "id": "evt_000005y000",
+      "seq": 507,
+      "tick": 214,
+      "at": "2026-10-14T11:35:32.178Z",
+      "type": "task.claimed",
+      "summary": "Gridline Haul took delivery for Old Stone Mill",
+      "agentId": "agt_9zYVeTf8hiuhia",
+      "buildingId": "bld_07d97l2",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "data": {
+        "taskId": "tsk_00001x"
+      }
+    },
+    {
+      "id": "evt_000005x001",
+      "seq": 503,
+      "tick": 213,
+      "at": "2026-10-14T11:35:32.178Z",
+      "type": "task.verified",
+      "summary": "Gridline Haul completed demand fulfillment (3 bread) for Genesis Market",
+      "agentId": "agt_9zYVeTf8hiuhia",
+      "buildingId": "bld_0o27s0c",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "data": {
+        "taskId": "tsk_000029",
+        "receiptId": "rcp_000015",
+        "points": 13,
+        "reward": 924
+      }
+    },
+    {
+      "id": "evt_000005x000",
+      "seq": 502,
+      "tick": 213,
+      "at": "2026-10-14T11:35:32.178Z",
+      "type": "task.claimed",
+      "summary": "Ovenkeeper took production shift for Hearth Bakery",
+      "agentId": "agt_HJ1BkAqqhuEHiX",
+      "buildingId": "bld_04rw7d1",
+      "communityId": "com_LUKKf1U5YwB0L2",
+      "data": {
+        "taskId": "tsk_000023"
+      }
+    },
+    {
+      "id": "evt_000005w001",
+      "seq": 499,
+      "tick": 212,
+      "at": "2026-10-14T11:35:32.178Z",
+      "type": "production.completed",
+      "summary": "Hillside Homestead produced 2 wheat (shift: Golden Furrow)",
+      "agentId": "agt_JNmxbL42qGXKDb",
+      "buildingId": "bld_0bqxkw4",
+      "communityId": null,
+      "data": {
+        "outputs": {
+          "wheat": 2
+        },
+        "inputs": {}
+      }
+    },
+    {
+      "id": "evt_000005w000",
+      "seq": 498,
+      "tick": 212,
+      "at": "2026-10-14T11:35:32.178Z",
+      "type": "task.verified",
+      "summary": "Ovenkeeper completed production shift for Northwind Mill",
+      "agentId": "agt_HJ1BkAqqhuEHiX",
+      "buildingId": "bld_1dzw6fu",
+      "communityId": "com_LUKKf1U5YwB0L2",
+      "data": {
+        "taskId": "tsk_00000w",
+        "receiptId": "rcp_000014",
+        "points": 8,
+        "reward": 900
+      }
+    }
+  ],
+  "nextCursor": "NDk4",
+  "mode": "demo"
+}

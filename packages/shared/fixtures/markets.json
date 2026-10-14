@@ -1,0 +1,273 @@
+{
+  "mode": "demo",
+  "tick": 252,
+  "currency": "CITY_CREDIT_MILLI",
+  "quotes": [
+    {
+      "resource": "wheat",
+      "price": 959,
+      "bid": 940,
+      "ask": 978,
+      "supply": 2369,
+      "demand": 12,
+      "changePct24h": -2.9
+    },
+    {
+      "resource": "flour",
+      "price": 8370,
+      "bid": 8203,
+      "ask": 8537,
+      "supply": 0,
+      "demand": 14,
+      "changePct24h": 2.8
+    },
+    {
+      "resource": "bread",
+      "price": 17349,
+      "bid": 17002,
+      "ask": 17696,
+      "supply": 0,
+      "demand": 107,
+      "changePct24h": 3
+    },
+    {
+      "resource": "timber",
+      "price": 1420,
+      "bid": 1392,
+      "ask": 1448,
+      "supply": 148,
+      "demand": 22,
+      "changePct24h": -2.2
+    },
+    {
+      "resource": "stone",
+      "price": 1412,
+      "bid": 1384,
+      "ask": 1440,
+      "supply": 161,
+      "demand": 6,
+      "changePct24h": -2.8
+    },
+    {
+      "resource": "energy",
+      "price": 1446,
+      "bid": 1417,
+      "ask": 1475,
+      "supply": 40,
+      "demand": 16,
+      "changePct24h": -1.4
+    }
+  ],
+  "listings": [
+    {
+      "buildingId": "bld_07d97l2",
+      "resource": "wheat",
+      "side": "sell",
+      "quantity": 12,
+      "price": 959
+    },
+    {
+      "buildingId": "bld_16t1zgy",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_16t1zgy",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1hp82oz",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1hp82oz",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1fl12j2",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1fl12j2",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 6,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_0hfmt49",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_0hfmt49",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1r8y6gx",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1r8y6gx",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1a4z7oe",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1a4z7oe",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1wp47eh",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1wp47eh",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_04hjlq6",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 4,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_04hjlq6",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1wixh6t",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1wixh6t",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_081p8s9",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_081p8s9",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1feofjq",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1feofjq",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1hvpvaz",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1hvpvaz",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1p8ngoy",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1p8ngoy",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_0caq6up",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 8,
+      "price": 1412
+    },
+    {
+      "buildingId": "bld_1cj1ta9",
+      "resource": "timber",
+      "side": "sell",
+      "quantity": 6,
+      "price": 1420
+    },
+    {
+      "buildingId": "bld_1cj1ta9",
+      "resource": "stone",
+      "side": "sell",
+      "quantity": 10,
+      "price": 1412
+    }
+  ]
+}

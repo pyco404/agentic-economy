@@ -1,0 +1,150 @@
+{
+  "mode": "demo",
+  "tick": 252,
+  "agents": [
+    {
+      "id": "agt_xQr2TBw3Fx9hAY",
+      "name": "Juniper Cart",
+      "profession": "logistics_operator",
+      "communityId": "com_LUKKf1U5YwB0L2",
+      "ownerWallet": "5f69YWidoxRabXTehswyHgLyRi6cUHPYaA6VJCsoQtwL",
+      "status": "active",
+      "state": "delivering",
+      "pos": {
+        "x": 72.5,
+        "y": 44.5
+      },
+      "credits": 53206,
+      "verifiedTasks": 6,
+      "points": 68
+    },
+    {
+      "id": "agt_BhZuybvzmU6jNY",
+      "name": "Rye Runner",
+      "profession": "merchant",
+      "communityId": "com_LUKKf1U5YwB0L2",
+      "ownerWallet": "J8PnLPsa6535gBzia4Ys1wnSrjyaB2AAyEjbur5B9Bs9",
+      "status": "active",
+      "state": "delivering",
+      "pos": {
+        "x": 45.5,
+        "y": 88.5
+      },
+      "credits": 53222,
+      "verifiedTasks": 7,
+      "points": 86
+    },
+    {
+      "id": "agt_HJ1BkAqqhuEHiX",
+      "name": "Ovenkeeper",
+      "profession": "manufacturer",
+      "communityId": "com_LUKKf1U5YwB0L2",
+      "ownerWallet": "CjeVc5fwZrR8ws1ZFcCn3NXN5Ukz58PpGcjC1tvBqgBT",
+      "status": "active",
+      "state": "working",
+      "pos": {
+        "x": 60.5,
+        "y": 56.5
+      },
+      "credits": 47940,
+      "verifiedTasks": 4,
+      "points": 32
+    },
+    {
+      "id": "agt_FZnYjPWCnnF9Mk",
+      "name": "Millrace",
+      "profession": "logistics_operator",
+      "communityId": "com_VG5WE9XHuUs72h",
+      "ownerWallet": "Uk4sypiPYnJbLkUtoYWFNHo32W9x2FwPphGpiogxCD2",
+      "status": "active",
+      "state": "delivering",
+      "pos": {
+        "x": 72.5,
+        "y": 58.5
+      },
+      "credits": 54164,
+      "verifiedTasks": 10,
+      "points": 121
+    },
+    {
+      "id": "agt_JNmxbL42qGXKDb",
+      "name": "Golden Furrow",
+      "profession": "farmer",
+      "communityId": "com_VG5WE9XHuUs72h",
+      "ownerWallet": "CVdJRytV5AFFYBzYuysa44i1spgwjjJRjJrC6UCDCgVY",
+      "status": "active",
+      "state": "moving",
+      "pos": {
+        "x": 51.5,
+        "y": 8.5
+      },
+      "credits": 47820,
+      "verifiedTasks": 4,
+      "points": 32
+    },
+    {
+      "id": "agt_Q6C3CzH77iwets",
+      "name": "Quay Trader",
+      "profession": "merchant",
+      "communityId": "com_VG5WE9XHuUs72h",
+      "ownerWallet": "5iyyzrVi7hpeSCdfPuYexyJH6V8X5sBAjE8oVz4wLSCy",
+      "status": "active",
+      "state": "delivering",
+      "pos": {
+        "x": 72.5,
+        "y": 80.5
+      },
+      "credits": 51542,
+      "verifiedTasks": 4,
+      "points": 44
+    },
+    {
+      "id": "agt_eq2THQM90rpm00",
+      "name": "Mortar & Pestle",
+      "profession": "builder",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "ownerWallet": "3sRUimc1PGTQGEMjEHJY6bSGvCmhWx9Pge5W6YWVybJa",
+      "status": "active",
+      "state": "working",
+      "pos": {
+        "x": 8.5,
+        "y": 5.5
+      },
+      "credits": 45600,
+      "verifiedTasks": 1,
+      "points": 8
+    },
+    {
+      "id": "agt_A45BPQdud2SvNz",
+      "name": "Lintel",
+      "profession": "property_manager",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "ownerWallet": "5suEMEbxcZWD6oy39GwenS9McFewaT1cr3sNLvak4ByT",
+      "status": "active",
+      "state": "moving",
+      "pos": {
+        "x": 56.5,
+        "y": 67.5
+      },
+      "credits": 45000,
+      "verifiedTasks": 0,
+      "points": 0
+    },
+    {
+      "id": "agt_9zYVeTf8hiuhia",
+      "name": "Gridline Haul",
+      "profession": "logistics_operator",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "ownerWallet": "Dn9wy7DSwT7UYNRTW2MWKHnwCufG1HRbCRXdYaTeLJef",
+      "status": "active",
+      "state": "delivering",
+      "pos": {
+        "x": 72.5,
+        "y": 38.5
+      },
+      "credits": 53800,
+      "verifiedTasks": 6,
+      "points": 68
+    }
+  ]
+}

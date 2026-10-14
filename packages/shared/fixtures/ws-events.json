@@ -1,0 +1,1343 @@
+[
+  {
+    "v": 1,
+    "type": "activity.created",
+    "seq": 92,
+    "tick": 15,
+    "ts": "2026-10-14T11:35:31.996Z",
+    "data": {
+      "event": {
+        "id": "evt_000000f000",
+        "tick": 15,
+        "type": "task.claimed",
+        "summary": "Ovenkeeper took production shift for Hearth Bakery",
+        "agentId": "agt_HJ1BkAqqhuEHiX",
+        "buildingId": "bld_04rw7d1",
+        "communityId": "com_LUKKf1U5YwB0L2",
+        "data": {
+          "taskId": "tsk_00000d"
+        },
+        "at": "2026-10-14T11:35:31.995Z",
+        "seq": 79
+      }
+    }
+  },
+  {
+    "v": 1,
+    "type": "agent.action",
+    "seq": 91,
+    "tick": 15,
+    "ts": "2026-10-14T11:35:31.996Z",
+    "data": {
+      "action": {
+        "id": "act_b",
+        "agentId": "agt_HJ1BkAqqhuEHiX",
+        "tick": 15,
+        "kind": "claim_task",
+        "reason": "production_shift (~46 ticks): 13.0 mCC/tick",
+        "utility": 13.04,
+        "taskId": "tsk_00000d",
+        "buildingId": "bld_04rw7d1",
+        "detail": {}
+      }
+    }
+  },
+  {
+    "v": 1,
+    "type": "agent.moved",
+    "seq": 87,
+    "tick": 12,
+    "ts": "2026-10-14T11:35:31.992Z",
+    "data": {
+      "moves": [
+        {
+          "id": "agt_xQr2TBw3Fx9hAY",
+          "pos": {
+            "x": 56.5,
+            "y": 60.5
+          },
+          "state": "delivering",
+          "target": {
+            "x": 59,
+            "y": 64
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_BhZuybvzmU6jNY",
+          "pos": {
+            "x": 72.5,
+            "y": 74.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 83,
+            "y": 88
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_HJ1BkAqqhuEHiX",
+          "pos": {
+            "x": 64.5,
+            "y": 80.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 60,
+            "y": 80
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_FZnYjPWCnnF9Mk",
+          "pos": {
+            "x": 45.5,
+            "y": 72.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 40,
+            "y": 69
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_JNmxbL42qGXKDb",
+          "pos": {
+            "x": 64.5,
+            "y": 65.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 63,
+            "y": 56
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_Q6C3CzH77iwets",
+          "pos": {
+            "x": 69.5,
+            "y": 72.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 83,
+            "y": 88
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_eq2THQM90rpm00",
+          "pos": {
+            "x": 56.5,
+            "y": 74.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 53,
+            "y": 80
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_A45BPQdud2SvNz",
+          "pos": {
+            "x": 56.5,
+            "y": 72.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 56,
+            "y": 75
+          },
+          "speed": 2
+        },
+        {
+          "id": "agt_9zYVeTf8hiuhia",
+          "pos": {
+            "x": 54.5,
+            "y": 72.5
+          },
+          "state": "moving",
+          "target": {
+            "x": 66,
+            "y": 24
+          },
+          "speed": 2
+        }
+      ]
+    }
+  },
+  {
+    "v": 1,
+    "type": "community.updated",
+    "seq": 102,
+    "tick": 17,
+    "ts": "2026-10-14T11:35:31.999Z",
+    "data": {
+      "community": {
+        "id": "com_LUKKf1U5YwB0L2",
+        "name": "Demo Hearth Bakers",
+        "symbol": "DHEARTH",
+        "description": "DEMO MODE community. Bakers and couriers keeping the Genesis district fed.",
+        "imageUri": null,
+        "metadataUri": "https://example.invalid/demo/hearth.json",
+        "mint": "JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky",
+        "launchId": "lch_1L2H6zamKJXN5n",
+        "launchSignature": "2xpHy24nVD6EbaVGe4Y85dk7tcLrKM1zmgDTvspqouV7nMz9xwe8XKwdnj9qTgvhvhkeX2dXuAr56oxwpmK3h57c",
+        "creatorWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
+        "feeSharingConfig": "7KZe6QgXWqteywtCn1XRwDnCM9u7HmygHNhuHDpZfg46",
+        "links": {
+          "pumpFun": "https://pump.fun/coin/JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky",
+          "explorer": "https://solscan.io/token/JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky?cluster=devnet",
+          "website": null,
+          "twitter": null,
+          "telegram": null
+        },
+        "headquartersBuildingId": "bld_0k4syq2",
+        "stats": {
+          "agents": 3,
+          "activeAgents": 3,
+          "verifiedTasks": 1,
+          "prominence": 15
+        },
+        "registeredAt": "2026-10-14T11:35:31.620Z"
+      }
+    }
+  },
+  {
+    "v": 1,
+    "type": "economy.price_updated",
+    "seq": 97,
+    "tick": 15,
+    "ts": "2026-10-14T11:35:31.997Z",
+    "data": {
+      "quotes": [
+        {
+          "resource": "wheat",
+          "price": 1891,
+          "bid": 1853,
+          "ask": 1929,
+          "supply": 540,
+          "demand": 18,
+          "changePct24h": -5.4
+        },
+        {
+          "resource": "flour",
+          "price": 5180,
+          "bid": 5076,
+          "ask": 5284,
+          "supply": 12,
+          "demand": 8,
+          "changePct24h": 3.6
+        },
+        {
+          "resource": "bread",
+          "price": 9281,
+          "bid": 9095,
+          "ask": 9467,
+          "supply": 7,
+          "demand": 13,
+          "changePct24h": 3.1
+        },
+        {
+          "resource": "timber",
+          "price": 2824,
+          "bid": 2768,
+          "ask": 2880,
+          "supply": 156,
+          "demand": 0,
+          "changePct24h": -5.9
+        },
+        {
+          "resource": "stone",
+          "price": 2824,
+          "bid": 2768,
+          "ask": 2880,
+          "supply": 156,
+          "demand": 0,
+          "changePct24h": -5.9
+        },
+        {
+          "resource": "energy",
+          "price": 1545,
+          "bid": 1514,
+          "ask": 1576,
+          "supply": 12,
+          "demand": 8,
+          "changePct24h": 3
+        }
+      ]
+    }
+  },
+  {
+    "v": 1,
+    "type": "world.chunk.updated",
+    "seq": 111,
+    "tick": 19,
+    "ts": "2026-10-14T11:35:32.003Z",
+    "data": {
+      "chunk": {
+        "coord": {
+          "cx": 0,
+          "cy": 0
+        },
+        "size": 32,
+        "version": 20,
+        "terrain": "gggggggggggggggggfffffffffffggggggggggggggggggggfffffffffffffgggggggggggrgggggggfffffxxxrffffgggggggggggrgggggggfffffxxxrffffgggggffxxxxrgggggggfffffxxxrffffgggffffxxxxrgggggggffffffffrffffgggffffxxxxrfgggggggfffffffrfffggggffffffffrfgggggggfffffffrfffggggffrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrfffxxxffrffgggggggggffffrggggggxfffxxxffrffgggggggggggggrffffggxfffxxxffrffggggggggggxxxrffffffxffffffffrffggggggggggxxxrfffffffffffffffrfgggggggggggfffrfffffffffffffffrfggggggggggffffrfffffffffffffffrgggggggggggffffrxxxffffggfffffgrfffffggggggffffrxxxffffgggggggfrfffffffggggffffrxxxffffggggggffrffffffffgggffffrfffffffggggggffrffffffffggggfffrfffffffgggggfffrfffffffffgggfffrfffffffgggggfffrfxxxfffffggggffrffffffggggggfffrfxxxfffffggggggrffffggggggggfffrfxxxfffffggggggrgggggggggrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrggxxggffrffffffffgggggggrggggggxggxxggffrffffffffgggggggrggggggxgggggggfrfffffffggggggggrgggggggggggggggrfffffggggggggggrxxxggxxggggggxxrffffgggggggggggrxxxggxxggggggxxrffffffgggggggggrxxxggxxgggggfffrfffffffggggggggrgggggxx",
+        "elevation": "6666666666666666667777777777777766666666666666666666777777766666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666665555666666666666666666666666666555555555555666666666666666666655555555555555666666666666666665555555555555555666666666666665555555555555555555566665666666555555555555555555555555556666655555555555555555555555555566665555555555555555555555555555666655555555555555555555555555556666555555555555555444445555555566665555555555554444444445555555666555555555555444444444445555556665555555555444444444444445555566655555555544444444444444444555666555555555444444444444444444456665555555554444444444444444444466655555555544444444444444444444666655555555444444444444444444446666555555555444444444444444444466666555555555544444444444444444666665555555555544444444444444446666665555555555544444444444444466666655555555555444444444444444666666555555555554444444444444446666666555555555544444444444444466666666555555555444444444444444",
+        "buildings": [
+          {
+            "id": "bld_079czck",
+            "kind": "lumber_yard",
+            "name": "Lumber Yard 1",
+            "origin": {
+              "x": 4,
+              "y": 4
+            },
+            "entrance": {
+              "x": 8,
+              "y": 5
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 4,
+              "depth": 3,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "shed",
+              "material": "timber",
+              "windowPattern": "none",
+              "districtTheme": "agricultural",
+              "roofPalette": 0,
+              "facing": "e",
+              "seed": 3159119559
+            },
+            "status": "active",
+            "condition": 69,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {
+              "timber": 7
+            },
+            "branding": null
+          },
+          {
+            "id": "bld_0bqxkw4",
+            "kind": "farm",
+            "name": "Hillside Homestead",
+            "origin": {
+              "x": 21,
+              "y": 2
+            },
+            "entrance": {
+              "x": 24,
+              "y": 3
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 3,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "timber",
+              "windowPattern": "none",
+              "districtTheme": "agricultural",
+              "roofPalette": 2,
+              "facing": "e",
+              "seed": 402521535
+            },
+            "status": "active",
+            "condition": 78,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {
+              "wheat": 12
+            },
+            "branding": null
+          },
+          {
+            "id": "bld_1eth8ei",
+            "kind": "farm",
+            "name": "Golden Farm",
+            "origin": {
+              "x": 3,
+              "y": 9
+            },
+            "entrance": {
+              "x": 4,
+              "y": 8
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 3,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "timber",
+              "windowPattern": "sparse",
+              "districtTheme": "agricultural",
+              "roofPalette": 2,
+              "facing": "n",
+              "seed": 404424989
+            },
+            "status": "active",
+            "condition": 88,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {
+              "wheat": 12
+            },
+            "branding": null
+          },
+          {
+            "id": "bld_1cnx38k",
+            "kind": "house",
+            "name": "Residence 3",
+            "origin": {
+              "x": 31,
+              "y": 9
+            },
+            "entrance": {
+              "x": 32,
+              "y": 8
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 2,
+              "depth": 3,
+              "height": 2,
+              "floors": 2,
+              "roofStyle": "gable",
+              "material": "plaster",
+              "windowPattern": "sparse",
+              "districtTheme": "agricultural",
+              "roofPalette": 7,
+              "facing": "n",
+              "seed": 3698438595
+            },
+            "status": "active",
+            "condition": 86,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          },
+          {
+            "id": "bld_1nda9ly",
+            "kind": "house",
+            "name": "Residence 9",
+            "origin": {
+              "x": 21,
+              "y": 11
+            },
+            "entrance": {
+              "x": 24,
+              "y": 12
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 2,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "plaster",
+              "windowPattern": "sparse",
+              "districtTheme": "agricultural",
+              "roofPalette": 1,
+              "facing": "e",
+              "seed": 1600149423
+            },
+            "status": "active",
+            "condition": 100,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          },
+          {
+            "id": "bld_1ve8jsu",
+            "kind": "farm",
+            "name": "Sunfield Farm",
+            "origin": {
+              "x": 25,
+              "y": 15
+            },
+            "entrance": {
+              "x": 24,
+              "y": 16
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 3,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "timber",
+              "windowPattern": "none",
+              "districtTheme": "agricultural",
+              "roofPalette": 4,
+              "facing": "w",
+              "seed": 708612152
+            },
+            "status": "active",
+            "condition": 80,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {
+              "wheat": 12
+            },
+            "branding": null
+          },
+          {
+            "id": "bld_16fu0dt",
+            "kind": "farm",
+            "name": "Sunfield Fields",
+            "origin": {
+              "x": 10,
+              "y": 21
+            },
+            "entrance": {
+              "x": 11,
+              "y": 24
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 3,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "timber",
+              "windowPattern": "none",
+              "districtTheme": "agricultural",
+              "roofPalette": 5,
+              "facing": "s",
+              "seed": 1137645411
+            },
+            "status": "active",
+            "condition": 84,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {
+              "wheat": 12
+            },
+            "branding": null
+          },
+          {
+            "id": "bld_1g2kbcv",
+            "kind": "house",
+            "name": "Residence 16",
+            "origin": {
+              "x": 2,
+              "y": 25
+            },
+            "entrance": {
+              "x": 3,
+              "y": 24
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 2,
+              "depth": 2,
+              "height": 2,
+              "floors": 2,
+              "roofStyle": "shed",
+              "material": "timber",
+              "windowPattern": "sparse",
+              "districtTheme": "agricultural",
+              "roofPalette": 6,
+              "facing": "n",
+              "seed": 2808795406
+            },
+            "status": "active",
+            "condition": 96,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          },
+          {
+            "id": "bld_1w37671",
+            "kind": "house",
+            "name": "Residence 17",
+            "origin": {
+              "x": 31,
+              "y": 25
+            },
+            "entrance": {
+              "x": 32,
+              "y": 24
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 2,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "brick",
+              "windowPattern": "grid",
+              "districtTheme": "residential",
+              "roofPalette": 2,
+              "facing": "n",
+              "seed": 4098623952
+            },
+            "status": "active",
+            "condition": 93,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          },
+          {
+            "id": "bld_0mc15tm",
+            "kind": "house",
+            "name": "Residence 31",
+            "origin": {
+              "x": 25,
+              "y": 28
+            },
+            "entrance": {
+              "x": 24,
+              "y": 29
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 3,
+              "height": 2,
+              "floors": 2,
+              "roofStyle": "hip",
+              "material": "plaster",
+              "windowPattern": "grid",
+              "districtTheme": "residential",
+              "roofPalette": 3,
+              "facing": "w",
+              "seed": 419684633
+            },
+            "status": "active",
+            "condition": 71,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          },
+          {
+            "id": "bld_195i6ng",
+            "kind": "apartment",
+            "name": "Linden Apartments",
+            "origin": {
+              "x": 30,
+              "y": 28
+            },
+            "entrance": {
+              "x": 31,
+              "y": 32
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 3,
+              "depth": 4,
+              "height": 3.8,
+              "floors": 4,
+              "roofStyle": "flat",
+              "material": "concrete",
+              "windowPattern": "grid",
+              "districtTheme": "residential",
+              "roofPalette": 6,
+              "facing": "s",
+              "seed": 3303729512
+            },
+            "status": "active",
+            "condition": 73,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          },
+          {
+            "id": "bld_0jzp2y5",
+            "kind": "house",
+            "name": "Residence 33",
+            "origin": {
+              "x": 6,
+              "y": 29
+            },
+            "entrance": {
+              "x": 8,
+              "y": 30
+            },
+            "chunk": {
+              "cx": 0,
+              "cy": 0
+            },
+            "params": {
+              "width": 2,
+              "depth": 2,
+              "height": 1.1,
+              "floors": 1,
+              "roofStyle": "gable",
+              "material": "brick",
+              "windowPattern": "grid",
+              "districtTheme": "agricultural",
+              "roofPalette": 2,
+              "facing": "e",
+              "seed": 35881978
+            },
+            "status": "active",
+            "condition": 72,
+            "ownerAgentId": null,
+            "communityId": null,
+            "inventory": {},
+            "branding": null
+          }
+        ],
+        "props": [
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 11,
+              "y": 2
+            },
+            "scale": 0.91,
+            "seed": 2375869995
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 4,
+              "y": 3
+            },
+            "scale": 1.11,
+            "seed": 1640344743
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 14,
+              "y": 3
+            },
+            "scale": 0.99,
+            "seed": 459003147
+          },
+          {
+            "kind": "rock",
+            "pos": {
+              "x": 31,
+              "y": 4
+            },
+            "scale": 0.74,
+            "seed": 3347338106
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 7
+            },
+            "scale": 0.84,
+            "seed": 3848400241
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 30,
+              "y": 7
+            },
+            "scale": 0.9,
+            "seed": 3273085988
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 25,
+              "y": 9
+            },
+            "scale": 1.02,
+            "seed": 3144036388
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 27,
+              "y": 9
+            },
+            "scale": 1.13,
+            "seed": 2405357954
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 9
+            },
+            "scale": 0.7,
+            "seed": 3789715305
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 23,
+              "y": 10
+            },
+            "scale": 0.94,
+            "seed": 303389491
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 30,
+              "y": 10
+            },
+            "scale": 0.92,
+            "seed": 3123275995
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 17,
+              "y": 11
+            },
+            "scale": 0.91,
+            "seed": 3109652487
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 17,
+              "y": 12
+            },
+            "scale": 0.89,
+            "seed": 308297160
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 19,
+              "y": 12
+            },
+            "scale": 0.82,
+            "seed": 901399807
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 20,
+              "y": 12
+            },
+            "scale": 0.9,
+            "seed": 2698737643
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 10,
+              "y": 13
+            },
+            "scale": 1.03,
+            "seed": 2688701069
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 11,
+              "y": 13
+            },
+            "scale": 0.91,
+            "seed": 3101061144
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 18,
+              "y": 13
+            },
+            "scale": 0.9,
+            "seed": 585282981
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 12,
+              "y": 14
+            },
+            "scale": 0.73,
+            "seed": 551971486
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 9,
+              "y": 15
+            },
+            "scale": 0.98,
+            "seed": 4245567626
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 10,
+              "y": 15
+            },
+            "scale": 1.15,
+            "seed": 587418522
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 11,
+              "y": 15
+            },
+            "scale": 1.2,
+            "seed": 507007074
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 1,
+              "y": 16
+            },
+            "scale": 0.9,
+            "seed": 3820751904
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 14,
+              "y": 16
+            },
+            "scale": 0.82,
+            "seed": 2956922686
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 2,
+              "y": 17
+            },
+            "scale": 0.95,
+            "seed": 2745963725
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 4,
+              "y": 17
+            },
+            "scale": 1.05,
+            "seed": 2861011061
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 1,
+              "y": 18
+            },
+            "scale": 0.72,
+            "seed": 3064128233
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 4,
+              "y": 18
+            },
+            "scale": 0.94,
+            "seed": 4133064092
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 5,
+              "y": 18
+            },
+            "scale": 1.03,
+            "seed": 2778595437
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 18,
+              "y": 18
+            },
+            "scale": 0.99,
+            "seed": 2156673667
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 4,
+              "y": 19
+            },
+            "scale": 1.18,
+            "seed": 1481280132
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 19,
+              "y": 19
+            },
+            "scale": 0.72,
+            "seed": 2988381686
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 2,
+              "y": 20
+            },
+            "scale": 0.86,
+            "seed": 1593856134
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 31,
+              "y": 21
+            },
+            "scale": 1.25,
+            "seed": 3797036946
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 1,
+              "y": 22
+            },
+            "scale": 1,
+            "seed": 663690409
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 2,
+              "y": 22
+            },
+            "scale": 1.24,
+            "seed": 3944128400
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 4,
+              "y": 22
+            },
+            "scale": 1,
+            "seed": 475272454
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 18,
+              "y": 22
+            },
+            "scale": 0.85,
+            "seed": 685707018
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 30,
+              "y": 22
+            },
+            "scale": 0.78,
+            "seed": 3002993185
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 23
+            },
+            "scale": 0.82,
+            "seed": 3976774272
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 30,
+              "y": 23
+            },
+            "scale": 0.94,
+            "seed": 540124845
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 31,
+              "y": 23
+            },
+            "scale": 0.71,
+            "seed": 2270367315
+          },
+          {
+            "kind": "rock",
+            "pos": {
+              "x": 4,
+              "y": 25
+            },
+            "scale": 1.26,
+            "seed": 1667981042
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 5,
+              "y": 25
+            },
+            "scale": 0.82,
+            "seed": 3176630687
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 25,
+              "y": 25
+            },
+            "scale": 0.71,
+            "seed": 4007897931
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 26,
+              "y": 25
+            },
+            "scale": 1.1,
+            "seed": 69345966
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 27,
+              "y": 25
+            },
+            "scale": 0.87,
+            "seed": 3367093410
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 25
+            },
+            "scale": 1.16,
+            "seed": 3431862838
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 5,
+              "y": 26
+            },
+            "scale": 1.3,
+            "seed": 3512773339
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 26,
+              "y": 26
+            },
+            "scale": 1.08,
+            "seed": 440154619
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 27,
+              "y": 26
+            },
+            "scale": 0.98,
+            "seed": 2111677203
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 4,
+              "y": 27
+            },
+            "scale": 1.18,
+            "seed": 3530539887
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 25,
+              "y": 27
+            },
+            "scale": 1.29,
+            "seed": 344208828
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 28,
+              "y": 27
+            },
+            "scale": 0.9,
+            "seed": 481963174
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 4,
+              "y": 28
+            },
+            "scale": 0.99,
+            "seed": 782258391
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 23,
+              "y": 28
+            },
+            "scale": 0.87,
+            "seed": 2473181829
+          },
+          {
+            "kind": "rock",
+            "pos": {
+              "x": 4,
+              "y": 29
+            },
+            "scale": 1.04,
+            "seed": 2691453082
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 5,
+              "y": 29
+            },
+            "scale": 1.24,
+            "seed": 3958309088
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 17,
+              "y": 29
+            },
+            "scale": 0.91,
+            "seed": 1560409025
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 23,
+              "y": 29
+            },
+            "scale": 1.17,
+            "seed": 3745358781
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 29
+            },
+            "scale": 0.88,
+            "seed": 35885587
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 5,
+              "y": 30
+            },
+            "scale": 1.06,
+            "seed": 791432237
+          },
+          {
+            "kind": "bush",
+            "pos": {
+              "x": 28,
+              "y": 30
+            },
+            "scale": 0.86,
+            "seed": 987412476
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 30
+            },
+            "scale": 0.82,
+            "seed": 384713286
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 2,
+              "y": 31
+            },
+            "scale": 1.16,
+            "seed": 741576400
+          },
+          {
+            "kind": "tree_cone",
+            "pos": {
+              "x": 26,
+              "y": 31
+            },
+            "scale": 0.93,
+            "seed": 3715209092
+          },
+          {
+            "kind": "tree_round",
+            "pos": {
+              "x": 29,
+              "y": 31
+            },
+            "scale": 0.95,
+            "seed": 1511041847
+          }
+        ]
+      }
+    }
+  }
+]

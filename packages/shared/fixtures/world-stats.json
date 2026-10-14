@@ -1,0 +1,27 @@
+{
+  "mode": "demo",
+  "tick": 252,
+  "population": 1714,
+  "activeAgents": 9,
+  "pausedAgents": 0,
+  "communities": 3,
+  "buildings": 404,
+  "creditsInCirculation": 599922100,
+  "goodsProduced": {
+    "wheat": 1948,
+    "flour": 24,
+    "bread": 42,
+    "timber": 14,
+    "stone": 11,
+    "energy": 63
+  },
+  "goodsConsumed": {
+    "wheat": 39,
+    "flour": 30,
+    "bread": 57,
+    "timber": 0,
+    "stone": 0,
+    "energy": 28
+  },
+  "verifiedTasks": 42
+}

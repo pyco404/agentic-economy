@@ -1,0 +1,6635 @@
+openapi: 3.1.0
+info:
+  title: Agentic Economy API
+  version: 0.1.0
+  description: |-
+    Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
+
+    Every list/read response carries `mode` (demo | devnet | production); clients must show a visible Demo Mode label when mode=demo.
+
+    Amounts in lamports/token base units are decimal strings. City Credits are integer milli-credits, simulated and non-withdrawable.
+
+    $AECO is a FUTURE token and does not exist; nothing in this API mints, sells or references it as live.
+
+    WebSocket protocol: GET /api/v1/ws (see contracts/events.md); message schemas are the *Event components.
+servers:
+  - url: http://localhost:8787
+    description: local
+tags:
+  - name: world
+  - name: economy
+  - name: agents
+  - name: communities
+  - name: launches
+  - name: treasury
+  - name: auth
+  - name: system
+  - name: demo
+paths:
+  /healthz:
+    get:
+      operationId: health
+      summary: Liveness + mode
+      tags:
+        - system
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/world/bootstrap:
+    get:
+      operationId: getWorldBootstrap
+      summary: World seed, regions, building catalog, simulation clock
+      tags:
+        - world
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorldBootstrap"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/world/chunks:
+    get:
+      operationId: getWorldChunks
+      summary: Chunks (terrain, buildings, props) around a chunk coordinate
+      tags:
+        - world
+      parameters:
+        - name: x
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+            description: Center chunk x (chunk units, not cells).
+        - name: y
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+            description: Center chunk y (chunk units).
+        - name: radius
+          in: query
+          required: false
+          schema:
+            default: 1
+            type: integer
+            minimum: 0
+            maximum: 4
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChunksResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/world/stats:
+    get:
+      operationId: getWorldStats
+      summary: Population, economy, agent and community counts
+      tags:
+        - world
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorldStats"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/world/agents:
+    get:
+      operationId: getWorldAgents
+      summary: All agents with positions (compact)
+      tags:
+        - world
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorldAgentsResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/activities:
+    get:
+      operationId: listActivities
+      summary: Public activity feed (newest first)
+      tags:
+        - economy
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/markets:
+    get:
+      operationId: getMarkets
+      summary: Simulated City Credit prices and listings
+      tags:
+        - economy
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketsResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/economy/summary:
+    get:
+      operationId: getEconomySummary
+      summary: Credit supply, production totals, task stats
+      tags:
+        - economy
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EconomySummary"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/tasks:
+    get:
+      operationId: listTasks
+      summary: Service tasks (open and verified)
+      tags:
+        - economy
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/TaskStatus"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/tasks/receipts:
+    get:
+      operationId: listTaskReceipts
+      summary: Verification receipts (hash-chained)
+      tags:
+        - economy
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/rewards:
+    get:
+      operationId: listRewardRecords
+      summary: Dry-run contribution records (no payouts)
+      tags:
+        - economy
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/communities:
+    get:
+      operationId: listCommunities
+      summary: Communities launched through Agentic Economy
+      tags:
+        - communities
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/communities/{id}:
+    get:
+      operationId: getCommunity
+      summary: Community and token details
+      tags:
+        - communities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/CommunityId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/communities/{id}/agents:
+    get:
+      operationId: listCommunityAgents
+      summary: Agents affiliated with a community
+      tags:
+        - communities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/CommunityId"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentSummaryPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/communities/{id}/eligibility:
+    get:
+      operationId: getHolderEligibility
+      summary: Signed-in wallet's holder eligibility (from chain data)
+      tags:
+        - communities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/CommunityId"
+      security:
+        - walletSession: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolderEligibility"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/agents/{id}:
+    get:
+      operationId: getAgent
+      summary: Agent profile, location, inventory, performance
+      tags:
+        - agents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AgentId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateAgent
+      summary: Pause/resume or update bounded strategy (owner only)
+      tags:
+        - agents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AgentId"
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: 8-128 chars [A-Za-z0-9_.:-]. Same key + same request ⇒ stored response replayed; same key + different request ⇒ 409 idempotency_conflict.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchAgentRequestInput"
+      security:
+        - walletSession: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/agents:
+    post:
+      operationId: createAgent
+      summary: Activate an agent (server verifies holder eligibility)
+      tags:
+        - agents
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: 8-128 chars [A-Za-z0-9_.:-]. Same key + same request ⇒ stored response replayed; same key + different request ⇒ 409 idempotency_conflict.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentRequestInput"
+      security:
+        - walletSession: []
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/agents/{id}/activity:
+    get:
+      operationId: listAgentActivity
+      summary: Agent decision/action log (newest first)
+      tags:
+        - agents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AgentId"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentActionPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/treasury:
+    get:
+      operationId: getTreasury
+      summary: Public fee/allocation summary with reconciliation state
+      tags:
+        - treasury
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TreasurySummary"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/treasury/summary:
+    get:
+      operationId: getTreasurySummary
+      summary: Alias of /treasury
+      tags:
+        - treasury
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TreasurySummary"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/treasury/entries:
+    get:
+      operationId: listTreasuryEntries
+      summary: Append-only treasury ledger (newest first)
+      tags:
+        - treasury
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TreasuryEntryPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/auth/challenge:
+    post:
+      operationId: createAuthChallenge
+      summary: Create single-use sign-in message
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChallengeRequestInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChallengeResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/auth/verify:
+    post:
+      operationId: verifyAuthChallenge
+      summary: Verify wallet signature, open session
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyRequestInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/auth/session:
+    get:
+      operationId: getSession
+      summary: Current session identity
+      tags:
+        - auth
+      security:
+        - walletSession: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletIdentity"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/launches/prepare:
+    post:
+      operationId: prepareLaunch
+      summary: Validate metadata; build atomic fee + Pump.fun create + 60/40 fee-sharing transaction
+      tags:
+        - launches
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: 8-128 chars [A-Za-z0-9_.:-]. Same key + same request ⇒ stored response replayed; same key + different request ⇒ 409 idempotency_conflict.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrepareLaunchRequestInput"
+      security:
+        - walletSession: []
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrepareLaunchResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/launches/confirm:
+    post:
+      operationId: confirmLaunch
+      summary: Verify landed transaction on-chain and register community (idempotent)
+      tags:
+        - launches
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: 8-128 chars [A-Za-z0-9_.:-]. Same key + same request ⇒ stored response replayed; same key + different request ⇒ 409 idempotency_conflict.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmLaunchRequestInput"
+      security:
+        - walletSession: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LaunchResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/launches/{id}:
+    get:
+      operationId: getLaunch
+      summary: Launch progress and errors
+      tags:
+        - launches
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/LaunchId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LaunchResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/demo/launches/{id}/sign:
+    post:
+      operationId: demoSignLaunch
+      summary: "DEMO ONLY: simulate wallet signing + landing of a prepared launch on the mock chain"
+      tags:
+        - demo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/LaunchId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoSignRequestInput"
+      security:
+        - walletSession: []
+      x-demo-only: true
+      description: Only registered when MODE=demo. Never available on devnet/production.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoSignResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+components:
+  securitySchemes:
+    walletSession:
+      type: http
+      scheme: bearer
+      description: Opaque session token from POST /api/v1/auth/verify.
+  schemas:
+    ActivityCreatedEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: activity.created
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            event:
+              $ref: "#/components/schemas/EconomicEvent"
+          required:
+            - event
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    ActivityCreatedEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: activity.created
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            event:
+              $ref: "#/components/schemas/EconomicEventInput"
+          required:
+            - event
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    ActivityPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EconomicEvent"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    ActivityPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EconomicEventInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    Agent:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/AgentId"
+        name:
+          type: string
+        profession:
+          $ref: "#/components/schemas/Profession"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        pos:
+          $ref: "#/components/schemas/WorldPos"
+        credits:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: City Credit balance (mCC). Simulated; not withdrawable.
+        verifiedTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        points:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        strategy:
+          $ref: "#/components/schemas/AgentStrategy"
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentPermission"
+        createdTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        target:
+          anyOf:
+            - $ref: "#/components/schemas/GridPos"
+            - type: "null"
+        path:
+          type: array
+          items:
+            $ref: "#/components/schemas/GridPos"
+        currentTaskId:
+          anyOf:
+            - $ref: "#/components/schemas/TaskId"
+            - type: "null"
+        operatedBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        cargo:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+        performance:
+          type: object
+          properties:
+            creditsEarned:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            creditsSpent:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            tasksCompleted:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            tasksFailed:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            reliabilityPct:
+              type: number
+              minimum: 0
+              maximum: 100
+          required:
+            - creditsEarned
+            - creditsSpent
+            - tasksCompleted
+            - tasksFailed
+            - reliabilityPct
+          additionalProperties: false
+      required:
+        - id
+        - name
+        - profession
+        - communityId
+        - ownerWallet
+        - status
+        - state
+        - pos
+        - credits
+        - verifiedTasks
+        - points
+        - strategy
+        - permissions
+        - createdTick
+        - target
+        - path
+        - currentTaskId
+        - operatedBuildingId
+        - cargo
+        - performance
+      additionalProperties: false
+    AgentInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/AgentId"
+        name:
+          type: string
+        profession:
+          $ref: "#/components/schemas/Profession"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        pos:
+          $ref: "#/components/schemas/WorldPosInput"
+        credits:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: City Credit balance (mCC). Simulated; not withdrawable.
+        verifiedTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        points:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        strategy:
+          $ref: "#/components/schemas/AgentStrategyInput"
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentPermission"
+        createdTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        target:
+          anyOf:
+            - $ref: "#/components/schemas/GridPosInput"
+            - type: "null"
+        path:
+          type: array
+          items:
+            $ref: "#/components/schemas/GridPosInput"
+        currentTaskId:
+          anyOf:
+            - $ref: "#/components/schemas/TaskId"
+            - type: "null"
+        operatedBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        cargo:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+        performance:
+          type: object
+          properties:
+            creditsEarned:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            creditsSpent:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            tasksCompleted:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            tasksFailed:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            reliabilityPct:
+              type: number
+              minimum: 0
+              maximum: 100
+          required:
+            - creditsEarned
+            - creditsSpent
+            - tasksCompleted
+            - tasksFailed
+            - reliabilityPct
+      required:
+        - id
+        - name
+        - profession
+        - communityId
+        - ownerWallet
+        - status
+        - state
+        - pos
+        - credits
+        - verifiedTasks
+        - points
+        - strategy
+        - permissions
+        - createdTick
+        - target
+        - path
+        - currentTaskId
+        - operatedBuildingId
+        - cargo
+        - performance
+    AgentAction:
+      type: object
+      properties:
+        id:
+          type: string
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        kind:
+          $ref: "#/components/schemas/AgentActionKind"
+        reason:
+          type: string
+        utility:
+          type: number
+        taskId:
+          anyOf:
+            - $ref: "#/components/schemas/TaskId"
+            - type: "null"
+        buildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        detail:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+        - id
+        - agentId
+        - tick
+        - kind
+        - reason
+        - utility
+        - taskId
+        - buildingId
+        - detail
+      additionalProperties: false
+    AgentActionInput:
+      type: object
+      properties:
+        id:
+          type: string
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        kind:
+          $ref: "#/components/schemas/AgentActionKind"
+        reason:
+          type: string
+        utility:
+          type: number
+        taskId:
+          anyOf:
+            - $ref: "#/components/schemas/TaskId"
+            - type: "null"
+        buildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        detail:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+        - id
+        - agentId
+        - tick
+        - kind
+        - reason
+        - utility
+        - taskId
+        - buildingId
+        - detail
+    AgentActionEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: agent.action
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            action:
+              $ref: "#/components/schemas/AgentAction"
+          required:
+            - action
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    AgentActionEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: agent.action
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            action:
+              $ref: "#/components/schemas/AgentActionInput"
+          required:
+            - action
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    AgentActionKind:
+      type: string
+      enum:
+        - move
+        - claim_task
+        - pickup
+        - deliver
+        - produce
+        - trade
+        - maintain
+        - rest
+        - wait
+        - rejected
+    AgentActionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentAction"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    AgentActionPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentActionInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    AgentId:
+      type: string
+      pattern: ^agt_[A-Za-z0-9]{6,40}$
+    AgentMove:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/AgentId"
+        pos:
+          $ref: "#/components/schemas/WorldPos"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        target:
+          anyOf:
+            - $ref: "#/components/schemas/GridPos"
+            - type: "null"
+        speed:
+          type: number
+      required:
+        - id
+        - pos
+        - state
+        - target
+        - speed
+      additionalProperties: false
+    AgentMoveInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/AgentId"
+        pos:
+          $ref: "#/components/schemas/WorldPosInput"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        target:
+          anyOf:
+            - $ref: "#/components/schemas/GridPosInput"
+            - type: "null"
+        speed:
+          type: number
+      required:
+        - id
+        - pos
+        - state
+        - target
+        - speed
+    AgentMovedEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: agent.moved
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            moves:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentMove"
+          required:
+            - moves
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    AgentMovedEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: agent.moved
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            moves:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentMoveInput"
+          required:
+            - moves
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    AgentPermission:
+      type: string
+      enum:
+        - claim_tasks
+        - trade_market
+        - operate_building
+        - perform_maintenance
+    AgentResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        agent:
+          $ref: "#/components/schemas/Agent"
+      required:
+        - mode
+        - agent
+      additionalProperties: false
+    AgentResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        agent:
+          $ref: "#/components/schemas/AgentInput"
+      required:
+        - mode
+        - agent
+    AgentState:
+      type: string
+      enum:
+        - idle
+        - moving
+        - working
+        - delivering
+        - trading
+        - resting
+        - paused
+    AgentStatus:
+      type: string
+      enum:
+        - active
+        - paused
+    AgentStrategy:
+      type: object
+      properties:
+        temperament:
+          $ref: "#/components/schemas/Temperament"
+        risk:
+          $ref: "#/components/schemas/RiskLevel"
+        objective:
+          $ref: "#/components/schemas/Objective"
+        dailyBudget:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+        minMarginBps:
+          type: integer
+          minimum: 0
+          maximum: 5000
+        preferredResources:
+          maxItems: 6
+          type: array
+          items:
+            $ref: "#/components/schemas/Resource"
+        homeBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+      required:
+        - temperament
+        - risk
+        - objective
+        - dailyBudget
+        - minMarginBps
+        - preferredResources
+        - homeBuildingId
+      additionalProperties: false
+    AgentStrategyInput:
+      type: object
+      properties:
+        temperament:
+          $ref: "#/components/schemas/Temperament"
+        risk:
+          $ref: "#/components/schemas/RiskLevel"
+        objective:
+          $ref: "#/components/schemas/Objective"
+        dailyBudget:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+        minMarginBps:
+          type: integer
+          minimum: 0
+          maximum: 5000
+        preferredResources:
+          maxItems: 6
+          type: array
+          items:
+            $ref: "#/components/schemas/Resource"
+        homeBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+      required:
+        - temperament
+        - risk
+        - objective
+        - dailyBudget
+        - minMarginBps
+        - preferredResources
+        - homeBuildingId
+    AgentSummary:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/AgentId"
+        name:
+          type: string
+        profession:
+          $ref: "#/components/schemas/Profession"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        pos:
+          $ref: "#/components/schemas/WorldPos"
+        credits:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: City Credit balance (mCC). Simulated; not withdrawable.
+        verifiedTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        points:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - id
+        - name
+        - profession
+        - communityId
+        - ownerWallet
+        - status
+        - state
+        - pos
+        - credits
+        - verifiedTasks
+        - points
+      additionalProperties: false
+    AgentSummaryInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/AgentId"
+        name:
+          type: string
+        profession:
+          $ref: "#/components/schemas/Profession"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        pos:
+          $ref: "#/components/schemas/WorldPosInput"
+        credits:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: City Credit balance (mCC). Simulated; not withdrawable.
+        verifiedTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        points:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - id
+        - name
+        - profession
+        - communityId
+        - ownerWallet
+        - status
+        - state
+        - pos
+        - credits
+        - verifiedTasks
+        - points
+    AgentSummaryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSummary"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    AgentSummaryPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSummaryInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    AmountString:
+      type: string
+      pattern: ^(0|[1-9][0-9]*)$
+      description: Non-negative integer in the asset's base units, encoded as a decimal string.
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - bad_request
+                - unauthorized
+                - forbidden
+                - not_found
+                - conflict
+                - idempotency_conflict
+                - not_eligible
+                - chain_verification_failed
+                - feature_disabled
+                - unavailable
+                - internal
+            message:
+              type: string
+            details: {}
+          required:
+            - code
+            - message
+          additionalProperties: false
+        requestId:
+          type: string
+      required:
+        - error
+        - requestId
+      additionalProperties: false
+    ApiErrorInput:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - bad_request
+                - unauthorized
+                - forbidden
+                - not_found
+                - conflict
+                - idempotency_conflict
+                - not_eligible
+                - chain_verification_failed
+                - feature_disabled
+                - unavailable
+                - internal
+            message:
+              type: string
+            details: {}
+          required:
+            - code
+            - message
+        requestId:
+          type: string
+      required:
+        - error
+        - requestId
+    AssetTotals:
+      type: object
+      properties:
+        assetMint:
+          $ref: "#/components/schemas/PublicKey"
+        assetSymbol:
+          type: string
+        decimals:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        finalized:
+          $ref: "#/components/schemas/AmountString"
+        pending:
+          $ref: "#/components/schemas/AmountString"
+      required:
+        - assetMint
+        - assetSymbol
+        - decimals
+        - finalized
+        - pending
+      additionalProperties: false
+    AssetTotalsInput:
+      type: object
+      properties:
+        assetMint:
+          $ref: "#/components/schemas/PublicKey"
+        assetSymbol:
+          type: string
+        decimals:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        finalized:
+          $ref: "#/components/schemas/AmountString"
+        pending:
+          $ref: "#/components/schemas/AmountString"
+      required:
+        - assetMint
+        - assetSymbol
+        - decimals
+        - finalized
+        - pending
+    Building:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/BuildingId"
+        kind:
+          $ref: "#/components/schemas/BuildingKind"
+        name:
+          type: string
+        origin:
+          $ref: "#/components/schemas/GridPos"
+        entrance:
+          $ref: "#/components/schemas/GridPos"
+        chunk:
+          $ref: "#/components/schemas/ChunkCoord"
+        params:
+          $ref: "#/components/schemas/BuildingParams"
+        status:
+          $ref: "#/components/schemas/BuildingStatus"
+        condition:
+          type: number
+          minimum: 0
+          maximum: 100
+        ownerAgentId:
+          anyOf:
+            - $ref: "#/components/schemas/AgentId"
+            - type: "null"
+        communityId:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityId"
+            - type: "null"
+        inventory:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+        branding:
+          anyOf:
+            - type: object
+              properties:
+                primary:
+                  type: string
+                accent:
+                  type: string
+              required:
+                - primary
+                - accent
+              additionalProperties: false
+            - type: "null"
+      required:
+        - id
+        - kind
+        - name
+        - origin
+        - entrance
+        - chunk
+        - params
+        - status
+        - condition
+        - ownerAgentId
+        - communityId
+        - inventory
+        - branding
+      additionalProperties: false
+    BuildingInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/BuildingId"
+        kind:
+          $ref: "#/components/schemas/BuildingKind"
+        name:
+          type: string
+        origin:
+          $ref: "#/components/schemas/GridPosInput"
+        entrance:
+          $ref: "#/components/schemas/GridPosInput"
+        chunk:
+          $ref: "#/components/schemas/ChunkCoordInput"
+        params:
+          $ref: "#/components/schemas/BuildingParamsInput"
+        status:
+          $ref: "#/components/schemas/BuildingStatus"
+        condition:
+          type: number
+          minimum: 0
+          maximum: 100
+        ownerAgentId:
+          anyOf:
+            - $ref: "#/components/schemas/AgentId"
+            - type: "null"
+        communityId:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityId"
+            - type: "null"
+        inventory:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+        branding:
+          anyOf:
+            - type: object
+              properties:
+                primary:
+                  type: string
+                accent:
+                  type: string
+              required:
+                - primary
+                - accent
+            - type: "null"
+      required:
+        - id
+        - kind
+        - name
+        - origin
+        - entrance
+        - chunk
+        - params
+        - status
+        - condition
+        - ownerAgentId
+        - communityId
+        - inventory
+        - branding
+    BuildingCatalogEntry:
+      type: object
+      properties:
+        kind:
+          $ref: "#/components/schemas/BuildingKind"
+        label:
+          type: string
+        description:
+          type: string
+        profession:
+          type:
+            - string
+            - "null"
+        inputs:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+        outputs:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+        cycleTicks:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - kind
+        - label
+        - description
+        - profession
+        - inputs
+        - outputs
+        - cycleTicks
+      additionalProperties: false
+    BuildingCatalogEntryInput:
+      type: object
+      properties:
+        kind:
+          $ref: "#/components/schemas/BuildingKind"
+        label:
+          type: string
+        description:
+          type: string
+        profession:
+          type:
+            - string
+            - "null"
+        inputs:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+        outputs:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+        cycleTicks:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - kind
+        - label
+        - description
+        - profession
+        - inputs
+        - outputs
+        - cycleTicks
+    BuildingId:
+      type: string
+      pattern: ^bld_[A-Za-z0-9]{6,40}$
+    BuildingKind:
+      type: string
+      enum:
+        - house
+        - apartment
+        - farm
+        - mill
+        - bakery
+        - market
+        - warehouse
+        - factory
+        - headquarters
+        - town_hall
+        - lumber_yard
+        - quarry
+        - power_station
+    BuildingParams:
+      type: object
+      properties:
+        width:
+          type: integer
+          minimum: 1
+          maximum: 16
+          description: Footprint width in cells (x).
+        depth:
+          type: integer
+          minimum: 1
+          maximum: 16
+          description: Footprint depth in cells (y).
+        height:
+          type: number
+          minimum: 0.2
+          maximum: 40
+          description: Wall height in world units (1 unit = 1 cell).
+        floors:
+          type: integer
+          minimum: 1
+          maximum: 12
+        roofStyle:
+          $ref: "#/components/schemas/RoofStyle"
+        material:
+          $ref: "#/components/schemas/Material"
+        windowPattern:
+          $ref: "#/components/schemas/WindowPattern"
+        districtTheme:
+          $ref: "#/components/schemas/DistrictTheme"
+        roofPalette:
+          type: integer
+          minimum: 0
+          maximum: 7
+        facing:
+          $ref: "#/components/schemas/Facing"
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Per-building deterministic seed for secondary detail.
+      required:
+        - width
+        - depth
+        - height
+        - floors
+        - roofStyle
+        - material
+        - windowPattern
+        - districtTheme
+        - roofPalette
+        - facing
+        - seed
+      additionalProperties: false
+    BuildingParamsInput:
+      type: object
+      properties:
+        width:
+          type: integer
+          minimum: 1
+          maximum: 16
+          description: Footprint width in cells (x).
+        depth:
+          type: integer
+          minimum: 1
+          maximum: 16
+          description: Footprint depth in cells (y).
+        height:
+          type: number
+          minimum: 0.2
+          maximum: 40
+          description: Wall height in world units (1 unit = 1 cell).
+        floors:
+          type: integer
+          minimum: 1
+          maximum: 12
+        roofStyle:
+          $ref: "#/components/schemas/RoofStyle"
+        material:
+          $ref: "#/components/schemas/Material"
+        windowPattern:
+          $ref: "#/components/schemas/WindowPattern"
+        districtTheme:
+          $ref: "#/components/schemas/DistrictTheme"
+        roofPalette:
+          type: integer
+          minimum: 0
+          maximum: 7
+        facing:
+          $ref: "#/components/schemas/Facing"
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Per-building deterministic seed for secondary detail.
+      required:
+        - width
+        - depth
+        - height
+        - floors
+        - roofStyle
+        - material
+        - windowPattern
+        - districtTheme
+        - roofPalette
+        - facing
+        - seed
+    BuildingStatus:
+      type: string
+      enum:
+        - active
+        - idle
+        - under_construction
+        - needs_maintenance
+        - reserved_lot
+    ChallengeRequest:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+      required:
+        - wallet
+      additionalProperties: false
+    ChallengeRequestInput:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+      required:
+        - wallet
+    ChallengeResponse:
+      type: object
+      properties:
+        nonce:
+          type: string
+        message:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - nonce
+        - message
+        - expiresAt
+      additionalProperties: false
+    ChallengeResponseInput:
+      type: object
+      properties:
+        nonce:
+          type: string
+        message:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - nonce
+        - message
+        - expiresAt
+    ChunkCoord:
+      type: object
+      properties:
+        cx:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        cy:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - cx
+        - cy
+      additionalProperties: false
+    ChunkCoordInput:
+      type: object
+      properties:
+        cx:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        cy:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - cx
+        - cy
+    ChunkUpdatedEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: world.chunk.updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            chunk:
+              $ref: "#/components/schemas/WorldChunk"
+          required:
+            - chunk
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    ChunkUpdatedEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: world.chunk.updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            chunk:
+              $ref: "#/components/schemas/WorldChunkInput"
+          required:
+            - chunk
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    ChunksQuery:
+      type: object
+      properties:
+        x:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Center chunk x (chunk units, not cells).
+        y:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Center chunk y (chunk units).
+        radius:
+          default: 1
+          type: integer
+          minimum: 0
+          maximum: 4
+      required:
+        - x
+        - y
+        - radius
+      additionalProperties: false
+    ChunksQueryInput:
+      type: object
+      properties:
+        x:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Center chunk x (chunk units, not cells).
+        y:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Center chunk y (chunk units).
+        radius:
+          default: 1
+          type: integer
+          minimum: 0
+          maximum: 4
+      required:
+        - x
+        - y
+    ChunksResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorldChunk"
+      required:
+        - mode
+        - chunks
+      additionalProperties: false
+    ChunksResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorldChunkInput"
+      required:
+        - mode
+        - chunks
+    ClientMessage:
+      oneOf:
+        - type: object
+          properties:
+            v:
+              type: number
+              const: 1
+            type:
+              type: string
+              const: subscribe
+            chunks:
+              anyOf:
+                - maxItems: 64
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ChunkCoord"
+                - type: "null"
+          required:
+            - v
+            - type
+            - chunks
+          additionalProperties: false
+        - type: object
+          properties:
+            v:
+              type: number
+              const: 1
+            type:
+              type: string
+              const: resume
+            lastSeq:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+          required:
+            - v
+            - type
+            - lastSeq
+          additionalProperties: false
+        - type: object
+          properties:
+            v:
+              type: number
+              const: 1
+            type:
+              type: string
+              const: ping
+            nonce:
+              type: string
+              maxLength: 64
+          required:
+            - v
+            - type
+            - nonce
+          additionalProperties: false
+    ClientMessageInput:
+      oneOf:
+        - type: object
+          properties:
+            v:
+              type: number
+              const: 1
+            type:
+              type: string
+              const: subscribe
+            chunks:
+              anyOf:
+                - maxItems: 64
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ChunkCoordInput"
+                - type: "null"
+          required:
+            - v
+            - type
+            - chunks
+        - type: object
+          properties:
+            v:
+              type: number
+              const: 1
+            type:
+              type: string
+              const: resume
+            lastSeq:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+          required:
+            - v
+            - type
+            - lastSeq
+        - type: object
+          properties:
+            v:
+              type: number
+              const: 1
+            type:
+              type: string
+              const: ping
+            nonce:
+              type: string
+              maxLength: 64
+          required:
+            - v
+            - type
+            - nonce
+    Community:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/CommunityId"
+        name:
+          type: string
+        symbol:
+          type: string
+        description:
+          type: string
+        imageUri:
+          type:
+            - string
+            - "null"
+        metadataUri:
+          type: string
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        launchSignature:
+          $ref: "#/components/schemas/TxSignature"
+        creatorWallet:
+          description: Wallet that launched the token. Receives 0% of creator fees.
+          $ref: "#/components/schemas/PublicKey"
+        feeSharingConfig:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+          description: Pump.fun fee sharing config PDA routing creator fees 60/40.
+        links:
+          type: object
+          properties:
+            pumpFun:
+              type: string
+              format: uri
+            explorer:
+              type: string
+              format: uri
+            website:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+            twitter:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+            telegram:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+          required:
+            - pumpFun
+            - explorer
+            - website
+            - twitter
+            - telegram
+          additionalProperties: false
+        headquartersBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        stats:
+          type: object
+          properties:
+            agents:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            activeAgents:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            verifiedTasks:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            prominence:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - agents
+            - activeAgents
+            - verifiedTasks
+            - prominence
+          additionalProperties: false
+        registeredAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - name
+        - symbol
+        - description
+        - imageUri
+        - metadataUri
+        - mint
+        - launchId
+        - launchSignature
+        - creatorWallet
+        - feeSharingConfig
+        - links
+        - headquartersBuildingId
+        - stats
+        - registeredAt
+      additionalProperties: false
+    CommunityInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/CommunityId"
+        name:
+          type: string
+        symbol:
+          type: string
+        description:
+          type: string
+        imageUri:
+          type:
+            - string
+            - "null"
+        metadataUri:
+          type: string
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        launchSignature:
+          $ref: "#/components/schemas/TxSignature"
+        creatorWallet:
+          description: Wallet that launched the token. Receives 0% of creator fees.
+          $ref: "#/components/schemas/PublicKey"
+        feeSharingConfig:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+          description: Pump.fun fee sharing config PDA routing creator fees 60/40.
+        links:
+          type: object
+          properties:
+            pumpFun:
+              type: string
+              format: uri
+            explorer:
+              type: string
+              format: uri
+            website:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+            twitter:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+            telegram:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+          required:
+            - pumpFun
+            - explorer
+            - website
+            - twitter
+            - telegram
+        headquartersBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        stats:
+          type: object
+          properties:
+            agents:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            activeAgents:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            verifiedTasks:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            prominence:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - agents
+            - activeAgents
+            - verifiedTasks
+            - prominence
+        registeredAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - name
+        - symbol
+        - description
+        - imageUri
+        - metadataUri
+        - mint
+        - launchId
+        - launchSignature
+        - creatorWallet
+        - feeSharingConfig
+        - links
+        - headquartersBuildingId
+        - stats
+        - registeredAt
+    CommunityId:
+      type: string
+      pattern: ^com_[A-Za-z0-9]{6,40}$
+    CommunityPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Community"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    CommunityPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    CommunityResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        community:
+          $ref: "#/components/schemas/Community"
+      required:
+        - mode
+        - community
+      additionalProperties: false
+    CommunityResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        community:
+          $ref: "#/components/schemas/CommunityInput"
+      required:
+        - mode
+        - community
+    CommunityUpdatedEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: community.updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            community:
+              $ref: "#/components/schemas/Community"
+          required:
+            - community
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    CommunityUpdatedEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: community.updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            community:
+              $ref: "#/components/schemas/CommunityInput"
+          required:
+            - community
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    ConfirmLaunchRequest:
+      type: object
+      properties:
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        signature:
+          $ref: "#/components/schemas/TxSignature"
+      required:
+        - launchId
+        - signature
+      additionalProperties: false
+    ConfirmLaunchRequestInput:
+      type: object
+      properties:
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        signature:
+          $ref: "#/components/schemas/TxSignature"
+      required:
+        - launchId
+        - signature
+    CreateAgentRequest:
+      type: object
+      properties:
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        name:
+          type: string
+          minLength: 2
+          maxLength: 32
+        profession:
+          $ref: "#/components/schemas/Profession"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+          additionalProperties: false
+      required:
+        - communityId
+        - name
+        - profession
+      additionalProperties: false
+    CreateAgentRequestInput:
+      type: object
+      properties:
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        name:
+          type: string
+          minLength: 2
+          maxLength: 32
+        profession:
+          $ref: "#/components/schemas/Profession"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+      required:
+        - communityId
+        - name
+        - profession
+    DataMode:
+      type: string
+      enum:
+        - demo
+        - devnet
+        - production
+      description: demo = fixtures/mock chain; devnet = Solana devnet; production = mainnet.
+    DemoSignRequest:
+      type: object
+      properties:
+        outcome:
+          default: success
+          description: "Demo failure injection: tx_failed, missing_fee_sharing (no fee-sharing config), wrong_fee (charge != 0.05 SOL), launcher_share (launcher given a creator-fee share)."
+          type: string
+          enum:
+            - success
+            - tx_failed
+            - missing_fee_sharing
+            - wrong_fee
+            - launcher_share
+      required:
+        - outcome
+      additionalProperties: false
+    DemoSignRequestInput:
+      type: object
+      properties:
+        outcome:
+          default: success
+          description: "Demo failure injection: tx_failed, missing_fee_sharing (no fee-sharing config), wrong_fee (charge != 0.05 SOL), launcher_share (launcher given a creator-fee share)."
+          type: string
+          enum:
+            - success
+            - tx_failed
+            - missing_fee_sharing
+            - wrong_fee
+            - launcher_share
+    DemoSignResponse:
+      type: object
+      properties:
+        signature:
+          type: string
+        note:
+          type: string
+      required:
+        - signature
+        - note
+      additionalProperties: false
+    DemoSignResponseInput:
+      type: object
+      properties:
+        signature:
+          type: string
+        note:
+          type: string
+      required:
+        - signature
+        - note
+    DistrictTheme:
+      type: string
+      enum:
+        - civic
+        - residential
+        - market
+        - industrial
+        - agricultural
+        - waterfront
+    EconomicEvent:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        at:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        type:
+          $ref: "#/components/schemas/EconomicEventType"
+        summary:
+          type: string
+          description: Human-readable one-liner for feeds.
+        agentId:
+          anyOf:
+            - $ref: "#/components/schemas/AgentId"
+            - type: "null"
+        buildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        communityId:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityId"
+            - type: "null"
+        data:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+        - id
+        - seq
+        - tick
+        - at
+        - type
+        - summary
+        - agentId
+        - buildingId
+        - communityId
+        - data
+      additionalProperties: false
+    EconomicEventInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        at:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        type:
+          $ref: "#/components/schemas/EconomicEventType"
+        summary:
+          type: string
+          description: Human-readable one-liner for feeds.
+        agentId:
+          anyOf:
+            - $ref: "#/components/schemas/AgentId"
+            - type: "null"
+        buildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        communityId:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityId"
+            - type: "null"
+        data:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+        - id
+        - seq
+        - tick
+        - at
+        - type
+        - summary
+        - agentId
+        - buildingId
+        - communityId
+        - data
+    EconomicEventType:
+      type: string
+      enum:
+        - production.completed
+        - task.created
+        - task.claimed
+        - task.verified
+        - task.expired
+        - trade.executed
+        - consumption
+        - maintenance.completed
+        - agent.activated
+        - agent.paused
+        - agent.resumed
+        - agent.strategy_updated
+        - community.registered
+        - building.placed
+        - launch.confirmed
+    EconomySummary:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        epoch:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        creditSupply:
+          type: object
+          properties:
+            issued:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            burned:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            circulating:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            issuanceCapPerEpoch:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - issued
+            - burned
+            - circulating
+            - issuanceCapPerEpoch
+          additionalProperties: false
+        production:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: object
+            properties:
+              produced:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+              consumed:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+              stock:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+            required:
+              - produced
+              - consumed
+              - stock
+            additionalProperties: false
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketQuote"
+        openTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        verifiedTasksThisEpoch:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        pointsThisEpoch:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        rewardMode:
+          type: string
+          const: dry_run
+          description: "MVP: no real payouts."
+      required:
+        - mode
+        - tick
+        - epoch
+        - creditSupply
+        - production
+        - quotes
+        - openTasks
+        - verifiedTasksThisEpoch
+        - pointsThisEpoch
+        - rewardMode
+      additionalProperties: false
+    EconomySummaryInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        epoch:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        creditSupply:
+          type: object
+          properties:
+            issued:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            burned:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            circulating:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            issuanceCapPerEpoch:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - issued
+            - burned
+            - circulating
+            - issuanceCapPerEpoch
+        production:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: object
+            properties:
+              produced:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+              consumed:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+              stock:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+            required:
+              - produced
+              - consumed
+              - stock
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketQuoteInput"
+        openTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        verifiedTasksThisEpoch:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        pointsThisEpoch:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        rewardMode:
+          type: string
+          const: dry_run
+          description: "MVP: no real payouts."
+      required:
+        - mode
+        - tick
+        - epoch
+        - creditSupply
+        - production
+        - quotes
+        - openTasks
+        - verifiedTasksThisEpoch
+        - pointsThisEpoch
+        - rewardMode
+    EventId:
+      type: string
+      pattern: ^evt_[A-Za-z0-9]{6,40}$
+    Facing:
+      type: string
+      enum:
+        - n
+        - e
+        - s
+        - w
+      description: Side of the footprint the entrance faces.
+    FeeBreakdown:
+      type: object
+      properties:
+        platformLaunchFeeLamports:
+          description: Always 50000000 (0.05 SOL), 100% to platform treasury.
+          $ref: "#/components/schemas/AmountString"
+        platformTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        estimatedNetworkFeesLamports:
+          description: Signature + priority fees (estimate).
+          $ref: "#/components/schemas/AmountString"
+        estimatedAccountRentLamports:
+          description: Rent for mint/bonding-curve/fee-config accounts (estimate).
+          $ref: "#/components/schemas/AmountString"
+        launcherCreatorFeeBps:
+          type: number
+          const: 0
+        creatorFeeSplit:
+          type: object
+          properties:
+            agentRewardsTreasury:
+              $ref: "#/components/schemas/PublicKey"
+            agentRewardsBps:
+              type: number
+              const: 6000
+            platformTreasury:
+              $ref: "#/components/schemas/PublicKey"
+            platformBps:
+              type: number
+              const: 4000
+          required:
+            - agentRewardsTreasury
+            - agentRewardsBps
+            - platformTreasury
+            - platformBps
+          additionalProperties: false
+        notes:
+          type: array
+          items:
+            type: string
+      required:
+        - platformLaunchFeeLamports
+        - platformTreasury
+        - estimatedNetworkFeesLamports
+        - estimatedAccountRentLamports
+        - launcherCreatorFeeBps
+        - creatorFeeSplit
+        - notes
+      additionalProperties: false
+    FeeBreakdownInput:
+      type: object
+      properties:
+        platformLaunchFeeLamports:
+          description: Always 50000000 (0.05 SOL), 100% to platform treasury.
+          $ref: "#/components/schemas/AmountString"
+        platformTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        estimatedNetworkFeesLamports:
+          description: Signature + priority fees (estimate).
+          $ref: "#/components/schemas/AmountString"
+        estimatedAccountRentLamports:
+          description: Rent for mint/bonding-curve/fee-config accounts (estimate).
+          $ref: "#/components/schemas/AmountString"
+        launcherCreatorFeeBps:
+          type: number
+          const: 0
+        creatorFeeSplit:
+          type: object
+          properties:
+            agentRewardsTreasury:
+              $ref: "#/components/schemas/PublicKey"
+            agentRewardsBps:
+              type: number
+              const: 6000
+            platformTreasury:
+              $ref: "#/components/schemas/PublicKey"
+            platformBps:
+              type: number
+              const: 4000
+          required:
+            - agentRewardsTreasury
+            - agentRewardsBps
+            - platformTreasury
+            - platformBps
+        notes:
+          type: array
+          items:
+            type: string
+      required:
+        - platformLaunchFeeLamports
+        - platformTreasury
+        - estimatedNetworkFeesLamports
+        - estimatedAccountRentLamports
+        - launcherCreatorFeeBps
+        - creatorFeeSplit
+        - notes
+    FeeRoutingStatus:
+      type: object
+      properties:
+        mechanism:
+          type: string
+          const: pump_fees_sharing_config
+        verified:
+          type: boolean
+          description: True only after the full launch → trade → graduation path was tested on devnet/mainnet.
+        verifiedPaths:
+          type: array
+          items:
+            type: string
+            enum:
+              - bonding_curve
+              - pumpswap_graduated
+        notes:
+          type: array
+          items:
+            type: string
+      required:
+        - mechanism
+        - verified
+        - verifiedPaths
+        - notes
+      additionalProperties: false
+    FeeRoutingStatusInput:
+      type: object
+      properties:
+        mechanism:
+          type: string
+          const: pump_fees_sharing_config
+        verified:
+          type: boolean
+          description: True only after the full launch → trade → graduation path was tested on devnet/mainnet.
+        verifiedPaths:
+          type: array
+          items:
+            type: string
+            enum:
+              - bonding_curve
+              - pumpswap_graduated
+        notes:
+          type: array
+          items:
+            type: string
+      required:
+        - mechanism
+        - verified
+        - verifiedPaths
+        - notes
+    Finality:
+      type: string
+      enum:
+        - pending
+        - finalized
+        - reversed
+    GridPos:
+      type: object
+      properties:
+        x:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        y:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - x
+        - y
+      additionalProperties: false
+      description: Logical terrain cell coordinate. +x east, +y south.
+    GridPosInput:
+      type: object
+      properties:
+        x:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        y:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - x
+        - y
+      description: Logical terrain cell coordinate. +x east, +y south.
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        contractVersion:
+          type: string
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        simRunning:
+          type: boolean
+        store:
+          type: string
+          enum:
+            - memory
+            - postgres
+        financialFeaturesEnabled:
+          type: boolean
+      required:
+        - status
+        - mode
+        - contractVersion
+        - tick
+        - simRunning
+        - store
+        - financialFeaturesEnabled
+      additionalProperties: false
+    HealthResponseInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        contractVersion:
+          type: string
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        simRunning:
+          type: boolean
+        store:
+          type: string
+          enum:
+            - memory
+            - postgres
+        financialFeaturesEnabled:
+          type: boolean
+      required:
+        - status
+        - mode
+        - contractVersion
+        - tick
+        - simRunning
+        - store
+        - financialFeaturesEnabled
+    HeartbeatEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: system.heartbeat
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            simRunning:
+              type: boolean
+          required:
+            - simRunning
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    HeartbeatEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: system.heartbeat
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            simRunning:
+              type: boolean
+          required:
+            - simRunning
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    HolderEligibility:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        eligible:
+          type: boolean
+        balance:
+          type: string
+          description: Raw token base units observed on-chain.
+        threshold:
+          type: string
+          description: Required raw base units.
+        decimals:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        source:
+          type: string
+          enum:
+            - solana_rpc
+            - mock_chain
+        slot:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        checkedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - wallet
+        - communityId
+        - mint
+        - eligible
+        - balance
+        - threshold
+        - decimals
+        - source
+        - slot
+        - checkedAt
+        - expiresAt
+      additionalProperties: false
+    HolderEligibilityInput:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        eligible:
+          type: boolean
+        balance:
+          type: string
+          description: Raw token base units observed on-chain.
+        threshold:
+          type: string
+          description: Required raw base units.
+        decimals:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        source:
+          type: string
+          enum:
+            - solana_rpc
+            - mock_chain
+        slot:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        checkedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - wallet
+        - communityId
+        - mint
+        - eligible
+        - balance
+        - threshold
+        - decimals
+        - source
+        - slot
+        - checkedAt
+        - expiresAt
+    IsoTimestamp:
+      type: string
+      format: date-time
+      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+    LaunchDraft:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+        symbol:
+          type: string
+          minLength: 1
+          maxLength: 13
+          pattern: ^[A-Za-z0-9$_.-]+$
+        description:
+          default: ""
+          type: string
+          maxLength: 1000
+        metadataUri:
+          type: string
+          maxLength: 200
+          format: uri
+        imageUri:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 500
+              format: uri
+            - type: "null"
+        website:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        twitter:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        telegram:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+      required:
+        - name
+        - symbol
+        - description
+        - metadataUri
+        - imageUri
+        - website
+        - twitter
+        - telegram
+      additionalProperties: false
+    LaunchDraftInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+        symbol:
+          type: string
+          minLength: 1
+          maxLength: 13
+          pattern: ^[A-Za-z0-9$_.-]+$
+        description:
+          default: ""
+          type: string
+          maxLength: 1000
+        metadataUri:
+          type: string
+          maxLength: 200
+          format: uri
+        imageUri:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 500
+              format: uri
+            - type: "null"
+        website:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        twitter:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        telegram:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+      required:
+        - name
+        - symbol
+        - metadataUri
+    LaunchError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        at:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - code
+        - message
+        - at
+      additionalProperties: false
+    LaunchErrorInput:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        at:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - code
+        - message
+        - at
+    LaunchId:
+      type: string
+      pattern: ^lch_[A-Za-z0-9]{6,40}$
+    LaunchModeInfo:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - mode
+      additionalProperties: false
+    LaunchModeInfoInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - mode
+    LaunchResponse:
+      type: object
+      properties:
+        launch:
+          $ref: "#/components/schemas/TokenLaunch"
+      required:
+        - launch
+      additionalProperties: false
+    LaunchResponseInput:
+      type: object
+      properties:
+        launch:
+          $ref: "#/components/schemas/TokenLaunchInput"
+      required:
+        - launch
+    LaunchStatus:
+      type: string
+      enum:
+        - draft
+        - awaiting_signature
+        - submitted
+        - confirmed
+        - failed
+        - recovery_needed
+        - expired
+    MarketListing:
+      type: object
+      properties:
+        buildingId:
+          $ref: "#/components/schemas/BuildingId"
+        resource:
+          $ref: "#/components/schemas/Resource"
+        side:
+          type: string
+          enum:
+            - sell
+            - buy
+        quantity:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        price:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - buildingId
+        - resource
+        - side
+        - quantity
+        - price
+      additionalProperties: false
+    MarketListingInput:
+      type: object
+      properties:
+        buildingId:
+          $ref: "#/components/schemas/BuildingId"
+        resource:
+          $ref: "#/components/schemas/Resource"
+        side:
+          type: string
+          enum:
+            - sell
+            - buy
+        quantity:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        price:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - buildingId
+        - resource
+        - side
+        - quantity
+        - price
+    MarketQuote:
+      type: object
+      properties:
+        resource:
+          $ref: "#/components/schemas/Resource"
+        price:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+          description: mCC per unit (last clearing price).
+        bid:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ask:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        supply:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        demand:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        changePct24h:
+          type: number
+          description: Change vs. one simulated day ago, percent.
+      required:
+        - resource
+        - price
+        - bid
+        - ask
+        - supply
+        - demand
+        - changePct24h
+      additionalProperties: false
+    MarketQuoteInput:
+      type: object
+      properties:
+        resource:
+          $ref: "#/components/schemas/Resource"
+        price:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+          description: mCC per unit (last clearing price).
+        bid:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ask:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        supply:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        demand:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        changePct24h:
+          type: number
+          description: Change vs. one simulated day ago, percent.
+      required:
+        - resource
+        - price
+        - bid
+        - ask
+        - supply
+        - demand
+        - changePct24h
+    MarketsResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        currency:
+          type: string
+          const: CITY_CREDIT_MILLI
+          description: Simulated, non-withdrawable City Credits (milli units).
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketQuote"
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketListing"
+      required:
+        - mode
+        - tick
+        - currency
+        - quotes
+        - listings
+      additionalProperties: false
+    MarketsResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        currency:
+          type: string
+          const: CITY_CREDIT_MILLI
+          description: Simulated, non-withdrawable City Credits (milli units).
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketQuoteInput"
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketListingInput"
+      required:
+        - mode
+        - tick
+        - currency
+        - quotes
+        - listings
+    Material:
+      type: string
+      enum:
+        - plaster
+        - brick
+        - timber
+        - stone
+        - concrete
+        - glass
+    Objective:
+      type: string
+      enum:
+        - profitability
+        - reliability
+        - expansion
+    PageQuery:
+      type: object
+      properties:
+        cursor:
+          type: string
+          maxLength: 200
+        limit:
+          default: 50
+          type: integer
+          minimum: 1
+          maximum: 200
+      required:
+        - limit
+      additionalProperties: false
+    PageQueryInput:
+      type: object
+      properties:
+        cursor:
+          type: string
+          maxLength: 200
+        limit:
+          default: 50
+          type: integer
+          minimum: 1
+          maximum: 200
+    PatchAgentRequest:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+          additionalProperties: false
+      additionalProperties: false
+    PatchAgentRequestInput:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+    PongMessage:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: pong
+        nonce:
+          type: string
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - v
+        - type
+        - nonce
+        - ts
+      additionalProperties: false
+    PongMessageInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: pong
+        nonce:
+          type: string
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - v
+        - type
+        - nonce
+        - ts
+    PrepareLaunchRequest:
+      type: object
+      properties:
+        draft:
+          $ref: "#/components/schemas/LaunchDraft"
+      required:
+        - draft
+      additionalProperties: false
+    PrepareLaunchRequestInput:
+      type: object
+      properties:
+        draft:
+          $ref: "#/components/schemas/LaunchDraftInput"
+      required:
+        - draft
+    PrepareLaunchResponse:
+      type: object
+      properties:
+        launch:
+          $ref: "#/components/schemas/TokenLaunch"
+        transaction:
+          type: string
+        demoTransaction:
+          type: boolean
+        lastValidBlockHeight:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+      required:
+        - launch
+        - transaction
+        - demoTransaction
+        - lastValidBlockHeight
+      additionalProperties: false
+    PrepareLaunchResponseInput:
+      type: object
+      properties:
+        launch:
+          $ref: "#/components/schemas/TokenLaunchInput"
+        transaction:
+          type: string
+        demoTransaction:
+          type: boolean
+        lastValidBlockHeight:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+      required:
+        - launch
+        - transaction
+        - demoTransaction
+        - lastValidBlockHeight
+    PriceUpdatedEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: economy.price_updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/MarketQuote"
+          required:
+            - quotes
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    PriceUpdatedEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: economy.price_updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/MarketQuoteInput"
+          required:
+            - quotes
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    Profession:
+      type: string
+      enum:
+        - farmer
+        - manufacturer
+        - merchant
+        - logistics_operator
+        - builder
+        - property_manager
+      description: Belongs to an individual agent; never assigned to a whole community.
+    Prop:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - tree_round
+            - tree_cone
+            - bush
+            - rock
+            - lamp
+        pos:
+          $ref: "#/components/schemas/GridPos"
+        scale:
+          type: number
+          minimum: 0.3
+          maximum: 2
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+      required:
+        - kind
+        - pos
+        - scale
+        - seed
+      additionalProperties: false
+    PropInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - tree_round
+            - tree_cone
+            - bush
+            - rock
+            - lamp
+        pos:
+          $ref: "#/components/schemas/GridPosInput"
+        scale:
+          type: number
+          minimum: 0.3
+          maximum: 2
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+      required:
+        - kind
+        - pos
+        - scale
+        - seed
+    PublicKey:
+      type: string
+      pattern: ^[1-9A-HJ-NP-Za-km-z]{32,44}$
+      description: Base58-encoded Solana public key.
+    ReceiptPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskReceipt"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    ReceiptPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskReceiptInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    ReconciliationStatus:
+      type: string
+      enum:
+        - unreconciled
+        - reconciled
+        - mismatch
+    Region:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        theme:
+          $ref: "#/components/schemas/DistrictTheme"
+        bounds:
+          type: object
+          properties:
+            minX:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            minY:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            maxX:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            maxY:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - minX
+            - minY
+            - maxX
+            - maxY
+          additionalProperties: false
+      required:
+        - id
+        - name
+        - theme
+        - bounds
+      additionalProperties: false
+    RegionInput:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        theme:
+          $ref: "#/components/schemas/DistrictTheme"
+        bounds:
+          type: object
+          properties:
+            minX:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            minY:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            maxX:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            maxY:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - minX
+            - minY
+            - maxX
+            - maxY
+      required:
+        - id
+        - name
+        - theme
+        - bounds
+    Resource:
+      type: string
+      enum:
+        - wheat
+        - flour
+        - bread
+        - timber
+        - stone
+        - energy
+    RewardPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RewardRecord"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    RewardPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RewardRecordInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    RewardRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        epoch:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        points:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        estimatedShareBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        status:
+          type: string
+          enum:
+            - dry_run
+            - disputed
+            - voided
+        receiptIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - epoch
+        - agentId
+        - ownerWallet
+        - points
+        - estimatedShareBps
+        - status
+        - receiptIds
+      additionalProperties: false
+    RewardRecordInput:
+      type: object
+      properties:
+        id:
+          type: string
+        epoch:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        points:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        estimatedShareBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        status:
+          type: string
+          enum:
+            - dry_run
+            - disputed
+            - voided
+        receiptIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - epoch
+        - agentId
+        - ownerWallet
+        - points
+        - estimatedShareBps
+        - status
+        - receiptIds
+    RiskLevel:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+    RoofStyle:
+      type: string
+      enum:
+        - flat
+        - gable
+        - hip
+        - shed
+        - sawtooth
+        - dome
+    ServerEvent:
+      oneOf:
+        - $ref: "#/components/schemas/WorldSnapshotEvent"
+        - $ref: "#/components/schemas/ChunkUpdatedEvent"
+        - $ref: "#/components/schemas/AgentMovedEvent"
+        - $ref: "#/components/schemas/AgentActionEvent"
+        - $ref: "#/components/schemas/PriceUpdatedEvent"
+        - $ref: "#/components/schemas/ActivityCreatedEvent"
+        - $ref: "#/components/schemas/CommunityUpdatedEvent"
+        - $ref: "#/components/schemas/TreasuryUpdatedEvent"
+        - $ref: "#/components/schemas/SystemNoticeEvent"
+        - $ref: "#/components/schemas/HeartbeatEvent"
+    SystemNoticeEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: system.notice
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            level:
+              type: string
+              enum:
+                - info
+                - warning
+                - incident
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - level
+            - code
+            - message
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    SystemNoticeEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: system.notice
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            level:
+              type: string
+              enum:
+                - info
+                - warning
+                - incident
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - level
+            - code
+            - message
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    Task:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/TaskId"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        createdTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        expiresTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        fromBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        toBuildingId:
+          $ref: "#/components/schemas/BuildingId"
+        resource:
+          anyOf:
+            - $ref: "#/components/schemas/Resource"
+            - type: "null"
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        rewardCredits:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        points:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        claimedBy:
+          anyOf:
+            - $ref: "#/components/schemas/AgentId"
+            - type: "null"
+        receiptId:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - kind
+        - status
+        - createdTick
+        - expiresTick
+        - fromBuildingId
+        - toBuildingId
+        - resource
+        - quantity
+        - rewardCredits
+        - points
+        - claimedBy
+        - receiptId
+      additionalProperties: false
+    TaskInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/TaskId"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        createdTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        expiresTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        fromBuildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        toBuildingId:
+          $ref: "#/components/schemas/BuildingId"
+        resource:
+          anyOf:
+            - $ref: "#/components/schemas/Resource"
+            - type: "null"
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        rewardCredits:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        points:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        claimedBy:
+          anyOf:
+            - $ref: "#/components/schemas/AgentId"
+            - type: "null"
+        receiptId:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - kind
+        - status
+        - createdTick
+        - expiresTick
+        - fromBuildingId
+        - toBuildingId
+        - resource
+        - quantity
+        - rewardCredits
+        - points
+        - claimedBy
+        - receiptId
+    TaskId:
+      type: string
+      pattern: ^tsk_[A-Za-z0-9]{6,40}$
+    TaskKind:
+      type: string
+      enum:
+        - delivery
+        - demand_fulfillment
+        - maintenance
+        - production_shift
+      description: System-generated service tasks. Agents cannot create tasks.
+    TaskPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    TaskPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    TaskReceipt:
+      type: object
+      properties:
+        id:
+          type: string
+        taskId:
+          $ref: "#/components/schemas/TaskId"
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        claimedTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        pickupTick:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        completedTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        from:
+          anyOf:
+            - $ref: "#/components/schemas/GridPos"
+            - type: "null"
+        to:
+          $ref: "#/components/schemas/GridPos"
+        resource:
+          anyOf:
+            - $ref: "#/components/schemas/Resource"
+            - type: "null"
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        lots:
+          type: array
+          items:
+            type: string
+        creditsPaid:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        pointsAwarded:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        pointAdjustments:
+          type: array
+          items:
+            type: object
+            properties:
+              reason:
+                type: string
+              delta:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+            required:
+              - reason
+              - delta
+            additionalProperties: false
+        checks:
+          type: array
+          items:
+            type: object
+            properties:
+              check:
+                type: string
+              passed:
+                type: boolean
+            required:
+              - check
+              - passed
+            additionalProperties: false
+        prevHash:
+          type: string
+        hash:
+          type: string
+      required:
+        - id
+        - taskId
+        - agentId
+        - ownerWallet
+        - kind
+        - claimedTick
+        - pickupTick
+        - completedTick
+        - from
+        - to
+        - resource
+        - quantity
+        - lots
+        - creditsPaid
+        - pointsAwarded
+        - pointAdjustments
+        - checks
+        - prevHash
+        - hash
+      additionalProperties: false
+    TaskReceiptInput:
+      type: object
+      properties:
+        id:
+          type: string
+        taskId:
+          $ref: "#/components/schemas/TaskId"
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        ownerWallet:
+          $ref: "#/components/schemas/PublicKey"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        claimedTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        pickupTick:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        completedTick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        from:
+          anyOf:
+            - $ref: "#/components/schemas/GridPosInput"
+            - type: "null"
+        to:
+          $ref: "#/components/schemas/GridPosInput"
+        resource:
+          anyOf:
+            - $ref: "#/components/schemas/Resource"
+            - type: "null"
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        lots:
+          type: array
+          items:
+            type: string
+        creditsPaid:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        pointsAwarded:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        pointAdjustments:
+          type: array
+          items:
+            type: object
+            properties:
+              reason:
+                type: string
+              delta:
+                type: integer
+                minimum: -9007199254740991
+                maximum: 9007199254740991
+            required:
+              - reason
+              - delta
+        checks:
+          type: array
+          items:
+            type: object
+            properties:
+              check:
+                type: string
+              passed:
+                type: boolean
+            required:
+              - check
+              - passed
+        prevHash:
+          type: string
+        hash:
+          type: string
+      required:
+        - id
+        - taskId
+        - agentId
+        - ownerWallet
+        - kind
+        - claimedTick
+        - pickupTick
+        - completedTick
+        - from
+        - to
+        - resource
+        - quantity
+        - lots
+        - creditsPaid
+        - pointsAwarded
+        - pointAdjustments
+        - checks
+        - prevHash
+        - hash
+    TaskStatus:
+      type: string
+      enum:
+        - open
+        - claimed
+        - in_progress
+        - verified
+        - expired
+        - rejected
+    TasksQuery:
+      type: object
+      properties:
+        cursor:
+          type: string
+          maxLength: 200
+        limit:
+          default: 50
+          type: integer
+          minimum: 1
+          maximum: 200
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+      required:
+        - limit
+      additionalProperties: false
+    TasksQueryInput:
+      type: object
+      properties:
+        cursor:
+          type: string
+          maxLength: 200
+        limit:
+          default: 50
+          type: integer
+          minimum: 1
+          maximum: 200
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+    Temperament:
+      type: string
+      enum:
+        - cooperative
+        - balanced
+        - competitive
+    TokenLaunch:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/LaunchId"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        status:
+          $ref: "#/components/schemas/LaunchStatus"
+        launcherWallet:
+          $ref: "#/components/schemas/PublicKey"
+        draft:
+          $ref: "#/components/schemas/LaunchDraft"
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        feeSharingConfig:
+          $ref: "#/components/schemas/PublicKey"
+        fees:
+          $ref: "#/components/schemas/FeeBreakdown"
+        signature:
+          anyOf:
+            - $ref: "#/components/schemas/TxSignature"
+            - type: "null"
+        slot:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        communityId:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityId"
+            - type: "null"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/LaunchError"
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                $ref: "#/components/schemas/LaunchStatus"
+              at:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+            required:
+              - status
+              - at
+            additionalProperties: false
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - mode
+        - status
+        - launcherWallet
+        - draft
+        - mint
+        - feeSharingConfig
+        - fees
+        - signature
+        - slot
+        - communityId
+        - errors
+        - history
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+    TokenLaunchInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/LaunchId"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        status:
+          $ref: "#/components/schemas/LaunchStatus"
+        launcherWallet:
+          $ref: "#/components/schemas/PublicKey"
+        draft:
+          $ref: "#/components/schemas/LaunchDraftInput"
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        feeSharingConfig:
+          $ref: "#/components/schemas/PublicKey"
+        fees:
+          $ref: "#/components/schemas/FeeBreakdownInput"
+        signature:
+          anyOf:
+            - $ref: "#/components/schemas/TxSignature"
+            - type: "null"
+        slot:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        communityId:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityId"
+            - type: "null"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/LaunchErrorInput"
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                $ref: "#/components/schemas/LaunchStatus"
+              at:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+            required:
+              - status
+              - at
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - mode
+        - status
+        - launcherWallet
+        - draft
+        - mint
+        - feeSharingConfig
+        - fees
+        - signature
+        - slot
+        - communityId
+        - errors
+        - history
+        - createdAt
+        - updatedAt
+    TreasuryAccount:
+      type: string
+      enum:
+        - platform
+        - agent_rewards
+    TreasuryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        stream:
+          $ref: "#/components/schemas/TreasuryStream"
+        account:
+          $ref: "#/components/schemas/TreasuryAccount"
+        accountAddress:
+          $ref: "#/components/schemas/PublicKey"
+        assetMint:
+          $ref: "#/components/schemas/PublicKey"
+        assetSymbol:
+          type: string
+        decimals:
+          type: integer
+          minimum: 0
+          maximum: 18
+        amount:
+          $ref: "#/components/schemas/AmountString"
+        direction:
+          type: string
+          enum:
+            - credit
+            - debit
+        signature:
+          $ref: "#/components/schemas/TxSignature"
+        instructionIndex:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        slot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        finality:
+          $ref: "#/components/schemas/Finality"
+        tokenMint:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+          description: Community token whose launch/creator fees produced this receipt.
+        launchId:
+          anyOf:
+            - $ref: "#/components/schemas/LaunchId"
+            - type: "null"
+        supersedes:
+          type:
+            - string
+            - "null"
+        recordedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - seq
+        - stream
+        - account
+        - accountAddress
+        - assetMint
+        - assetSymbol
+        - decimals
+        - amount
+        - direction
+        - signature
+        - instructionIndex
+        - slot
+        - finality
+        - tokenMint
+        - launchId
+        - supersedes
+        - recordedAt
+      additionalProperties: false
+    TreasuryEntryInput:
+      type: object
+      properties:
+        id:
+          type: string
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        stream:
+          $ref: "#/components/schemas/TreasuryStream"
+        account:
+          $ref: "#/components/schemas/TreasuryAccount"
+        accountAddress:
+          $ref: "#/components/schemas/PublicKey"
+        assetMint:
+          $ref: "#/components/schemas/PublicKey"
+        assetSymbol:
+          type: string
+        decimals:
+          type: integer
+          minimum: 0
+          maximum: 18
+        amount:
+          $ref: "#/components/schemas/AmountString"
+        direction:
+          type: string
+          enum:
+            - credit
+            - debit
+        signature:
+          $ref: "#/components/schemas/TxSignature"
+        instructionIndex:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        slot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        finality:
+          $ref: "#/components/schemas/Finality"
+        tokenMint:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+          description: Community token whose launch/creator fees produced this receipt.
+        launchId:
+          anyOf:
+            - $ref: "#/components/schemas/LaunchId"
+            - type: "null"
+        supersedes:
+          type:
+            - string
+            - "null"
+        recordedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - seq
+        - stream
+        - account
+        - accountAddress
+        - assetMint
+        - assetSymbol
+        - decimals
+        - amount
+        - direction
+        - signature
+        - instructionIndex
+        - slot
+        - finality
+        - tokenMint
+        - launchId
+        - supersedes
+        - recordedAt
+    TreasuryEntryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TreasuryEntry"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+      additionalProperties: false
+    TreasuryEntryPageInput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TreasuryEntryInput"
+        nextCursor:
+          type:
+            - string
+            - "null"
+        mode:
+          $ref: "#/components/schemas/DataMode"
+      required:
+        - items
+        - nextCursor
+        - mode
+    TreasuryStream:
+      type: string
+      enum:
+        - launch_fee
+        - creator_fee
+    TreasurySummary:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        platformTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        agentRewardsTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        launchFees:
+          type: object
+          properties:
+            description:
+              type: string
+            launches:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            totals:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetTotals"
+          required:
+            - description
+            - launches
+            - totals
+          additionalProperties: false
+        creatorFees:
+          type: object
+          properties:
+            description:
+              type: string
+            agentRewards:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetTotals"
+            platform:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetTotals"
+            expectedSplitBps:
+              type: object
+              properties:
+                agentRewards:
+                  type: number
+                  const: 6000
+                platform:
+                  type: number
+                  const: 4000
+                launcher:
+                  type: number
+                  const: 0
+              required:
+                - agentRewards
+                - platform
+                - launcher
+              additionalProperties: false
+            reconciliation:
+              $ref: "#/components/schemas/ReconciliationStatus"
+            reconciliationNotes:
+              type: array
+              items:
+                type: string
+          required:
+            - description
+            - agentRewards
+            - platform
+            - expectedSplitBps
+            - reconciliation
+            - reconciliationNotes
+          additionalProperties: false
+        feeRouting:
+          $ref: "#/components/schemas/FeeRoutingStatus"
+        payouts:
+          type: object
+          properties:
+            mode:
+              type: string
+              const: disabled_dry_run
+            description:
+              type: string
+          required:
+            - mode
+            - description
+          additionalProperties: false
+        recentEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/TreasuryEntry"
+        asOf:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - mode
+        - platformTreasury
+        - agentRewardsTreasury
+        - launchFees
+        - creatorFees
+        - feeRouting
+        - payouts
+        - recentEntries
+        - asOf
+      additionalProperties: false
+    TreasurySummaryInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        platformTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        agentRewardsTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        launchFees:
+          type: object
+          properties:
+            description:
+              type: string
+            launches:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            totals:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetTotalsInput"
+          required:
+            - description
+            - launches
+            - totals
+        creatorFees:
+          type: object
+          properties:
+            description:
+              type: string
+            agentRewards:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetTotalsInput"
+            platform:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetTotalsInput"
+            expectedSplitBps:
+              type: object
+              properties:
+                agentRewards:
+                  type: number
+                  const: 6000
+                platform:
+                  type: number
+                  const: 4000
+                launcher:
+                  type: number
+                  const: 0
+              required:
+                - agentRewards
+                - platform
+                - launcher
+            reconciliation:
+              $ref: "#/components/schemas/ReconciliationStatus"
+            reconciliationNotes:
+              type: array
+              items:
+                type: string
+          required:
+            - description
+            - agentRewards
+            - platform
+            - expectedSplitBps
+            - reconciliation
+            - reconciliationNotes
+        feeRouting:
+          $ref: "#/components/schemas/FeeRoutingStatusInput"
+        payouts:
+          type: object
+          properties:
+            mode:
+              type: string
+              const: disabled_dry_run
+            description:
+              type: string
+          required:
+            - mode
+            - description
+        recentEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/TreasuryEntryInput"
+        asOf:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - mode
+        - platformTreasury
+        - agentRewardsTreasury
+        - launchFees
+        - creatorFees
+        - feeRouting
+        - payouts
+        - recentEntries
+        - asOf
+    TreasuryUpdatedEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: treasury.updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            entry:
+              $ref: "#/components/schemas/TreasuryEntry"
+          required:
+            - entry
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    TreasuryUpdatedEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: treasury.updated
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            entry:
+              $ref: "#/components/schemas/TreasuryEntryInput"
+          required:
+            - entry
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    TxSignature:
+      type: string
+      pattern: ^[1-9A-HJ-NP-Za-km-z]{64,90}$
+      description: Base58-encoded Solana transaction signature.
+    VerifyRequest:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        nonce:
+          type: string
+        signature:
+          type: string
+          pattern: ^[1-9A-HJ-NP-Za-km-z]{64,90}$
+      required:
+        - wallet
+        - nonce
+        - signature
+      additionalProperties: false
+    VerifyRequestInput:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        nonce:
+          type: string
+        signature:
+          type: string
+          pattern: ^[1-9A-HJ-NP-Za-km-z]{64,90}$
+      required:
+        - wallet
+        - nonce
+        - signature
+    VerifyResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        identity:
+          $ref: "#/components/schemas/WalletIdentity"
+      required:
+        - token
+        - identity
+      additionalProperties: false
+    VerifyResponseInput:
+      type: object
+      properties:
+        token:
+          type: string
+        identity:
+          $ref: "#/components/schemas/WalletIdentityInput"
+      required:
+        - token
+        - identity
+    WalletIdentity:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        sessionExpiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - wallet
+        - sessionExpiresAt
+      additionalProperties: false
+    WalletIdentityInput:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        sessionExpiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - wallet
+        - sessionExpiresAt
+    WindowPattern:
+      type: string
+      enum:
+        - none
+        - grid
+        - bands
+        - sparse
+        - storefront
+    WorldAgentsResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSummary"
+      required:
+        - mode
+        - tick
+        - agents
+      additionalProperties: false
+    WorldAgentsResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSummaryInput"
+      required:
+        - mode
+        - tick
+        - agents
+    WorldBootstrap:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        contractVersion:
+          type: string
+        worldId:
+          type: string
+        seed:
+          type: string
+        generatorVersion:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        size:
+          type: object
+          properties:
+            width:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            height:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - width
+            - height
+          additionalProperties: false
+        chunkSize:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChunkCoord"
+          description: All chunk coordinates that currently exist.
+        regions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Region"
+        catalog:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildingCatalogEntry"
+        sim:
+          type: object
+          properties:
+            tick:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            tickMs:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+            serverTime:
+              type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+            ticksPerDay:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+          required:
+            - tick
+            - tickMs
+            - serverTime
+            - ticksPerDay
+          additionalProperties: false
+      required:
+        - mode
+        - contractVersion
+        - worldId
+        - seed
+        - generatorVersion
+        - size
+        - chunkSize
+        - chunks
+        - regions
+        - catalog
+        - sim
+      additionalProperties: false
+    WorldBootstrapInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        contractVersion:
+          type: string
+        worldId:
+          type: string
+        seed:
+          type: string
+        generatorVersion:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        size:
+          type: object
+          properties:
+            width:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            height:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+            - width
+            - height
+        chunkSize:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChunkCoordInput"
+          description: All chunk coordinates that currently exist.
+        regions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegionInput"
+        catalog:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildingCatalogEntryInput"
+        sim:
+          type: object
+          properties:
+            tick:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            tickMs:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+            serverTime:
+              type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+            ticksPerDay:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+          required:
+            - tick
+            - tickMs
+            - serverTime
+            - ticksPerDay
+      required:
+        - mode
+        - contractVersion
+        - worldId
+        - seed
+        - generatorVersion
+        - size
+        - chunkSize
+        - chunks
+        - regions
+        - catalog
+        - sim
+    WorldChunk:
+      type: object
+      properties:
+        coord:
+          $ref: "#/components/schemas/ChunkCoord"
+        size:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        version:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        terrain:
+          type: string
+          description: size*size chars, see TERRAIN_LEGEND.
+        elevation:
+          type: string
+        buildings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Building"
+        props:
+          type: array
+          items:
+            $ref: "#/components/schemas/Prop"
+      required:
+        - coord
+        - size
+        - version
+        - terrain
+        - elevation
+        - buildings
+        - props
+      additionalProperties: false
+    WorldChunkInput:
+      type: object
+      properties:
+        coord:
+          $ref: "#/components/schemas/ChunkCoordInput"
+        size:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        version:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        terrain:
+          type: string
+          description: size*size chars, see TERRAIN_LEGEND.
+        elevation:
+          type: string
+        buildings:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildingInput"
+        props:
+          type: array
+          items:
+            $ref: "#/components/schemas/PropInput"
+      required:
+        - coord
+        - size
+        - version
+        - terrain
+        - elevation
+        - buildings
+        - props
+    WorldPos:
+      type: object
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+      required:
+        - x
+        - y
+      additionalProperties: false
+      description: Continuous position in terrain-cell units.
+    WorldPosInput:
+      type: object
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+      required:
+        - x
+        - y
+      description: Continuous position in terrain-cell units.
+    WorldSnapshotEvent:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: world.snapshot
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            mode:
+              $ref: "#/components/schemas/DataMode"
+            worldId:
+              type: string
+            seed:
+              type: string
+            reason:
+              type: string
+              enum:
+                - join
+                - resume_gap
+                - subscription_changed
+                - server_restart
+            subscribedChunks:
+              anyOf:
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/ChunkCoord"
+                - type: "null"
+              description: null = all chunks.
+            agents:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentSummary"
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/MarketQuote"
+            chunkVersions:
+              type: array
+              items:
+                type: object
+                properties:
+                  coord:
+                    $ref: "#/components/schemas/ChunkCoord"
+                  version:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                required:
+                  - coord
+                  - version
+                additionalProperties: false
+          required:
+            - mode
+            - worldId
+            - seed
+            - reason
+            - subscribedChunks
+            - agents
+            - quotes
+            - chunkVersions
+          additionalProperties: false
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+      additionalProperties: false
+    WorldSnapshotEventInput:
+      type: object
+      properties:
+        v:
+          type: number
+          const: 1
+        type:
+          type: string
+          const: world.snapshot
+        seq:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        ts:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        data:
+          type: object
+          properties:
+            mode:
+              $ref: "#/components/schemas/DataMode"
+            worldId:
+              type: string
+            seed:
+              type: string
+            reason:
+              type: string
+              enum:
+                - join
+                - resume_gap
+                - subscription_changed
+                - server_restart
+            subscribedChunks:
+              anyOf:
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/ChunkCoordInput"
+                - type: "null"
+              description: null = all chunks.
+            agents:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentSummaryInput"
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/MarketQuoteInput"
+            chunkVersions:
+              type: array
+              items:
+                type: object
+                properties:
+                  coord:
+                    $ref: "#/components/schemas/ChunkCoordInput"
+                  version:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                required:
+                  - coord
+                  - version
+          required:
+            - mode
+            - worldId
+            - seed
+            - reason
+            - subscribedChunks
+            - agents
+            - quotes
+            - chunkVersions
+      required:
+        - v
+        - type
+        - seq
+        - tick
+        - ts
+        - data
+    WorldStats:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        population:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Simulated residents (demand sink).
+        activeAgents:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        pausedAgents:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        communities:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        buildings:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        creditsInCirculation:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total City Credits (milli-credits) held by all accounts. Non-withdrawable.
+        goodsProduced:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+        goodsConsumed:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+        verifiedTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - mode
+        - tick
+        - population
+        - activeAgents
+        - pausedAgents
+        - communities
+        - buildings
+        - creditsInCirculation
+        - goodsProduced
+        - goodsConsumed
+        - verifiedTasks
+      additionalProperties: false
+    WorldStatsInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        tick:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        population:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Simulated residents (demand sink).
+        activeAgents:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        pausedAgents:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        communities:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        buildings:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        creditsInCirculation:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total City Credits (milli-credits) held by all accounts. Non-withdrawable.
+        goodsProduced:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+        goodsConsumed:
+          type: object
+          propertyNames:
+            $ref: "#/components/schemas/Resource"
+          additionalProperties:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+        verifiedTasks:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - mode
+        - tick
+        - population
+        - activeAgents
+        - pausedAgents
+        - communities
+        - buildings
+        - creditsInCirculation
+        - goodsProduced
+        - goodsConsumed
+        - verifiedTasks

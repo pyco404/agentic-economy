@@ -1,0 +1,61 @@
+{
+  "launch": {
+    "id": "lch_hMg22trdMy0xKs",
+    "mode": "demo",
+    "status": "confirmed",
+    "launcherWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
+    "draft": {
+      "name": "Demo Stonewright Co",
+      "symbol": "DSTONE",
+      "description": "DEMO MODE community. Builders keeping the city in good repair.",
+      "metadataUri": "https://example.invalid/demo/stonewright.json",
+      "imageUri": null,
+      "website": null,
+      "twitter": null,
+      "telegram": null
+    },
+    "mint": "7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
+    "feeSharingConfig": "CwZwakDiWct1DdRaTdZfQeW2hXLjTP7hKTKkds4uxAtW",
+    "fees": {
+      "platformLaunchFeeLamports": "50000000",
+      "platformTreasury": "3PttrU4AutC7CTu2rtiFe32YUHwh5jLMZ9E5xphoeqTN",
+      "estimatedNetworkFeesLamports": "50000",
+      "estimatedAccountRentLamports": "16500000",
+      "launcherCreatorFeeBps": 0,
+      "creatorFeeSplit": {
+        "agentRewardsTreasury": "29kQNUTZsUdx7RokWtRCpbxunJmHjjsBMabioDrGMtvb",
+        "agentRewardsBps": 6000,
+        "platformTreasury": "3PttrU4AutC7CTu2rtiFe32YUHwh5jLMZ9E5xphoeqTN",
+        "platformBps": 4000
+      },
+      "notes": [
+        "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+        "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+        "Solana network fees and account rent are paid by your wallet and are estimates.",
+        "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+        "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split.",
+        "DEMO MODE: no real transaction is created and no SOL moves."
+      ]
+    },
+    "signature": "53GLKu4AFcaprzWtSH229ZkfDSHhbQRnyU9NHNSTdM9gH2gk4BphWLLZHs18dcgGP4S52jSDNEfxrEJDMa8dakWp",
+    "slot": 1017,
+    "communityId": "com_yKuqQotcFc6M3v",
+    "errors": [],
+    "history": [
+      {
+        "status": "draft",
+        "at": "2026-10-14T11:35:31.759Z"
+      },
+      {
+        "status": "awaiting_signature",
+        "at": "2026-10-14T11:35:31.759Z"
+      },
+      {
+        "status": "confirmed",
+        "at": "2026-10-14T11:35:31.762Z"
+      }
+    ],
+    "createdAt": "2026-10-14T11:35:31.759Z",
+    "updatedAt": "2026-10-14T11:35:31.762Z"
+  }
+}

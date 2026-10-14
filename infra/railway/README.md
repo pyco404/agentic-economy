@@ -173,11 +173,7 @@ These are starting points from one machine. Confirm with `/metrics` after the fi
 
 **Steps:**
 
-1. **Source (decision needed):** Railway builds from GitHub. This repository has no remote, and backend work lives on branch `claude/backend`.
-   - Push to a private GitHub repo.
-   - Choose the deploy branch, and set `GITHUB_REPO` / `GITHUB_BRANCH` in `.railway/railway.ts` (or connect the repo in the dashboard after apply).
-   - Install the Railway GitHub app with access to that repo.
-   - Codex's `apps/web` is currently uncommitted and unaffected either way.
+1. **Source (done):** `.railway/railway.ts` points the service at `pyco404/agentic-economy`, branch `staging`. Install the Railway GitHub app with access to this repository before applying, otherwise the source cannot be connected.
 2. Re-run the plan and review it:
 
    ```bash
@@ -187,10 +183,11 @@ These are starting points from one machine. Confirm with `/metrics` after the fi
 
    If you run the CLI under a wrapper such as `timeout`, prefix `env _=$(command -v railway)`: the SDK's version check executes `$_ --version`.
 3. **Apply (approval):** `railway config apply --environment staging`. This creates Postgres and the service. Postgres starts. The service only builds once it has a source.
-4. In the dashboard, set the preserved variables:
-   - **Required:** `CORS_ORIGINS`, `AUTH_URI` (frontend origin) and `AUTH_DOMAIN` (the API's public host).
-   - **Not needed in demo** (leave unset): `SOLANA_*` and the treasury variables.
-   - **Already pinned in the IaC file:** `MODE=demo` and `FEE_ROUTING_VERIFIED=false`.
+4. **Variables (declared in `.railway/railway.ts`):**
+   - `ROLE=all`, `MODE=demo`, `FEE_ROUTING_VERIFIED=false`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `HOST=::`, `WORLD_SEED`, tick/snapshot/stream settings.
+   - `AUTH_DOMAIN=${{RAILWAY_PUBLIC_DOMAIN}}` (the service's own generated domain).
+   - `AUTH_URI=http://localhost:5173`, `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173` (local frontend against staging; add the hosted frontend origin later).
+   - `SOLANA_RPC_URL`, `SOLANA_CLUSTER`, `PLATFORM_TREASURY`, `AGENT_REWARDS_TREASURY` are **deliberately unset** in demo staging (no chain access).
 5. **Generate a public domain** for `agentic-economy` (Settings → Networking).
 6. **First deploy (approval):** connect the source or push the deploy branch. The build runs the Dockerfile, then the pre-deploy step runs `node migrate.mjs`, then the `/readyz` healthcheck must pass.
 7. **Verify:**

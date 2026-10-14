@@ -116,6 +116,10 @@ describe("Railway IaC and environment templates", () => {
     const df = /dockerfilePath: "([^"]+)"/.exec(iac)?.[1];
     expect(df && existsSync(join(ROOT, df))).toBe(true);
     for (const w of ["apps/server/**", "packages/**", "infra/railway/**", "pnpm-lock.yaml"]) expect(iac).toContain(`"${w}"`);
+    // Staging deploys the staging branch; chain access stays unset; CORS never wildcards.
+    expect(iac).toMatch(/const GITHUB_BRANCH = "staging";/);
+    for (const v of ["SOLANA_RPC_URL", "PLATFORM_TREASURY", "AGENT_REWARDS_TREASURY"]) expect(iac).toMatch(new RegExp(`${v}: preserve\\(\\)`));
+    expect(iac).not.toMatch(/CORS_ORIGINS: "[^"]*\*/);
   });
 
   it("env templates never enable launches or production and contain no secrets", () => {

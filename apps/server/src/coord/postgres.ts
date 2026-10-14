@@ -280,7 +280,8 @@ class PgLeaderSession implements LeaderSession {
   private markLost(reason: string) {
     if (this._lost) return;
     this._lost = true;
-    this.log.warn({ epoch: this.epoch, reason }, "simulation leadership lost");
+    if (reason === "released") this.log.info({ epoch: this.epoch }, "simulation leadership released");
+    else this.log.warn({ epoch: this.epoch, reason }, "simulation leadership lost");
     for (const cb of this.callbacks) cb(reason);
   }
 

@@ -1,0 +1,27 @@
+{
+  "name": "agentic-economy",
+  "private": true,
+  "type": "module",
+  "description": "Agentic Economy — one persistent, procedurally generated city where autonomous agents of on-platform token communities run a shared simulated economy.",
+  "packageManager": "pnpm@11.5.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/* --filter ./apps/server run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "lint": "eslint .",
+    "contracts:gen": "pnpm --filter @agentic-economy/server run contracts:gen",
+    "dev:server": "pnpm --filter @agentic-economy/server run dev",
+    "db:migrate": "pnpm --filter @agentic-economy/server run db:migrate"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.39.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.4"
+  }
+}

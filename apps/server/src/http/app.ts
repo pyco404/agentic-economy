@@ -87,12 +87,13 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       url: def.path,
       handler: async (req: FastifyRequest, reply: FastifyReply) => {
         if (LIMITED.has(name) && !limiter.allow(`${name}|${req.ip}`)) throw new AppError("forbidden", "too many requests; slow down");
-        const params = def.params ? def.params.parse(req.params) : {};
-        const query = def.query ? def.query.parse(req.query) : {};
-        const body = def.body ? def.body.parse(req.body ?? {}) : undefined;
+        // Authenticate before validating input so unauthenticated callers learn nothing about request shapes.
         let wallet = "";
         let sessionExpiresAt = "";
         if (def.auth) ({ wallet, sessionExpiresAt } = await ctx.auth.authenticate(req.headers.authorization));
+        const params = def.params ? def.params.parse(req.params) : {};
+        const query = def.query ? def.query.parse(req.query) : {};
+        const body = def.body ? def.body.parse(req.body ?? {}) : undefined;
 
         const idemKey = typeof req.headers["idempotency-key"] === "string" ? req.headers["idempotency-key"] : undefined;
         if (def.idempotencyKey === "required" && !idemKey) throw new AppError("bad_request", "Idempotency-Key header is required for this operation");

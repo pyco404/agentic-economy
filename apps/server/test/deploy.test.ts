@@ -109,7 +109,7 @@ describe("Railway IaC and environment templates", () => {
   it("keeps staging safe: fee routing unverified, no production mode, readiness healthcheck, migrations pre-deploy", () => {
     expect(iac).toMatch(/FEE_ROUTING_VERIFIED: "false"/);
     expect(iac).not.toMatch(/MODE:\s*"production"/);
-    expect(iac).toMatch(/MODE: preserve\(\)/);
+    expect(iac).toMatch(/MODE: "demo",/); // pinned for staging; not left to a code default
     expect(iac).toMatch(/healthcheckPath: "\/readyz"/);
     expect(iac).toMatch(/preDeployCommand: \["node migrate\.mjs"\]/);
     expect(iac).toMatch(/const TOPOLOGY: "single" \| "split" = "single";/);

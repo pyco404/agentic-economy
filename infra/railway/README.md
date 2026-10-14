@@ -74,7 +74,7 @@ Railway objects:
 | Variable | Stage 0 (demo staging) | Stage 1 (devnet) | Secret? |
 |---|---|---|---|
 | `ROLE` | `all` | `all` | |
-| `MODE` | `demo` | `devnet` | |
+| `MODE` | `demo` (pinned in `.railway/railway.ts`) | `devnet` (a reviewed edit to `railway.ts`) | |
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | same | yes (reference) |
 | `HOST` | `::` (Railway private networking is IPv6) | same | |
 | `PORT` | injected by Railway | same | |
@@ -165,17 +165,43 @@ These are starting points from one machine. Confirm with `/metrics` after the fi
    - An `agent-worker` role for LLM planning: workers read the published state view and submit **proposals** through the durable inbox; the simulation validates them. No new trust path.
    - Read replicas for heavy history queries.
 
-## 9. Deployment checklist (staging; requires owner approval before any production step)
+## 9. First staging deployment: runbook (each step needs owner approval where marked)
 
-1. `cd .railway && npm install && railway link` (select the project, environment `staging`).
-2. `railway config plan`: review. It should create Postgres and `agentic-economy` with the settings above.
-3. Set preserved variables in the dashboard: `MODE=demo`, `AUTH_*`, `CORS_ORIGINS` (no secrets needed for demo).
-4. `railway config apply`, then connect the GitHub repo if `GITHUB_REPO` is null. The first deploy builds the image and runs migrations.
-5. Verify:
-   - `/readyz` returns 200;
-   - `/healthz` shows `simRunning: true`;
-   - `/api/v1/world/stats` returns `mode: "demo"`;
-   - `wss://<domain>/api/v1/ws` streams events.
-6. Rehearse failover: redeploy the service and confirm that `/healthz` `simLeader.epoch` increments and `lastTick` continues.
-7. Stage 1 devnet: set `MODE=devnet`, `SOLANA_RPC_URL`, devnet Squads vault addresses and `SOLANA_CLUSTER=devnet`. Keep `FEE_ROUTING_VERIFIED=false`.
-8. **Stop for approval** before any production environment, mainnet RPC, real treasury addresses or `FEE_ROUTING_VERIFIED=true`.
+**Already done (2026-10-14):**
+- Empty Railway project `agentic-economy` (ID `c0003363-55ab-497b-a994-a1d07002b87d`) with an empty `staging` environment. The default `production` environment is left empty and unused.
+- This directory is linked to `staging`. `railway config plan` shows **2 to add, 0 to change, 0 to destroy** (Postgres plus the `agentic-economy` service), all changes classed safe.
+
+**Steps:**
+
+1. **Source (decision needed):** Railway builds from GitHub. This repository has no remote, and backend work lives on branch `claude/backend`.
+   - Push to a private GitHub repo.
+   - Choose the deploy branch, and set `GITHUB_REPO` / `GITHUB_BRANCH` in `.railway/railway.ts` (or connect the repo in the dashboard after apply).
+   - Install the Railway GitHub app with access to that repo.
+   - Codex's `apps/web` is currently uncommitted and unaffected either way.
+2. Re-run the plan and review it:
+
+   ```bash
+   cd .railway && npm install && cd ..
+   railway config plan --environment staging --verbose
+   ```
+
+   If you run the CLI under a wrapper such as `timeout`, prefix `env _=$(command -v railway)`: the SDK's version check executes `$_ --version`.
+3. **Apply (approval):** `railway config apply --environment staging`. This creates Postgres and the service. Postgres starts. The service only builds once it has a source.
+4. In the dashboard, set the preserved variables:
+   - **Required:** `CORS_ORIGINS`, `AUTH_URI` (frontend origin) and `AUTH_DOMAIN` (the API's public host).
+   - **Not needed in demo** (leave unset): `SOLANA_*` and the treasury variables.
+   - **Already pinned in the IaC file:** `MODE=demo` and `FEE_ROUTING_VERIFIED=false`.
+5. **Generate a public domain** for `agentic-economy` (Settings → Networking).
+6. **First deploy (approval):** connect the source or push the deploy branch. The build runs the Dockerfile, then the pre-deploy step runs `node migrate.mjs`, then the `/readyz` healthcheck must pass.
+7. **Verify:**
+   - `GET /readyz` returns 200;
+   - `GET /healthz` shows `mode=demo`, `simRunning=true` and `financialFeaturesEnabled=false`;
+   - `GET /api/v1/world/stats` works;
+   - the `wss://<domain>/api/v1/ws` stream is live;
+   - `POST /api/v1/launches/prepare` without auth returns 401.
+8. **Failover rehearsal:** click Redeploy, then check that `/healthz` `simLeader.epoch` increases and `lastTick` continues (it doesn't restart from 0).
+9. **Stop for approval** before:
+   - setting `MODE` to `devnet` (a reviewed edit to `.railway/railway.ts`);
+   - adding RPC or treasury values;
+   - the stage-2 split;
+   - any production environment, mainnet RPC, real treasuries, or `FEE_ROUTING_VERIFIED=true`.

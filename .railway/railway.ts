@@ -41,7 +41,9 @@ export default defineRailway(() => {
     restartPolicyMaxRetries: 10,
   };
   const common = {
-    MODE: preserve(), // "demo" for the first staging deploy, then "devnet"; never "production" without approval
+    // Staging runs the mock chain with labelled demo data. Changing this to "devnet" or "production"
+    // is a reviewed change to this file and requires explicit owner approval.
+    MODE: "demo",
     DATABASE_URL: db.env.DATABASE_URL, // private network URL
     HOST: "::",
     LOG_LEVEL: "info",

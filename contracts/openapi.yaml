@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.1.0
+  version: 0.2.0
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -29,7 +29,7 @@ paths:
   /healthz:
     get:
       operationId: health
-      summary: Liveness + mode
+      summary: Liveness + mode, role and simulation leadership
       tags:
         - system
       responses:
@@ -39,6 +39,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /readyz:
+    get:
+      operationId: readiness
+      summary: Readiness for this process role (503 when not ready)
+      tags:
+        - system
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
         default:
           description: Error
           content:
@@ -3587,14 +3606,18 @@ components:
             - degraded
         mode:
           $ref: "#/components/schemas/DataMode"
+        role:
+          $ref: "#/components/schemas/ProcessRole"
         contractVersion:
           type: string
         tick:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+          description: Tick of the state this process can read (0 if none yet).
         simRunning:
           type: boolean
+          description: A simulation leader has committed a tick within the last 10 s (cluster-wide).
         store:
           type: string
           enum:
@@ -3602,14 +3625,42 @@ components:
             - postgres
         financialFeaturesEnabled:
           type: boolean
+        simLeader:
+          type: object
+          properties:
+            localLeader:
+              type: boolean
+              description: This process currently holds simulation leadership.
+            epoch:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            lastTick:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            heartbeatAgeMs:
+              anyOf:
+                - type: integer
+                  minimum: -9007199254740991
+                  maximum: 9007199254740991
+                - type: "null"
+          required:
+            - localLeader
+            - epoch
+            - lastTick
+            - heartbeatAgeMs
+          additionalProperties: false
       required:
         - status
         - mode
+        - role
         - contractVersion
         - tick
         - simRunning
         - store
         - financialFeaturesEnabled
+        - simLeader
       additionalProperties: false
     HealthResponseInput:
       type: object
@@ -3621,14 +3672,18 @@ components:
             - degraded
         mode:
           $ref: "#/components/schemas/DataMode"
+        role:
+          $ref: "#/components/schemas/ProcessRole"
         contractVersion:
           type: string
         tick:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+          description: Tick of the state this process can read (0 if none yet).
         simRunning:
           type: boolean
+          description: A simulation leader has committed a tick within the last 10 s (cluster-wide).
         store:
           type: string
           enum:
@@ -3636,14 +3691,41 @@ components:
             - postgres
         financialFeaturesEnabled:
           type: boolean
+        simLeader:
+          type: object
+          properties:
+            localLeader:
+              type: boolean
+              description: This process currently holds simulation leadership.
+            epoch:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            lastTick:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            heartbeatAgeMs:
+              anyOf:
+                - type: integer
+                  minimum: -9007199254740991
+                  maximum: 9007199254740991
+                - type: "null"
+          required:
+            - localLeader
+            - epoch
+            - lastTick
+            - heartbeatAgeMs
       required:
         - status
         - mode
+        - role
         - contractVersion
         - tick
         - simRunning
         - store
         - financialFeaturesEnabled
+        - simLeader
     HeartbeatEvent:
       type: object
       properties:
@@ -4469,6 +4551,13 @@ components:
         - tick
         - ts
         - data
+    ProcessRole:
+      type: string
+      enum:
+        - all
+        - api
+        - sim
+        - indexer
     Profession:
       type: string
       enum:
@@ -4536,6 +4625,64 @@ components:
       type: string
       pattern: ^[1-9A-HJ-NP-Za-km-z]{32,44}$
       description: Base58-encoded Solana public key.
+    ReadinessResponse:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        role:
+          $ref: "#/components/schemas/ProcessRole"
+        checks:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              ok:
+                type: boolean
+              detail:
+                type:
+                  - string
+                  - "null"
+            required:
+              - name
+              - ok
+              - detail
+            additionalProperties: false
+      required:
+        - ready
+        - role
+        - checks
+      additionalProperties: false
+    ReadinessResponseInput:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        role:
+          $ref: "#/components/schemas/ProcessRole"
+        checks:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              ok:
+                type: boolean
+              detail:
+                type:
+                  - string
+                  - "null"
+            required:
+              - name
+              - ok
+              - detail
+      required:
+        - ready
+        - role
+        - checks
     ReceiptPage:
       type: object
       properties:

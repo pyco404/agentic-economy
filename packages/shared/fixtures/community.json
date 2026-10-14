@@ -1,20 +1,20 @@
 {
   "mode": "demo",
   "community": {
-    "id": "com_yKuqQotcFc6M3v",
+    "id": "com_x0B2RHKHi6FELj",
     "name": "Demo Stonewright Co",
     "symbol": "DSTONE",
     "description": "DEMO MODE community. Builders keeping the city in good repair.",
     "imageUri": null,
     "metadataUri": "https://example.invalid/demo/stonewright.json",
-    "mint": "7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
-    "launchId": "lch_hMg22trdMy0xKs",
-    "launchSignature": "53GLKu4AFcaprzWtSH229ZkfDSHhbQRnyU9NHNSTdM9gH2gk4BphWLLZHs18dcgGP4S52jSDNEfxrEJDMa8dakWp",
+    "mint": "FEnVDKocvfEWdXA3KZKvPxAAnapYSQQHcS6Ypma4N1j8",
+    "launchId": "lch_8z3EyfN9PL3xCT",
+    "launchSignature": "RFsJcU1A7FULGhLGVBHBRgd1iUpVoohqX4efBWx37pZSVeJPF2NFPtXUkzZeDPTbBvKe3TcG1H43duKLU2gSuco",
     "creatorWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
-    "feeSharingConfig": "CwZwakDiWct1DdRaTdZfQeW2hXLjTP7hKTKkds4uxAtW",
+    "feeSharingConfig": "BMxYKp893bLnBWpFbb7wt9nesWaGKPvYGMCE9gh8pYPj",
     "links": {
-      "pumpFun": "https://pump.fun/coin/7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
-      "explorer": "https://solscan.io/token/7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq?cluster=devnet",
+      "pumpFun": "https://pump.fun/coin/FEnVDKocvfEWdXA3KZKvPxAAnapYSQQHcS6Ypma4N1j8",
+      "explorer": "https://solscan.io/token/FEnVDKocvfEWdXA3KZKvPxAAnapYSQQHcS6Ypma4N1j8?cluster=devnet",
       "website": null,
       "twitter": null,
       "telegram": null
@@ -26,6 +26,6 @@
       "verifiedTasks": 7,
       "prominence": 76
     },
-    "registeredAt": "2026-10-14T11:35:31.762Z"
+    "registeredAt": "2026-10-14T12:17:05.551Z"
   }
 }

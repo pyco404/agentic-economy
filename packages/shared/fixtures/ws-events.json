@@ -2,36 +2,35 @@
   {
     "v": 1,
     "type": "activity.created",
-    "seq": 92,
     "tick": 15,
-    "ts": "2026-10-14T11:35:31.996Z",
+    "ts": "2026-10-14T12:17:05.670Z",
     "data": {
       "event": {
         "id": "evt_000000f000",
         "tick": 15,
         "type": "task.claimed",
         "summary": "Ovenkeeper took production shift for Hearth Bakery",
-        "agentId": "agt_HJ1BkAqqhuEHiX",
+        "agentId": "agt_CE04JuWz4dFWqD",
         "buildingId": "bld_04rw7d1",
-        "communityId": "com_LUKKf1U5YwB0L2",
+        "communityId": "com_ZmhY5JAWhBV3Rp",
         "data": {
           "taskId": "tsk_00000d"
         },
-        "at": "2026-10-14T11:35:31.995Z",
+        "at": "2026-10-14T12:17:05.669Z",
         "seq": 79
       }
-    }
+    },
+    "seq": 92
   },
   {
     "v": 1,
     "type": "agent.action",
-    "seq": 91,
     "tick": 15,
-    "ts": "2026-10-14T11:35:31.996Z",
+    "ts": "2026-10-14T12:17:05.670Z",
     "data": {
       "action": {
         "id": "act_b",
-        "agentId": "agt_HJ1BkAqqhuEHiX",
+        "agentId": "agt_CE04JuWz4dFWqD",
         "tick": 15,
         "kind": "claim_task",
         "reason": "production_shift (~46 ticks): 13.0 mCC/tick",
@@ -40,18 +39,18 @@
         "buildingId": "bld_04rw7d1",
         "detail": {}
       }
-    }
+    },
+    "seq": 91
   },
   {
     "v": 1,
     "type": "agent.moved",
-    "seq": 87,
     "tick": 12,
-    "ts": "2026-10-14T11:35:31.992Z",
+    "ts": "2026-10-14T12:17:05.663Z",
     "data": {
       "moves": [
         {
-          "id": "agt_xQr2TBw3Fx9hAY",
+          "id": "agt_gpie7GH5F6L1dD",
           "pos": {
             "x": 56.5,
             "y": 60.5
@@ -64,7 +63,7 @@
           "speed": 2
         },
         {
-          "id": "agt_BhZuybvzmU6jNY",
+          "id": "agt_F2FKJ6qvD8Bd31",
           "pos": {
             "x": 72.5,
             "y": 74.5
@@ -77,7 +76,7 @@
           "speed": 2
         },
         {
-          "id": "agt_HJ1BkAqqhuEHiX",
+          "id": "agt_CE04JuWz4dFWqD",
           "pos": {
             "x": 64.5,
             "y": 80.5
@@ -90,7 +89,7 @@
           "speed": 2
         },
         {
-          "id": "agt_FZnYjPWCnnF9Mk",
+          "id": "agt_5PNs81CCUUmJip",
           "pos": {
             "x": 45.5,
             "y": 72.5
@@ -103,7 +102,7 @@
           "speed": 2
         },
         {
-          "id": "agt_JNmxbL42qGXKDb",
+          "id": "agt_NBz1RAjm6Fvup8",
           "pos": {
             "x": 64.5,
             "y": 65.5
@@ -116,7 +115,7 @@
           "speed": 2
         },
         {
-          "id": "agt_Q6C3CzH77iwets",
+          "id": "agt_yG6zwnmcRafWw2",
           "pos": {
             "x": 69.5,
             "y": 72.5
@@ -129,7 +128,7 @@
           "speed": 2
         },
         {
-          "id": "agt_eq2THQM90rpm00",
+          "id": "agt_3nYKmE5dFs0gBk",
           "pos": {
             "x": 56.5,
             "y": 74.5
@@ -142,7 +141,7 @@
           "speed": 2
         },
         {
-          "id": "agt_A45BPQdud2SvNz",
+          "id": "agt_qDGru5dvigK6hz",
           "pos": {
             "x": 56.5,
             "y": 72.5
@@ -155,7 +154,7 @@
           "speed": 2
         },
         {
-          "id": "agt_9zYVeTf8hiuhia",
+          "id": "agt_z7eVqsSP1GtHPS",
           "pos": {
             "x": 54.5,
             "y": 72.5
@@ -168,30 +167,30 @@
           "speed": 2
         }
       ]
-    }
+    },
+    "seq": 87
   },
   {
     "v": 1,
     "type": "community.updated",
-    "seq": 102,
-    "tick": 17,
-    "ts": "2026-10-14T11:35:31.999Z",
+    "tick": 16,
+    "ts": "2026-10-14T12:17:05.673Z",
     "data": {
       "community": {
-        "id": "com_LUKKf1U5YwB0L2",
+        "id": "com_ZmhY5JAWhBV3Rp",
         "name": "Demo Hearth Bakers",
         "symbol": "DHEARTH",
         "description": "DEMO MODE community. Bakers and couriers keeping the Genesis district fed.",
         "imageUri": null,
         "metadataUri": "https://example.invalid/demo/hearth.json",
-        "mint": "JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky",
-        "launchId": "lch_1L2H6zamKJXN5n",
-        "launchSignature": "2xpHy24nVD6EbaVGe4Y85dk7tcLrKM1zmgDTvspqouV7nMz9xwe8XKwdnj9qTgvhvhkeX2dXuAr56oxwpmK3h57c",
+        "mint": "3WeFczg2WESxUDJvNancPPTz12JoaHZHAvdnJKN9316T",
+        "launchId": "lch_bM7hjdJ40XphLs",
+        "launchSignature": "5xVBJUXw6f8GoSfyTZAJr5zCcFfGbu4MNZnx327STgmXwgDWTSreBudzX3d1eyVA1DsJgJ442JPtrvXw5aXPMXju",
         "creatorWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
-        "feeSharingConfig": "7KZe6QgXWqteywtCn1XRwDnCM9u7HmygHNhuHDpZfg46",
+        "feeSharingConfig": "HxtNcYdRDAJ1HPJVV77F9qrr5nAVuzrFWtCw85DV12DT",
         "links": {
-          "pumpFun": "https://pump.fun/coin/JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky",
-          "explorer": "https://solscan.io/token/JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky?cluster=devnet",
+          "pumpFun": "https://pump.fun/coin/3WeFczg2WESxUDJvNancPPTz12JoaHZHAvdnJKN9316T",
+          "explorer": "https://solscan.io/token/3WeFczg2WESxUDJvNancPPTz12JoaHZHAvdnJKN9316T?cluster=devnet",
           "website": null,
           "twitter": null,
           "telegram": null
@@ -203,16 +202,16 @@
           "verifiedTasks": 1,
           "prominence": 15
         },
-        "registeredAt": "2026-10-14T11:35:31.620Z"
+        "registeredAt": "2026-10-14T12:17:05.442Z"
       }
-    }
+    },
+    "seq": 102
   },
   {
     "v": 1,
     "type": "economy.price_updated",
-    "seq": 97,
     "tick": 15,
-    "ts": "2026-10-14T11:35:31.997Z",
+    "ts": "2026-10-14T12:17:05.671Z",
     "data": {
       "quotes": [
         {
@@ -270,14 +269,14 @@
           "changePct24h": 3
         }
       ]
-    }
+    },
+    "seq": 97
   },
   {
     "v": 1,
     "type": "world.chunk.updated",
-    "seq": 111,
     "tick": 19,
-    "ts": "2026-10-14T11:35:32.003Z",
+    "ts": "2026-10-14T12:17:05.681Z",
     "data": {
       "chunk": {
         "coord": {
@@ -1338,6 +1337,7 @@
           }
         ]
       }
-    }
+    },
+    "seq": 111
   }
 ]

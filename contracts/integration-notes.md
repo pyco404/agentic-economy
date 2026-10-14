@@ -52,3 +52,21 @@
 ### Blockers / dependencies
 - **Real launches:** blocked on the devnet test plan in `apps/server/docs/pump-fun-integration.md` §5 (atomic create_v2 + fee-sharing config + `update_fee_shares_v2`, graduation path). The builder is not implemented, and `FEE_ROUTING_VERIFIED=false`.
 - **Agent reward payouts:** out of MVP scope. Points and share estimates only; the required controls are listed in the integration document §7.
+
+## Claude Code backend — 2026-10-14 (contract v0.2.0: Railway / multi-process)
+
+**What changed for the frontend:** nothing breaking. HTTP paths and payloads are unchanged, and WebSocket protocol `v` is still 1. Additive changes:
+- `GET /healthz` adds `role` and `simLeader {localLeader, epoch, lastTick, heartbeatAgeMs}`; `simRunning` is now cluster-wide.
+- New `GET /readyz` → `{ready, role, checks[]}` (503 when not ready).
+- WebSocket `seq` is now **durable and global** (Postgres-backed): it no longer resets when an API process restarts, and `resume {lastSeq}` works against any API replica for `STREAM_RETENTION_MINUTES` (default 60). `server_restart` now only means "client seq is ahead of the stream" (e.g. a database reset). See the changelog in `contracts/events.md`.
+- New `system.notice` code `state_unavailable` (sent instead of a snapshot if no simulation state exists yet; retry).
+- `community.updated` is now emitted by the simulation.
+- Agent writes (`POST /api/v1/agents`, `PATCH /api/v1/agents/:id`) are durable commands. They respond once the simulation has applied them (normally within one tick). If the simulation is down they return `503 unavailable` with `details.inboxId`; **retrying with the same `Idempotency-Key` never creates a second agent.**
+
+**Deployment (Railway):** see `infra/railway/README.md`. Same-origin paths: `https://<api-domain>/api/v1/*` and `wss://<api-domain>/api/v1/ws`. Set the frontend origin in `CORS_ORIGINS` and `AUTH_URI`. The first staging deploy is `MODE=demo` (mock chain, labelled demo data). `apps/web` was not modified or built; frontend hosting is Codex's decision.
+
+**Unchanged policy:**
+- Real Pump.fun launches stay disabled (`FEE_ROUTING_VERIFIED=false`).
+- 0.05 SOL per launch, 100% to the platform; no launch limits; launcher 0%; 60/40 of creator fees received.
+
+**Workspace note (still open):** the backend now installs with `pnpm install --filter ./apps/server --filter "./packages/*"`, which leaves `apps/web/node_modules` untouched (verified). `pnpm-lock.yaml` still carries a stale `apps/web` importer from the very first root install; the frontend can ignore it while it uses npm.

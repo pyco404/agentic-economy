@@ -1,6 +1,6 @@
 # Agentic Economy — WebSocket Event Contract (protocol v1)
 
-**Owner:** backend (Claude Code). **Contract version:** 0.1.0.
+**Owner:** backend (Claude Code). **Contract version:** 0.2.0 (protocol `v` unchanged: 1).
 **Schemas:** `packages/shared/src/events.ts` (Zod) and the `*Event` components in `contracts/openapi.yaml`.
 **Samples:** `packages/shared/fixtures/ws-events.json` (one real message of each streamed type).
 
@@ -23,7 +23,7 @@ Every server message:
 | Field | Meaning |
 |---|---|
 | `v` | Protocol version. Breaking changes bump it; clients should ignore unknown `type`s. |
-| `seq` | Global, strictly increasing stream sequence (per server process). **Gaps are normal** when your chunk subscription filters messages out; they are not data loss. |
+| `seq` | Global, strictly increasing sequence of the **durable** event stream (stored in Postgres, shared by all API replicas, survives restarts). **Gaps are normal**: your chunk subscription filters messages out, and aborted writes can skip numbers. They are not data loss. |
 | `tick` | Simulation tick the message describes. `TICK_MS` (default 500 ms) per tick; `ticksPerDay` in `/world/bootstrap`. |
 | `ts` | Server wall-clock time of emission. |
 
@@ -33,16 +33,16 @@ Every server message:
 
 | type | When | `data` |
 |---|---|---|
-| `world.snapshot` | On connect (`reason: "join"`), after `subscribe` (`"subscription_changed"`), on `resume` when the gap is no longer buffered (`"resume_gap"`) or the client is ahead of the server (`"server_restart"`). | `mode`, `worldId`, `seed`, `reason`, `subscribedChunks` (null = all), `agents` (AgentSummary[] in view), `quotes`, `chunkVersions[{coord, version}]` |
+| `world.snapshot` | On connect (`reason: "join"`), after `subscribe` (`"subscription_changed"`), on `resume` when the gap is no longer retained (`"resume_gap"`) or the client is ahead of the stream (`"server_restart"`). If no simulation state exists yet, a `system.notice` `state_unavailable` is sent instead; retry shortly. | `mode`, `worldId`, `seed`, `reason`, `subscribedChunks` (null = all), `agents` (AgentSummary[] in view), `quotes`, `chunkVersions[{coord, version}]` |
 | `world.chunk.updated` | Buildings in the chunk changed (stock, condition, status, HQ placed). Batched, at most once per chunk every 10 ticks. Filtered by subscription. | `chunk` (full WorldChunk) |
 | `agent.moved` | Agents whose cell or activity changed this tick. One batched message per tick, filtered by subscription. | `moves[{id, pos, state, target, speed}]` |
 | `agent.action` | Every validated (or rejected) agent action, including the planner's reason and utility. Not filtered. | `action` (AgentAction) |
 | `activity.created` | Every persisted public economic event (feed/ticker). | `event` (EconomicEvent) |
 | `economy.price_updated` | Any simulated price changed (evaluated every 10 ticks). | `quotes` (MarketQuote[]) |
-| `community.updated` | A community's HQ, agents or verified work changed. At most once per community per tick. | `community` (with live stats) |
+| `community.updated` | A community's HQ, agents or verified work changed. Produced by the simulation, at most once per community per tick. | `community` (with live stats) |
 | `treasury.updated` | A real (or, in demo mode, mock-chain) treasury receipt was appended: launch fee, creator-fee distribution, finalization or reversal. **Never estimates.** | `entry` (TreasuryEntry) |
 | `system.notice` | Incidents, maintenance, or `bad_message` replies to malformed client messages. | `level`, `code`, `message` |
-| `system.heartbeat` | Every 15 s. | `simRunning` |
+| `system.heartbeat` | Every 15 s. | `simRunning`: some simulation leader committed a tick in the last 10 s (cluster-wide) |
 
 ### Positions and interpolation
 
@@ -63,9 +63,9 @@ Every server message:
 1. `GET /api/v1/world/bootstrap`, then `GET /api/v1/world/chunks?x=&y=&radius=` for visible chunks (the Genesis district is 4×4 chunks of 32 cells).
 2. Connect, then wait for the `world.snapshot` (`join`). Seed agent positions from `data.agents`.
 3. Send `subscribe` with the visible chunks whenever the camera's chunk set changes. Each change triggers a fresh snapshot.
-4. Track the highest `seq` received. On disconnect, reconnect with exponential backoff (1 s → 30 s), then send `resume { lastSeq }`:
-   - buffered gap (the server keeps the last 2,000 sequenced events): missed events are replayed in order;
-   - otherwise: a `world.snapshot` with `resume_gap` / `server_restart`. Replace local agent state, and re-fetch chunks whose `chunkVersions` changed.
+4. Track the highest `seq` received. On disconnect, reconnect with exponential backoff (1 s → 30 s), to any API replica, then send `resume { lastSeq }`:
+   - events still retained (`STREAM_RETENTION_MINUTES`, default 60 min, and at most 2,000 behind): missed events are replayed in order from the durable stream;
+   - otherwise: a `world.snapshot` with `resume_gap`. `server_restart` means you hold a seq the server has never issued (e.g. a database reset). Replace local agent state, and re-fetch chunks whose `chunkVersions` changed.
 5. Treat 45 s without any message (heartbeats arrive every 15 s) as a dead connection.
 6. Close code **1013** means you fell behind (more than 2 MiB buffered). Reconnect and resume.
 
@@ -74,3 +74,7 @@ Every server message:
 - Additive fields or new event types: minor contract bump, no `v` change. Clients must ignore unknown fields and types.
 - Renames, removals or semantic changes: `v` bump and a new path (`/api/v2/ws`), with the old version served during migration.
 - Every change is recorded in `contracts/integration-notes.md`.
+
+## Changelog
+- **0.2.0:** the stream is durable (Postgres-backed). `seq` is global across API replicas and restarts; `resume` replays from storage for the retention window. `community.updated` is emitted. Heartbeat `simRunning` is cluster-wide. New `system.notice` code `state_unavailable`.
+- **0.1.0:** initial protocol.

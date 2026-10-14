@@ -1,6 +1,6 @@
 {
   "mode": "demo",
-  "contractVersion": "0.1.0",
+  "contractVersion": "0.2.0",
   "worldId": "world_bp71r8",
   "seed": "agentic-economy-genesis",
   "generatorVersion": 1,
@@ -283,7 +283,7 @@
   "sim": {
     "tick": 252,
     "tickMs": 500,
-    "serverTime": "2026-10-14T11:35:32.270Z",
+    "serverTime": "2026-10-14T12:17:06.338Z",
     "ticksPerDay": 240
   }
 }

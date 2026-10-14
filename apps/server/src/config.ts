@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { Keypair } from "@solana/web3.js";
 import { z } from "zod";
 import { PublicKey } from "@agentic-economy/shared";
 
@@ -36,12 +38,14 @@ const Env = z.object({
 
 export type AppConfig = ReturnType<typeof loadConfig>;
 
-/** Deterministic placeholder treasuries for demo mode only (NOT real accounts). */
-export const DEMO_PLATFORM_TREASURY = "DemoP1atformTreasury1111111111111111111111";
-export const DEMO_AGENT_TREASURY = "DemoAgentRewardsTreasury1111111111111111111";
+/** Deterministic placeholder treasuries for demo mode only — derived from public seeds, NEVER real accounts. */
+const demoKey = (label: string) => Keypair.fromSeed(createHash("sha256").update(`agentic-economy-demo:${label}`).digest()).publicKey.toBase58();
+export const DEMO_PLATFORM_TREASURY = demoKey("platform-treasury");
+export const DEMO_AGENT_TREASURY = demoKey("agent-rewards-treasury");
 
 export function loadConfig(env: Record<string, string | undefined> = process.env) {
-  const e = Env.parse(env);
+  // Empty values (e.g. `SOLANA_RPC_URL=` copied from .env.example) mean "unset".
+  const e = Env.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined && v !== "")));
   const demo = e.MODE === "demo";
   if (!demo && !e.DATABASE_URL) throw new Error(`MODE=${e.MODE} requires DATABASE_URL (Postgres)`);
   if (!demo && !e.SOLANA_RPC_URL) throw new Error(`MODE=${e.MODE} requires SOLANA_RPC_URL`);

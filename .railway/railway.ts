@@ -13,15 +13,16 @@
  * `apply` requires --confirm-destructive for it. Do the stage-1 → stage-2 switch as documented in
  * infra/railway/README.md (create the new services first, then remove the old one).
  *
- * Secrets (SOLANA_RPC_URL, treasury addresses, domains) are `preserve()`d: set them in the Railway
- * dashboard; this file never contains secret values. FEE_ROUTING_VERIFIED is pinned to "false".
+ * Chain settings (SOLANA_RPC_URL, SOLANA_CLUSTER, treasury addresses) are `preserve()`d and stay UNSET for demo
+ * staging, so the deployment has no chain access; this file never contains secret values.
+ * MODE is pinned to "demo" and FEE_ROUTING_VERIFIED to "false".
  */
 import { defineRailway, github, postgres, preserve, project, service } from "railway/iac";
 
 const TOPOLOGY: "single" | "split" = "single";
 /** Optional: "owner/repo" to connect the GitHub source from here; null = connect the repo in the dashboard. */
-const GITHUB_REPO: string | null = null;
-const GITHUB_BRANCH = "main";
+const GITHUB_REPO: string | null = "pyco404/agentic-economy";
+const GITHUB_BRANCH = "staging";
 
 export default defineRailway(() => {
   const db = postgres("Postgres");
@@ -62,9 +63,11 @@ export default defineRailway(() => {
     HOLDER_MIN_BALANCE_RAW: "1000000000",
     ELIGIBILITY_CACHE_SECONDS: "60",
     MAX_AGENTS_PER_WALLET_PER_COMMUNITY: "3",
-    AUTH_DOMAIN: preserve(),
-    AUTH_URI: preserve(),
-    CORS_ORIGINS: preserve(),
+    // Sign-in messages name the API's own Railway domain (resolved by Railway at deploy time).
+    AUTH_DOMAIN: "${{RAILWAY_PUBLIC_DOMAIN}}",
+    // Staging accepts the local frontend dev server only; add the hosted frontend origin when it exists.
+    AUTH_URI: "http://localhost:5173",
+    CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173",
     SESSION_TTL_SECONDS: "43200",
     CHALLENGE_TTL_SECONDS: "300",
   };

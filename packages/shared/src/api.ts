@@ -37,17 +37,36 @@ export const TreasuryEntryPage = page(TreasuryEntry).extend({ mode: DataMode }).
 export const TasksQuery = PageQuery.extend({ status: TaskStatus.optional() }).meta({ id: "TasksQuery" });
 export const PageQuerySchema = PageQuery.meta({ id: "PageQuery" });
 
+export const ProcessRole = z.enum(["all", "api", "sim", "indexer"]).meta({ id: "ProcessRole" });
+
+/** Liveness: the process is up. Always 200 while the process can answer. */
 export const HealthResponse = z
   .object({
     status: z.enum(["ok", "degraded"]),
     mode: DataMode,
+    role: ProcessRole,
     contractVersion: z.string(),
-    tick: z.number().int(),
-    simRunning: z.boolean(),
+    tick: z.number().int().describe("Tick of the state this process can read (0 if none yet)."),
+    simRunning: z.boolean().describe("A simulation leader has committed a tick within the last 10 s (cluster-wide)."),
     store: z.enum(["memory", "postgres"]),
     financialFeaturesEnabled: z.boolean(),
+    simLeader: z.object({
+      localLeader: z.boolean().describe("This process currently holds simulation leadership."),
+      epoch: z.number().int(),
+      lastTick: z.number().int(),
+      heartbeatAgeMs: z.number().int().nullable(),
+    }),
   })
   .meta({ id: "HealthResponse" });
+
+/** Readiness: 200 only when this process can do its role's job; 503 otherwise (body still returned). */
+export const ReadinessResponse = z
+  .object({
+    ready: z.boolean(),
+    role: ProcessRole,
+    checks: z.array(z.object({ name: z.string(), ok: z.boolean(), detail: z.string().nullable() })),
+  })
+  .meta({ id: "ReadinessResponse" });
 
 export const DemoSignResponse = z
   .object({ signature: z.string(), note: z.string() })
@@ -82,7 +101,8 @@ export interface RouteDef {
 const P = "/api/v1";
 
 export const routes = {
-  health: { method: "get", path: "/healthz", operationId: "health", summary: "Liveness + mode", tag: "system", auth: false, response: HealthResponse },
+  health: { method: "get", path: "/healthz", operationId: "health", summary: "Liveness + mode, role and simulation leadership", tag: "system", auth: false, response: HealthResponse },
+  readiness: { method: "get", path: "/readyz", operationId: "readiness", summary: "Readiness for this process role (503 when not ready)", tag: "system", auth: false, response: ReadinessResponse },
 
   worldBootstrap: { method: "get", path: `${P}/world/bootstrap`, operationId: "getWorldBootstrap", summary: "World seed, regions, building catalog, simulation clock", tag: "world", auth: false, response: WorldBootstrap },
   worldChunks: { method: "get", path: `${P}/world/chunks`, operationId: "getWorldChunks", summary: "Chunks (terrain, buildings, props) around a chunk coordinate", tag: "world", auth: false, query: ChunksQuery, response: ChunksResponse },

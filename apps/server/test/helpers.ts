@@ -7,6 +7,9 @@ import { createContext, type AppContext } from "../src/context.js";
 import { buildApp } from "../src/http/app.js";
 import { MockChain } from "../src/chain/mock.js";
 import type { Store } from "../src/store/types.js";
+import type { Coordinator } from "../src/coord/types.js";
+import pg from "pg";
+import { LOCK_KEYS } from "../src/store/postgres.js";
 
 export interface TestEnv {
   ctx: AppContext;
@@ -15,10 +18,10 @@ export interface TestEnv {
   close(): Promise<void>;
 }
 
-export async function makeEnv(env: Record<string, string> = {}, overrides: { store?: Store; chain?: MockChain } = {}): Promise<TestEnv> {
+export async function makeEnv(env: Record<string, string> = {}, overrides: { store?: Store; chain?: MockChain; coord?: Coordinator } = {}): Promise<TestEnv> {
   const config = loadConfig({ MODE: "demo", LOG_LEVEL: "silent", SIM_AUTOSTART: "false", WORLD_SEED: "test-world", ...env });
   const chain = overrides.chain ?? new MockChain();
-  const ctx = await createContext(config, { chain, store: overrides.store });
+  const ctx = await createContext(config, { chain, store: overrides.store, coord: overrides.coord });
   const app = await buildApp(ctx);
   return { ctx, app, chain, close: async () => (await app.close(), await ctx.close()) };
 }
@@ -60,4 +63,15 @@ export async function launch(
   const signature = signed.json().signature as string;
   const confirm = await app.inject({ method: "POST", url: "/api/v1/launches/confirm", headers: user.auth, payload: { launchId, signature } });
   return { launchId, signature, prepared: prep.json(), confirm };
+}
+
+/** Simulate the simulation leader's process dying: terminate the backend holding the sim advisory lock. */
+export async function killSimLeaderBackend(url: string, key: number = LOCK_KEYS.sim): Promise<number> {
+  const pool = new pg.Pool({ connectionString: url });
+  try {
+    const r = await pool.query("SELECT pg_terminate_backend(pid) AS ok FROM pg_locks WHERE locktype = 'advisory' AND objid = $1 AND granted", [key]);
+    return r.rowCount ?? 0;
+  } finally {
+    await pool.end();
+  }
 }

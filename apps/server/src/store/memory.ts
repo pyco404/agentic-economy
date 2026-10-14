@@ -1,5 +1,4 @@
 import type { AgentAction, Community, EconomicEvent, RewardRecord, TaskReceipt, TokenLaunch, TreasuryEntry } from "@agentic-economy/shared";
-import type { LoggedCommand } from "../sim/types.js";
 import {
   ConflictError,
   decodeCursor,
@@ -29,8 +28,6 @@ const treasuryKey = (e: TreasuryEntry) => `${e.signature}|${e.instructionIndex}|
 export class MemoryStore implements Store {
   readonly kind = "memory" as const;
   private world: WorldMeta | null = null;
-  private snapshots: Array<{ tick: number; state: string; hash: string }> = [];
-  private commands: LoggedCommand[] = [];
   private events: EconomicEvent[] = [];
   private eventIds = new Set<string>();
   private actions: Array<{ seq: number; row: AgentAction }> = [];
@@ -56,25 +53,6 @@ export class MemoryStore implements Store {
   async initWorldMeta(meta: WorldMeta) {
     this.world ??= meta;
     return this.world;
-  }
-
-  async saveSnapshot(tick: number, state: string, hash: string) {
-    this.snapshots = this.snapshots.filter((s) => s.tick !== tick);
-    this.snapshots.push({ tick, state, hash });
-    if (this.snapshots.length > 5) this.snapshots.shift();
-  }
-  async loadLatestSnapshot() {
-    return this.snapshots.reduce<{ tick: number; state: string; hash: string } | null>((best, s) => (!best || s.tick > best.tick ? s : best), null);
-  }
-  async appendCommand(c: LoggedCommand) {
-    if (this.commands.some((x) => x.seq === c.seq)) throw new ConflictError(`command seq ${c.seq} exists`);
-    this.commands.push(clone(c));
-  }
-  async commandsFrom(tick: number) {
-    return this.commands.filter((c) => c.tick >= tick).sort((a, b) => a.seq - b.seq).map(clone);
-  }
-  async maxCommandSeq() {
-    return this.commands.reduce((m, c) => Math.max(m, c.seq), -1);
   }
 
   async appendSimOutputs(o: { events: NewEvent[]; actions: AgentAction[]; receipts: TaskReceipt[]; rewards: RewardRecord[] }) {

@@ -15,7 +15,10 @@ import { MockChain, type MockLaunchOutcome } from "../chain/mock.js";
 import { sharingConfigPda } from "../chain/pump.js";
 import { ChainFeatureUnavailable, type ChainGateway } from "../chain/types.js";
 import { verifyLaunch } from "../chain/verify.js";
-import type { CityRuntime } from "../runtime.js";
+import type { Coordinator } from "../coord/types.js";
+import type { CommandBus, StateReader } from "../roles/read-model.js";
+import { publishDurable } from "../roles/stream.js";
+import { communityBranding } from "./community.js";
 import { ConflictError, type Store } from "../store/types.js";
 import { AppError } from "../util/errors.js";
 import { newId } from "../util/ids.js";
@@ -24,8 +27,6 @@ import type { TreasuryService } from "./treasury.js";
 /** Rent estimates (lamports) for accounts created by the launch transaction; shown as estimates only. */
 const RENT_ESTIMATE_LAMPORTS = 16_500_000n;
 const NETWORK_FEE_ESTIMATE_LAMPORTS = 50_000n;
-
-const BRAND_COLORS = ["#c98b6b", "#7a9e7e", "#6b8fc9", "#b58db6", "#d4a95a", "#5fa8a0", "#c96b7e", "#8a8fc9"];
 
 /**
  * Launch lifecycle. Deliberately NO per-wallet limits, cooldowns, history checks, duplicate-metadata
@@ -37,7 +38,9 @@ export class LaunchService {
     private readonly chain: ChainGateway,
     private readonly config: AppConfig,
     private readonly treasury: TreasuryService,
-    private readonly runtime: CityRuntime,
+    private readonly coord: Coordinator,
+    private readonly bus: CommandBus,
+    private readonly reader: StateReader,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -139,7 +142,12 @@ export class LaunchService {
     if (launch.launcherWallet !== wallet) throw new AppError("forbidden", "only the launching wallet can confirm this launch");
     if (launch.signature && launch.signature !== signature)
       throw new AppError("conflict", "a different transaction signature is already bound to this launch", { boundSignature: launch.signature });
-    if (launch.status === "confirmed" || launch.status === "failed" || launch.status === "expired") return launch;
+    if (launch.status === "confirmed") {
+      // Idempotent re-confirm also heals a crash between registration and command enqueue (dedupe makes this a no-op otherwise).
+      await this.registerInWorld(launch.communityId!, launch.draft.name, launch.mint, false);
+      return launch;
+    }
+    if (launch.status === "failed" || launch.status === "expired") return launch;
     const other = await this.store.findLaunchBySignature(signature);
     if (other && other.id !== launch.id) throw new AppError("conflict", "signature belongs to another launch");
 
@@ -173,7 +181,7 @@ export class LaunchService {
       if (v.outcome === "recovery_needed") {
         const next = { ...this.transition(launch, "recovery_needed"), signature, slot: v.slot, errors: [...launch.errors, ...v.issues.map((i) => ({ ...i, at }))] };
         await this.store.updateLaunch(next, rec.version);
-        for (const e of await this.store.appendTreasuryEntries([feeEntry])) this.runtime.publish("treasury.updated", this.runtime.engine.tick, { entry: e });
+        for (const e of await this.store.appendTreasuryEntries([feeEntry])) await publishDurable(this.coord, `treasury:${e.id}`, "treasury.updated", this.reader.tick, { entry: e });
         return next;
       }
 
@@ -182,7 +190,7 @@ export class LaunchService {
       const next: TokenLaunch = { ...this.transition(launch, "confirmed"), signature, slot: v.slot, communityId };
       await this.store.confirmLaunch(next, rec.version, community, [feeEntry], {
         id: `evt_l${launch.id.slice(4)}`,
-        tick: this.runtime.engine.tick,
+        tick: this.reader.tick,
         at,
         type: "launch.confirmed",
         summary: `${launch.draft.name} ($${launch.draft.symbol}) launched on Pump.fun through Agentic Economy`,
@@ -191,9 +199,9 @@ export class LaunchService {
         communityId,
         data: { mint: launch.mint, signature },
       });
-      this.runtime.publish("treasury.updated", this.runtime.engine.tick, { entry: { ...feeEntry } });
-      // Give the community a headquarters in the shared world (applied on the next tick).
-      await this.runtime.submit({ type: "community.register", communityId, name: launch.draft.name, branding: this.branding(launch.mint) });
+      await publishDurable(this.coord, `treasury:${feeEntry.id}`, "treasury.updated", this.reader.tick, { entry: feeEntry });
+      // Give the community a headquarters in the shared world (durable command, applied by the simulation leader).
+      await this.registerInWorld(communityId, launch.draft.name, launch.mint, true);
       return next;
     } catch (e) {
       if (e instanceof ConflictError) {
@@ -206,10 +214,13 @@ export class LaunchService {
     }
   }
 
-  private branding(mint: string) {
-    let h = 0;
-    for (const ch of mint) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-    return { primary: BRAND_COLORS[h % BRAND_COLORS.length]!, accent: BRAND_COLORS[(h >>> 8) % BRAND_COLORS.length]! };
+  /**
+   * Enqueue the HQ placement for a registered community. Waiting is best-effort: the registration is
+   * already durable, and the simulation leader also reconciles registered-but-unplaced communities.
+   */
+  private async registerInWorld(communityId: string, name: string, mint: string, wait: boolean) {
+    const q = await this.bus.enqueue({ type: "community.register", communityId, name, branding: communityBranding(mint) }, `community.register:${communityId}`);
+    if (wait && q && q.appliedTick === null) await this.bus.awaitApplied(q.id, 3_000).catch(() => undefined);
   }
 
   private buildCommunity(l: TokenLaunch, id: string, signature: string, at: string): Community {

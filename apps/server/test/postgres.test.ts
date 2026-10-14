@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { hashState } from "../src/sim/engine.js";
 import { PostgresStore } from "../src/store/postgres.js";
 import { MockChain } from "../src/chain/mock.js";
-import { launch, login, makeEnv, idem } from "./helpers.js";
+import { launch, login, makeEnv, idem, killSimLeaderBackend } from "./helpers.js";
 
 /**
  * Runs only when TEST_DATABASE_URL points at a disposable database, e.g.
@@ -65,19 +65,20 @@ d("postgres store", () => {
     for (let i = 0; i < 25; i++) await env1.ctx.runtime.tickOnce();
     await env1.app.inject({ method: "POST", url: "/api/v1/agents", headers: { ...user.auth, ...idem() }, payload: { communityId, name: "Crash Courier", profession: "logistics_operator" } });
     for (let i = 0; i < 12; i++) await env1.ctx.runtime.tickOnce();
-    const tickAtCrash = env1.ctx.runtime.engine.tick;
-    const hashAtCrash = hashState(env1.ctx.runtime.engine.state);
-    // Crash: no final snapshot, just drop the connections.
+    const tickAtCrash = env1.ctx.runtime.tick;
+    const hashAtCrash = hashState(env1.ctx.runtime.state);
+    // Crash: no final snapshot; the leader's database session dies with the process.
+    await killSimLeaderBackend(url!);
     await env1.app.close();
     await env1.ctx.store.close();
 
     const env2 = await makeEnv({ DATABASE_URL: url!, SNAPSHOT_EVERY_TICKS: "20" }, { store: await PostgresStore.connect(url!), chain });
     try {
       const rt = env2.ctx.runtime;
-      expect(rt.engine.tick).toBeLessThanOrEqual(tickAtCrash);
-      while (rt.engine.tick < tickAtCrash) await rt.tickOnce();
-      expect(hashState(rt.engine.state)).toBe(hashAtCrash);
-      expect(Object.values(rt.engine.state.agents).map((a) => a.name)).toContain("Crash Courier");
+      expect(rt.tick).toBeLessThanOrEqual(tickAtCrash);
+      for (let i = 0; rt.tick < tickAtCrash && i < 500; i++) await rt.tickOnce();
+      expect(hashState(rt.state)).toBe(hashAtCrash);
+      expect(Object.values(rt.state.agents).map((a) => a.name)).toContain("Crash Courier");
       // Replayed events were de-duplicated, not double-inserted.
       const pool = new pg.Pool({ connectionString: url });
       const dupes = await pool.query("SELECT id FROM events GROUP BY id HAVING count(*) > 1");

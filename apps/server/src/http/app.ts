@@ -8,6 +8,7 @@ import type { AppContext } from "../context.js";
 import { AppError } from "../util/errors.js";
 import { registerHandlers } from "./handlers.js";
 import { registerWebSocket } from "../ws/gateway.js";
+import { health, metrics, readiness } from "./system.js";
 
 export interface HandlerCtx<N extends RouteName> {
   params: (typeof routes)[N] extends { params: infer P extends z.ZodType } ? z.infer<P> : Record<string, never>;
@@ -15,6 +16,8 @@ export interface HandlerCtx<N extends RouteName> {
   body: (typeof routes)[N] extends { body: infer B extends z.ZodType } ? z.infer<B> : undefined;
   /** Authenticated wallet (present on auth routes). */
   wallet: string;
+  /** Idempotency-Key header, when supplied (used as a dedupe key for durable commands). */
+  idempotencyKey: string | null;
   sessionExpiresAt: string;
   req: FastifyRequest;
 }
@@ -72,9 +75,13 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     counters.requests += 1;
   });
 
+  const servesApi = ctx.config.role === "api" || ctx.config.role === "all";
+  const SYSTEM: ReadonlySet<RouteName> = new Set<RouteName>(["health", "readiness"]);
+
   function register<N extends RouteName>(name: N, handler: Handler<N>) {
     const def: RouteDef = routes[name];
     if (def.demoOnly && ctx.config.mode !== "demo") return;
+    if (!servesApi && !SYSTEM.has(name)) return; // sim/indexer processes expose only health endpoints
     app.route({
       method: def.method.toUpperCase() as "GET" | "POST" | "PATCH",
       url: def.path,
@@ -100,8 +107,9 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
           }
         }
 
-        const result = await handler({ params, query, body, wallet, sessionExpiresAt, req } as HandlerCtx<N>);
+        const result = await handler({ params, query, body, wallet, sessionExpiresAt, idempotencyKey: idemKey ?? null, req } as HandlerCtx<N>);
         let out: unknown = result;
+        if (name === "readiness" && !(result as { ready: boolean }).ready) return reply.status(503).send(result);
         if (validateResponses) {
           const parsed = def.response.safeParse(result);
           if (!parsed.success) {
@@ -117,33 +125,12 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     });
   }
 
+  register("health", () => health(ctx));
+  register("readiness", () => readiness(ctx));
   registerHandlers(ctx, register);
-  registerWebSocket(app, ctx);
+  if (servesApi) registerWebSocket(app, ctx);
 
-  app.get("/metrics", async (_req, reply) => {
-    const m = ctx.runtime.metrics;
-    const lines = [
-      "# TYPE ae_sim_tick gauge",
-      `ae_sim_tick ${ctx.runtime.engine.tick}`,
-      "# TYPE ae_sim_ticks_total counter",
-      `ae_sim_ticks_total ${m.ticks}`,
-      "# TYPE ae_sim_tick_errors_total counter",
-      `ae_sim_tick_errors_total ${m.tickErrors}`,
-      "# TYPE ae_sim_tick_ms gauge",
-      `ae_sim_tick_ms ${m.avgTickMs.toFixed(3)}`,
-      "# TYPE ae_events_persisted_total counter",
-      `ae_events_persisted_total ${m.eventsPersisted}`,
-      "# TYPE ae_http_requests_total counter",
-      `ae_http_requests_total ${counters.requests}`,
-      "# TYPE ae_http_errors_total counter",
-      `ae_http_errors_total ${counters.errors}`,
-      "# TYPE ae_ws_connections gauge",
-      `ae_ws_connections ${ctx.wsStats.connections}`,
-      "# TYPE ae_agents gauge",
-      `ae_agents ${ctx.runtime.engine.state.agentOrder.length}`,
-    ];
-    return reply.type("text/plain; version=0.0.4").send(lines.join("\n") + "\n");
-  });
+  app.get("/metrics", async (_req, reply) => reply.type("text/plain; version=0.0.4").send(metrics(ctx, counters)));
 
   return app;
 }

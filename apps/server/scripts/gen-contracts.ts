@@ -127,7 +127,7 @@ async function buildFixtures() {
   await seedDemo(ctx);
   const app = await buildApp(ctx);
   const ws: ServerEvent[] = [];
-  const unsub = ctx.runtime.subscribe((e) => {
+  const unsub = ctx.runtime.hub!.subscribe((e) => {
     if (!ws.some((x) => x.type === e.type)) ws.push(e);
   });
   for (let i = 0; i < 240; i++) await ctx.runtime.tickOnce();
@@ -139,7 +139,7 @@ async function buildFixtures() {
     return r.json();
   };
   const community = (await get("/api/v1/communities?limit=1")).items[0];
-  const agentId = ctx.runtime.engine.state.agentOrder[0]!;
+  const agentId = ctx.runtime.state.agentOrder[0]!;
   const launchId = community.launchId as string;
   const fixtures: Record<string, unknown> = {
     "world-bootstrap": await get("/api/v1/world/bootstrap"),

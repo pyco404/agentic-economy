@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -18,18 +19,37 @@ import {
 
 const MIGRATIONS_DIR = fileURLToPath(new URL("./migrations/", import.meta.url));
 
-/** Apply pending SQL migrations in filename order, each in its own transaction. */
 /** Advisory lock keys (one database per world). */
 export const LOCK_KEYS = { migrate: 4_242_000, sim: 4_242_001, indexer: 4_242_002 } as const;
 
-/** Apply pending SQL migrations in filename order, each in its own transaction, serialized across processes. */
+export class MigrationIntegrityError extends Error {}
+
+/**
+ * Apply pending SQL migrations in filename order, each in its own transaction, serialized across processes.
+ *
+ * Safety properties (tested in test/migrations.test.ts):
+ * - forward-only and additive: migration files may not contain DROP/TRUNCATE/DELETE (static check);
+ * - repeatable: applied files are recorded in schema_migrations and never re-run;
+ * - tamper-evident: each applied file's SHA-256 is recorded; if an applied file changes, startup is refused
+ *   instead of silently diverging from the deployed schema;
+ * - never resets data: there is no "reset"/"down" path in production code.
+ */
 export async function migrate(pool: pg.Pool): Promise<string[]> {
   const client = await pool.connect();
   try {
     await client.query("SELECT pg_advisory_lock($1)", [LOCK_KEYS.migrate]);
     await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
+    await client.query("ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS checksum text");
     const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
-    const applied = new Set((await client.query<{ name: string }>("SELECT name FROM schema_migrations")).rows.map((r) => r.name));
+    const sums = new Map<string, string>();
+    for (const f of files) sums.set(f, createHash("sha256").update(await readFile(MIGRATIONS_DIR + f, "utf8")).digest("hex"));
+    const applied = new Map((await client.query<{ name: string; checksum: string | null }>("SELECT name, checksum FROM schema_migrations")).rows.map((r) => [r.name, r.checksum]));
+    for (const [name, checksum] of applied) {
+      const current = sums.get(name);
+      if (current === undefined) throw new MigrationIntegrityError(`migration ${name} is applied in the database but missing from this build (refusing to start an older build against a newer schema)`);
+      if (checksum === null) await client.query("UPDATE schema_migrations SET checksum = $2 WHERE name = $1", [name, current]); // adopt pre-checksum rows
+      else if (checksum !== current) throw new MigrationIntegrityError(`migration ${name} was modified after it was applied (checksum mismatch); add a new migration instead`);
+    }
     const ran: string[] = [];
     for (const f of files) {
       if (applied.has(f)) continue;
@@ -37,7 +57,7 @@ export async function migrate(pool: pg.Pool): Promise<string[]> {
       try {
         await client.query("BEGIN");
         await client.query(sql);
-        await client.query("INSERT INTO schema_migrations (name) VALUES ($1)", [f]);
+        await client.query("INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)", [f, sums.get(f)]);
         await client.query("COMMIT");
         ran.push(f);
       } catch (e) {
@@ -51,6 +71,9 @@ export async function migrate(pool: pg.Pool): Promise<string[]> {
     client.release();
   }
 }
+
+/** Directory holding the SQL migrations (exported for tests/tools). */
+export const MIGRATIONS_PATH = MIGRATIONS_DIR;
 
 export async function insertEvents(q: Queryable, events: NewEvent[]): Promise<EconomicEvent[]> {
   const out: EconomicEvent[] = [];

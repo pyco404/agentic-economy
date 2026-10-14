@@ -67,10 +67,37 @@ export async function launch(
 
 /** Simulate the simulation leader's process dying: terminate the backend holding the sim advisory lock. */
 export async function killSimLeaderBackend(url: string, key: number = LOCK_KEYS.sim): Promise<number> {
+  // pg_locks is cluster-wide but advisory locks are per database: only ever touch the disposable test DB's own sessions
+  // (other local databases may be running real processes, e.g. the frontend's integration backend).
+  assertDisposableTestDb(url);
   const pool = new pg.Pool({ connectionString: url });
   try {
-    const r = await pool.query("SELECT pg_terminate_backend(pid) AS ok FROM pg_locks WHERE locktype = 'advisory' AND objid = $1 AND granted", [key]);
+    const r = await pool.query(
+      `SELECT pg_terminate_backend(l.pid) AS ok FROM pg_locks l
+       WHERE l.locktype = 'advisory' AND l.objid = $1 AND l.granted
+         AND l.database = (SELECT oid FROM pg_database WHERE datname = current_database())`,
+      [key],
+    );
     return r.rowCount ?? 0;
+  } finally {
+    await pool.end();
+  }
+}
+
+/**
+ * Tests drop and recreate the public schema. Refuse to do that to anything that is not obviously a
+ * disposable test database (guards against pointing TEST_DATABASE_URL at staging/production).
+ */
+export function assertDisposableTestDb(url: string): void {
+  const name = /^postgres(?:ql)?:\/\/[^/]*\/([^?#]+)/.exec(url)?.[1] ?? "";
+  if (!/_test$/.test(name)) throw new Error(`refusing to reset database "${name}": test databases must be named *_test`);
+}
+
+export async function resetTestSchema(url: string): Promise<void> {
+  assertDisposableTestDb(url);
+  const pool = new pg.Pool({ connectionString: url });
+  try {
+    await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   } finally {
     await pool.end();
   }

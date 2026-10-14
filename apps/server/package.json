@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx watch --conditions=@agentic-economy/source src/main.ts",
     "start": "node dist/main.js",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && cp -r src/store/migrations dist/store/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx --conditions=@agentic-economy/source src/store/migrate.ts",

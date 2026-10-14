@@ -1,0 +1,9 @@
+{
+  "name": "agentic-economy-railway-iac",
+  "private": true,
+  "description": "Railway Infrastructure as Code for Agentic Economy (not part of the pnpm workspace). Run `npm install` here before `railway config plan`.",
+  "type": "module",
+  "devDependencies": {
+    "railway": "3.16.0"
+  }
+}

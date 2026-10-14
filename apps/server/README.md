@@ -38,15 +38,24 @@ Demo mode with Postgres keeps the world, communities and ledger across restarts.
 | `pnpm --filter @agentic-economy/server build` then `start` | Compile to `dist/` (build `packages/*` first) and run `node dist/main.js`. |
 | `pnpm contracts:gen` | Regenerate `contracts/openapi.yaml` and `packages/shared/fixtures/*.json` from the Zod source. |
 
-## Modes
+## Modes and roles
 
 | | `demo` | `devnet` | `production` |
 |---|---|---|---|
 | Chain | `MockChain` (in-process) | Solana devnet RPC | Solana mainnet RPC |
 | Store | memory, or Postgres if `DATABASE_URL` is set | Postgres (required) | Postgres (required) |
 | Launches | simulated (`POST /demo/launches/:id/sign`) | disabled until `FEE_ROUTING_VERIFIED=true` | disabled until `FEE_ROUTING_VERIFIED=true` and the spec §8.10 reviews |
-| Treasury indexer and drift check | — | every 30 s / 5 min | every 30 s / 5 min |
+| Treasury indexer and drift check | — | every 30 s / ~5 min | every 30 s / ~5 min |
 | Payouts | none (dry-run points) | none | none |
+
+`ROLE` selects what a process does. All roles ship in one image; see [infra/railway/README.md](../../infra/railway/README.md).
+
+| ROLE | Runs | Needs |
+|---|---|---|
+| `all` (default) | API + WebSocket + simulation (+ indexer outside demo) | memory or Postgres |
+| `api` | HTTP + WebSocket; reads the leader's published state view; sends commands through the durable inbox | Postgres, chain (for auth/launch/eligibility) |
+| `sim` | the single simulation writer (Postgres leadership + fencing); standbys wait | Postgres only (no chain access) |
+| `indexer` | treasury indexer + fee-routing drift checks (lease-holder only) | Postgres, chain |
 
 `FEE_ROUTING_VERIFIED` is a deliberate manual gate. See [docs/pump-fun-integration.md](docs/pump-fun-integration.md). The real launch-transaction builder is intentionally unimplemented until the devnet test plan there passes, so non-demo launches return `503 feature_disabled`.
 
@@ -56,7 +65,9 @@ Demo mode with Postgres keeps the world, communities and ledger across restarts.
 src/
   config.ts            env → typed config (fails fast on unsafe combinations)
   context.ts           wires store, chain, runtime and services
-  runtime.ts           persistent world + authoritative tick loop, snapshots, replay, event stream
+  runtime.ts           per-role composition (sim worker / read model / event hub / command bus) + world views
+  roles/               SimWorker (leader-only ticks, fenced commits, recovery), StateReader, EventHub, CommandBus
+  coord/               Coordinator: leadership + fencing, command inbox, durable stream, state view, LISTEN/NOTIFY (memory | Postgres)
   sim/                 deterministic simulation (no wall clock, no Math.random)
     engine.ts          production chain, tasks, logistics, receipts, residents, prices, epochs
     planner.ts         Planner interface + UtilityPlanner (proposals are validated by the engine)
@@ -80,7 +91,7 @@ scripts/gen-contracts.ts
 - **Verification:** every completion produces a hash-chained `TaskReceipt` with explicit checks (unique task, claimant, escrow funded, picked up at source, delivered at destination, quantity and lot provenance, shift presence).
 - **Dry-run rewards:** points per receipt. They are zeroed for self-dealing (requester owned by the performer's wallet), circular goods movement and implausibly fast completion, and capped per agent per epoch. Epoch close emits `RewardRecord`s carrying point shares only, with **no SOL amounts and no claims**.
 - **Agents** propose actions through `Planner`. The engine re-validates every proposal, and rejections are logged. Agent permissions are simulation-only; there is no permission to sign transactions or move user funds.
-- **Determinism and recovery:** state is plain JSON. Commands (agent create/update, community registration) are logged with the tick they apply at. On restart the latest snapshot is loaded (and its integrity hash checked), then the command log is replayed. Tests prove the recovered state hashes identically to the uninterrupted run, both in memory and through Postgres. Snapshots and commands are stored as `text`, not `jsonb`, because `jsonb` reorders keys and breaks replay.
+- **Determinism and recovery:** state is plain JSON. API processes enqueue commands (agent create/update, community registration) into a durable inbox. The simulation leader applies them at the start of a tick and moves them into the append-only command log, in the same transaction that commits the tick. On leadership acquisition the latest snapshot is loaded (and its integrity hash checked), then the command log is replayed up to the last committed tick. Tests prove the recovered state hashes identically to the uninterrupted run and to an independent replay of the log, including after a leader is killed mid-run. Snapshots and commands are stored as `text`, not `jsonb`, because `jsonb` reorders keys and breaks replay.
 
 ### Launch flow (spec §2, §3.2)
 
@@ -110,10 +121,12 @@ States: `draft → awaiting_signature → submitted → confirmed | failed | rec
 
 ## Operations
 
-- `GET /healthz`: mode, tick, simulation running, store kind, whether financial features are enabled.
+- `GET /healthz`: liveness, mode, role, tick, cluster-wide `simRunning`, leader epoch/heartbeat, store kind, whether financial features are enabled.
+- `GET /readyz`: 200 when the role can work (database reachable), otherwise 503. Used by Railway's deploy healthcheck.
 - `GET /metrics`: Prometheus text (ticks, tick time, errors, HTTP and WS counts, agents).
 - Structured JSON logs (pino). SIGINT/SIGTERM take a final snapshot before exit.
-- Deploy: one stateful process per world (the tick loop is single-writer) behind TLS. Postgres with backups. WebSocket upgrade allowed on `/api/v1/ws`. Horizontal read scaling would come later via read replicas and a pub/sub fan-out of the event stream.
+- Deploy: Railway, one image for all roles. See [infra/railway/README.md](../../infra/railway/README.md) for exact service settings, variables, resource estimates and the staged rollout (single `ROLE=all` service, then split `api`/`sim`/`indexer`).
+- `pnpm --filter @agentic-economy/server bundle` produces the self-contained `dist-bundle/` used by the image (`main.mjs`, `migrate.mjs`, `migrations/`).
 
 ## Known limitations / next steps
 
@@ -122,4 +135,5 @@ States: `draft → awaiting_signature → submitted → confirmed | failed | rec
 3. World expansion beyond the Genesis district (12 HQ lots; when they run out, a new community's `headquartersBuildingId` is null).
 4. LLM planner: only the interface and validation boundary exist.
 5. The metadata upload helper for Pump.fun (IPFS) is not implemented. Clients currently provide `metadataUri`.
-6. Per-IP rate limiting is in-process. Use a shared limiter when running multiple API instances.
+6. Per-IP rate limiting is in-process (per API replica). Use a shared limiter when running many API replicas.
+7. AI-agent workers are not built. When they are, they must submit proposals through the durable command inbox (no new write path).

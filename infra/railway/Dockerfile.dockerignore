@@ -1,0 +1,15 @@
+# BuildKit per-Dockerfile ignore list (used when building with -f infra/railway/Dockerfile).
+**/node_modules
+**/dist
+**/dist-bundle
+**/coverage
+**/test-results
+**/.env
+**/.env.*
+!**/.env.example
+.git
+apps/web
+programs
+contracts
+*.md
+!apps/server/README.md

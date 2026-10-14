@@ -1,0 +1,29 @@
+{
+  "name": "@agentic-economy/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentic Economy shared Zod schemas, API route registry, WebSocket events, constants and fixtures. Owned by the backend (Claude Code); consumed by apps/web.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "@agentic-economy/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./fixtures/*": "./fixtures/*"
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  }
+}

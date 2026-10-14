@@ -124,6 +124,7 @@ States: `draft → awaiting_signature → submitted → confirmed | failed | rec
 - `GET /metrics`: Prometheus text (ticks, tick time, errors, HTTP and WS counts, agents).
 - Structured JSON logs (pino). SIGINT/SIGTERM take a final snapshot before exit.
 - Deploy: one stateful process per world (the tick loop is single-writer) behind TLS. Postgres with backups. WebSocket upgrade allowed on `/api/v1/ws`. Horizontal read scaling would come later via read replicas and a pub/sub fan-out of the event stream.
+- `pnpm --filter @agentic-economy/server bundle` produces the self-contained `dist-bundle/` used by the image (`main.mjs`, `migrate.mjs`, `migrations/`).
 
 ## Known limitations / next steps
 

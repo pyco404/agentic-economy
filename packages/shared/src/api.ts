@@ -118,7 +118,7 @@ export const routes = {
   confirmLaunch: { method: "post", path: `${P}/launches/confirm`, operationId: "confirmLaunch", summary: "Verify landed transaction on-chain and register community (idempotent)", tag: "launches", auth: true, idempotencyKey: "optional", body: ConfirmLaunchRequest, response: LaunchResponse },
   launch: { method: "get", path: `${P}/launches/:id`, operationId: "getLaunch", summary: "Launch progress and errors", tag: "launches", auth: false, params: z.object({ id: LaunchId }), response: LaunchResponse },
 
-  demoSignLaunch: { method: "post", path: `${P}/demo/launches/:id/sign`, operationId: "demoSignLaunch", summary: "DEMO ONLY: simulate wallet signing + landing of a prepared launch on the mock chain", tag: "demo", auth: true, params: z.object({ id: LaunchId }), body: z.object({ outcome: z.enum(["success", "tx_failed", "missing_fee_sharing"]).default("success") }).meta({ id: "DemoSignRequest" }), response: DemoSignResponse, demoOnly: true },
+  demoSignLaunch: { method: "post", path: `${P}/demo/launches/:id/sign`, operationId: "demoSignLaunch", summary: "DEMO ONLY: simulate wallet signing + landing of a prepared launch on the mock chain", tag: "demo", auth: true, params: z.object({ id: LaunchId }), body: z.object({ outcome: z.enum(["success", "tx_failed", "missing_fee_sharing", "wrong_fee", "launcher_share"]).default("success").describe("Demo failure injection: tx_failed, missing_fee_sharing (no fee-sharing config), wrong_fee (charge != 0.05 SOL), launcher_share (launcher given a creator-fee share).") }).meta({ id: "DemoSignRequest" }), response: DemoSignResponse, demoOnly: true },
 } as const satisfies Record<string, RouteDef>;
 
 export type RouteName = keyof typeof routes;

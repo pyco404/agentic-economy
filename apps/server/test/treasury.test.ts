@@ -153,10 +153,10 @@ describe("treasury indexer", () => {
       const ok = await launch(env.app, user);
       const mint = ok.confirm.json().launch.mint as string;
       const log = { info() {}, warn() {}, error() {} };
-      const idx = new TreasuryIndexer(env.chain, env.ctx.store, env.ctx.treasury, env.ctx.runtime, [agentRewards, platform], log);
+      const idx = new TreasuryIndexer(env.chain, env.ctx.store, env.ctx.treasury, env.ctx.coord, [agentRewards, platform], log);
       env.chain.simulateCreatorFeeDistribution({ mint, payouts: [{ address: agentRewards, lamports: 6_000n }, { address: platform, lamports: 4_000n }] });
       expect(await idx.runOnce()).toBe(2);
-      expect(await new TreasuryIndexer(env.chain, env.ctx.store, env.ctx.treasury, env.ctx.runtime, [agentRewards, platform], log).runOnce()).toBe(0); // fresh cursor, no double count
+      expect(await new TreasuryIndexer(env.chain, env.ctx.store, env.ctx.treasury, env.ctx.coord, [agentRewards, platform], log).runOnce()).toBe(0); // fresh cursor, no double count
       expect(await idx.checkRoutingDrift()).toEqual([]);
       // Simulate a takeover rewriting the coin's sharing config.
       env.chain.simulateLaunch({ launcherWallet: user.wallet, mint, platformTreasury: platform, agentRewardsTreasury: agentRewards }, "launcher_share");

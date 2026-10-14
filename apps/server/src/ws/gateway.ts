@@ -9,19 +9,23 @@ const MAX_BUFFERED_BYTES = 2 * 1024 * 1024;
 export const WS_PATH = "/api/v1/ws";
 
 /**
- * WebSocket gateway (protocol v1, see contracts/events.md).
+ * WebSocket gateway (protocol v1, see contracts/events.md). Events come from the durable stream via the
+ * EventHub, so `resume` works across API restarts and between API replicas (seq is global in Postgres).
  * - On connect: `world.snapshot` (reason "join").
  * - `subscribe {chunks}` limits agent.moved / world.chunk.updated to visible chunks.
- * - `resume {lastSeq}` replays buffered events, or sends a fresh snapshot if the gap is too old.
+ * - `resume {lastSeq}` replays from the durable stream, or sends a fresh snapshot if the gap was pruned.
  * - Heartbeat every 15 s; slow consumers are disconnected (code 1013) instead of buffering unboundedly.
  */
 export function registerWebSocket(app: FastifyInstance, ctx: AppContext) {
   const { runtime } = ctx;
+  const hub = runtime.hub!;
   const sockets = new Set<WebSocket>();
+  let simRunning = false;
 
-  const heartbeat = setInterval(() => {
-    const env = { v: WS_PROTOCOL_VERSION, type: "system.heartbeat", seq: runtime.currentSeq, tick: runtime.engine.tick, ts: new Date().toISOString(), data: { simRunning: runtime.running } };
-    const raw = JSON.stringify(env);
+  const heartbeat = setInterval(async () => {
+    const st = await ctx.coord.simStatus().catch(() => null);
+    simRunning = Boolean(st?.heartbeatAt && Date.now() - new Date(st.heartbeatAt).getTime() < 10_000);
+    const raw = JSON.stringify({ v: WS_PROTOCOL_VERSION, type: "system.heartbeat", seq: hub.currentSeq, tick: runtime.tick, ts: new Date().toISOString(), data: { simRunning } });
     for (const s of sockets) if (s.readyState === s.OPEN) s.send(raw);
   }, HEARTBEAT_MS);
   heartbeat.unref();
@@ -45,6 +49,8 @@ export function registerWebSocket(app: FastifyInstance, ctx: AppContext) {
       }
       socket.send(JSON.stringify(msg));
     };
+    const notice = (code: string, message: string, level: "info" | "warning" | "incident" = "warning") =>
+      send({ v: WS_PROTOCOL_VERSION, type: "system.notice", seq: hub.currentSeq, tick: runtime.tick, ts: new Date().toISOString(), data: { level, code, message } });
 
     const filter = (e: ServerEvent): ServerEvent | null => {
       if (chunks === null) return e;
@@ -57,11 +63,12 @@ export function registerWebSocket(app: FastifyInstance, ctx: AppContext) {
     };
 
     const snapshot = (reason: "join" | "resume_gap" | "subscription_changed" | "server_restart") => {
+      if (!runtime.reader.available) return notice("state_unavailable", "simulation state is not available yet; retry shortly");
       send({
         v: WS_PROTOCOL_VERSION,
         type: "world.snapshot",
-        seq: runtime.currentSeq,
-        tick: runtime.engine.tick,
+        seq: hub.currentSeq,
+        tick: runtime.tick,
         ts: new Date().toISOString(),
         data: {
           mode: ctx.config.mode,
@@ -70,38 +77,55 @@ export function registerWebSocket(app: FastifyInstance, ctx: AppContext) {
           reason,
           subscribedChunks: chunks === null ? null : [...chunks].map((k) => ({ cx: Number(k.split(",")[0]), cy: Number(k.split(",")[1]) })),
           agents: runtime.agentSummaries().filter((a) => visible(a.pos)),
-          quotes: marketQuotes(runtime.engine.state),
+          quotes: marketQuotes(runtime.state),
           chunkVersions: runtime.chunkVersionList().filter((c) => chunks === null || chunks.has(key(c.coord))),
         },
       });
     };
 
-    const unsubscribe = runtime.subscribe((e) => {
+    // While a resume replay is in flight, buffer live events so ordering is preserved.
+    let replaying: ServerEvent[] | null = null;
+    const unsubscribe = hub.subscribe((e) => {
+      if (replaying) return void replaying.push(e);
       const f = filter(e);
       if (f) send(f);
     });
     snapshot("join");
 
-    socket.on("message", (raw) => {
+    socket.on("message", async (raw) => {
       let msg: ClientMessage;
       try {
         msg = ClientMessage.parse(JSON.parse(String(raw)));
       } catch {
-        send({ v: WS_PROTOCOL_VERSION, type: "system.notice", seq: runtime.currentSeq, tick: runtime.engine.tick, ts: new Date().toISOString(), data: { level: "warning", code: "bad_message", message: "unrecognised client message (expected subscribe | resume | ping, v=1)" } });
-        return;
+        return notice("bad_message", "unrecognised client message (expected subscribe | resume | ping, v=1)");
       }
-      if (msg.type === "ping") send({ v: WS_PROTOCOL_VERSION, type: "pong", nonce: msg.nonce, ts: new Date().toISOString() });
-      else if (msg.type === "subscribe") {
+      if (msg.type === "ping") return send({ v: WS_PROTOCOL_VERSION, type: "pong", nonce: msg.nonce, ts: new Date().toISOString() });
+      if (msg.type === "subscribe") {
         chunks = msg.chunks === null ? null : new Set(msg.chunks.map(key));
-        snapshot("subscription_changed");
-      } else if (msg.type === "resume") {
-        if (msg.lastSeq > runtime.currentSeq) return snapshot("server_restart");
-        const missed = runtime.eventsSince(msg.lastSeq);
-        if (missed === null) return snapshot("resume_gap");
-        for (const e of missed) {
-          const f = filter(e);
-          if (f) send(f);
+        return snapshot("subscription_changed");
+      }
+      // resume
+      replaying = [];
+      try {
+        const missed = await hub.since(msg.lastSeq);
+        if (missed === "ahead") snapshot("server_restart");
+        else if (missed === "gap") snapshot("resume_gap");
+        else {
+          let last = msg.lastSeq;
+          for (const e of missed) {
+            last = e.seq;
+            const f = filter(e);
+            if (f) send(f);
+          }
+          for (const e of replaying.filter((x) => x.seq > last)) {
+            const f = filter(e);
+            if (f) send(f);
+          }
         }
+      } catch {
+        snapshot("resume_gap");
+      } finally {
+        replaying = null;
       }
     });
 

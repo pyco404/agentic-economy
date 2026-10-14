@@ -9,8 +9,18 @@ import { PublicKey } from "@agentic-economy/shared";
  * - devnet:     Solana devnet RPC for verification/eligibility. Requires Postgres.
  * - production: mainnet. Requires Postgres, real treasuries and FEE_ROUTING_VERIFIED=true before launches are enabled.
  */
+export const ROLES = ["all", "api", "sim", "indexer"] as const;
+export type Role = (typeof ROLES)[number];
+
 const Env = z.object({
   MODE: z.enum(["demo", "devnet", "production"]).default("demo"),
+  /**
+   * all     = API + WebSocket + simulation (+ indexer outside demo) in one process (local dev, first Railway deploy)
+   * api     = HTTP + WebSocket only; reads the leader's published state; commands go through the durable inbox
+   * sim     = simulation worker; ticks only while holding Postgres leadership (safe to run standbys)
+   * indexer = Pump.fun/Solana treasury indexer; works only while holding its lease
+   */
+  ROLE: z.enum(ROLES).default("all"),
   HOST: z.string().default("0.0.0.0"),
   PORT: z.coerce.number().int().default(8787),
   DATABASE_URL: z.string().optional(),
@@ -18,6 +28,13 @@ const Env = z.object({
   TICK_MS: z.coerce.number().int().min(50).max(10_000).default(500),
   SNAPSHOT_EVERY_TICKS: z.coerce.number().int().min(1).default(20),
   SIM_AUTOSTART: z.enum(["true", "false"]).default("true"),
+  /** Publish the gzipped state view for API read replicas every N ticks (also on any tick that applied commands). */
+  VIEW_EVERY_TICKS: z.coerce.number().int().min(1).default(2),
+  /** How long durable WebSocket stream events are kept for client resume. */
+  STREAM_RETENTION_MINUTES: z.coerce.number().int().min(1).default(60),
+  /** How often a standby simulation worker retries acquiring leadership. */
+  LEADER_RETRY_MS: z.coerce.number().int().min(100).default(2_000),
+  INDEXER_INTERVAL_MS: z.coerce.number().int().min(1_000).default(30_000),
   SOLANA_RPC_URL: z.string().url().optional(),
   SOLANA_CLUSTER: z.enum(["devnet", "mainnet-beta", "localnet"]).default("devnet"),
   PLATFORM_TREASURY: PublicKey.optional(),
@@ -47,16 +64,20 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   // Empty values (e.g. `SOLANA_RPC_URL=` copied from .env.example) mean "unset".
   const e = Env.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined && v !== "")));
   const demo = e.MODE === "demo";
+  const usesChain = e.ROLE !== "sim"; // the simulation never talks to Solana (least privilege)
   if (!demo && !e.DATABASE_URL) throw new Error(`MODE=${e.MODE} requires DATABASE_URL (Postgres)`);
-  if (!demo && !e.SOLANA_RPC_URL) throw new Error(`MODE=${e.MODE} requires SOLANA_RPC_URL`);
-  if (!demo && (!e.PLATFORM_TREASURY || !e.AGENT_REWARDS_TREASURY))
-    throw new Error(`MODE=${e.MODE} requires PLATFORM_TREASURY and AGENT_REWARDS_TREASURY`);
+  if (e.ROLE !== "all" && !e.DATABASE_URL) throw new Error(`ROLE=${e.ROLE} requires DATABASE_URL: separate processes coordinate through Postgres`);
+  if (demo && e.ROLE === "indexer") throw new Error("ROLE=indexer is not used in demo mode (the mock chain is in-process)");
+  if (!demo && usesChain && !e.SOLANA_RPC_URL) throw new Error(`MODE=${e.MODE} ROLE=${e.ROLE} requires SOLANA_RPC_URL`);
+  if (!demo && usesChain && (!e.PLATFORM_TREASURY || !e.AGENT_REWARDS_TREASURY))
+    throw new Error(`MODE=${e.MODE} ROLE=${e.ROLE} requires PLATFORM_TREASURY and AGENT_REWARDS_TREASURY`);
   if (e.PLATFORM_TREASURY && e.PLATFORM_TREASURY === e.AGENT_REWARDS_TREASURY)
     throw new Error("PLATFORM_TREASURY and AGENT_REWARDS_TREASURY must be distinct accounts");
 
   const feeRoutingVerified = e.FEE_ROUTING_VERIFIED === "true";
   return {
     mode: e.MODE,
+    role: e.ROLE as Role,
     host: e.HOST,
     port: e.PORT,
     databaseUrl: e.DATABASE_URL ?? null,
@@ -64,6 +85,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     tickMs: e.TICK_MS,
     snapshotEveryTicks: e.SNAPSHOT_EVERY_TICKS,
     simAutostart: e.SIM_AUTOSTART === "true",
+    viewEveryTicks: e.VIEW_EVERY_TICKS,
+    streamRetentionMinutes: e.STREAM_RETENTION_MINUTES,
+    leaderRetryMs: e.LEADER_RETRY_MS,
+    indexerIntervalMs: e.INDEXER_INTERVAL_MS,
     solana: { rpcUrl: e.SOLANA_RPC_URL ?? null, cluster: e.SOLANA_CLUSTER },
     treasuries: {
       platform: e.PLATFORM_TREASURY ?? DEMO_PLATFORM_TREASURY,

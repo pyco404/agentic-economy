@@ -1,5 +1,4 @@
 import type { AgentAction, Community, EconomicEvent, RewardRecord, TaskReceipt, TokenLaunch, TreasuryEntry } from "@agentic-economy/shared";
-import type { LoggedCommand } from "../sim/types.js";
 
 export interface WorldMeta {
   worldId: string;
@@ -54,12 +53,6 @@ export interface Store {
   getWorldMeta(): Promise<WorldMeta | null>;
   /** Insert-once; returns the persisted meta (existing one wins). */
   initWorldMeta(meta: WorldMeta): Promise<WorldMeta>;
-
-  saveSnapshot(tick: number, state: string, hash: string): Promise<void>;
-  loadLatestSnapshot(): Promise<{ tick: number; state: string; hash: string } | null>;
-  appendCommand(c: LoggedCommand): Promise<void>;
-  commandsFrom(tick: number): Promise<LoggedCommand[]>;
-  maxCommandSeq(): Promise<number>;
 
   /** Append sim outputs; rows whose deterministic id already exists are skipped (replay-safe). Returns newly inserted events with seq. */
   appendSimOutputs(o: { events: NewEvent[]; actions: AgentAction[]; receipts: TaskReceipt[]; rewards: RewardRecord[] }): Promise<EconomicEvent[]>;

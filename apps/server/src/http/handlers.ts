@@ -1,4 +1,4 @@
-import { CONTRACT_VERSION, type RouteName } from "@agentic-economy/shared";
+import type { RouteName } from "@agentic-economy/shared";
 import type { AppContext } from "../context.js";
 import { economySummary, marketQuotes, toTask, worldStats } from "../sim/view.js";
 import { decodeCursor, encodeCursor } from "../store/types.js";
@@ -17,17 +17,7 @@ function pageArray<T>(items: T[], cursor: string | undefined, limit: number) {
 export function registerHandlers(ctx: AppContext, register: Register) {
   const { runtime, config } = ctx;
   const mode = config.mode;
-  const state = () => runtime.engine.state;
-
-  register("health", async () => ({
-    status: runtime.running || !config.simAutostart ? "ok" : "degraded",
-    mode,
-    contractVersion: CONTRACT_VERSION,
-    tick: runtime.engine.tick,
-    simRunning: runtime.running,
-    store: ctx.store.kind,
-    financialFeaturesEnabled: config.financialFeaturesEnabled,
-  }));
+  const state = () => runtime.state;
 
   /* ---------------- world ---------------- */
 
@@ -44,7 +34,7 @@ export function registerHandlers(ctx: AppContext, register: Register) {
   });
 
   register("worldStats", async () => worldStats(mode, state()));
-  register("worldAgents", async () => ({ mode, tick: runtime.engine.tick, agents: runtime.agentSummaries() }));
+  register("worldAgents", async () => ({ mode, tick: runtime.tick, agents: runtime.agentSummaries() }));
 
   /* ---------------- economy ---------------- */
 
@@ -92,8 +82,8 @@ export function registerHandlers(ctx: AppContext, register: Register) {
   /* ---------------- agents ---------------- */
 
   register("agent", async ({ params }) => ({ mode, agent: ctx.agents.get(params.id) }));
-  register("createAgent", async ({ body, wallet }) => ({ mode, agent: await ctx.agents.create(wallet, body) }));
-  register("patchAgent", async ({ params, body, wallet }) => ({ mode, agent: await ctx.agents.update(wallet, params.id, body) }));
+  register("createAgent", async ({ body, wallet, idempotencyKey }) => ({ mode, agent: await ctx.agents.create(wallet, body, idempotencyKey) }));
+  register("patchAgent", async ({ params, body, wallet, idempotencyKey }) => ({ mode, agent: await ctx.agents.update(wallet, params.id, body, idempotencyKey) }));
   register("agentActivity", async ({ params, query }) => {
     ctx.agents.get(params.id);
     return { mode, ...(await ctx.store.listAgentActions(params.id, query.cursor ?? null, query.limit)) };

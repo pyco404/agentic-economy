@@ -2,7 +2,6 @@ import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import type { AgentAction, Community, EconomicEvent, RewardRecord, TaskReceipt, TokenLaunch, TreasuryEntry } from "@agentic-economy/shared";
-import type { LoggedCommand } from "../sim/types.js";
 import {
   ConflictError,
   decodeCursor,
@@ -20,34 +19,74 @@ import {
 const MIGRATIONS_DIR = fileURLToPath(new URL("./migrations/", import.meta.url));
 
 /** Apply pending SQL migrations in filename order, each in its own transaction. */
+/** Advisory lock keys (one database per world). */
+export const LOCK_KEYS = { migrate: 4_242_000, sim: 4_242_001, indexer: 4_242_002 } as const;
+
+/** Apply pending SQL migrations in filename order, each in its own transaction, serialized across processes. */
 export async function migrate(pool: pg.Pool): Promise<string[]> {
-  await pool.query("CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
-  const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
-  const applied = new Set((await pool.query<{ name: string }>("SELECT name FROM schema_migrations")).rows.map((r) => r.name));
-  const ran: string[] = [];
-  for (const f of files) {
-    if (applied.has(f)) continue;
-    const sql = await readFile(MIGRATIONS_DIR + f, "utf8");
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      await client.query(sql);
-      await client.query("INSERT INTO schema_migrations (name) VALUES ($1)", [f]);
-      await client.query("COMMIT");
-      ran.push(f);
-    } catch (e) {
-      await client.query("ROLLBACK");
-      throw e;
-    } finally {
-      client.release();
+  const client = await pool.connect();
+  try {
+    await client.query("SELECT pg_advisory_lock($1)", [LOCK_KEYS.migrate]);
+    await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
+    const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
+    const applied = new Set((await client.query<{ name: string }>("SELECT name FROM schema_migrations")).rows.map((r) => r.name));
+    const ran: string[] = [];
+    for (const f of files) {
+      if (applied.has(f)) continue;
+      const sql = await readFile(MIGRATIONS_DIR + f, "utf8");
+      try {
+        await client.query("BEGIN");
+        await client.query(sql);
+        await client.query("INSERT INTO schema_migrations (name) VALUES ($1)", [f]);
+        await client.query("COMMIT");
+        ran.push(f);
+      } catch (e) {
+        await client.query("ROLLBACK");
+        throw e;
+      }
     }
+    return ran;
+  } finally {
+    await client.query("SELECT pg_advisory_unlock($1)", [LOCK_KEYS.migrate]).catch(() => undefined);
+    client.release();
   }
-  return ran;
+}
+
+export async function insertEvents(q: Queryable, events: NewEvent[]): Promise<EconomicEvent[]> {
+  const out: EconomicEvent[] = [];
+  for (const e of events) {
+    const r = await q.query(
+      `INSERT INTO events (id, tick, type, summary, agent_id, building_id, community_id, data, at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING RETURNING seq`,
+      [e.id, e.tick, e.type, e.summary, e.agentId, e.buildingId, e.communityId, JSON.stringify(e.data), e.at],
+    );
+    if (r.rows[0]) out.push({ ...e, seq: Number(r.rows[0].seq) });
+  }
+  return out;
+}
+
+/** Insert one tick's outputs; rows whose deterministic id already exists are skipped (replay-safe). */
+export async function insertSimOutputs(q: Queryable, o: { events: NewEvent[]; actions: AgentAction[]; receipts: TaskReceipt[]; rewards: RewardRecord[] }): Promise<EconomicEvent[]> {
+  const inserted = await insertEvents(q, o.events);
+  for (const a of o.actions)
+    await q.query("INSERT INTO agent_actions (id, agent_id, tick, doc) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING", [a.id, a.agentId, a.tick, JSON.stringify(a)]);
+  for (const r of o.receipts)
+    await q.query("INSERT INTO task_receipts (id, task_id, agent_id, hash, prev_hash, doc) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO NOTHING", [
+      r.id,
+      r.taskId,
+      r.agentId,
+      r.hash,
+      r.prevHash,
+      JSON.stringify(r),
+    ]);
+  for (const r of o.rewards)
+    await q.query("INSERT INTO reward_records (id, epoch, agent_id, doc) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING", [r.id, r.epoch, r.agentId, JSON.stringify(r)]);
+  return inserted;
 }
 
 const isUniqueViolation = (e: unknown) => (e as { code?: string }).code === "23505";
 
-type Queryable = Pick<pg.Pool, "query"> | pg.PoolClient;
+export type Queryable = Pick<pg.Pool, "query"> | pg.PoolClient | pg.Client;
 
 function page<T>(rows: Array<{ seq: string | number; doc: T }>, limit: number): PageResult<T> {
   const more = rows.length > limit;
@@ -58,7 +97,7 @@ function page<T>(rows: Array<{ seq: string | number; doc: T }>, limit: number): 
 export class PostgresStore implements Store {
   readonly kind = "postgres" as const;
 
-  private constructor(private readonly pool: pg.Pool) {}
+  private constructor(readonly pool: pg.Pool) {}
 
   static async connect(databaseUrl: string): Promise<PostgresStore> {
     const pool = new pg.Pool({ connectionString: databaseUrl, max: 10 });
@@ -103,70 +142,8 @@ export class PostgresStore implements Store {
     return (await this.getWorldMeta())!;
   }
 
-  async saveSnapshot(tick: number, state: string, hash: string) {
-    await this.tx(async (c) => {
-      await c.query("INSERT INTO sim_snapshots (tick, state, state_hash) VALUES ($1, $2, $3) ON CONFLICT (tick) DO NOTHING", [tick, state, hash]);
-      // Keep the five most recent snapshots; the command log covers everything after the latest one.
-      await c.query("DELETE FROM sim_snapshots WHERE tick NOT IN (SELECT tick FROM sim_snapshots ORDER BY tick DESC LIMIT 5)");
-    });
-  }
-
-  async loadLatestSnapshot() {
-    const r = await this.pool.query("SELECT tick, state, state_hash FROM sim_snapshots ORDER BY tick DESC LIMIT 1");
-    const row = r.rows[0];
-    return row ? { tick: Number(row.tick), state: row.state as string, hash: row.state_hash as string } : null;
-  }
-
-  async appendCommand(c: LoggedCommand) {
-    try {
-      await this.pool.query("INSERT INTO sim_commands (seq, tick, command) VALUES ($1, $2, $3)", [c.seq, c.tick, JSON.stringify(c.command)]);
-    } catch (e) {
-      if (isUniqueViolation(e)) throw new ConflictError(`command seq ${c.seq} exists`);
-      throw e;
-    }
-  }
-
-  async commandsFrom(tick: number): Promise<LoggedCommand[]> {
-    const r = await this.pool.query("SELECT seq, tick, command FROM sim_commands WHERE tick >= $1 ORDER BY seq", [tick]);
-    return r.rows.map((row) => ({ seq: Number(row.seq), tick: Number(row.tick), command: JSON.parse(row.command as string) }));
-  }
-
-  async maxCommandSeq() {
-    const r = await this.pool.query("SELECT COALESCE(MAX(seq), -1) AS m FROM sim_commands");
-    return Number(r.rows[0].m);
-  }
-
-  private async insertEvents(q: Queryable, events: NewEvent[]): Promise<EconomicEvent[]> {
-    const out: EconomicEvent[] = [];
-    for (const e of events) {
-      const r = await q.query(
-        `INSERT INTO events (id, tick, type, summary, agent_id, building_id, community_id, data, at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING RETURNING seq`,
-        [e.id, e.tick, e.type, e.summary, e.agentId, e.buildingId, e.communityId, JSON.stringify(e.data), e.at],
-      );
-      if (r.rows[0]) out.push({ ...e, seq: Number(r.rows[0].seq) });
-    }
-    return out;
-  }
-
-  async appendSimOutputs(o: { events: NewEvent[]; actions: AgentAction[]; receipts: TaskReceipt[]; rewards: RewardRecord[] }) {
-    return this.tx(async (c) => {
-      const inserted = await this.insertEvents(c, o.events);
-      for (const a of o.actions)
-        await c.query("INSERT INTO agent_actions (id, agent_id, tick, doc) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING", [a.id, a.agentId, a.tick, JSON.stringify(a)]);
-      for (const r of o.receipts)
-        await c.query("INSERT INTO task_receipts (id, task_id, agent_id, hash, prev_hash, doc) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO NOTHING", [
-          r.id,
-          r.taskId,
-          r.agentId,
-          r.hash,
-          r.prevHash,
-          JSON.stringify(r),
-        ]);
-      for (const r of o.rewards)
-        await c.query("INSERT INTO reward_records (id, epoch, agent_id, doc) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING", [r.id, r.epoch, r.agentId, JSON.stringify(r)]);
-      return inserted;
-    });
+  appendSimOutputs(o: { events: NewEvent[]; actions: AgentAction[]; receipts: TaskReceipt[]; rewards: RewardRecord[] }) {
+    return this.tx((c) => insertSimOutputs(c, o));
   }
 
   async listEvents(cursor: string | null, limit: number): Promise<PageResult<EconomicEvent>> {
@@ -317,7 +294,7 @@ export class PostgresStore implements Store {
           community.registeredAt,
         ]);
         await this.insertTreasury(c, entries);
-        await this.insertEvents(c, [event]);
+        await insertEvents(c, [event]);
       });
     } catch (e) {
       if (isUniqueViolation(e)) throw new ConflictError("community already registered");

@@ -1,29 +1,36 @@
 import { AGENT_TREASURY_CREATOR_FEE_BPS, PLATFORM_TREASURY_CREATOR_FEE_BPS } from "@agentic-economy/shared";
 import { sharingConfigPda } from "../chain/pump.js";
 import type { ChainGateway } from "../chain/types.js";
-import type { CityRuntime, Logger } from "../runtime.js";
+import type { Coordinator, Lease } from "../coord/types.js";
+import { publishDurable } from "../roles/stream.js";
+import type { Logger } from "../roles/sim-worker.js";
 import type { Store } from "../store/types.js";
 import type { TreasuryService } from "./treasury.js";
 
 /**
- * Polls the agent-rewards and platform treasuries for new transactions and ingests Pump
- * creator-fee distributions into the append-only ledger, then re-checks pending entries for
- * finality/reversal. Every step is idempotent, so restarts (which reset the in-memory cursors)
- * simply re-read recent history without double-counting.
+ * Polls the agent-rewards and platform treasuries for new transactions and ingests Pump creator-fee
+ * distributions into the append-only ledger, then re-checks pending entries for finality/reversal.
+ *
+ * Double counting is impossible by construction: ledger rows are unique on
+ * (signature, instruction, account, stream, finality) and stream events are keyed by ledger entry id.
+ * The lease only avoids wasted RPC work; restarts (which reset in-memory cursors) simply re-read history.
  */
 export class TreasuryIndexer {
   private cursors = new Map<string, string | null>();
-  private timer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly chain: ChainGateway,
     private readonly store: Store,
     private readonly treasury: TreasuryService,
-    private readonly runtime: CityRuntime,
+    private readonly coord: Coordinator,
     /** [agentRewardsTreasury, platformTreasury] */
     private readonly addresses: string[],
     private readonly log: Logger,
   ) {}
+
+  private publish(entries: Awaited<ReturnType<Store["appendTreasuryEntries"]>>) {
+    return Promise.all(entries.map((e) => publishDurable(this.coord, `treasury:${e.id}`, "treasury.updated", 0, { entry: e })));
+  }
 
   async runOnce(): Promise<number> {
     let inserted = 0;
@@ -35,15 +42,13 @@ export class TreasuryIndexer {
         const tx = await this.chain.getTransaction(sig);
         if (!tx) continue;
         const res = await this.treasury.ingestCreatorFeeDistribution(tx, communities);
-        for (const e of res.inserted) this.runtime.publish("treasury.updated", this.runtime.engine.tick, { entry: e });
+        await this.publish(res.inserted);
         inserted += res.inserted.length;
       }
     }
-    for (const e of await this.treasury.reconcilePending(this.chain)) {
-      this.runtime.publish("treasury.updated", this.runtime.engine.tick, { entry: e });
-      inserted += 1;
-    }
-    return inserted;
+    const reconciled = await this.treasury.reconcilePending(this.chain);
+    await this.publish(reconciled);
+    return inserted + reconciled.length;
   }
 
   /**
@@ -55,7 +60,6 @@ export class TreasuryIndexer {
     for (const c of await this.store.allCommunities()) {
       const r = await this.chain.getFeeRoutingState(c.mint);
       const sc = r.sharingConfig;
-      const pda = sharingConfigPda(c.mint);
       const shares = new Map(sc?.shareholders.map((h) => [h.address, h.shareBps]) ?? []);
       const ok =
         sc !== null &&
@@ -64,11 +68,11 @@ export class TreasuryIndexer {
         sc.shareholders.length === 2 &&
         shares.get(this.addresses[0]!) === AGENT_TREASURY_CREATOR_FEE_BPS &&
         shares.get(this.addresses[1]!) === PLATFORM_TREASURY_CREATOR_FEE_BPS &&
-        r.bondingCurveCreator === pda;
+        r.bondingCurveCreator === sharingConfigPda(c.mint);
       if (ok) continue;
       drifted.push(c.id);
       this.log.warn({ communityId: c.id, mint: c.mint }, "fee routing drift detected");
-      this.runtime.publish("system.notice", this.runtime.engine.tick, {
+      await publishDurable(this.coord, `drift:${c.id}:${new Date().toISOString().slice(0, 13)}`, "system.notice", 0, {
         level: "incident",
         code: "fee_routing_drift",
         message: `Creator-fee routing for ${c.symbol} (${c.mint}) no longer matches the locked 60/40 configuration.`,
@@ -76,17 +80,65 @@ export class TreasuryIndexer {
     }
     return drifted;
   }
+}
 
-  start(intervalMs: number) {
-    let runs = 0;
-    this.timer = setInterval(() => {
-      this.runOnce().catch((err) => this.log.error({ err }, "treasury indexer failed"));
-      if (runs++ % 10 === 0) this.checkRoutingDrift().catch((err) => this.log.error({ err }, "routing drift check failed"));
-    }, intervalMs);
-    this.timer.unref();
+/** Singleton loop around TreasuryIndexer: only the holder of the `indexer` lease does work. */
+export class IndexerWorker {
+  private lease: Lease | null = null;
+  private timer: NodeJS.Timeout | null = null;
+  private running = false;
+  private runs = 0;
+  readonly metrics = { runs: 0, errors: 0, inserted: 0, acquisitions: 0, driftChecks: 0 };
+
+  constructor(
+    private readonly indexer: TreasuryIndexer,
+    private readonly coord: Coordinator,
+    private readonly log: Logger,
+    readonly holder: string,
+  ) {}
+
+  get isActive() {
+    return this.lease !== null && !this.lease.lost;
   }
 
-  stop() {
+  /** One iteration: acquire/verify the lease, then index. Returns false if another instance holds the lease. */
+  async runOnce(): Promise<boolean> {
+    if (this.running) return this.isActive;
+    this.running = true;
+    try {
+      if (!this.isActive) {
+        this.lease = await this.coord.tryAcquireLease("indexer", this.holder);
+        if (!this.lease) return false;
+        this.metrics.acquisitions += 1;
+        this.log.info({ epoch: this.lease.epoch }, "acquired indexer lease");
+      }
+      await this.lease!.heartbeat();
+      this.metrics.inserted += await this.indexer.runOnce();
+      if (this.runs++ % 10 === 0) {
+        this.metrics.driftChecks += 1;
+        await this.indexer.checkRoutingDrift();
+      }
+      this.metrics.runs += 1;
+      return true;
+    } catch (e) {
+      this.metrics.errors += 1;
+      this.log.error({ err: String(e) }, "indexer iteration failed");
+      if (this.lease?.lost) this.lease = null;
+      return this.isActive;
+    } finally {
+      this.running = false;
+    }
+  }
+
+  start(intervalMs: number) {
+    void this.runOnce();
+    this.timer = setInterval(() => void this.runOnce(), intervalMs);
+  }
+
+  async stop() {
     if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+    await this.lease?.release().catch(() => undefined);
+    this.lease = null;
   }
 }

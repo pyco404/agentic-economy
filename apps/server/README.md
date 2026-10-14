@@ -48,6 +48,8 @@ Demo mode with Postgres keeps the world, communities and ledger across restarts.
 | Treasury indexer and drift check | — | every 30 s / ~5 min | every 30 s / ~5 min |
 | Payouts | none (dry-run points) | none | none |
 
+`ROLE` selects what a process does. All roles ship in one image; see [infra/railway/README.md](../../infra/railway/README.md).
+
 | ROLE | Runs | Needs |
 |---|---|---|
 | `all` (default) | API + WebSocket + simulation (+ indexer outside demo) | memory or Postgres |
@@ -123,7 +125,7 @@ States: `draft → awaiting_signature → submitted → confirmed | failed | rec
 - `GET /readyz`: 200 when the role can work (database reachable), otherwise 503. Used by Railway's deploy healthcheck.
 - `GET /metrics`: Prometheus text (ticks, tick time, errors, HTTP and WS counts, agents).
 - Structured JSON logs (pino). SIGINT/SIGTERM take a final snapshot before exit.
-- Deploy: one stateful process per world (the tick loop is single-writer) behind TLS. Postgres with backups. WebSocket upgrade allowed on `/api/v1/ws`. Horizontal read scaling would come later via read replicas and a pub/sub fan-out of the event stream.
+- Deploy: Railway, one image for all roles. See [infra/railway/README.md](../../infra/railway/README.md) for exact service settings, variables, resource estimates and the staged rollout (single `ROLE=all` service, then split `api`/`sim`/`indexer`).
 - `pnpm --filter @agentic-economy/server bundle` produces the self-contained `dist-bundle/` used by the image (`main.mjs`, `migrate.mjs`, `migrations/`).
 
 ## Known limitations / next steps

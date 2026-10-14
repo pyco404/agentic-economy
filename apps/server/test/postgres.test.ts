@@ -4,6 +4,7 @@ import { hashState } from "../src/sim/engine.js";
 import { PostgresStore } from "../src/store/postgres.js";
 import { MockChain } from "../src/chain/mock.js";
 import { launch, login, makeEnv, idem, killSimLeaderBackend } from "./helpers.js";
+import { resetTestSchema } from "./helpers.js";
 
 /**
  * Runs only when TEST_DATABASE_URL points at a disposable database, e.g.
@@ -13,11 +14,7 @@ import { launch, login, makeEnv, idem, killSimLeaderBackend } from "./helpers.js
 const url = process.env.TEST_DATABASE_URL;
 const d = url ? describe : describe.skip;
 
-async function resetSchema() {
-  const pool = new pg.Pool({ connectionString: url });
-  await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
-  await pool.end();
-}
+const resetSchema = () => resetTestSchema(url!);
 
 d("postgres store", () => {
   beforeAll(resetSchema);

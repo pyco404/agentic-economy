@@ -9,16 +9,13 @@ import type { LoggedCommand } from "../src/sim/types.js";
 import { MemoryStore } from "../src/store/memory.js";
 import { PostgresStore } from "../src/store/postgres.js";
 import { idem, killSimLeaderBackend, launch, login, makeEnv, type TestEnv } from "./helpers.js";
+import { resetTestSchema } from "./helpers.js";
 
 const url = process.env.TEST_DATABASE_URL;
 const d = url ? describe : describe.skip;
 const SEED = "test-world";
 
-async function resetSchema() {
-  const pool = new pg.Pool({ connectionString: url });
-  await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
-  await pool.end();
-}
+const resetSchema = () => resetTestSchema(url!);
 
 async function q<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
   const pool = new pg.Pool({ connectionString: url });

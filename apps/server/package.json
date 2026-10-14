@@ -1,0 +1,36 @@
+{
+  "name": "@agentic-economy/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentic Economy backend: HTTP API, WebSocket gateway, deterministic city simulation, launch verification and treasury ledger.",
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "dev": "tsx watch --conditions=@agentic-economy/source src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "db:migrate": "tsx --conditions=@agentic-economy/source src/store/migrate.ts",
+    "contracts:gen": "tsx --conditions=@agentic-economy/source scripts/gen-contracts.ts"
+  },
+  "dependencies": {
+    "@agentic-economy/shared": "workspace:*",
+    "@agentic-economy/world-spec": "workspace:*",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/websocket": "^11.2.0",
+    "@solana/web3.js": "^1.98.4",
+    "bs58": "^6.0.0",
+    "fastify": "^5.6.1",
+    "pg": "^8.16.3",
+    "tweetnacl": "^1.0.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.5",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.20.6",
+    "ws": "^8.18.3",
+    "yaml": "^2.8.1"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "mode": "demo",
+  "tick": 252,
+  "epoch": 1,
+  "creditSupply": {
+    "issued": 600000000,
+    "burned": 77900,
+    "circulating": 599922100,
+    "issuanceCapPerEpoch": 1714000
+  },
+  "production": {
+    "wheat": {
+      "produced": 1948,
+      "consumed": 39,
+      "stock": 2369
+    },
+    "flour": {
+      "produced": 24,
+      "consumed": 30,
+      "stock": 0
+    },
+    "bread": {
+      "produced": 42,
+      "consumed": 57,
+      "stock": 0
+    },
+    "timber": {
+      "produced": 14,
+      "consumed": 0,
+      "stock": 148
+    },
+    "stone": {
+      "produced": 11,
+      "consumed": 0,
+      "stock": 161
+    },
+    "energy": {
+      "produced": 63,
+      "consumed": 28,
+      "stock": 40
+    }
+  },
+  "quotes": [
+    {
+      "resource": "wheat",
+      "price": 959,
+      "bid": 940,
+      "ask": 978,
+      "supply": 2369,
+      "demand": 12,
+      "changePct24h": -2.9
+    },
+    {
+      "resource": "flour",
+      "price": 8370,
+      "bid": 8203,
+      "ask": 8537,
+      "supply": 0,
+      "demand": 14,
+      "changePct24h": 2.8
+    },
+    {
+      "resource": "bread",
+      "price": 17349,
+      "bid": 17002,
+      "ask": 17696,
+      "supply": 0,
+      "demand": 107,
+      "changePct24h": 3
+    },
+    {
+      "resource": "timber",
+      "price": 1420,
+      "bid": 1392,
+      "ask": 1448,
+      "supply": 148,
+      "demand": 22,
+      "changePct24h": -2.2
+    },
+    {
+      "resource": "stone",
+      "price": 1412,
+      "bid": 1384,
+      "ask": 1440,
+      "supply": 161,
+      "demand": 6,
+      "changePct24h": -2.8
+    },
+    {
+      "resource": "energy",
+      "price": 1446,
+      "bid": 1417,
+      "ask": 1475,
+      "supply": 40,
+      "demand": 16,
+      "changePct24h": -1.4
+    }
+  ],
+  "openTasks": 43,
+  "verifiedTasksThisEpoch": 0,
+  "pointsThisEpoch": 0,
+  "rewardMode": "dry_run"
+}

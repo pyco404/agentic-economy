@@ -1,0 +1,90 @@
+{
+  "items": [
+    {
+      "id": "com_yKuqQotcFc6M3v",
+      "name": "Demo Stonewright Co",
+      "symbol": "DSTONE",
+      "description": "DEMO MODE community. Builders keeping the city in good repair.",
+      "imageUri": null,
+      "metadataUri": "https://example.invalid/demo/stonewright.json",
+      "mint": "7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
+      "launchId": "lch_hMg22trdMy0xKs",
+      "launchSignature": "53GLKu4AFcaprzWtSH229ZkfDSHhbQRnyU9NHNSTdM9gH2gk4BphWLLZHs18dcgGP4S52jSDNEfxrEJDMa8dakWp",
+      "creatorWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
+      "feeSharingConfig": "CwZwakDiWct1DdRaTdZfQeW2hXLjTP7hKTKkds4uxAtW",
+      "links": {
+        "pumpFun": "https://pump.fun/coin/7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
+        "explorer": "https://solscan.io/token/7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq?cluster=devnet",
+        "website": null,
+        "twitter": null,
+        "telegram": null
+      },
+      "headquartersBuildingId": "bld_17o92eq",
+      "stats": {
+        "agents": 3,
+        "activeAgents": 3,
+        "verifiedTasks": 7,
+        "prominence": 76
+      },
+      "registeredAt": "2026-10-14T11:35:31.762Z"
+    },
+    {
+      "id": "com_VG5WE9XHuUs72h",
+      "name": "Demo Riverside Guild",
+      "symbol": "DRIVER",
+      "description": "DEMO MODE community. Farmers and haulers along the river.",
+      "imageUri": null,
+      "metadataUri": "https://example.invalid/demo/riverside.json",
+      "mint": "HK2FXvzP2Lx6fLHmkH5cDAHMpwePoJqAZBTay41jKQMM",
+      "launchId": "lch_3VhFiDmBYGXcbm",
+      "launchSignature": "41XhywAhYj5qHhir45rJZTt32AVsa5cmXBczrNmouxQGKcq4dCxHvjJxScHoDo3wER3S5qjMgZ3ErpArtkHP1bXG",
+      "creatorWallet": "3ezh9s34hx7HdfDRoXg27YYMR6KmwgQ4R6Bs5LM194oj",
+      "feeSharingConfig": "44mgbvDBoyu8itbSWerd72nDezAPTskn9MRtRMm9k3Hg",
+      "links": {
+        "pumpFun": "https://pump.fun/coin/HK2FXvzP2Lx6fLHmkH5cDAHMpwePoJqAZBTay41jKQMM",
+        "explorer": "https://solscan.io/token/HK2FXvzP2Lx6fLHmkH5cDAHMpwePoJqAZBTay41jKQMM?cluster=devnet",
+        "website": null,
+        "twitter": null,
+        "telegram": null
+      },
+      "headquartersBuildingId": "bld_123y1l0",
+      "stats": {
+        "agents": 3,
+        "activeAgents": 3,
+        "verifiedTasks": 18,
+        "prominence": 197
+      },
+      "registeredAt": "2026-10-14T11:35:31.744Z"
+    },
+    {
+      "id": "com_LUKKf1U5YwB0L2",
+      "name": "Demo Hearth Bakers",
+      "symbol": "DHEARTH",
+      "description": "DEMO MODE community. Bakers and couriers keeping the Genesis district fed.",
+      "imageUri": null,
+      "metadataUri": "https://example.invalid/demo/hearth.json",
+      "mint": "JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky",
+      "launchId": "lch_1L2H6zamKJXN5n",
+      "launchSignature": "2xpHy24nVD6EbaVGe4Y85dk7tcLrKM1zmgDTvspqouV7nMz9xwe8XKwdnj9qTgvhvhkeX2dXuAr56oxwpmK3h57c",
+      "creatorWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
+      "feeSharingConfig": "7KZe6QgXWqteywtCn1XRwDnCM9u7HmygHNhuHDpZfg46",
+      "links": {
+        "pumpFun": "https://pump.fun/coin/JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky",
+        "explorer": "https://solscan.io/token/JvU9mN1sfXK8eeJqkoVTpbpyrZKsr7LzkTgv52Qj4ky?cluster=devnet",
+        "website": null,
+        "twitter": null,
+        "telegram": null
+      },
+      "headquartersBuildingId": "bld_0k4syq2",
+      "stats": {
+        "agents": 3,
+        "activeAgents": 3,
+        "verifiedTasks": 17,
+        "prominence": 186
+      },
+      "registeredAt": "2026-10-14T11:35:31.620Z"
+    }
+  ],
+  "nextCursor": null,
+  "mode": "demo"
+}

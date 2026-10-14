@@ -1,0 +1,289 @@
+{
+  "mode": "demo",
+  "contractVersion": "0.1.0",
+  "worldId": "world_bp71r8",
+  "seed": "agentic-economy-genesis",
+  "generatorVersion": 1,
+  "size": {
+    "width": 128,
+    "height": 128
+  },
+  "chunkSize": 32,
+  "chunks": [
+    {
+      "cx": 0,
+      "cy": 0
+    },
+    {
+      "cx": 1,
+      "cy": 0
+    },
+    {
+      "cx": 2,
+      "cy": 0
+    },
+    {
+      "cx": 3,
+      "cy": 0
+    },
+    {
+      "cx": 0,
+      "cy": 1
+    },
+    {
+      "cx": 1,
+      "cy": 1
+    },
+    {
+      "cx": 2,
+      "cy": 1
+    },
+    {
+      "cx": 3,
+      "cy": 1
+    },
+    {
+      "cx": 0,
+      "cy": 2
+    },
+    {
+      "cx": 1,
+      "cy": 2
+    },
+    {
+      "cx": 2,
+      "cy": 2
+    },
+    {
+      "cx": 3,
+      "cy": 2
+    },
+    {
+      "cx": 0,
+      "cy": 3
+    },
+    {
+      "cx": 1,
+      "cy": 3
+    },
+    {
+      "cx": 2,
+      "cy": 3
+    },
+    {
+      "cx": 3,
+      "cy": 3
+    }
+  ],
+  "regions": [
+    {
+      "id": "region_agricultural",
+      "name": "Outer Fields",
+      "theme": "agricultural",
+      "bounds": {
+        "minX": 2,
+        "minY": 2,
+        "maxX": 126,
+        "maxY": 124
+      }
+    },
+    {
+      "id": "region_civic",
+      "name": "Civic Core",
+      "theme": "civic",
+      "bounds": {
+        "minX": 41,
+        "minY": 51,
+        "maxX": 56,
+        "maxY": 70
+      }
+    },
+    {
+      "id": "region_industrial",
+      "name": "Riverside Works",
+      "theme": "industrial",
+      "bounds": {
+        "minX": 57,
+        "minY": 9,
+        "maxX": 91,
+        "maxY": 40
+      }
+    },
+    {
+      "id": "region_market",
+      "name": "Market Ring",
+      "theme": "market",
+      "bounds": {
+        "minX": 29,
+        "minY": 41,
+        "maxX": 69,
+        "maxY": 80
+      }
+    },
+    {
+      "id": "region_residential",
+      "name": "Old Town",
+      "theme": "residential",
+      "bounds": {
+        "minX": 9,
+        "minY": 21,
+        "maxX": 87,
+        "maxY": 99
+      }
+    },
+    {
+      "id": "region_waterfront",
+      "name": "East Bank",
+      "theme": "waterfront",
+      "bounds": {
+        "minX": 89,
+        "minY": 30,
+        "maxX": 100,
+        "maxY": 76
+      }
+    }
+  ],
+  "catalog": [
+    {
+      "kind": "house",
+      "label": "House",
+      "description": "Home for simulated residents; drives bread demand.",
+      "profession": null,
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "apartment",
+      "label": "Apartment block",
+      "description": "Dense housing; drives bread demand.",
+      "profession": "property_manager",
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "farm",
+      "label": "Farm",
+      "description": "Grows wheat on surrounding fields.",
+      "profession": "farmer",
+      "inputs": {},
+      "outputs": {
+        "wheat": 2
+      },
+      "cycleTicks": 6
+    },
+    {
+      "kind": "mill",
+      "label": "Mill",
+      "description": "Grinds wheat into flour using energy.",
+      "profession": "manufacturer",
+      "inputs": {
+        "wheat": 3,
+        "energy": 1
+      },
+      "outputs": {
+        "flour": 2
+      },
+      "cycleTicks": 8
+    },
+    {
+      "kind": "bakery",
+      "label": "Bakery",
+      "description": "Bakes bread from flour using energy.",
+      "profession": "manufacturer",
+      "inputs": {
+        "flour": 2,
+        "energy": 1
+      },
+      "outputs": {
+        "bread": 3
+      },
+      "cycleTicks": 8
+    },
+    {
+      "kind": "market",
+      "label": "Market",
+      "description": "Residents buy bread here (demand sink).",
+      "profession": "merchant",
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "warehouse",
+      "label": "Warehouse",
+      "description": "Bulk storage for any goods.",
+      "profession": "logistics_operator",
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "factory",
+      "label": "Workshop factory",
+      "description": "Assembles maintenance kits from timber and stone (consumed by repairs).",
+      "profession": "manufacturer",
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "headquarters",
+      "label": "Community headquarters",
+      "description": "A token community's branded presence in the city.",
+      "profession": "property_manager",
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "town_hall",
+      "label": "Town hall",
+      "description": "Civic center; funds resident wages from controlled City Credit issuance.",
+      "profession": null,
+      "inputs": {},
+      "outputs": {},
+      "cycleTicks": 0
+    },
+    {
+      "kind": "lumber_yard",
+      "label": "Lumber yard",
+      "description": "Produces timber for construction and maintenance.",
+      "profession": "builder",
+      "inputs": {},
+      "outputs": {
+        "timber": 1
+      },
+      "cycleTicks": 10
+    },
+    {
+      "kind": "quarry",
+      "label": "Quarry",
+      "description": "Produces stone for construction and maintenance.",
+      "profession": "builder",
+      "inputs": {},
+      "outputs": {
+        "stone": 1
+      },
+      "cycleTicks": 12
+    },
+    {
+      "kind": "power_station",
+      "label": "Power station",
+      "description": "Generates energy consumed by mills and bakeries.",
+      "profession": "manufacturer",
+      "inputs": {},
+      "outputs": {
+        "energy": 3
+      },
+      "cycleTicks": 6
+    }
+  ],
+  "sim": {
+    "tick": 252,
+    "tickMs": 500,
+    "serverTime": "2026-10-14T11:35:32.270Z",
+    "ticksPerDay": 240
+  }
+}

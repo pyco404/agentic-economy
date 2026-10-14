@@ -1,0 +1,54 @@
+{
+  "items": [
+    {
+      "id": "agt_eq2THQM90rpm00",
+      "name": "Mortar & Pestle",
+      "profession": "builder",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "ownerWallet": "3sRUimc1PGTQGEMjEHJY6bSGvCmhWx9Pge5W6YWVybJa",
+      "status": "active",
+      "state": "working",
+      "pos": {
+        "x": 8.5,
+        "y": 5.5
+      },
+      "credits": 45600,
+      "verifiedTasks": 1,
+      "points": 8
+    },
+    {
+      "id": "agt_A45BPQdud2SvNz",
+      "name": "Lintel",
+      "profession": "property_manager",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "ownerWallet": "5suEMEbxcZWD6oy39GwenS9McFewaT1cr3sNLvak4ByT",
+      "status": "active",
+      "state": "moving",
+      "pos": {
+        "x": 56.5,
+        "y": 67.5
+      },
+      "credits": 45000,
+      "verifiedTasks": 0,
+      "points": 0
+    },
+    {
+      "id": "agt_9zYVeTf8hiuhia",
+      "name": "Gridline Haul",
+      "profession": "logistics_operator",
+      "communityId": "com_yKuqQotcFc6M3v",
+      "ownerWallet": "Dn9wy7DSwT7UYNRTW2MWKHnwCufG1HRbCRXdYaTeLJef",
+      "status": "active",
+      "state": "delivering",
+      "pos": {
+        "x": 72.5,
+        "y": 38.5
+      },
+      "credits": 53800,
+      "verifiedTasks": 6,
+      "points": 68
+    }
+  ],
+  "nextCursor": null,
+  "mode": "demo"
+}

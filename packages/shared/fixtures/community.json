@@ -1,0 +1,31 @@
+{
+  "mode": "demo",
+  "community": {
+    "id": "com_yKuqQotcFc6M3v",
+    "name": "Demo Stonewright Co",
+    "symbol": "DSTONE",
+    "description": "DEMO MODE community. Builders keeping the city in good repair.",
+    "imageUri": null,
+    "metadataUri": "https://example.invalid/demo/stonewright.json",
+    "mint": "7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
+    "launchId": "lch_hMg22trdMy0xKs",
+    "launchSignature": "53GLKu4AFcaprzWtSH229ZkfDSHhbQRnyU9NHNSTdM9gH2gk4BphWLLZHs18dcgGP4S52jSDNEfxrEJDMa8dakWp",
+    "creatorWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
+    "feeSharingConfig": "CwZwakDiWct1DdRaTdZfQeW2hXLjTP7hKTKkds4uxAtW",
+    "links": {
+      "pumpFun": "https://pump.fun/coin/7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq",
+      "explorer": "https://solscan.io/token/7mD4YW1xm7uzZAK6HneWy1QqXUxe3V8jKKLw6DPp8tvq?cluster=devnet",
+      "website": null,
+      "twitter": null,
+      "telegram": null
+    },
+    "headquartersBuildingId": "bld_17o92eq",
+    "stats": {
+      "agents": 3,
+      "activeAgents": 3,
+      "verifiedTasks": 7,
+      "prominence": 76
+    },
+    "registeredAt": "2026-10-14T11:35:31.762Z"
+  }
+}

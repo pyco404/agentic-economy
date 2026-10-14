@@ -1,0 +1,181 @@
+{
+  "mode": "demo",
+  "agent": {
+    "id": "agt_xQr2TBw3Fx9hAY",
+    "name": "Juniper Cart",
+    "profession": "logistics_operator",
+    "communityId": "com_LUKKf1U5YwB0L2",
+    "ownerWallet": "5f69YWidoxRabXTehswyHgLyRi6cUHPYaA6VJCsoQtwL",
+    "status": "active",
+    "state": "delivering",
+    "pos": {
+      "x": 72.5,
+      "y": 44.5
+    },
+    "credits": 53206,
+    "verifiedTasks": 6,
+    "points": 68,
+    "strategy": {
+      "temperament": "cooperative",
+      "risk": "medium",
+      "objective": "reliability",
+      "dailyBudget": 20000,
+      "minMarginBps": 500,
+      "preferredResources": [],
+      "homeBuildingId": null
+    },
+    "permissions": [
+      "claim_tasks",
+      "trade_market",
+      "operate_building",
+      "perform_maintenance"
+    ],
+    "createdTick": 1,
+    "target": {
+      "x": 83,
+      "y": 88
+    },
+    "path": [
+      {
+        "x": 72,
+        "y": 45
+      },
+      {
+        "x": 72,
+        "y": 46
+      },
+      {
+        "x": 72,
+        "y": 47
+      },
+      {
+        "x": 72,
+        "y": 48
+      },
+      {
+        "x": 72,
+        "y": 49
+      },
+      {
+        "x": 72,
+        "y": 50
+      },
+      {
+        "x": 72,
+        "y": 51
+      },
+      {
+        "x": 72,
+        "y": 52
+      },
+      {
+        "x": 72,
+        "y": 53
+      },
+      {
+        "x": 72,
+        "y": 54
+      },
+      {
+        "x": 72,
+        "y": 55
+      },
+      {
+        "x": 72,
+        "y": 56
+      },
+      {
+        "x": 72,
+        "y": 57
+      },
+      {
+        "x": 72,
+        "y": 58
+      },
+      {
+        "x": 72,
+        "y": 59
+      },
+      {
+        "x": 72,
+        "y": 60
+      },
+      {
+        "x": 72,
+        "y": 61
+      },
+      {
+        "x": 72,
+        "y": 62
+      },
+      {
+        "x": 72,
+        "y": 63
+      },
+      {
+        "x": 72,
+        "y": 64
+      },
+      {
+        "x": 72,
+        "y": 65
+      },
+      {
+        "x": 72,
+        "y": 66
+      },
+      {
+        "x": 72,
+        "y": 67
+      },
+      {
+        "x": 72,
+        "y": 68
+      },
+      {
+        "x": 72,
+        "y": 69
+      },
+      {
+        "x": 72,
+        "y": 70
+      },
+      {
+        "x": 72,
+        "y": 71
+      },
+      {
+        "x": 72,
+        "y": 72
+      },
+      {
+        "x": 72,
+        "y": 73
+      },
+      {
+        "x": 72,
+        "y": 74
+      },
+      {
+        "x": 72,
+        "y": 75
+      },
+      {
+        "x": 72,
+        "y": 76
+      }
+    ],
+    "currentTaskId": "tsk_00001e",
+    "operatedBuildingId": null,
+    "cargo": {
+      "energy": 1
+    },
+    "performance": {
+      "creditsEarned": 8206,
+      "creditsSpent": 5000,
+      "tasksCompleted": 6,
+      "tasksFailed": 0,
+      "reliabilityPct": 100
+    }
+  }
+}

@@ -70,3 +70,9 @@
 - 0.05 SOL per launch, 100% to the platform; no launch limits; launcher 0%; 60/40 of creator fees received.
 
 **Workspace note (still open):** the backend now installs with `pnpm install --filter ./apps/server --filter "./packages/*"`, which leaves `apps/web/node_modules` untouched (verified). `pnpm-lock.yaml` still carries a stale `apps/web` importer from the very first root install; the frontend can ignore it while it uses npm.
+
+## Claude Code backend — 2026-10-14 (staging preparation; nothing deployed)
+
+- **Incident affecting the frontend's local backend (resolved):** a backend test helper that simulates a leader crash looked up the simulation's advisory lock across the whole local Postgres cluster instead of only its test database. Between about 13:40 and 13:50 it terminated the simulation-leader connection of the backend running against `agentic_economy_frontend_integration_20261014` roughly seven times. By design that process dropped its in-memory state and re-acquired leadership from its snapshot plus command log, so no data was lost; it was holding the lock again when checked. The helper now refuses any database not named `*_test` and only terminates sessions inside it. Apologies for the disruption. If you saw brief WebSocket gaps or `503`s on agent writes in that window, that was the cause.
+- `POST` routes now authenticate **before** validating the body: unauthenticated calls get `401`, not `400`.
+- Railway staging: empty project `agentic-economy` with environment `staging`, plan reviewed, **not applied**. Staging will run `MODE=demo`. The frontend will need the generated API domain for `VITE_API_URL` / `VITE_WS_URL`, and its origin must be added to `CORS_ORIGINS` / `AUTH_URI`.

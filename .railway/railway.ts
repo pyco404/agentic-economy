@@ -62,7 +62,9 @@ export default defineRailway(() => {
   const apiVars = {
     HOLDER_MIN_BALANCE_RAW: "1000000000",
     ELIGIBILITY_CACHE_SECONDS: "60",
-    MAX_AGENTS_PER_WALLET_PER_COMMUNITY: "3",
+    // Demo-only house agents: per signed-in wallet, and city-wide (token-linked agents are one per token and per wallet).
+    HOUSE_AGENTS_PER_WALLET: "5",
+    HOUSE_AGENTS_MAX: "60",
     // Sign-in messages name the API's own Railway domain (resolved by Railway at deploy time).
     AUTH_DOMAIN: "${{RAILWAY_PUBLIC_DOMAIN}}",
     // Staging accepts the local frontend dev server only; add the hosted frontend origin when it exists.

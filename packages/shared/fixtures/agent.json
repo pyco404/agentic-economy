@@ -1,11 +1,20 @@
 {
   "mode": "demo",
   "agent": {
-    "id": "agt_gpie7GH5F6L1dD",
-    "name": "Juniper Cart",
+    "id": "agt_ReDTBW412EvP1q",
+    "name": "3hxD...JbvN",
+    "displayName": "3hxD...JbvN",
+    "identity": {
+      "kind": "token_linked",
+      "activationId": "act_RuwcezbaGM3U9o",
+      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
+      "activatingWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
+      "launchId": "lch_MTMneC1hCMa2cK",
+      "communityId": "com_eqHiMC8JMR7Mux"
+    },
     "profession": "logistics_operator",
-    "communityId": "com_ZmhY5JAWhBV3Rp",
-    "ownerWallet": "5f69YWidoxRabXTehswyHgLyRi6cUHPYaA6VJCsoQtwL",
+    "communityId": "com_eqHiMC8JMR7Mux",
+    "ownerWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
     "status": "active",
     "state": "delivering",
     "pos": {

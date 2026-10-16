@@ -159,32 +159,26 @@ describe("launchpad", () => {
 });
 
 describe("communities, holder eligibility and agents", () => {
-  it("gates agent activation on on-chain holdings and enforces ownership", async () => {
+  it("reports holder eligibility read-only; holdings never activate or own an agent", async () => {
     const launcher = await login(env.app);
     const { confirm } = await launch(env.app, launcher);
     const communityId = confirm.json().launch.communityId as string;
     const mint = confirm.json().launch.mint as string;
 
     const holder = await login(env.app);
-    const body = { communityId, name: "Test Courier", profession: "logistics_operator" };
-    const denied = await env.app.inject({ method: "POST", url: "/api/v1/agents", headers: { ...holder.auth, ...idem() }, payload: body });
-    expect(denied.statusCode).toBe(403);
-    expect(denied.json().error.code).toBe("not_eligible");
-
     env.chain.setTokenBalance(holder.wallet, mint, 5_000_000_000n);
-    const created = await env.app.inject({ method: "POST", url: "/api/v1/agents", headers: { ...holder.auth, ...idem() }, payload: body });
-    expect(created.statusCode).toBe(201);
-    const agent = created.json().agent;
-    expect(agent.ownerWallet).toBe(holder.wallet);
-    expect(agent.permissions).not.toContain("sign_transactions");
-
     const elig = await env.app.inject({ method: "GET", url: `/api/v1/communities/${communityId}/eligibility`, headers: holder.auth });
     expect(elig.json()).toMatchObject({ eligible: true, source: "mock_chain" });
+    const denied = await env.app.inject({ method: "POST", url: "/api/v1/agents/activate", headers: { ...holder.auth, ...idem() }, payload: { communityId, profession: "merchant" } });
+    expect(denied.json().error.code).toBe("not_token_launcher");
 
-    const stranger = await login(env.app);
-    const hijack = await env.app.inject({ method: "PATCH", url: `/api/v1/agents/${agent.id}`, headers: stranger.auth, payload: { status: "paused" } });
-    expect(hijack.statusCode).toBe(403);
-    const pause = await env.app.inject({ method: "PATCH", url: `/api/v1/agents/${agent.id}`, headers: holder.auth, payload: { status: "paused", strategy: { risk: "low" } } });
+    const created = await env.app.inject({ method: "POST", url: "/api/v1/agents/activate", headers: { ...launcher.auth, ...idem() }, payload: { communityId, profession: "logistics_operator" } });
+    expect(created.statusCode).toBe(201);
+    const agent = created.json().agent;
+    expect(agent.ownerWallet).toBe(launcher.wallet);
+    expect(agent.permissions).not.toContain("sign_transactions");
+
+    const pause = await env.app.inject({ method: "PATCH", url: `/api/v1/agents/${agent.id}`, headers: launcher.auth, payload: { status: "paused", strategy: { risk: "low" } } });
     expect(pause.statusCode).toBe(200);
     expect(pause.json().agent.status).toBe("paused");
     expect(pause.json().agent.strategy.risk).toBe("low");
@@ -195,14 +189,11 @@ describe("communities, holder eligibility and agents", () => {
     expect(r.statusCode).toBe(404);
   });
 
-  it("caps agents per wallet per community", async () => {
-    const launcher = await login(env.app);
-    const { confirm } = await launch(env.app, launcher);
-    const communityId = confirm.json().launch.communityId as string;
-    const codes: number[] = [];
-    for (let i = 0; i < 4; i++)
-      codes.push((await env.app.inject({ method: "POST", url: "/api/v1/agents", headers: { ...launcher.auth, ...idem() }, payload: { communityId, name: `Agent ${i}`, profession: "merchant" } })).statusCode);
-    expect(codes).toEqual([201, 201, 201, 403]);
+  it("retires POST /agents with 410 gone", async () => {
+    const user = await login(env.app);
+    const r = await env.app.inject({ method: "POST", url: "/api/v1/agents", headers: { ...user.auth, ...idem() }, payload: { communityId: "com_whatever1", name: "Old", profession: "merchant" } });
+    expect(r.statusCode).toBe(410);
+    expect(r.json().error.code).toBe("gone");
   });
 });
 
@@ -256,6 +247,10 @@ describe("non-demo safety", () => {
       expect(r.json().error.code).toBe("feature_disabled");
       const demo = await dev.app.inject({ method: "POST", url: "/api/v1/demo/launches/lch_aaaaaaaaaaaa/sign", headers: user.auth, payload: {} });
       expect(demo.statusCode).toBe(404);
+      const houseRoute = await dev.app.inject({ method: "POST", url: "/api/v1/agents/house", headers: { ...user.auth, ...idem() }, payload: { communityId: "com_whatever1", profession: "merchant" } });
+      expect(houseRoute.statusCode).toBe(404);
+      const activation = await dev.app.inject({ method: "POST", url: "/api/v1/agents/activate", headers: { ...user.auth, ...idem() }, payload: { communityId: "com_whatever1", profession: "merchant" } });
+      expect(activation.json().error.code).toBe("feature_disabled");
       const t = (await dev.app.inject({ method: "GET", url: "/api/v1/treasury" })).json();
       expect(t.feeRouting.verified).toBe(false);
       expect(t.payouts.mode).toBe("disabled_dry_run");

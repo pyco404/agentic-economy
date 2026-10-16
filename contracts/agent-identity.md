@@ -1,6 +1,6 @@
 # Agent identity and activation — design record (contract 0.3.0)
 
-Status: **design approved by the owner on 2026-10-16**; contract published for frontend review; backend not yet implemented. Inputs: `apps/web/AGENT_IDENTITY_BACKEND_HANDOFF.md`, backend at `60a2d83`.
+Status: **design approved by the owner on 2026-10-16**; contract 0.3.0 and the demo-safe backend are implemented on `claude/backend`. Migration 003 is **not applied** to any shared environment yet. Inputs: `apps/web/AGENT_IDENTITY_BACKEND_HANDOFF.md`, backend at `60a2d83`.
 
 ## 1. What exists today
 
@@ -51,12 +51,18 @@ One transaction on `POST /agents/activate`:
 
 Transfer, deactivation and re-activation: **rejected** (`unsupported_lifecycle`). Rows are never freed.
 
-## 4. Migration plan (forward-only)
+## 4. Migration and upgrade (forward-only)
 
-- **SQL `003_agent_identity.sql`:** `agent_activations`, `house_names`, `agent_identity_audit` (append-only), immutability triggers. No changes to existing tables.
-- **Sim state v1 → v2:** loading a v1 snapshot runs a pure, deterministic upgrade. Every existing agent becomes `legacy` with a persisted house name, keeps its ID, `name`, ownership history and stats. Old `agent.create` commands in the log still replay exactly; new agents use the new `agent.activate` / `agent.create_house` commands.
-- **Audit:** at upgrade time, one append-only audit row per legacy agent, flagging multiple agents per mint and multiple agents per wallet. Nothing is reassigned or deleted. The audit is exposed read-only for review.
-- Historical events keep their original names and text.
+- **SQL `003_agent_identity.sql`** (additive; no existing table or row changes):
+  - `agent_names`: every display name the API reserves (house and token-linked), one uniqueness domain; `requested_by` only for house agents (quota/audit, never ownership).
+  - `agent_activations`: `UNIQUE(token_mint)`, `UNIQUE(activating_wallet)`, `UNIQUE(agent_id)`, `UNIQUE(display_name)`, foreign keys to the community, launch and the create command's inbox row. Status (`pending`/`active`) is derived from that inbox row, so rows never change.
+  - Both tables are append-only (trigger). Rows are reserved in the same transaction as the create command, under a cluster-wide transaction lock.
+- **Sim state v1 → v2** (`apps/server/src/sim/identity.ts`): when a v1 snapshot is loaded (after its integrity hash is checked) or a v1 view is read, every agent becomes `legacy` with a name derived from its ID, in agent order. Nothing else changes: no RNG, ledger, counter or simulation field. Old `agent.create` commands (from the log, or still queued at deploy) produce legacy agents the same way, so replaying from a v1 snapshot reaches exactly the uninterrupted state (tested).
+- **Name formats are disjoint**, so the two allocators can never collide: legacy `Word_NNNN` (simulation, deterministic), house `Word_NNN` (API, reserved in `agent_names`), token-linked `CMYx...6Wec` (API, reserved in `agent_names`, extended on collision).
+- **Audit before applying:** `pnpm --filter @agentic-economy/server identity:audit -- --api <url>` (or `--database <url>`, read-only transaction) lists every existing agent with its future legacy name and the duplicate wallets, tokens and names. Nothing is reassigned or deleted; duplicates stay `legacy` with their recorded owners.
+- **House agents** have no owner: task receipts and dry-run reward records carry `ownerWallet: null` for them (their points have no beneficiary). Quotas: `HOUSE_AGENTS_PER_WALLET` (default 5) per signed-in requester and `HOUSE_AGENTS_MAX` (default 60) city-wide, plus the per-IP rate limit (`429 rate_limited`).
+- **Eligible mint** = the community's confirmed Agentic Economy launch in the current mode; balances are not consulted. Activation is demo-only (`feature_disabled` elsewhere).
+- Historical events keep their original names and text. Deploying runs pending migrations in Railway's pre-deploy step, so **deploying this branch applies 003**.
 
 ## 5. Approved decisions
 

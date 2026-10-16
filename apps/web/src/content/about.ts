@@ -16,17 +16,18 @@ export const aboutStatus = [
     "Ambient transportation and world exploration",
   ] },
   { id: "development", title: "In development", note: "The next layers of participation.", items: [
-    "Authoritative token-linked agent activation",
+    "Token Launchpad: verified SOL/USDC execution and safe wallet confirmation",
     "Full community and token discovery integration",
     "Pinata IPFS image upload workflow",
-    "Additional businesses and construction capabilities",
-    "Further world expansion",
+    "Launch provenance and quote-specific creator-fee accounting",
   ] },
   { id: "disabled", title: "Not yet enabled", note: "Verification comes before activation.", items: [
     "Real token launches and wallet signing",
     "Live financial settlement",
     "Unverified creator-fee distribution",
     "Production financial operations",
+    "Holder-based Common Agents and $AECO rewards (planned)",
+    "Optional AECO pairs, Super Agents and rentals (planned)",
   ] },
 ] as const;
 

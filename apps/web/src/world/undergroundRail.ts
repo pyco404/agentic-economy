@@ -10,7 +10,9 @@ import type { RailCut } from "./railExcavation";
 
 export const UNDERGROUND_RAIL = { hiddenSeconds: 120, halfLength: 1.3, carriages: 3, spacing: 2.6,
   interiorHeight: 1.5, roof: .25, cover: .3, halfCut: 1.32, halfWorks: 1.6, undergroundLevel: -3 } as const;
+export const URBAN_RAIL = { westEntranceX: 20, eastEntranceX: 148, galleryHalfWidth: 1.6 } as const;
 export interface UndergroundRoute {
+  galleries: { x: number; y: number; z: number; left: number; right: number; leftY: number; rightY: number }[][];
   surface: RailPath; cuts: RailCut[]; west: { x: number; y: number; z: number; distance: number };
   east: { x: number; y: number; z: number; distance: number }; station: number;
   hiddenStart: number; hiddenEnd: number; minCover: number; maxGrade: number; supports: number;
@@ -56,8 +58,9 @@ export function planUndergroundRail(base: RiversidePlan, chunks: ChunkVisual[], 
   const overlaps = (p: Part) => {
     const yaw = p.rotation?.[1] ?? 0, w = Math.abs(Math.cos(yaw)) * p.scale[0] + Math.abs(Math.sin(yaw)) * p.scale[2],
       d = Math.abs(Math.sin(yaw)) * p.scale[0] + Math.abs(Math.cos(yaw)) * p.scale[2];
+    const centerY = p.position[1] + (p.geometry === "shed" ? p.scale[1] / 2 : 0);
     return solids.some((s) => Math.abs(p.position[0] - s.x) < (w + s.width) / 2 + .02 &&
-      Math.abs(p.position[2] - s.z) < (d + s.depth) / 2 + .02 && p.position[1] + p.scale[1] / 2 > s.low && p.position[1] - p.scale[1] / 2 < s.high);
+      Math.abs(p.position[2] - s.z) < (d + s.depth) / 2 + .02 && centerY + p.scale[1] / 2 > s.low && centerY - p.scale[1] / 2 < s.high);
   };
   const sampleGround = (p: THREE.Vector3, yaw = Math.PI / 2) => [-1.6, -.95, 0, .95, 1.6].map((s) => ground(p.x + Math.cos(yaw) * s, p.z - Math.sin(yaw) * s));
   const portalIndex = (start: number, end: number, step: number) => {
@@ -70,17 +73,21 @@ export function planUndergroundRail(base: RiversidePlan, chunks: ChunkVisual[], 
   };
   const westEnd = path.points.findIndex((p) => p.x === -94 && p.z === -7);
   const eastStart = path.points.findIndex((p) => Math.abs(p.x - 274) < .001 && Math.abs(p.z - 1) < .001);
-  const westIndex = portalIndex(0, westEnd + 1, 1), eastIndex = portalIndex(path.points.length - 1, eastStart - 1, -1);
+  const naturalWestIndex = portalIndex(0, westEnd + 1, 1), naturalEastIndex = portalIndex(path.points.length - 1, eastStart - 1, -1);
+  const westIndex = path.points.findIndex((p) => p.x === URBAN_RAIL.westEntranceX && p.z === -7);
+  const eastIndex = path.points.findIndex((p) => p.x === URBAN_RAIL.eastEntranceX && p.z === 1);
   const westPoint = path.points[westIndex]!, eastPoint = path.points[eastIndex]!;
-  if (!westPoint || !eastPoint) return { ...base, path: null, parts: [], report: { ...base.report, mode: "unavailable", issues: ["No sustained tunnel cover."] } };
-  const westernSurface = path.points.slice(0, westIndex + 1), easternSurface = path.points.slice(eastIndex);
+  if (!westPoint || !eastPoint || !path.points[naturalWestIndex] || !path.points[naturalEastIndex] ||
+    !(westIndex < naturalWestIndex && naturalWestIndex < naturalEastIndex && naturalEastIndex < eastIndex))
+    return { ...base, path: null, parts: [], report: { ...base.report, mode: "unavailable", issues: ["No sustained tunnel cover."] } };
+  const westernSurface = path.points.slice(0, naturalWestIndex + 1), easternSurface = path.points.slice(naturalEastIndex);
   for (const line of [westernSurface.filter((p) => p.z < 0), easternSurface]) for (const hit of railConflicts(line, buildings, 1.6)) issues.push(`Parcel obstruction: ${hit.id}`);
   let maxGrade = 0, minCover = Infinity;
   for (let i = 1; i < path.points.length; i++) {
     const p = path.points[i]!, a = path.points[i - 1]!, span = Math.hypot(p.x - a.x, p.z - a.z);
     maxGrade = Math.max(maxGrade, Math.abs(p.y - a.y) / span);
     const yaw = Math.atan2(p.x - a.x, p.z - a.z);
-    const covered = i >= westIndex && i <= eastIndex;
+    const covered = i >= naturalWestIndex && i <= naturalEastIndex;
     if (covered) for (const g of sampleGround(p, yaw)) {
       const cover = (g?.height ?? -Infinity) - p.y - 1.75; minCover = Math.min(minCover, cover);
       if (!g || cover < .3) issues.push(`Insufficient underground cover at ${p.x.toFixed(2)},${p.z.toFixed(2)}`);
@@ -109,8 +116,8 @@ export function planUndergroundRail(base: RiversidePlan, chunks: ChunkVisual[], 
     }
   }
   const cuts: RailCut[] = [];
-  for (const [line, portal, west] of [[westernSurface.filter((p) => p.z === -7), westPoint, true],
-    [easternSurface, eastPoint, false]] as const) {
+  for (const [line, portal, west] of [[path.points.slice(0, naturalWestIndex + 1).filter((p) => p.z === -7), path.points[naturalWestIndex]!, true],
+    [path.points.slice(naturalEastIndex), path.points[naturalEastIndex]!, false]] as const) {
     const cutting = line.filter((p) => sampleGround(p).some((g) => g && p.y - .36 < g.height + .08));
     if (!cutting.length) { issues.push("Missing cutting transition."); continue; }
     cuts.push({ minX: west ? portal.x - .6 : Math.min(...cutting.map((p) => p.x)),
@@ -124,6 +131,48 @@ export function planUndergroundRail(base: RiversidePlan, chunks: ChunkVisual[], 
     if (h > .001) newParts.push({ geometry: "box", color, position: [x, y, z], scale: [w, h, d], rotation: [0, yaw, 0] });
   };
   const p = new THREE.Vector3(), tangent = new THREE.Vector3();
+  const galleries: UndergroundRoute["galleries"] = [];
+  // Real cut-and-cover galleries enclose the long graded approaches. Visible
+  // rail ends at urban entrances; the continuous, gently graded route remains
+  // underneath solid roofs and earth shoulders, never hidden in open terrain.
+  for (const [from, to] of [[westIndex, naturalWestIndex + 8], [naturalEastIndex - 8, eastIndex]]) {
+    const gallery: UndergroundRoute["galleries"][number] = [];
+    for (let i = from!; i < to!; i += 2) {
+      const a = path.points[i]!, b = path.points[Math.min(i + 2, to!)]!;
+      const x = (a.x + b.x) / 2, z = (a.z + b.z) / 2, y = Math.max(a.y, b.y);
+      const length = Math.abs(b.x - a.x) + .012;
+      box("#c4b89d", x, y + .57, z - 1.45, length, 1.86, .28);
+      box("#c4b89d", x, y + .57, z + 1.45, length, 1.86, .28);
+      box("#d4c6aa", x, y + 1.625, z, length, .25, 3.2);
+      box("#c8d0ae", x, y + 1.765, z, length, .03, 3.2);
+      const section = { x, y: y + 1.795, z, left: 1.6, right: 1.6,
+        leftY: y + 1.795, rightY: y + 1.795 };
+      // Only the dry, unobstructed flanks receive earth. This geometry is
+      // checked below against full-height scenery, paving and persisted lots.
+      for (const side of [-1, 1]) {
+        const edgeZ = z + side * 2.9, groundLevel = ground(x, edgeZ);
+        if (!groundLevel || groundLevel.wet) { issues.push(`Gallery bank meets water at ${x},${edgeZ}`); continue; }
+        const h = y + 1.78 - groundLevel.height;
+        if (h > .03) {
+          const bank: Part = { geometry: "shed", color: "#cdd2b2",
+            position: [x, groundLevel.height, edgeZ], scale: [2.6, h, length], rotation: [0, side * Math.PI / 2, 0] };
+          let paving = false;
+          for (let px = x - length / 2; px <= x + length / 2 + .25; px += .25)
+            for (let pz = edgeZ - 1.3; pz <= edgeZ + 1.55; pz += .25) paving ||= !!tileAt(px, pz);
+          if (!paving && !overlaps(bank) && !buildings.some((b) => Math.abs(b.x - x) < (b.width + length) / 2 + .1 &&
+            Math.abs(b.z - edgeZ) < (b.depth + 2.6) / 2 + .1)) {
+            const outerZ = z + side * 4.2, outerGround = ground(x, outerZ);
+            if (outerGround && !outerGround.wet) {
+              if (side < 0) { section.left = 4.2; section.leftY = outerGround.height + .012; }
+              else { section.right = 4.2; section.rightY = outerGround.height + .012; }
+            }
+          }
+        }
+      }
+      gallery.push(section);
+    }
+    galleries.push(gallery);
+  }
   // Render only the connected exposed part, east portal -> city -> west portal.
   // Extend under each roof so rails never terminate visibly at a portal face.
   const surface = railPath([...path.points.slice(eastIndex - 8, -1), ...path.points.slice(0, westIndex + 9)]);
@@ -188,11 +237,13 @@ export function planUndergroundRail(base: RiversidePlan, chunks: ChunkVisual[], 
       Math.abs(b.z - part.position[2]) < (b.depth + depth) / 2 + .02)) issues.push(`Works enter a parcel at ${part.position[0]},${part.position[2]}`);
 
   }
-  const route: UndergroundRoute = { surface, cuts,
+  const route: UndergroundRoute = { surface, cuts, galleries,
     west: { ...westPoint, distance: path.distances[westIndex]! }, east: { ...eastPoint, distance: path.distances[eastIndex]! },
     station: path.distances[stationIndex]!, hiddenStart: path.distances[westIndex]! + 6.5,
     hiddenEnd: path.distances[eastIndex]! - 1.3, minCover, maxGrade, supports: supportCount };
   const report = { ...base.report, issues: [...new Set(issues)], maxGrade, length: path.length,
+    visibleLength: surface.length,
+    previousVisibleLength: railPath([...path.points.slice(naturalEastIndex - 8, -1), ...path.points.slice(0, naturalWestIndex + 9)]).length,
     tunnel: { west: route.west, east: route.east, hiddenSeconds: UNDERGROUND_RAIL.hiddenSeconds, minCover,
       station: { x: 56, z: -5 }, continuous: true, originalDepotPreserved: true, cuts, supports: supportCount } };
   // Fail closed rather than silently restore the exposed old service on a changed world.
@@ -218,8 +269,9 @@ export function undergroundService(time: number, path: RailPath, route: Undergro
   } else if (t < emergesAt + lastCruise) { relative = route.hiddenEnd - route.station + (t - emergesAt) * v; speed = v; }
   else { const left = period - t; relative = path.length - acceleration * left * left / 2; speed = acceleration * left; }
   const unwrapped = route.station + relative, distance = unwrapped % path.length;
+  const emergedDistance = (distance - route.hiddenEnd + path.length) % path.length;
   const state = t >= hiddenAt && t < emergesAt ? "underground" : distance >= route.west.distance - 1.3 && distance < route.hiddenStart
-    ? "entering-tunnel" : distance >= route.hiddenEnd && distance < route.east.distance + 6.5 ? "emerging-tunnel" : "surface";
+    ? "entering-tunnel" : t >= emergesAt && emergedDistance < 7.8 ? "emerging-tunnel" : "surface";
   return { distance, speed, state, period, hiddenAt, emergesAt, hiddenSeconds: UNDERGROUND_RAIL.hiddenSeconds, elapsed: t, dwelling: t < RIVERSIDE_RAIL.dwell };
 }
 export function railCarHidden(distance: number, path: RailPath, route: UndergroundRoute) {

@@ -1,6 +1,7 @@
 import { ArrowRight, ArrowUpRight, Blocks, Box, Building2, Check, Database, Globe2, Leaf,
   LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Users, Workflow } from "lucide-react";
-import type { MouseEvent, ReactNode } from "react";
+import { useEffect, type MouseEvent, type ReactNode } from "react";
+import { AgentClasses, FutureFees, Roadmap, EcosystemFaq } from "./Ecosystem";
 import { aboutConnection, aboutFees, aboutStatus } from "../content/about";
 import { routeUrl, type Page } from "../navigation/routes";
 
@@ -9,6 +10,7 @@ interface Props {
   source: "demo" | "http";
   connected: boolean;
   mode?: string;
+  roadmapRequest?: number;
 }
 const systems = [
   { title: "The World", icon: Building2, text: "A persistent procedural city makes buildings, infrastructure, resources and supported activity visible." },
@@ -18,7 +20,10 @@ const systems = [
   { title: "Solana infrastructure", icon: Network, text: "The integration layer is intended for verified launches, wallet-based identity and supported financial operations. Live actions remain disabled." },
 ] as const;
 
-export function About({ onNavigate, source, connected, mode }: Props) {
+export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 }: Props) {
+  useEffect(() => {
+    if (roadmapRequest) document.getElementById("about-roadmap")?.scrollIntoView({ block: "start" });
+  }, [roadmapRequest]);
   const connection = aboutConnection(source, connected, mode);
   const navigate = (event: MouseEvent<HTMLAnchorElement>, page: Page) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -35,9 +40,9 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       <div className="about-hero-copy">
         <p className="about-kicker"><Leaf size={14} aria-hidden="true" />About Agentic Economy</p>
         <h1 id="about-title">A world<br />that works<span>.</span></h1>
-        <p className="about-deck">Agentic Economy is a shared digital world where autonomous agents, communities, and businesses participate in a living economy. Every action contributes to a city that continues to operate, evolve, and grow.</p>
-        <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}</div>
-        <p className="about-hero-footnote">A Solana-oriented economy in development.<br />Explore the simulation today. Live financial operations are not enabled.</p>
+        <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. Common Agents and a separate, advanced Super-Agent class form the planned next layers of participation.</p>
+        <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}<button className="about-cta" type="button" onClick={() => document.getElementById("about-roadmap")?.scrollIntoView({ block: "start" })}>View Roadmap<ArrowRight size={16} aria-hidden="true" /></button></div>
+        <p className="about-hero-footnote">A World That Works. Powered by the planned $AECO ecosystem token.<br />Explore the simulation today. Live financial operations are not enabled.</p>
       </div>
       <div className="about-world-window" aria-label="A view into the same procedural city behind this page">
         <span className="about-coordinate"><Globe2 size={15} aria-hidden="true" />One living world.<br /><small>Every page belongs to it.</small></span>
@@ -64,26 +69,18 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       <div className="about-truth-note"><ShieldCheck size={19} aria-hidden="true" /><p><strong>Visible motion is not a receipt.</strong> Trains, cars and aircraft are ambient scenery. Visual path interpolation helps agents move between known samples; it does not create work, deliveries or verified transactions.</p></div>
     </section>
 
-    <section id="about-agents" className="about-identities" aria-labelledby="about-agents-title">
-      <div className="about-paper about-identity-intro">{heading("03", "Identity & participation", "Two kinds of citizens.")}
-        <p>Simulation identity and verified wallet identity serve different purposes. They stay distinct throughout the world.</p></div>
-      <div className="about-agent-pair">
-        <div className="about-agent-card about-house"><span className="about-tag"><Blocks size={13} aria-hidden="true" />Simulation participant</span>
-          <div className="about-name-samples" aria-label="Example house-agent names"><span>Fern_108</span><span>Bow_194</span></div>
-          <h3>House-generated agents</h3><p>Created by the city simulation, with unique, stable, readable names. House agents operate without invented blockchain wallets.</p>
-          <div className="about-agent-caption"><Check size={15} aria-hidden="true" />Their work is represented by supported simulation state.</div></div>
-        <div className="about-agent-card about-token"><span className="about-tag"><LockKeyhole size={13} aria-hidden="true" />Activation in development</span>
-          <div className="about-wallet-example"><span>CMYx...6Wec</span><small>Illustrative shortened-wallet format</small></div>
-          <h3>Token-linked agents</h3><p>Designed around <strong>one eligible token, one token-linked agent, one verified activating wallet</strong>. Identity and activation must be verified by the backend.</p>
-          <div className="about-agent-caption"><LockKeyhole size={15} aria-hidden="true" />Real activation is unavailable until implemented and enabled.</div></div>
-      </div>
-      <p className="about-identity-note">Token holdings alone do not establish exclusive agent ownership. No rewards or ownership rights are implied by these example names.</p>
+    <section id="about-agents" className="about-paper" aria-labelledby="about-agents-title">
+      {heading("03", "Planned participation", "Two classes. Different possibilities.")}
+      <AgentClasses />
+      <p className="about-caption">The future model allows several Common-Agent positions and one or more Super-Agent rentals at the same time. These are roadmap entitlements, not enabled production activation.</p>
+      <details className="ecosystem-page-note"><summary>Common-Agent holding example — planned</summary><p>Eligible holdings of $AECO, $DOG, and $CAT could qualify for three Common-Agent positions, subject to at least $20 per qualifying token and the additional AECO holding requirement once finalized. DOG and CAT are illustrative tickers, not verified platform listings.</p></details>
+      <p className="about-identity-note">Today’s house-generated simulation citizens use stable readable names such as Fern_108. They have no invented wallets and are not Super Agents. Holdings alone never establish exclusive agent ownership; future holder-based entitlements are not enabled by token holdings today.</p>
     </section>
 
     <section id="about-communities" className="about-paper about-participation" aria-labelledby="about-participation-title">
       {heading("04", "A shared place to build", "Communities give the world purpose.", "Discovery, launching and participation are connected experiences—not interchangeable claims of verification.")}
       <ol className="about-participation-flow" aria-label="Intended community participation pathway">
-        {["Community", "Platform-launched token", "Verified token-linked agent", "Economic participation"].map((label, i) => <li key={label}><span>0{i + 1}</span><strong>{label}</strong>{i < 3 && <ArrowRight size={15} aria-hidden="true" />}</li>)}
+        {["Community", "Platform-launched token", "Planned Common-Agent position", "Economic participation"].map((label, i) => <li key={label}><span>0{i + 1}</span><strong>{label}</strong>{i < 3 && <ArrowRight size={15} aria-hidden="true" />}</li>)}
       </ol>
       <div className="about-participation-bottom"><p>This is the intended pathway. Only tokens launched through Agentic Economy are eligible for its verified launch directory; externally launched tokens cannot be imported as platform launches. Demo records remain clearly separate. Launching and activation depend on backend readiness and blockchain verification.</p>
         <nav aria-label="Explore participation">{link("communities", "Meet the communities")}{link("explore", "Explore platform tokens")}{link("launchpad", "Visit the Launchpad")}</nav></div>
@@ -93,8 +90,8 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       {heading("05", "A transparent economic model", "Clear rules. Separate streams.", "The intended allocations below describe the product rules. Live settlement and fee sharing remain disabled pending verification.")}
       <div className="about-fee-layout"><div className="about-launch-charge"><span className="about-kicker">Platform token-launch charge</span>
         <div className="about-fee-number">{aboutFees.launchSol}<small>SOL</small></div><strong>100% to Platform Treasury</strong>
-        <p>The platform launch charge is separate from creator fees. No real payment is initiated here.</p></div>
-        <div className="about-creator-allocation"><p className="about-kicker">Target creator-fee allocation</p>
+        <p>The 0.05 SOL launch charge is independent of SOL or USDC pair selection and separate from creator fees. No real payment is initiated here.</p></div>
+        <div className="about-creator-allocation"><p className="about-kicker">Human-launched token · target allocation</p>
           <p>Of the eligible Pump.fun creator-fee portion <strong>actually received and verified</strong>:</p>
           <div className="about-split" aria-label={`${aboutFees.agentPercent}% Agent Rewards Treasury; ${aboutFees.platformPercent}% Platform Treasury`}>
             <div><strong>{aboutFees.agentPercent}<span>%</span></strong><span>Agent Rewards<br />Treasury</span></div>
@@ -102,6 +99,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
           </div>
           <p className="about-fee-exclusions"><strong>{aboutFees.launcherPercent}% to token launchers</strong> from this creator-fee allocation. Protocol and liquidity-provider fees are separate and are not included in this split.</p></div></div>
       <div className="about-truth-note"><Leaf size={20} aria-hidden="true" /><p>Rewards are intended for <strong>verified useful economic activity</strong> under the applicable rules. Holding a token does not promise rewards, automatic returns or guaranteed yields. Unverified fee routing is not presented as operational.</p></div>
+      <FutureFees />
       {link("treasury", "Understand the Treasury")}
     </section>
 
@@ -123,6 +121,9 @@ export function About({ onNavigate, source, connected, mode }: Props) {
         <h3>{group.title}</h3><p>{group.note}</p><ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul></div>)}</div>
       <p className="about-status-context"><Radio size={14} aria-hidden="true" /><strong>{connection.label}.</strong> {connection.detail}</p>
     </section>
+
+    <Roadmap />
+    <EcosystemFaq />
 
     <section className="about-vision" aria-labelledby="about-vision-title"><p className="about-kicker">The direction is shared</p>
       <h2 id="about-vision-title">The economy<br />is the world.</h2><p>We’re building a place where autonomous systems are visible, where communities can participate, and where useful work shapes a shared environment.</p>

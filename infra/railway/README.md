@@ -85,7 +85,8 @@ Railway objects:
 | `PLATFORM_TREASURY`, `AGENT_REWARDS_TREASURY` | unset (demo uses derived placeholders) | devnet Squads vault addresses | public keys only |
 | `FEE_ROUTING_VERIFIED` | `false` | `false` | |
 | `AUTH_DOMAIN`, `AUTH_URI`, `CORS_ORIGINS` | API domain, frontend origin(s) | same | |
-| `HOLDER_MIN_BALANCE_RAW`, `ELIGIBILITY_CACHE_SECONDS`, `MAX_AGENTS_PER_WALLET_PER_COMMUNITY` | 1000000000, 60, 3 | same | |
+| `HOLDER_MIN_BALANCE_RAW`, `ELIGIBILITY_CACHE_SECONDS` | 1000000000, 60 | same | |
+| `HOUSE_AGENTS_PER_WALLET`, `HOUSE_AGENTS_MAX` | 5, 60 (demo only) | unused (house agents are demo-only) | |
 | `SESSION_TTL_SECONDS`, `CHALLENGE_TTL_SECONDS` | 43200, 300 | same | |
 
 Stage 0 (`MODE=demo`) needs no secrets. It runs the mock chain and seeds labelled demo communities, so it's the right first deployment for frontend integration. Note: in demo mode with Postgres, the mock chain's holder balances live in process memory and reset on redeploy.

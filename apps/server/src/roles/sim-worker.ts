@@ -8,6 +8,7 @@ import type { LoggedCommand, TickOutput } from "../sim/types.js";
 import { cellCenter, marketQuotes } from "../sim/view.js";
 import { decorateCommunity, communityBranding } from "../services/community.js";
 import type { Store } from "../store/types.js";
+import { upgradeState } from "../sim/identity.js";
 import { streamDraft } from "./stream.js";
 
 export interface Logger {
@@ -101,8 +102,10 @@ export class SimWorker {
     const rec = await session.loadRecovery();
     let state;
     if (rec.snapshot) {
-      state = JSON.parse(rec.snapshot.state);
-      if (hashState(state) !== rec.snapshot.hash) throw new Error(`snapshot at tick ${rec.snapshot.tick} failed its integrity hash`);
+      const raw = JSON.parse(rec.snapshot.state);
+      // Integrity is checked on the stored form; only then is a v1 snapshot upgraded (pure, deterministic).
+      if (hashState(raw) !== rec.snapshot.hash) throw new Error(`snapshot at tick ${rec.snapshot.tick} failed its integrity hash`);
+      state = upgradeState(raw);
     } else state = createInitialState(this.layout);
     const engine = new SimEngine(state, this.layout);
     const byTick = new Map<number, LoggedCommand[]>();

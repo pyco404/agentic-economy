@@ -130,13 +130,13 @@ d("multi-process coordination (Postgres)", () => {
     expect(confirm.json().launch.status).toBe("confirmed");
     const communityId = confirm.json().launch.communityId as string;
     const headers = { ...user.auth, ...idem() };
-    const body = { communityId, name: "Durable Courier", profession: "logistics_operator" };
-    const first = await api.app.inject({ method: "POST", url: "/api/v1/agents", headers, payload: body });
+    const body = { communityId, profession: "logistics_operator" };
+    const first = await api.app.inject({ method: "POST", url: "/api/v1/agents/activate", headers, payload: body });
     expect(first.statusCode).toBe(201);
     // Same key again (e.g. client retry): same agent, nothing new queued.
-    const retry = await api.app.inject({ method: "POST", url: "/api/v1/agents", headers, payload: body });
+    const retry = await api.app.inject({ method: "POST", url: "/api/v1/agents/activate", headers, payload: body });
     expect(retry.json().agent.id).toBe(first.json().agent.id);
-    expect((await q("SELECT 1 FROM sim_command_inbox WHERE kind = 'agent.create'")).length).toBe(1);
+    expect((await q("SELECT 1 FROM sim_command_inbox WHERE kind = 'agent.activate'")).length).toBe(1);
 
     // HQ placement went through the inbox as well.
     const community = (await api.app.inject({ method: "GET", url: `/api/v1/communities/${communityId}` })).json().community;
@@ -147,7 +147,8 @@ d("multi-process coordination (Postgres)", () => {
     envs.splice(envs.indexOf(api), 1);
     const api2 = track(await pgEnv("api", {}, chain));
     const agent = (await api2.app.inject({ method: "GET", url: `/api/v1/agents/${first.json().agent.id}` })).json().agent;
-    expect(agent.name).toBe("Durable Courier");
+    expect(agent.displayName).toBe(first.json().agent.displayName);
+    expect(agent.identity.kind).toBe("token_linked");
     const ready = await api2.app.inject({ method: "GET", url: "/readyz" });
     expect(ready.statusCode).toBe(200);
     const health = (await api2.app.inject({ method: "GET", url: "/healthz" })).json();

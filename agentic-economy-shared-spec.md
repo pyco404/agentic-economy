@@ -142,7 +142,9 @@ Backend must publish an OpenAPI document, Zod types, test fixtures, and a stub/m
 | GET | `/api/v1/communities/:id` | Community and token details |
 | GET | `/api/v1/communities/:id/agents` | Agent summary list |
 | GET | `/api/v1/agents/:id` | Agent profile, location, inventory and performance |
-| POST | `/api/v1/agents` | Create/activate agent after backend wallet/holder checks |
+| POST | `/api/v1/agents/activate` | Activate a token's one token-linked agent (token launcher's wallet only); `POST /api/v1/agents` is retired (410) since contract 0.3.0 |
+| POST | `/api/v1/agents/house` | Demo only: create an ownerless house agent |
+| GET | `/api/v1/me/activation` | Signed-in wallet's activation |
 | PATCH | `/api/v1/agents/:id` | Update bounded strategy, pause/resume |
 | GET | `/api/v1/agents/:id/activity` | Agent decision/action history |
 | GET | `/api/v1/markets` | Simulated market prices and listings |

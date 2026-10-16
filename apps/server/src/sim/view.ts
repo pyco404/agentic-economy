@@ -45,6 +45,8 @@ export function toAgentSummary(s: SimState, a: AgentSimState): AgentSummary {
   return {
     id: a.id,
     name: a.name,
+    displayName: a.displayName,
+    identity: a.identity,
     profession: a.profession,
     communityId: a.communityId,
     ownerWallet: a.ownerWallet,

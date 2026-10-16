@@ -13,6 +13,7 @@
     "test": "vitest run",
     "db:migrate": "tsx --conditions=@agentic-economy/source src/store/migrate.ts",
     "contracts:gen": "tsx --conditions=@agentic-economy/source scripts/gen-contracts.ts",
+    "identity:audit": "tsx --conditions=@agentic-economy/source scripts/identity-audit.ts",
     "bundle": "node scripts/bundle.mjs"
   },
   "dependencies": {

@@ -3,9 +3,11 @@ import type { MemoryStore } from "../store/memory.js";
 import {
   LeadershipLost,
   type CoordinationListener,
+  type ActivationRecord,
   type Coordinator,
-  type EnqueueGuard,
   type EnqueueResult,
+  type IdentityEnqueueResult,
+  type IdentityReservation,
   type InboxRow,
   type Lease,
   type LeaderSession,
@@ -38,6 +40,9 @@ export class MemoryCoordinator implements Coordinator {
   private holder: string | null = null;
   private snapshots: Snapshot[] = [];
   private log: LoggedCommand[] = [];
+  /** Display-name registry and activation rows (mirrors the `agent_names` / `agent_activations` tables). */
+  private names = new Map<string, { agentId: string; kind: "house" | "token_linked"; requestedBy: string | null }>();
+  private activations: Array<Omit<ActivationRecord, "applied">> = [];
   private inbox: InboxEntry[] = [];
   private stream: Array<StreamRecord & { at: number }> = [];
   private streamKeys = new Set<string>();
@@ -164,24 +169,69 @@ export class MemoryCoordinator implements Coordinator {
 
   /* ---------------- public API ---------------- */
 
-  async enqueueCommand(command: SimCommand, dedupeKey: string | null, guard?: EnqueueGuard): Promise<EnqueueResult | null> {
+  async enqueueCommand(command: SimCommand, dedupeKey: string | null): Promise<EnqueueResult> {
+    return this.insertInbox(command, dedupeKey);
+  }
+
+  private insertInbox(command: SimCommand, dedupeKey: string | null): EnqueueResult {
     if (dedupeKey) {
       const existing = this.inbox.find((r) => r.dedupeKey === dedupeKey);
       if (existing) return { id: existing.id, command: structuredClone(existing.command), existing: true, appliedTick: existing.appliedTick };
     }
-    if (guard && (await this.pendingAgentCreates(guard.wallet, guard.communityId)) >= guard.maxPending) return null;
     const row: InboxEntry = { id: this.inbox.length + 1, dedupeKey, command: structuredClone(command), appliedSeq: null, appliedTick: null };
     this.inbox.push(row);
     return { id: row.id, command: structuredClone(command), existing: false, appliedTick: null };
   }
 
+  private withApplied(a: Omit<ActivationRecord, "applied">): ActivationRecord {
+    return { ...a, applied: this.inbox.find((r) => r.id === a.inboxId)?.appliedSeq != null };
+  }
+
+  // Synchronous body (no awaits): atomic with respect to every other caller in this process.
+  async enqueueIdentityCommand(dedupeKey: string, r: IdentityReservation, build: (displayName: string) => SimCommand): Promise<IdentityEnqueueResult> {
+    const prior = this.inbox.find((x) => x.dedupeKey === dedupeKey);
+    if (prior) {
+      const enqueued = this.insertInbox(prior.command, dedupeKey);
+      const agentId = (prior.command as { agentId: string }).agentId;
+      const a = this.activations.find((x) => x.agentId === agentId);
+      const displayName = [...this.names].find(([, v]) => v.agentId === agentId)![0];
+      return { ok: true, enqueued, displayName, activation: a ? this.withApplied(a) : null };
+    }
+    if (r.kind === "token_linked") {
+      const byWallet = this.activations.find((x) => x.activatingWallet === r.activation.activatingWallet);
+      if (byWallet) return { ok: false, reason: "wallet_taken", activation: this.withApplied(byWallet) };
+      const byMint = this.activations.find((x) => x.tokenMint === r.activation.tokenMint);
+      if (byMint) return { ok: false, reason: "mint_taken", activation: this.withApplied(byMint) };
+    } else {
+      const house = [...this.names.values()].filter((v) => v.kind === "house");
+      if (house.length >= r.maxTotal || house.filter((v) => v.requestedBy === r.requestedBy).length >= r.maxPerRequester) return { ok: false, reason: "quota_reached" };
+    }
+    const displayName = r.nameCandidates.find((n) => !this.names.has(n));
+    if (!displayName) return { ok: false, reason: "names_exhausted" };
+    const enqueued = this.insertInbox(build(displayName), dedupeKey);
+    this.names.set(displayName, { agentId: r.agentId, kind: r.kind, requestedBy: r.kind === "house" ? r.requestedBy : null });
+    let activation: ActivationRecord | null = null;
+    if (r.kind === "token_linked") {
+      const row = { ...r.activation, displayName, inboxId: enqueued.id, requestedAt: new Date().toISOString() };
+      this.activations.push(row);
+      activation = this.withApplied(row);
+    }
+    return { ok: true, enqueued, displayName, activation };
+  }
+
+  async activationByWallet(wallet: string) {
+    const a = this.activations.find((x) => x.activatingWallet === wallet);
+    return a ? this.withApplied(a) : null;
+  }
+
+  async activationByAgent(agentId: string) {
+    const a = this.activations.find((x) => x.agentId === agentId);
+    return a ? this.withApplied(a) : null;
+  }
+
   async inboxStatus(id: number) {
     const r = this.inbox.find((x) => x.id === id);
     return r ? { appliedTick: r.appliedTick } : null;
-  }
-
-  async pendingAgentCreates(wallet: string, communityId: string) {
-    return this.inbox.filter((r) => r.appliedSeq === null && r.command.type === "agent.create" && r.command.ownerWallet === wallet && r.command.communityId === communityId).length;
   }
 
   async appendStream(drafts: StreamDraft[]) {

@@ -1,6 +1,6 @@
 # Agentic Economy — WebSocket Event Contract (protocol v1)
 
-**Owner:** backend (Claude Code). **Contract version:** 0.2.0 (protocol `v` unchanged: 1).
+**Owner:** backend (Claude Code). **Contract version:** 0.3.0 (protocol `v` unchanged: 1).
 **Schemas:** `packages/shared/src/events.ts` (Zod) and the `*Event` components in `contracts/openapi.yaml`.
 **Samples:** `packages/shared/fixtures/ws-events.json` (one real message of each streamed type).
 
@@ -50,6 +50,21 @@ Every server message:
 - Agents move along road, bridge and plaza cells at `speed` cells per tick (2). Interpolate between consecutive `agent.moved` positions over `tickMs`. An agent missing from a tick's batch did not move.
 - `target` is the agent's current destination cell, or null.
 
+### Agent identity (0.3.0)
+
+Every `AgentSummary` (in `world.snapshot` and the HTTP lists) carries `identity` and `displayName`:
+
+| `identity.kind` | Meaning | `displayName` | `ownerWallet` (deprecated) |
+|---|---|---|---|
+| `house` | Created by the city. Never has a wallet. | `syntheticName`, e.g. `Fern_108` | `null` |
+| `token_linked` | Activated by the wallet that launched the token. One per mint, one per wallet. | Shortened `activatingWallet`, e.g. `CMYx...6Wec`; extended only on collision | `activatingWallet` |
+| `legacy` | Created before 0.3.0. Keeps its owner controls; not an activation. | `syntheticName` | `legacyOwnerWallet` |
+
+- Show `displayName`. It is persisted once, unique, and stable across restarts; do not derive names client-side or append IDs.
+- Never infer `token_linked` from `ownerWallet`, holdings or trades. Only `identity.kind` classifies an agent.
+- Historical `summary` text in `activity.created` keeps the names used at the time; use `agentId` for attribution.
+- `activity.created` events of type `agent.activated` carry `data.identityKind` and `data.displayName` from 0.3.0 onwards.
+
 ## Client → server messages
 
 ```jsonc
@@ -76,5 +91,6 @@ Every server message:
 - Every change is recorded in `contracts/integration-notes.md`.
 
 ## Changelog
+- **0.3.0:** agent identity. `AgentSummary` gains `identity` (`house` | `token_linked` | `legacy`) and `displayName`; `ownerWallet` is deprecated and `null` for house agents (removed in 0.4.0). `agent.activated` events carry `identityKind` and `displayName`. Protocol `v` stays 1: the only type change (nullable `ownerWallet`) appears only for house agents created after the upgrade, and was coordinated with the frontend.
 - **0.2.0:** the stream is durable (Postgres-backed). `seq` is global across API replicas and restarts; `resume` replays from storage for the retention window. `community.updated` is emitted. Heartbeat `simRunning` is cluster-wide. New `system.notice` code `state_unavailable`.
 - **0.1.0:** initial protocol.

@@ -34,6 +34,17 @@ import {
   type BuildingVisual,
   type ChunkVisual,
 } from "./layout";
+/** Flush pending orbit/pan inertia before restoring the home pose. Temporarily
+ * disabling damping consumes the accumulated deltas synchronously; normal
+ * gestures retain their original damping and mapping.
+ */
+function finishCameraMotion(controls: OrbitControls) {
+  const damping = controls.enableDamping;
+  controls.enableDamping = false;
+  controls.update();
+  controls.enableDamping = damping;
+}
+
 export interface AgentVisual {
   id: string;
   name: string;
@@ -124,6 +135,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         reset() {
           const r = runtime.current;
           if (r) {
+            finishCameraMotion(r.controls);
             r.focus = r.home.clone();
             r.camera.zoom = r.homeZoom;
             r.camera.position
@@ -460,6 +472,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (e.key === "-") camera.zoom = Math.max(controls.minZoom, camera.zoom / 1.15);
         if (e.key === "Home") {
           e.preventDefault();
+          finishCameraMotion(controls);
           runtime.current!.focus = runtime.current!.home.clone();
           camera.position.copy(controls.target).add(new THREE.Vector3(100, 90, 100).setLength(400 / controls.minZoom));
           camera.zoom = runtime.current!.homeZoom;

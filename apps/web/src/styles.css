@@ -1924,3 +1924,19 @@ th:not(:first-child) {
 .world-stat {
   color: #4b6350;
 }
+/* Shared interaction chrome: keep reading surfaces selectable by default.
+   ui-select-text / data-selectable are explicit opt-ins for copyable content.
+   Keep these exceptions aligned with world/selection.ts. */
+:where(.ui-no-select, .topbar, .world-main, .global-world-layer,
+  .mobile-navigation-layer, .app button, .app nav, .app select) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+:where(.ui-select-text, [data-selectable], input, textarea,
+  [contenteditable]:not([contenteditable="false"]), pre, code, .mint,
+  .agent-identity-value, .detail-list),
+:where(.ui-select-text, [data-selectable], [contenteditable]:not([contenteditable="false"]),
+  pre, code, .mint, .agent-identity-value, .detail-list) * {
+  -webkit-user-select: text;
+  user-select: text;
+}

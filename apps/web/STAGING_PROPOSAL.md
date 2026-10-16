@@ -1,95 +1,95 @@
-# Frontend demo staging proposal — not applied
+# Railway frontend staging configuration and Claude handoff
 
-Prepared 2026-10-16 (Africa/Lagos). No Railway service, deployment, domain, variable, Dockerfile, Caddyfile or backend configuration has been created or changed. This is the reviewable handoff for Claude and the project owner.
+Prepared 2026-10-16 (Africa/Lagos). The official domain is `useaeco.xyz`. All application hosting stays on Railway; Vercel handles registration/DNS only. Production configuration and financial operations remain review-only.
 
-## Recommended topology
+## Prepared frontend files
 
-Add a separate static frontend service, provisionally `agentic-economy-web`, in the existing project's **staging** environment. Keep Claude's API/simulation/Postgres topology unchanged. Source the frontend from the approved `codex/frontend` commit. The backend deploy branch/revision remains Claude's decision; confirm both releases use compatible shared contracts before connecting them.
+- `Dockerfile`: Node `24.13.0-slim`, pnpm `11.5.1`, frozen frontend/shared install, validated public build arguments, Vite production build, Caddy `2.11.7-alpine` runtime as UID/GID 65532.
+- `Dockerfile.dockerignore`: allowlists frontend/shared inputs; excludes backend, programs, infrastructure, credentials, local environment files, dependencies, generated artifacts and screenshots.
+- `Caddyfile`: listens on `PORT` (8080 fallback), `/healthz`, SPA fallback, asset caching, explicit API-path isolation, and the production `www` redirect. Railway terminates HTTPS.
+- `scripts/validate-hosting-env.mjs` and `scripts/hosting.test.mjs`: reject offline fixture mode, insecure/private endpoints, embedded credentials and incorrect API/WSS pairing.
+- `scripts/check-static-host.mjs`: tests a real static server's health, routes, cache behavior, missing resources and applicable redirect behavior.
+- `scripts/check-hosting-browser.mjs`: validates a compiled app through an actual browser; public checks require demo API data, WSS, persistent rendering and no write calls. Explicit local fixtures cannot certify public staging.
+- `DNS_INSTRUCTIONS.md`: exact ownership map, record specifications and staging-first DNS sequence.
 
-Use a Node 24 build stage and a Caddy runtime serving only `apps/web/dist`. Railway's React guide recommends Caddy for built React assets and its monorepo guide describes separate frontend/backend services:
+The prior proposal is now implemented as local frontend configuration. No Railway service/domain/variable or Vercel DNS mutation was made while preparing these files. No Vercel frontend deployment is part of this plan.
+
+## Claude-owned service settings
+
+The inspected staging inventory has API and PostgreSQL but no frontend service. The user confirmed that it has not been provisioned and instructed Codex to prepare this handoff for Claude. Claude owns Railway infrastructure. Provision a dedicated `agentic-economy-web` instance **only in staging**; provide its service ID and generated domain to Codex for frontend deployment/verification. Do not reuse the existing failed production service or change backend IaC ownership through a broad apply.
+
+| Setting | Required staging value |
+| --- | --- |
+| Project | `agentic-economy`, ID `c0003363-55ab-497b-a994-a1d07002b87d` |
+| Environment | `staging`, ID `120cbd41-56b8-446d-b9d5-9db71cfc580a` |
+| Service | New frontend service; proposed `agentic-economy-web` |
+| Source branch | Approved `codex/frontend` commit; no direct push to `main` |
+| Build context / root | Repository root, not `apps/web` alone |
+| Builder / Dockerfile | Dockerfile, `apps/web/Dockerfile` |
+| Watch paths | `apps/web/**`, `packages/shared/**`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json` |
+| Runtime command | Docker image default Caddy command; no backend migration or Node server command |
+| Health / timeout | `/healthz`, 120 seconds |
+| Runtime port | 8080, or Railway-injected `PORT`; domain target must match |
+| Replicas / storage | One frontend replica initially; no volume |
+| Planned custom domain | `staging.useaeco.xyz` |
+| Public networking | Railway generated domain for initial checks; assigned hostname must be recorded, never guessed |
+
+Do not use the root `build` script: it currently builds backend/shared packages. The Dockerfile uses `pnpm --filter @agentic-economy/web build`. Existing workspace lock/manifests stay unchanged. The shared schemas are copied as build inputs because the frontend imports their source. No backend code executes in the frontend runtime.
+
+Docker is not installed locally. The matching pinned Caddy binary was verified against both official release checksums and its SHA-256 asset digest, and its actual configuration was tested locally. A separate clean directory passed the frozen install and production build with only frontend/shared inputs and the planned custom API/WSS URLs. The produced bundle contains both expected public URLs; local Caddy health/route/cache/redirect checks passed. Hosting-environment tests (3), typecheck, lint and 93 frontend unit tests passed. A real browser also passed local compiled-bundle deep-link refresh and persistent-scene checks behind Caddy using explicit fixtures; this local fixture check is not public API/CORS certification. This does not claim a Docker image or Railway deployment has already passed.
+
+## Frontend public build variables
+
+| Variable | Final staging target | Temporary bootstrap alternative |
+| --- | --- | --- |
+| `VITE_DATA_MODE` | `api` | `api` |
+| `VITE_API_URL` | `https://api-staging.useaeco.xyz` | `https://agentic-economy-staging.up.railway.app` |
+| `VITE_WS_URL` | `wss://api-staging.useaeco.xyz/api/v1/ws` | `wss://agentic-economy-staging.up.railway.app/api/v1/ws` |
+
+Use the bootstrap pair only while custom API DNS/certificates are pending, then rebuild with the final pair. API base must have no `/api/v1` suffix. These `VITE_*` values must reach Docker build arguments before Vite runs; changing only runtime variables does not update a built bundle. The Dockerfile fixes `VITE_DATA_MODE=api` and rejects missing/bad public URLs instead of shipping localhost defaults.
+
+`api` means authoritative HTTP/WebSocket data, not production financial mode. Backend `MODE=demo` controls labelled simulation/mock-chain records. The current wallet/signing/real launch/payment/payout controls remain disabled. No browser token, database URL, Pinata JWT, signing material or RPC secret belongs in frontend variables or image layers.
+
+## Backend/CORS/auth handshake — Claude
+
+| Backend setting | Proposed staging value |
+| --- | --- |
+| `MODE` | `demo` |
+| `FEE_ROUTING_VERIFIED` | `false` |
+| `CORS_ORIGINS` | `https://staging.useaeco.xyz`, plus the actual generated frontend origin temporarily if needed for initial verification |
+| `AUTH_URI` | `https://staging.useaeco.xyz` |
+| `AUTH_DOMAIN` | Proposed `staging.useaeco.xyz` for the user-facing sign-in domain; Claude must confirm the intended challenge-domain binding before changing it |
+
+The server currently interpolates configured `AUTH_DOMAIN`/`AUTH_URI` into the signed challenge; the frontend does not implement signing. Earlier backend notes used the generated API hostname for `AUTH_DOMAIN`. The new planned frontend hostname is a proposal for Claude to review, not an unannounced contract change. Preserve bearer-session authentication on writes and the public read-stream WebSocket protocol. Do not enable wallet activation/signing to validate hosting.
+
+Current CORS methods are GET/POST/PATCH/OPTIONS; allowed headers are Authorization, Content-Type, Idempotency-Key. Exact frontend origin must pass preflight before end-to-end sign-off. Localhost is a development origin, not the public staging origin. No broad `*` origin is proposed.
+
+Claude should register `api-staging.useaeco.xyz` on the staging API, provide its Railway DNS target/TXT verification, confirm backend release and readiness, and keep PostgreSQL persistent. Follow the existing topology: demo currently runs ROLE=all; split API/simulation/indexer services are Claude's infrastructure decision. Do not create a second simulation leader or enable the chain indexer in demo. Production uses a separate environment/database and remains unmodified.
+
+## Existing public-backend checks
+
+The user-reported generated backend returned HTTP 200 for readiness, health, bootstrap and world stats. Health reported demo mode, PostgreSQL, a running simulation and financial features disabled. Public WSS returned a version-1 join snapshot.
+
+A full-dashboard Node adapter probe timed out connecting to port 443, including an environment-proxy retry; the separate successful HTTPS checks used Python. The cause is not established. Repeat the entire browser data journey after the actual staging frontend is deployed and its exact origin is authorized. Endpoint health alone is not full staging validation.
+
+## Staging deployment and acceptance sequence
+
+1. Claude provisions the dedicated staging frontend service and confirms frontend/API custom-domain records and backend CORS/auth configuration. Codex owns the frontend build files; no backend source/config changes are made by Codex.
+2. Deploy the approved frontend commit to that exact service/environment. Use the generated API URL pair initially if custom API DNS is not ready. Record the build/deployment IDs and actual generated frontend domain. A pending DNS record must not be disguised as a completed custom-domain deployment.
+3. Apply reviewed staging-only DNS records in Vercel after login, then wait for Railway verification and HTTPS certificates. Keep apex, www and production API records untouched. See `DNS_INSTRUCTIONS.md`.
+4. Once custom API is healthy, rebuild with the final API/WSS pair and verify `https://staging.useaeco.xyz`.
+5. Run `node scripts/check-static-host.mjs https://staging.useaeco.xyz` and `node scripts/check-hosting-browser.mjs https://staging.useaeco.xyz`; inspect route refreshes, cache headers, demo mode and disabled wallet controls.
+6. Verify browser CORS, real bootstrap/chunks/communities/agents, live WSS events, disconnect/replay, one persistent scene/socket through routes, desktop/mobile layout, and the complete railway cycle. Coordinate any API restart with Claude.
+7. Confirm demo labels, disabled financial controls, backend financial features disabled, and rejection of unauthenticated write calls. No real launch, payment, mainnet or treasury-signing test is permitted.
+8. Report staging results and exact DNS changes for production review. Do not deploy production or modify its DNS/financial configuration without separate approval.
+
+## Pending coordination/access
+
+At inspection time the frontend service ID and assigned Railway custom-domain record values were unavailable. Vercel CLI reported that a fresh `vercel login` is required; DNS delegation itself was confirmed. The existing failed production service remains untouched. These conditions are recorded rather than bypassing the ownership boundary or claiming a deployment succeeded.
+
+## Sources
 
 - https://docs.railway.com/guides/react
 - https://docs.railway.com/guides/deploying-a-monorepo
-- https://docs.railway.com/guides/spa-routing-configuration
-
-This is an application-specific proposal based on those guides, not a claim that a deployment has been tested. Runtime image tags/digests should be pinned when the concrete Dockerfile is reviewed.
-
-## Build and runtime settings to review
-
-| Setting | Proposal |
-| --- | --- |
-| Environment | `staging`; keep production untouched |
-| Source | This repository, `codex/frontend`, approved commit |
-| Build context / root | Repository root, because frontend imports `packages/shared/src` |
-| Proposed Dockerfile path | `apps/web/Dockerfile`; does not exist yet |
-| Node | 24 in build stage |
-| Package manager | `pnpm@11.5.1`, matching the current root `packageManager` |
-| Install | `pnpm install --frozen-lockfile` at repository root |
-| Build | `pnpm --filter @agentic-economy/web build` |
-| Output | `apps/web/dist` |
-| Runtime | Caddy, listening on Railway's injected `PORT`, all interfaces |
-| TLS | Railway public edge terminates TLS; Caddy serves internal HTTP |
-| SPA routing | Existing file first, then `index.html`; direct secondary-route refresh must work |
-| Frontend health check | Proposed `/healthz` response from Caddy; not backend readiness |
-| Assets | Hashed bundles may be cached immutably; HTML must revalidate |
-| Watch paths | `apps/web/**`, `packages/shared/**`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml` |
-| Persistent volume | None for the static frontend |
-
-The root `pnpm-lock.yaml` already includes the web importer. The root `build` script currently targets backend/shared packages, so use the explicit web build command. Do not set the Railway root directory to only `apps/web`: the shared-source import would be outside the uploaded build context. Do not change package managers or lockfiles as part of this proposal. A clean, frozen container build still needs validation after the deployment files are approved.
-
-The future Dockerfile must pass public `VITE_*` values into the **build** stage before Vite runs. Setting them only on the final Caddy container will not change an existing JavaScript bundle. Runtime should receive compiled assets, not source dependencies, browser-test artifacts, `.env` files or credentials. Do not serve through Vite's development or preview server.
-
-## Exact domain handshake with Claude — pending
-
-The user supplied the reported backend domain `agentic-economy-staging.up.railway.app`. Read-only checks on 2026-10-16 returned HTTP 200 for `/readyz`, `/healthz`, `/api/v1/world/bootstrap` and `/api/v1/world/stats`. Health reported `MODE=demo`, PostgreSQL persistence, a running simulation and `financialFeaturesEnabled=false`. The public WSS endpoint also returned a version-1 `world.snapshot` with reason `join`. These checks establish present connectivity, not frontend-origin CORS approval. No frontend public domain has been confirmed; that placeholder is deliberately not a deployable value.
-
-An additional full-dashboard probe using the frontend's `HttpAdapter.load()` from Node timed out connecting to port 443, including a retry with Node's supported environment-proxy option. The separate HTTPS checks used Python; WSS used Node's native client. The differing transport results do not establish the cause. Full staging dashboard access and schema compatibility remain unverified by that probe. Repeat the complete HTTP/WSS journey from the actual frontend browser origin before deployment sign-off; do not treat endpoint health alone as end-to-end validation.
-
-| Owner | Variable | Required value |
-| --- | --- | --- |
-| Frontend build | `VITE_DATA_MODE` | `api` |
-| Frontend build | `VITE_API_URL` | `https://agentic-economy-staging.up.railway.app`; no `/api/v1` suffix |
-| Frontend build | `VITE_WS_URL` | `wss://agentic-economy-staging.up.railway.app/api/v1/ws` |
-| Backend / Claude | `MODE` | `demo` |
-| Backend / Claude | `FEE_ROUTING_VERIFIED` | `false` |
-| Backend / Claude | `CORS_ORIGINS` | Exact `https://<confirmed-frontend-host>` origin, without a trailing slash; retain other origins only if deliberately needed |
-| Backend / Claude | `AUTH_URI` | Confirmed frontend URI, per existing backend handoff |
-| Backend / Claude | `AUTH_DOMAIN` | `agentic-economy-staging.up.railway.app` per existing backend handoff; Claude must confirm the challenge-domain binding |
-
-`api` selects the authoritative HTTP/WebSocket adapter; it does **not** enable production financial mode. Backend `MODE=demo` supplies labelled simulation/mock-chain records. `VITE_DATA_MODE=demo` instead selects offline frontend fixtures and would fail the intended live staging integration.
-
-The browser must reach public HTTPS/WSS endpoints, not `localhost`, a Railway private hostname or an HTTP endpoint embedded in an HTTPS page. The API base excludes `/api/v1` because canonical route paths already include it. The WebSocket URL includes the full `/api/v1/ws` path. If `VITE_WS_URL` is omitted, the current adapter derives that path and upgrades HTTPS to WSS; explicitly setting it makes staging review clearer.
-
-Claude owns backend CORS/auth configuration. Current CORS permits `GET`, `POST`, `PATCH`, `OPTIONS` and headers `Authorization`, `Content-Type`, `Idempotency-Key`. Confirm browser preflight succeeds for the exact frontend origin. Preserve authentication on write endpoints. The current WebSocket contract is a public read stream; do not add session tokens to its URL or introduce a conflicting authentication protocol.
-
-## Authentication and demo restrictions
-
-Keep wallet connection/signing, token-linked activation, live token launches, payments and payouts disabled. Current frontend HTTP requests support an optional bearer-token provider, but the application has no connected wallet/session UI. Do not inject a shared session or admin token into `VITE_*`, JavaScript, local storage or a public config response. No frontend session secret is required for public read-only demo staging.
-
-Existing backend challenge/verify endpoints remain authoritative if authentication is implemented later. That is separate reviewed work; it must not bypass verified ownership or the one-token/one-agent/one-activating-wallet contract. Do not change fees, reward splits or economic rules for deployment. Pinata JWT, database URL, signing material and RPC secrets remain backend-only and are not needed by the static frontend.
-
-Offline fixtures remain available only through the existing explicit, clearly labelled fallback. A staging backend outage must remain an error rather than silently showing fixture economic activity.
-
-## Coordination message for Claude
-
-Please confirm, before applying frontend staging:
-
-1. Actual staging API HTTPS host, `/api/v1/ws` public upgrade support, backend release commit and readiness URL.
-2. Chosen frontend public origin; add that exact origin to `CORS_ORIGINS` and confirm `AUTH_URI`/`AUTH_DOMAIN` against the existing challenge contract.
-3. Backend remains `MODE=demo`, `FEE_ROUTING_VERIFIED=false`, with PostgreSQL persistence and a working simulation leader. Real launches/payments remain unavailable.
-4. Public world/chunk/community/agent endpoints remain readable without wallet authentication. Authenticated write endpoints still reject missing sessions.
-5. A coordinated API restart window for staging replay testing; frontend work must not interrupt Claude's process or change its source/configuration.
-
-This file is the prepared handoff. No message has been sent to a separate Claude session, and no backend changes are claimed. Await the frontend domain decision, Claude confirmation and owner review before adding deployment files or applying Railway settings. The frontend domain must be obtained from the proposed Railway frontend service, then supplied to Claude; do not invent it or use localhost as its public origin.
-
-## Acceptance after deployment is approved
-
-- Clean build from the chosen commit with the frozen workspace lockfile; inspect the resulting bundle for correct public API/WSS values and absence of credentials/localhost defaults.
-- Load `/`, refresh every secondary direct URL, close/reopen overlays, and verify one persistent canvas and socket through route changes.
-- Confirm CORS preflight, bootstrap/chunks/communities/agents and real demo events over WSS. Confirm no mixed-content errors.
-- Force a browser disconnect/reconnect and, with Claude's coordination, restart the API; confirm durable replay and unchanged persisted world identities.
-- Verify desktop/mobile camera, UI scrolling, naming and full underground train cycle. Development-only review hooks must not be enabled in the production bundle.
-- Verify demo labelling and disabled financial controls. Unauthenticated write calls must remain rejected by the backend.
-- Frontend `/healthz` and backend `/readyz` must both pass; they test different services. Confirm backend health reports demo mode and financial features disabled.
-
-Once this proposal is accepted, prepare separate one-file commits for the concrete Dockerfile, Caddyfile, build-context exclusions and deployment smoke tests. No Railway changes are authorized by this document itself.
+- https://docs.railway.com/networking/domains/working-with-domains
+- https://vercel.com/docs/domains/managing-dns-records

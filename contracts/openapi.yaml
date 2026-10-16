@@ -5348,7 +5348,9 @@ components:
         agentId:
           $ref: "#/components/schemas/AgentId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         points:
           type: integer
           minimum: 0
@@ -5389,7 +5391,9 @@ components:
         agentId:
           $ref: "#/components/schemas/AgentId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         points:
           type: integer
           minimum: 0
@@ -5719,7 +5723,9 @@ components:
         agentId:
           $ref: "#/components/schemas/AgentId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         kind:
           $ref: "#/components/schemas/TaskKind"
         claimedTick:
@@ -5825,7 +5831,9 @@ components:
         agentId:
           $ref: "#/components/schemas/AgentId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         kind:
           $ref: "#/components/schemas/TaskKind"
         claimedTick:

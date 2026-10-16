@@ -106,7 +106,10 @@ export function planAmbient(chunks: ChunkVisual[], frontier: FrontierData, netwo
 type ActorKind = "train" | "car" | "plane" | "helicopter" | "balloon";
 export function createAmbientScene(plan: ReturnType<typeof planAmbient>, library: GeometryLibrary) {
   const group = new THREE.Group();
-  if (AMBIENT.train.enabled && plan.railway) group.add(createRiversideScene(plan.railway, library));
+  if (AMBIENT.train.enabled && plan.railway) group.add(createRiversideScene(plan.railway, library, {
+    minX: plan.center.x - plan.width / 2, maxX: plan.center.x + plan.width / 2,
+    minZ: plan.center.z - plan.depth / 2, maxZ: plan.center.z + plan.depth / 2,
+  }));
   const moving = new THREE.Group(); group.add(moving);
   const actors: { kind: ActorKind; index: number; path?: AmbientPath; phase: number; speed: number; pose: THREE.Object3D;
     delay: number; initialized: boolean; hidden: boolean }[] = [];

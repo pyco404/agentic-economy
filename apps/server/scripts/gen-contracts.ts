@@ -90,10 +90,15 @@ function buildOpenApi() {
       ...(def.body ? { requestBody: { required: true, content: { "application/json": { schema: refOrInline(def.body, "input") } } } } : {}),
       ...(def.auth ? { security: [{ walletSession: [] }] } : {}),
       ...(def.demoOnly ? { "x-demo-only": true, description: "Only registered when MODE=demo. Never available on devnet/production." } : {}),
-      responses: {
-        [String(def.successStatus ?? 200)]: { description: "OK", content: { "application/json": { schema: refOrInline(def.response, "output") } } },
-        default: { description: "Error", content: { "application/json": { schema: { $ref: "#/components/schemas/ApiError" } } } },
-      },
+      ...(def.retired
+        ? { deprecated: true, description: `Retired in ${def.retired.since}: always 410 \`gone\`. Use ${def.retired.replacements.join(" or ")}.` }
+        : {}),
+      responses: def.retired
+        ? { "410": { description: "Gone", content: { "application/json": { schema: { $ref: "#/components/schemas/ApiError" } } } } }
+        : {
+            [String(def.successStatus ?? 200)]: { description: "OK", content: { "application/json": { schema: refOrInline(def.response, "output") } } },
+            default: { description: "Error", content: { "application/json": { schema: { $ref: "#/components/schemas/ApiError" } } } },
+          },
     };
     paths[path] = { ...((paths[path] as Json) ?? {}), [def.method]: op };
   }

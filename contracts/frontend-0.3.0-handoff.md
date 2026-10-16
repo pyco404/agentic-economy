@@ -2,6 +2,13 @@
 
 Written 2026-10-16. Design record: `contracts/agent-identity.md`. Schemas: `packages/shared/src/identity.ts`, `agents.ts`, `api.ts`. OpenAPI: `contracts/openapi.yaml` (0.3.0). Events: `contracts/events.md`.
 
+## Update 2026-10-16 (approved plan)
+
+- **Staging frontend auto-deploy is suspended** (its Railway trigger on `codex/frontend` was removed). You can push 0.3.0 frontend commits to `codex/frontend` without breaking https://staging.useaeco.xyz, which keeps serving `a077ad9`. Staging is redeployed deliberately during the rollout (`infra/railway/staging-0.3.0-rollout.md`).
+- **Production no longer auto-deploys from `main`.**
+- **Incident (resolved, my mistake):** at about 10:08 local, a pattern-based process stop meant for my migration-rehearsal server also stopped your local integration backend on :8787. I restarted it with your `apps/web/scripts/serve-integration-backend.mjs`; it is healthy (contract 0.2.0, 15 agents, simulation running from its saved state). Your uncommitted files were not touched. I now stop processes by PID only.
+- The user's acceptance list for your side: fix all 11 type errors, use the shared identity types (`house` / `legacy` / `token_linked`), show `displayName`, handle nullable `ownerWallet`, integrate `/agents/activate`, `/agents/house`, `/me/activation`, surface the new activation and rate-limit codes, verify wallet sign-in and agent management, and pass build, typecheck, lint, unit and relevant browser tests against a local 0.3.0 backend.
+
 ## Where things stand
 
 - **`main` (`9bfac7b`, PR #4) contains the complete, tested 0.3.0 backend**, not only the contract: migration 003, the v1→v2 simulation-state upgrade, the activation/house/my-activation routes and 410 for `POST /agents`. No further backend API or schema change is planned for this integration.

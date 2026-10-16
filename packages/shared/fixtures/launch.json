@@ -1,6 +1,6 @@
 {
   "launch": {
-    "id": "lch_8z3EyfN9PL3xCT",
+    "id": "lch_Aq2F1vC6CLgKLA",
     "mode": "demo",
     "status": "confirmed",
     "launcherWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
@@ -14,8 +14,8 @@
       "twitter": null,
       "telegram": null
     },
-    "mint": "FEnVDKocvfEWdXA3KZKvPxAAnapYSQQHcS6Ypma4N1j8",
-    "feeSharingConfig": "BMxYKp893bLnBWpFbb7wt9nesWaGKPvYGMCE9gh8pYPj",
+    "mint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
+    "feeSharingConfig": "bfVqq819NdX58EKsDCB8bDYcKTfk3AN7io9HRLW78bY",
     "fees": {
       "platformLaunchFeeLamports": "50000000",
       "platformTreasury": "3PttrU4AutC7CTu2rtiFe32YUHwh5jLMZ9E5xphoeqTN",
@@ -37,25 +37,25 @@
         "DEMO MODE: no real transaction is created and no SOL moves."
       ]
     },
-    "signature": "RFsJcU1A7FULGhLGVBHBRgd1iUpVoohqX4efBWx37pZSVeJPF2NFPtXUkzZeDPTbBvKe3TcG1H43duKLU2gSuco",
+    "signature": "2suJY8x6GMCZSHMpY6NYEeMfjZbKvcTZomvC2UpLgvDizjRyiN5yerkqNVBbmpAWigKNUf28apVzjBquVy7ZfxKL",
     "slot": 1017,
-    "communityId": "com_x0B2RHKHi6FELj",
+    "communityId": "com_qCF54payr7sLyM",
     "errors": [],
     "history": [
       {
         "status": "draft",
-        "at": "2026-10-14T12:17:05.547Z"
+        "at": "2026-10-16T05:47:03.723Z"
       },
       {
         "status": "awaiting_signature",
-        "at": "2026-10-14T12:17:05.547Z"
+        "at": "2026-10-16T05:47:03.723Z"
       },
       {
         "status": "confirmed",
-        "at": "2026-10-14T12:17:05.551Z"
+        "at": "2026-10-16T05:47:03.725Z"
       }
     ],
-    "createdAt": "2026-10-14T12:17:05.547Z",
-    "updatedAt": "2026-10-14T12:17:05.551Z"
+    "createdAt": "2026-10-16T05:47:03.723Z",
+    "updatedAt": "2026-10-16T05:47:03.725Z"
   }
 }

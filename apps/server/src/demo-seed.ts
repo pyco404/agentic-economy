@@ -8,6 +8,7 @@ import { DEFAULT_STRATEGY } from "./sim/engine.js";
 /** Deterministic demo wallets (public seeds — never real funds). */
 export const demoWallet = (i: number) => Keypair.fromSeed(createHash("sha256").update(`agentic-economy-demo:wallet:${i}`).digest()).publicKey.toBase58();
 
+/** Seed agents per community: [historical label (unused since 0.3.0 naming), profession, strategy]. */
 const COMMUNITIES: Array<{ draft: LaunchDraft; agents: Array<[string, Profession, Partial<AgentStrategy>]> }> = [
   {
     draft: {
@@ -78,10 +79,11 @@ export async function seedDemo(ctx: AppContext): Promise<boolean> {
     const launch = await ctx.launches.confirm(launcher, prepared.launch.id, sig);
     if (launch.status !== "confirmed" || !launch.communityId) throw new Error(`demo launch failed: ${launch.status}`);
 
-    for (const [j, [name, profession, strategy]] of spec.agents.entries()) {
-      const holder = demoWallet(100 + i * 10 + j);
-      chain.setTokenBalance(holder, launch.mint, 2_000_000_000n);
-      await ctx.agents.create(holder, { communityId: launch.communityId, name, profession, strategy: { ...DEFAULT_STRATEGY, ...strategy } });
+    // The launcher activates the token's one token-linked agent; the rest join as house agents (no owner).
+    for (const [j, [, profession, strategy]] of spec.agents.entries()) {
+      const req = { communityId: launch.communityId, profession, strategy: { ...DEFAULT_STRATEGY, ...strategy } };
+      if (j === 0) await ctx.agents.activate(launcher, req, `demo-seed:activate:${i}`);
+      else await ctx.agents.createHouse(launcher, req, `demo-seed:house:${i}:${j}`);
     }
 
     // Two simulated creator-fee distributions per community (exact 60/40 of a realized amount).

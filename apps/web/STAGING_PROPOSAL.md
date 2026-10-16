@@ -43,6 +43,8 @@ The future Dockerfile must pass public `VITE_*` values into the **build** stage 
 
 The user supplied the reported backend domain `agentic-economy-staging.up.railway.app`. Read-only checks on 2026-10-16 returned HTTP 200 for `/readyz`, `/healthz`, `/api/v1/world/bootstrap` and `/api/v1/world/stats`. Health reported `MODE=demo`, PostgreSQL persistence, a running simulation and `financialFeaturesEnabled=false`. The public WSS endpoint also returned a version-1 `world.snapshot` with reason `join`. These checks establish present connectivity, not frontend-origin CORS approval. No frontend public domain has been confirmed; that placeholder is deliberately not a deployable value.
 
+An additional full-dashboard probe using the frontend's `HttpAdapter.load()` from Node timed out connecting to port 443, including a retry with Node's supported environment-proxy option. The separate HTTPS checks used Python; WSS used Node's native client. The differing transport results do not establish the cause. Full staging dashboard access and schema compatibility remain unverified by that probe. Repeat the complete HTTP/WSS journey from the actual frontend browser origin before deployment sign-off; do not treat endpoint health alone as end-to-end validation.
+
 | Owner | Variable | Required value |
 | --- | --- | --- |
 | Frontend build | `VITE_DATA_MODE` | `api` |

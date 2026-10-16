@@ -38,6 +38,9 @@ for (const viewport of [{ name: "desktop", width: 1440, height: 1000 },
     await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "A city in motion." })).toBeVisible();
     await page.getByRole("button", { name: "Reset camera" }).click();
+    if (viewport.name === "mobile") {
+      await page.getByRole("button", { name: "Expand city activity" }).click();
+    }
     await page.getByRole("button", { name: "Explore buildings" }).click();
     await page.locator(".building-list button").first().click();
     await expect(page.getByRole("complementary", { name: "Building details", exact: true })).toBeVisible();

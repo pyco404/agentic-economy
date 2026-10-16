@@ -1,5 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH??'/usr/bin/google-chrome',args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader']});
 try {
  const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
@@ -16,6 +17,44 @@ try {
  };
  const shots=[];
  const capture=async(label)=>{await page.screenshot({path:`artifacts/underground-${label}.png`,timeout:120000});shots.push({label,report,state:await state(),camera:JSON.parse(await city.getAttribute('data-camera'))});};
+ if(process.argv.includes('--real-cycle')) {
+  // Seek once to the surface approach, then leave the production-rate clock
+  // untouched through entry, the full underground interval and emergence.
+  const initial=await state(), {west,east}=report.tunnel;
+  await page.getByRole('button',{name:'Enter immersive mode'}).press('Enter');
+  await review({time:initial.hiddenAt-10,rate:1,focus:{x:west.x+1,z:west.z,zoom:11}});
+  const started=Date.now(), samples=[], states=new Set();
+  let previous='', hiddenAt=null, emergedAt=null, completed=false;
+  while(Date.now()-started<180000) {
+   const current=await state(), visible=current.cars.filter(c=>c.visible).length;
+   assert.equal(current.trackVisible,true);
+   assert.equal(await city.getAttribute('data-rail-clock-rate'),'1');
+   samples.push({wallSeconds:(Date.now()-started)/1000,rail:current});
+   states.add(current.state);
+   if(current.state==='underground') {
+    assert.equal(visible,0);
+    if(hiddenAt===null) hiddenAt=Date.now();
+   }
+   if(current.state==='emerging-tunnel'&&emergedAt===null) emergedAt=Date.now();
+   const key=`${current.state}-${visible}`;
+   if(key!==previous) {
+    console.log(`Live cycle: ${key}`);
+    await capture(`live-cycle-${String(shots.length).padStart(2,'0')}-${key}`);
+    previous=key;
+    if(current.state==='underground') await review({focus:{x:east.x-1,z:east.z,zoom:11,reverse:true}});
+   }
+   if(emergedAt!==null&&current.state==='surface'&&visible===3) {completed=true;break;}
+   await page.waitForTimeout(1000);
+  }
+  assert.equal(completed,true,'Train did not complete its continuous journey.');
+  for(const name of ['surface','entering-tunnel','underground','emerging-tunnel']) assert(states.has(name),name);
+  assert(hiddenAt!==null&&emergedAt!==null);
+  const observedHiddenSeconds=(emergedAt-hiddenAt)/1000;
+  assert(observedHiddenSeconds>116&&observedHiddenSeconds<130,`Observed hidden interval: ${observedHiddenSeconds}`);
+  assert.equal(initial.hiddenSeconds,120);
+  await writeFile('artifacts/underground-live-cycle.json',JSON.stringify({clockRate:1,configuredHiddenSeconds:120,observedHiddenSeconds,samples,shots},null,2));
+  console.log(`Complete live cycle captured; observed underground interval ${observedHiddenSeconds}s.`);
+ } else {
  await review({rate:0}); await capture('default-city');
  await page.getByRole('button',{name:'Enter immersive mode'}).press('Enter');
  await review({focus:{x:87,z:38,zoom:1}}); await capture('full-city-both-portals');
@@ -31,4 +70,5 @@ try {
  await review({time:service.period-30,rate:0,focus:{x:86,z:1,zoom:5}});await capture('surface-bridge');
  await writeFile('artifacts/underground-visual-review.json',JSON.stringify(shots,null,2));
  console.log('Saved railway overview, approach, entry, progressive carriage visibility, emergence and bridge captures.');
+ }
 } finally {await browser.close();}

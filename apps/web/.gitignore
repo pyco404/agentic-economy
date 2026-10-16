@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env.local
+test-results/
+playwright-report/
+# Local screenshots, run diagnostics and benchmark output are review artifacts.
+artifacts/
+# Generated railway surveys; retain the scripts and curated test fixtures.
+reviews/

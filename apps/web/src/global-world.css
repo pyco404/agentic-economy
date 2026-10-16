@@ -1,0 +1,93 @@
+/* One fixed world; route surfaces never determine the WebGL viewport size. */
+.app { isolation: isolate; height: 100dvh; overflow: hidden; }
+.app .topbar { height: 64px; position: sticky; top: 0; padding-inline: 24px;
+  background: #fffaf0f5; z-index: 20; }
+.global-world-layer { position: fixed; inset: 64px 0 0; z-index: 0; }
+.global-world-layer[data-interactive="false"] { pointer-events: none; }
+.global-world-layer[data-interactive="false"] .agent-world-labels { visibility: hidden; }
+.world-atmosphere { position: fixed; inset: 64px 0 0; z-index: 1; pointer-events: none;
+  background: #f7f0e2; opacity: 0; transition: opacity 280ms ease; }
+.app[data-route="explore"] .world-atmosphere { opacity: .32; }
+.app[data-route="communities"] .world-atmosphere { opacity: .24; }
+.app[data-route="studio"] .world-atmosphere { opacity: .42; }
+.app[data-route="economy"] .world-atmosphere { opacity: .5; }
+.app[data-route="treasury"] .world-atmosphere { opacity: .64; }
+.app[data-route="launchpad"] .world-atmosphere { opacity: .48; }
+.app main { z-index: 2; }
+.world-main { pointer-events: none; }
+.world-main > :not(.world-header) { pointer-events: auto; }
+.world-main .world-header { pointer-events: none; }
+.world-main .world-header button, .world-main .world-header select { pointer-events: auto; }
+.app .page-main { height: calc(100dvh - 64px); min-height: 0; overflow-y: auto; background: transparent; }
+.page-main .page-content { max-width: 1200px; padding: 34px 32px 24px; }
+.page-main .page-content.discovery-page { max-width: 1370px; padding-top: 34px; }
+.page-main .page-heading, .page-main .discovery-hero { width: fit-content; max-width: 100%;
+  background: #fffaf2ee; border: 1px solid #dfd6c4; border-radius: 12px;
+  padding: 28px 32px; box-shadow: 0 5px 22px #39492e08; }
+.page-main .discovery-hero { width: 100%; background: #fffaf2e8; }
+.page-main .page-heading p, .page-main .discovery-hero p { color: #56664f; }
+.page-main .muted, .page-main .notice, .page-main .detail-list dt { color: #5f6d59; }
+.page-main .surface, .page-main .discovery-card { background: #fffaf2f5;
+  border-color: #ded5c3; box-shadow: 0 5px 22px #39492e08; }
+.page-main .discovery-toolbar, .page-main .discovery-tabs { background: #fffaf2f2;
+  border: 1px solid #ded5c3; border-radius: 9px; padding: 14px; }
+.page-main .page-footer { background: #fffaf2ee; padding: 16px; border-radius: 9px; gap: 12px; }
+.page-main > .selection-panel { position: fixed; top: 88px; right: 24px;
+  max-height: calc(100dvh - 112px); z-index: 15; }
+.app[data-route="treasury"] .surface, .app[data-route="launchpad"] .surface,
+.app[data-route="studio"] .surface { background: #fffaf2fc; }
+.page-main .page-content { animation: page-surface-in 280ms ease both; }
+@keyframes page-surface-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 1000px) {
+  .page-main .page-content, .page-main .page-content.discovery-page { padding: 24px 22px; }
+}
+@media (max-width: 700px) {
+  .app .topbar { padding-inline: 14px; gap: 10px; }
+  .page-main .page-content, .page-main .page-content.discovery-page { padding: 18px 14px; }
+  .page-main .page-heading, .page-main .discovery-hero { padding: 22px 20px; background: #fffaf2f7; }
+  .page-main .surface, .page-main .discovery-card { background: #fffaf2fc; }
+  .page-main .page-footer { flex-wrap: wrap; }
+  .page-main > .selection-panel { top: auto; bottom: 16px; left: 14px; right: 14px;
+    width: auto; max-height: 70dvh; }
+  .page-main button, .page-main input, .page-main select { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-atmosphere { transition: none; }
+  .page-main .page-content { animation: none; }
+}
+
+/* One predictable close destination for all page and detail overlays. */
+.page-overlay-controls { position: sticky; top: max(12px, env(safe-area-inset-top)); z-index: 8;
+  display: flex; justify-content: flex-end; min-height: 44px; margin-bottom: 12px; pointer-events: none; }
+.page-close { width: 44px; height: 44px; flex-shrink: 0; display: inline-flex; align-items: center;
+  justify-content: center; padding: 0; border: 1px solid #cfc8b5; border-radius: 50%;
+  color: #315c44; background: #fffaf2fa; box-shadow: 0 2px 8px #263a3010; pointer-events: auto;
+  transition: background 180ms ease, border-color 180ms ease; }
+.page-close:hover { background: #eaf0df; border-color: #8c9d81; }
+.page-close:active { background: #dce7cf; }
+.page-close:focus-visible { outline: 2px solid #33664d; outline-offset: 3px; }
+.page-main:has(.community-dialog) .page-overlay-controls { visibility: hidden; }
+.community-dialog .page-close.close { top: 16px; right: 16px; }
+.community-dialog > .eyebrow { display: block; padding-right: 45px; }
+.draft-storage { color: #53664c; line-height: 1.7; }
+@media (prefers-reduced-motion: reduce) { .page-close { transition: none; } }
+.page-loading-close { position: fixed; top: 88px; right: 24px; z-index: 8; }
+@media (max-width: 700px) { .page-loading-close { right: 14px; } }
+.page-content[hidden] { display: none !important; }
+.page-reopen { position: fixed; z-index: 9; right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center;
+  gap: 10px; min-height: 44px; padding: 10px 15px; background: #fffaf2f5; border: 1px solid #cfc8b5;
+  border-radius: 8px; box-shadow: 0 3px 14px #263a3010; color: #315c44; text-align: left; }
+.page-reopen small { display: block; margin-top: 2px; color: #5f6d59; font-size: 10px; }
+.page-reopen:hover { background: #eaf0df; border-color: #8c9d81; }
+/* Reserve a separate dock row only while Show page is present. Camera controls
+ * remain at the left; the button never depends on activity height or scroll. */
+.app:has(> .page-reopen) .world-footer { right: 180px; }
+@media (max-width: 1100px) {
+  .app:has(> .page-reopen) .world-main:not(.is-immersive) .world-bottom {
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+  .app:has(> .page-reopen) .world-main .activity-panel { max-height: calc(100% - 254px - env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 700px) {
+  .app:has(> .page-reopen) .world-main .activity-panel { max-height: calc(100% - 340px - env(safe-area-inset-bottom, 0px)); }
+}

@@ -1,5 +1,6 @@
 import { cityPalette } from "./palette";
 import { clearAccidentalWorldSelection } from "./selection";
+import { TOUCH_GESTURES, TapTracker, frameDamping, orbitRotateSpeed } from "./cameraControls";
 import {
   forwardRef,
   useEffect,
@@ -198,7 +199,9 @@ export const City = forwardRef<CityHandle, CityProps>(
       controls.target.copy(initialCenter);
       camera.position.copy(initialCenter).add(new THREE.Vector3(100, 90, 100));
       controls.enableDamping = true;
-      controls.dampingFactor = 0.09;
+      // Replaced every frame by time-based damping (AgenticPad's ease); see cameraControls.ts.
+      controls.dampingFactor = frameDamping(1 / 60);
+      controls.rotateSpeed = orbitRotateSpeed(renderer.domElement.clientHeight);
       controls.minZoom = 0.3;
       controls.maxZoom = 22;
       controls.minPolarAngle = 0.25;
@@ -209,10 +212,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.PAN,
       };
-      controls.touches = {
-        ONE: THREE.TOUCH.PAN,
-        TWO: THREE.TOUCH.DOLLY_ROTATE,
-      };
+      controls.touches = TOUCH_GESTURES;
       controls.update();
       runtime.current = {
         camera,
@@ -354,19 +354,13 @@ export const City = forwardRef<CityHandle, CityProps>(
       });
       const trails = new THREE.LineSegments(trailGeometry, trailMaterial);
       scene.add(trails);
-      let pointerDown: { x: number; y: number } | null = null;
+      const taps = new TapTracker();
       const raycaster = new THREE.Raycaster(),
         pointer = new THREE.Vector2();
       const pick = (event: PointerEvent) => {
         if (current.current.interactive === false) return;
-        if (
-          !pointerDown ||
-          Math.hypot(
-            event.clientX - pointerDown.x,
-            event.clientY - pointerDown.y,
-          ) > 5
-        )
-          return;
+        // Only a still, single-pointer press selects; orbit drags and pinches never do.
+        if (!taps.up(event)) return;
         const rect = renderer.domElement.getBoundingClientRect();
         pointer.set(
           ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -406,10 +400,14 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (current.current.interactive === false) return;
         if (e.button === 0 || e.button === 2) clearAccidentalWorldSelection();
         current.current.onHover?.(null, 0, 0);
-        pointerDown = { x: e.clientX, y: e.clientY };
+        taps.down(e);
       };
       renderer.domElement.addEventListener("pointerdown", down);
       renderer.domElement.addEventListener("pointerup", pick);
+      const track = (e: PointerEvent) => taps.move(e);
+      const cancelTap = (e: PointerEvent) => taps.cancel(e);
+      renderer.domElement.addEventListener("pointermove", track);
+      renderer.domElement.addEventListener("pointercancel", cancelTap);
       const leave = () => { hoveredAgentId = null; current.current.onHover?.(null, 0, 0); };
       renderer.domElement.addEventListener("pointerleave", leave);
       let lastHover = 0;
@@ -566,7 +564,12 @@ export const City = forwardRef<CityHandle, CityProps>(
           camera.position.add(delta);
           if (delta.length() < 0.02) runtime.current.focus = null;
         }
-        if (interactive) controls.update();
+        if (interactive) {
+          // AgenticPad feel: a fixed angle per dragged pixel, eased by elapsed time (not frame count).
+          controls.dampingFactor = frameDamping(frameSeconds);
+          controls.rotateSpeed = orbitRotateSpeed(renderer.domElement.clientHeight);
+          controls.update();
+        }
         camera.updateMatrixWorld();
         if (!p.paused && !motionPreference.matches) waterElapsed += dt;
         updateWaterFlow(waterElapsed, camera);
@@ -974,6 +977,8 @@ export const City = forwardRef<CityHandle, CityProps>(
         window.removeEventListener("resize", resize);
         renderer.domElement.removeEventListener("pointerdown", down);
         renderer.domElement.removeEventListener("pointerup", pick);
+        renderer.domElement.removeEventListener("pointermove", track);
+        renderer.domElement.removeEventListener("pointercancel", cancelTap);
         renderer.domElement.removeEventListener("pointermove", move);
         renderer.domElement.removeEventListener("pointerleave", leave);
         renderer.domElement.removeEventListener("keydown", key);

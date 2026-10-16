@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.2.0
+  version: 0.3.0
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -537,7 +537,7 @@ paths:
   /api/v1/agents:
     post:
       operationId: createAgent
-      summary: Activate an agent (server verifies holder eligibility)
+      summary: "RETIRED in 0.3.0 (410 gone): use activateAgent or createHouseAgent"
       tags:
         - agents
       parameters:
@@ -557,6 +557,76 @@ paths:
               $ref: "#/components/schemas/CreateAgentRequestInput"
       security:
         - walletSession: []
+      deprecated: true
+      description: "Retired in 0.3.0: always 410 `gone`. Use POST /api/v1/agents/activate or POST /api/v1/agents/house."
+      responses:
+        "410":
+          description: Gone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/agents/activate:
+    post:
+      operationId: activateAgent
+      summary: Activate a community token's one token-linked agent (token launcher's wallet only)
+      tags:
+        - agents
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: 8-128 chars [A-Za-z0-9_.:-]. Same key + same request ⇒ stored response replayed; same key + different request ⇒ 409 idempotency_conflict.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateAgentRequestInput"
+      security:
+        - walletSession: []
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivateAgentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/agents/house:
+    post:
+      operationId: createHouseAgent
+      summary: "DEMO ONLY: create a house agent (no wallet owner; rate limited)"
+      tags:
+        - agents
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: 8-128 chars [A-Za-z0-9_.:-]. Same key + same request ⇒ stored response replayed; same key + different request ⇒ 409 idempotency_conflict.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHouseAgentRequestInput"
+      security:
+        - walletSession: []
+      x-demo-only: true
+      description: Only registered when MODE=demo. Never available on devnet/production.
       responses:
         "201":
           description: OK
@@ -564,6 +634,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AgentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/me/activation:
+    get:
+      operationId: getMyActivation
+      summary: Signed-in wallet's token-linked activation, if any
+      tags:
+        - agents
+      security:
+        - walletSession: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyActivationResponse"
         default:
           description: Error
           content:
@@ -891,6 +982,116 @@ components:
       scheme: bearer
       description: Opaque session token from POST /api/v1/auth/verify.
   schemas:
+    ActivateAgentRequest:
+      type: object
+      properties:
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        profession:
+          $ref: "#/components/schemas/Profession"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+          additionalProperties: false
+      required:
+        - communityId
+        - profession
+      additionalProperties: false
+    ActivateAgentRequestInput:
+      type: object
+      properties:
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        profession:
+          $ref: "#/components/schemas/Profession"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+      required:
+        - communityId
+        - profession
+    ActivateAgentResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        activation:
+          $ref: "#/components/schemas/AgentActivation"
+        agent:
+          $ref: "#/components/schemas/Agent"
+      required:
+        - mode
+        - activation
+        - agent
+      additionalProperties: false
+    ActivateAgentResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        activation:
+          $ref: "#/components/schemas/AgentActivationInput"
+        agent:
+          $ref: "#/components/schemas/AgentInput"
+      required:
+        - mode
+        - activation
+        - agent
+    ActivationId:
+      type: string
+      pattern: ^act_[A-Za-z0-9]{6,40}$
+    ActivationStatus:
+      type: string
+      enum:
+        - pending
+        - active
+      description: pending = reserved and queued for the simulation; active = agent exists.
     ActivityCreatedEvent:
       type: object
       properties:
@@ -1005,12 +1206,18 @@ components:
           $ref: "#/components/schemas/AgentId"
         name:
           type: string
+        displayName:
+          $ref: "#/components/schemas/DisplayName"
+        identity:
+          $ref: "#/components/schemas/AgentIdentity"
         profession:
           $ref: "#/components/schemas/Profession"
         communityId:
           $ref: "#/components/schemas/CommunityId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         status:
           $ref: "#/components/schemas/AgentStatus"
         state:
@@ -1097,6 +1304,8 @@ components:
       required:
         - id
         - name
+        - displayName
+        - identity
         - profession
         - communityId
         - ownerWallet
@@ -1123,12 +1332,18 @@ components:
           $ref: "#/components/schemas/AgentId"
         name:
           type: string
+        displayName:
+          $ref: "#/components/schemas/DisplayName"
+        identity:
+          $ref: "#/components/schemas/AgentIdentity"
         profession:
           $ref: "#/components/schemas/Profession"
         communityId:
           $ref: "#/components/schemas/CommunityId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         status:
           $ref: "#/components/schemas/AgentStatus"
         state:
@@ -1214,6 +1429,8 @@ components:
       required:
         - id
         - name
+        - displayName
+        - identity
         - profession
         - communityId
         - ownerWallet
@@ -1433,9 +1650,87 @@ components:
         - items
         - nextCursor
         - mode
+    AgentActivation:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ActivationId"
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        tokenMint:
+          $ref: "#/components/schemas/PublicKey"
+        activatingWallet:
+          $ref: "#/components/schemas/PublicKey"
+        displayName:
+          $ref: "#/components/schemas/DisplayName"
+        status:
+          $ref: "#/components/schemas/ActivationStatus"
+        requestedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - agentId
+        - communityId
+        - launchId
+        - tokenMint
+        - activatingWallet
+        - displayName
+        - status
+        - requestedAt
+      additionalProperties: false
+    AgentActivationInput:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ActivationId"
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        tokenMint:
+          $ref: "#/components/schemas/PublicKey"
+        activatingWallet:
+          $ref: "#/components/schemas/PublicKey"
+        displayName:
+          $ref: "#/components/schemas/DisplayName"
+        status:
+          $ref: "#/components/schemas/ActivationStatus"
+        requestedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - id
+        - agentId
+        - communityId
+        - launchId
+        - tokenMint
+        - activatingWallet
+        - displayName
+        - status
+        - requestedAt
     AgentId:
       type: string
       pattern: ^agt_[A-Za-z0-9]{6,40}$
+    AgentIdentity:
+      oneOf:
+        - $ref: "#/components/schemas/HouseIdentity"
+        - $ref: "#/components/schemas/TokenLinkedIdentity"
+        - $ref: "#/components/schemas/LegacyIdentity"
+    AgentKind:
+      type: string
+      enum:
+        - house
+        - token_linked
+        - legacy
     AgentMove:
       type: object
       properties:
@@ -1674,12 +1969,18 @@ components:
           $ref: "#/components/schemas/AgentId"
         name:
           type: string
+        displayName:
+          $ref: "#/components/schemas/DisplayName"
+        identity:
+          $ref: "#/components/schemas/AgentIdentity"
         profession:
           $ref: "#/components/schemas/Profession"
         communityId:
           $ref: "#/components/schemas/CommunityId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         status:
           $ref: "#/components/schemas/AgentStatus"
         state:
@@ -1702,6 +2003,8 @@ components:
       required:
         - id
         - name
+        - displayName
+        - identity
         - profession
         - communityId
         - ownerWallet
@@ -1719,12 +2022,18 @@ components:
           $ref: "#/components/schemas/AgentId"
         name:
           type: string
+        displayName:
+          $ref: "#/components/schemas/DisplayName"
+        identity:
+          $ref: "#/components/schemas/AgentIdentity"
         profession:
           $ref: "#/components/schemas/Profession"
         communityId:
           $ref: "#/components/schemas/CommunityId"
         ownerWallet:
-          $ref: "#/components/schemas/PublicKey"
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
         status:
           $ref: "#/components/schemas/AgentStatus"
         state:
@@ -1747,6 +2056,8 @@ components:
       required:
         - id
         - name
+        - displayName
+        - identity
         - profession
         - communityId
         - ownerWallet
@@ -1815,6 +2126,13 @@ components:
                 - feature_disabled
                 - unavailable
                 - internal
+                - gone
+                - rate_limited
+                - not_token_launcher
+                - wallet_already_activated
+                - mint_already_activated
+                - activation_in_progress
+                - unsupported_lifecycle
             message:
               type: string
             details: {}
@@ -1848,6 +2166,13 @@ components:
                 - feature_disabled
                 - unavailable
                 - internal
+                - gone
+                - rate_limited
+                - not_token_launcher
+                - wallet_already_activated
+                - mint_already_activated
+                - activation_in_progress
+                - unsupported_lifecycle
             message:
               type: string
             details: {}
@@ -3031,6 +3356,80 @@ components:
         - communityId
         - name
         - profession
+    CreateHouseAgentRequest:
+      type: object
+      properties:
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        profession:
+          $ref: "#/components/schemas/Profession"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+          additionalProperties: false
+      required:
+        - communityId
+        - profession
+      additionalProperties: false
+    CreateHouseAgentRequestInput:
+      type: object
+      properties:
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+        profession:
+          $ref: "#/components/schemas/Profession"
+        strategy:
+          type: object
+          properties:
+            temperament:
+              $ref: "#/components/schemas/Temperament"
+            risk:
+              $ref: "#/components/schemas/RiskLevel"
+            objective:
+              $ref: "#/components/schemas/Objective"
+            dailyBudget:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+            minMarginBps:
+              type: integer
+              minimum: 0
+              maximum: 5000
+            preferredResources:
+              maxItems: 6
+              type: array
+              items:
+                $ref: "#/components/schemas/Resource"
+            homeBuildingId:
+              anyOf:
+                - $ref: "#/components/schemas/BuildingId"
+                - type: "null"
+      required:
+        - communityId
+        - profession
     DataMode:
       type: string
       enum:
@@ -3088,6 +3487,10 @@ components:
       required:
         - signature
         - note
+    DisplayName:
+      type: string
+      minLength: 3
+      maxLength: 64
     DistrictTheme:
       type: string
       enum:
@@ -3903,6 +4306,29 @@ components:
         - slot
         - checkedAt
         - expiresAt
+    HouseIdentity:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: house
+        syntheticName:
+          $ref: "#/components/schemas/SyntheticName"
+      required:
+        - kind
+        - syntheticName
+      additionalProperties: false
+    HouseIdentityInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: house
+        syntheticName:
+          $ref: "#/components/schemas/SyntheticName"
+      required:
+        - kind
+        - syntheticName
     IsoTimestamp:
       type: string
       format: date-time
@@ -4091,6 +4517,35 @@ components:
         - failed
         - recovery_needed
         - expired
+    LegacyIdentity:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: legacy
+        syntheticName:
+          $ref: "#/components/schemas/SyntheticName"
+        legacyOwnerWallet:
+          $ref: "#/components/schemas/PublicKey"
+      required:
+        - kind
+        - syntheticName
+        - legacyOwnerWallet
+      additionalProperties: false
+    LegacyIdentityInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: legacy
+        syntheticName:
+          $ref: "#/components/schemas/SyntheticName"
+        legacyOwnerWallet:
+          $ref: "#/components/schemas/PublicKey"
+      required:
+        - kind
+        - syntheticName
+        - legacyOwnerWallet
     MarketListing:
       type: object
       properties:
@@ -4283,6 +4738,41 @@ components:
         - stone
         - concrete
         - glass
+    MyActivationResponse:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        activation:
+          anyOf:
+            - $ref: "#/components/schemas/AgentActivation"
+            - type: "null"
+        agent:
+          anyOf:
+            - $ref: "#/components/schemas/Agent"
+            - type: "null"
+      required:
+        - mode
+        - activation
+        - agent
+      additionalProperties: false
+    MyActivationResponseInput:
+      type: object
+      properties:
+        mode:
+          $ref: "#/components/schemas/DataMode"
+        activation:
+          anyOf:
+            - $ref: "#/components/schemas/AgentActivationInput"
+            - type: "null"
+        agent:
+          anyOf:
+            - $ref: "#/components/schemas/AgentInput"
+            - type: "null"
+      required:
+        - mode
+        - activation
+        - agent
     Objective:
       type: string
       enum:
@@ -4954,6 +5444,10 @@ components:
         - $ref: "#/components/schemas/TreasuryUpdatedEvent"
         - $ref: "#/components/schemas/SystemNoticeEvent"
         - $ref: "#/components/schemas/HeartbeatEvent"
+    SyntheticName:
+      type: string
+      pattern: ^[A-Z][a-z]{1,15}_[0-9]{3,6}$
+      description: Persisted, globally unique, house-generated agent name (e.g. Fern_108).
     SystemNoticeEvent:
       type: object
       properties:
@@ -5620,6 +6114,53 @@ components:
         - history
         - createdAt
         - updatedAt
+    TokenLinkedIdentity:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: token_linked
+        activationId:
+          $ref: "#/components/schemas/ActivationId"
+        tokenMint:
+          $ref: "#/components/schemas/PublicKey"
+        activatingWallet:
+          $ref: "#/components/schemas/PublicKey"
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+      required:
+        - kind
+        - activationId
+        - tokenMint
+        - activatingWallet
+        - launchId
+        - communityId
+      additionalProperties: false
+    TokenLinkedIdentityInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: token_linked
+        activationId:
+          $ref: "#/components/schemas/ActivationId"
+        tokenMint:
+          $ref: "#/components/schemas/PublicKey"
+        activatingWallet:
+          $ref: "#/components/schemas/PublicKey"
+        launchId:
+          $ref: "#/components/schemas/LaunchId"
+        communityId:
+          $ref: "#/components/schemas/CommunityId"
+      required:
+        - kind
+        - activationId
+        - tokenMint
+        - activatingWallet
+        - launchId
+        - communityId
     TreasuryAccount:
       type: string
       enum:

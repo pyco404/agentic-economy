@@ -9,6 +9,7 @@ import type {
   TaskStatus,
   EconomicEventType,
   AgentState as AgentActivityState,
+  AgentIdentity,
 } from "@agentic-economy/shared";
 
 /**
@@ -17,7 +18,8 @@ import type {
  * All money is integer milli-credits (mCC). All randomness flows through `rngState`.
  */
 export interface SimState {
-  version: 1;
+  /** 2 since contract 0.3.0 (agent identity). v1 snapshots are upgraded on load: see `sim/identity.ts`. */
+  version: 2;
   worldSeed: string;
   tick: number;
   rngState: number;
@@ -81,8 +83,10 @@ export interface BuildingState {
 
 export interface AgentSimState {
   id: string;
+  /** Free-text name from creation (historical, not unique). */
   name: string;
-  ownerWallet: string;
+  /** Wallet with owner controls: activating wallet (token_linked), legacy owner (legacy), null (house). */
+  ownerWallet: string | null;
   communityId: string;
   profession: Profession;
   status: "active" | "paused";
@@ -103,6 +107,9 @@ export interface AgentSimState {
   verifiedTasks: number;
   /** Next tick the planner may run for this agent (decision throttling). */
   nextDecisionTick: number;
+  identity: AgentIdentity;
+  /** Persisted, unique name shown everywhere. */
+  displayName: string;
 }
 
 export interface TaskState {
@@ -170,7 +177,7 @@ export interface SimReceipt {
   id: string;
   taskId: string;
   agentId: string;
-  ownerWallet: string;
+  ownerWallet: string | null;
   kind: TaskKind;
   claimedTick: number;
   pickupTick: number | null;
@@ -192,7 +199,7 @@ export interface SimRewardRecord {
   id: string;
   epoch: number;
   agentId: string;
-  ownerWallet: string;
+  ownerWallet: string | null;
   points: number;
   estimatedShareBps: number;
   receiptIds: string[];
@@ -212,11 +219,34 @@ export interface TickOutput {
 /** Inputs applied at the start of a tick. Persisted (command log) so state can be replayed deterministically. */
 export type SimCommand =
   | {
+      /** Pre-0.3.0 holder activation. No longer issued; still replayed from the log (creates a legacy agent). */
       type: "agent.create";
       agentId: string;
       ownerWallet: string;
       communityId: string;
       name: string;
+      profession: Profession;
+      strategy: AgentStrategy;
+    }
+  | {
+      /** Token-linked activation; the activation row was reserved atomically with this command. */
+      type: "agent.activate";
+      agentId: string;
+      activationId: string;
+      communityId: string;
+      launchId: string;
+      tokenMint: string;
+      activatingWallet: string;
+      displayName: string;
+      profession: Profession;
+      strategy: AgentStrategy;
+    }
+  | {
+      /** Demo house agent; the name was reserved in the database before queueing. No owner. */
+      type: "agent.create_house";
+      agentId: string;
+      communityId: string;
+      syntheticName: string;
       profession: Profession;
       strategy: AgentStrategy;
     }

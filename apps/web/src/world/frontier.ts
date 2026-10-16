@@ -6,6 +6,7 @@ import { districtSpecies } from "./vegetation";
 import { generateTreeParts } from "./vegetationGeometry";
 
 export type FrontierStyle = "frontier" | "coastal";
+export const FRONTIER_WATER = { reach: 36, straightReach: 12, taperStart: 18 } as const;
 export interface FrontierData {
   positions: number[];
   colors: number[];
@@ -66,8 +67,14 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
       }
     }
     const rolling = -0.04 + field(x, z) * 1.35;
-    const value = THREE.MathUtils.lerp(THREE.MathUtils.lerp(edge, rolling, ease(0, 36, d)),
+    let value = THREE.MathUtils.lerp(THREE.MathUtils.lerp(edge, rolling, ease(0, 36, d)),
       -0.4, ease(100, 172, d));
+    if (d > 6 && d < FRONTIER_WATER.reach + 6 && style !== "coastal") {
+      const near = (r: number) => [[-r, 0], [r, 0], [0, -r], [0, r]]
+        .some(([dx, dz]) => waterAt(x + dx!, z + dz!));
+      const bank = waterAt(x, z) ? 1 : near(2) ? .65 : near(4) ? .15 : 0;
+      value = THREE.MathUtils.lerp(value, -.12, ease(6, 24, d) * bank);
+    }
     heightCache.set(key, value);
     return value;
   };
@@ -100,8 +107,12 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
       ((z - (minZ + maxZ) / 2 - 24) / 150) ** 2 < 1) return true;
     return channels.some((e) => {
       const dx = x - e.x, dz = z - e.z, along = dx * e.nx + dz * e.nz;
-      const bend = Math.sin(along / 27 + phase) * 3 * ease(0, 24, along);
-      return along >= 0 && Math.abs(-dx * e.nz + dz * e.nx - bend) < e.width / 2 + along * 0.025;
+      // A short canal outlet becomes a quiet tapered drainage reach, rather
+      // than extending a high-contrast blue trench across the entire backdrop.
+      const bend = Math.sin(along / 27 + phase) * 1.4 * ease(FRONTIER_WATER.straightReach, 30, along);
+      const taper = 1 - ease(FRONTIER_WATER.taperStart, FRONTIER_WATER.reach, along);
+      return along >= 0 && along < FRONTIER_WATER.reach &&
+        Math.abs(-dx * e.nz + dz * e.nx - bend) < e.width / 2 * taper;
     });
   };
   const land = new THREE.Color(cityPalette.terrain), far = new THREE.Color(cityPalette.parchment),
@@ -112,6 +123,7 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
     if (cached) return cached;
     const d = distance(x, z), color = (water ? waterColor : land).clone();
     if (!water) color.lerp(meadow, field(x + 18, z - 17) * 0.22 * ease(0, 16, d));
+    if (water && style !== "coastal") color.lerp(land, ease(12, FRONTIER_WATER.reach, d) * .66);
     color.lerp(far, ease(36, 152, d) * (water ? 0.65 : 1));
     const rgb = color.toArray(); tintCache.set(key, rgb); return rgb;
   };

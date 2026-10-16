@@ -33,8 +33,8 @@ const WEB_BRANCH = "codex/frontend";
 const FRONTEND_ORIGIN = "https://staging.useaeco.xyz";
 /** Generated Railway domain of the frontend service (for checks before the custom domain's DNS is live). */
 const FRONTEND_RAILWAY_ORIGIN: string | null = "https://agentic-economy-web-staging.up.railway.app";
-/** Public API base the frontend is built against. Switch to https://api-staging.useaeco.xyz once its DNS and certificate are live. */
-const API_PUBLIC_URL = "https://agentic-economy-staging.up.railway.app";
+/** Public API base the frontend is built against (custom domain; the generated Railway API domain also keeps working). */
+const API_PUBLIC_URL = "https://api-staging.useaeco.xyz";
 
 export default defineRailway(() => {
   const db = postgres("Postgres");

@@ -2,7 +2,18 @@ import { z } from "zod";
 import { page, PageQuery, DataMode, AgentId, CommunityId, LaunchId } from "./primitives.js";
 import { WorldBootstrap, WorldChunk, WorldStats } from "./world.js";
 import { EconomicEvent, EconomySummary, MarketsResponse, Task, TaskStatus, TaskReceipt, RewardRecord } from "./economy.js";
-import { AgentAction, AgentResponse, AgentSummary, CreateAgentRequest, HolderEligibility, PatchAgentRequest } from "./agents.js";
+import {
+  ActivateAgentRequest,
+  ActivateAgentResponse,
+  AgentAction,
+  AgentResponse,
+  AgentSummary,
+  CreateAgentRequest,
+  CreateHouseAgentRequest,
+  HolderEligibility,
+  MyActivationResponse,
+  PatchAgentRequest,
+} from "./agents.js";
 import { CommunityResponse, Community } from "./community.js";
 import { ConfirmLaunchRequest, LaunchResponse, PrepareLaunchRequest, PrepareLaunchResponse } from "./launch.js";
 import { TreasuryEntry, TreasurySummary } from "./treasury.js";
@@ -96,6 +107,8 @@ export interface RouteDef {
   successStatus?: 200 | 201;
   /** Only available when MODE=demo. */
   demoOnly?: boolean;
+  /** Retired: always answers 410 `gone`, naming the replacement routes in `details.replacements`. */
+  retired?: { since: string; replacements: readonly string[] };
 }
 
 const P = "/api/v1";
@@ -122,7 +135,10 @@ export const routes = {
   communityEligibility: { method: "get", path: `${P}/communities/:id/eligibility`, operationId: "getHolderEligibility", summary: "Signed-in wallet's holder eligibility (from chain data)", tag: "communities", auth: true, params: z.object({ id: CommunityId }), response: HolderEligibility },
 
   agent: { method: "get", path: `${P}/agents/:id`, operationId: "getAgent", summary: "Agent profile, location, inventory, performance", tag: "agents", auth: false, params: z.object({ id: AgentId }), response: AgentResponse },
-  createAgent: { method: "post", path: `${P}/agents`, operationId: "createAgent", summary: "Activate an agent (server verifies holder eligibility)", tag: "agents", auth: true, idempotencyKey: "required", body: CreateAgentRequest, response: AgentResponse, successStatus: 201 },
+  createAgent: { method: "post", path: `${P}/agents`, operationId: "createAgent", summary: "RETIRED in 0.3.0 (410 gone): use activateAgent or createHouseAgent", tag: "agents", auth: true, idempotencyKey: "required", body: CreateAgentRequest, response: AgentResponse, successStatus: 201, retired: { since: "0.3.0", replacements: ["POST /api/v1/agents/activate", "POST /api/v1/agents/house"] } },
+  activateAgent: { method: "post", path: `${P}/agents/activate`, operationId: "activateAgent", summary: "Activate a community token's one token-linked agent (token launcher's wallet only)", tag: "agents", auth: true, idempotencyKey: "required", body: ActivateAgentRequest, response: ActivateAgentResponse, successStatus: 201 },
+  createHouseAgent: { method: "post", path: `${P}/agents/house`, operationId: "createHouseAgent", summary: "DEMO ONLY: create a house agent (no wallet owner; rate limited)", tag: "agents", auth: true, idempotencyKey: "required", body: CreateHouseAgentRequest, response: AgentResponse, successStatus: 201, demoOnly: true },
+  myActivation: { method: "get", path: `${P}/me/activation`, operationId: "getMyActivation", summary: "Signed-in wallet's token-linked activation, if any", tag: "agents", auth: true, response: MyActivationResponse },
   patchAgent: { method: "patch", path: `${P}/agents/:id`, operationId: "updateAgent", summary: "Pause/resume or update bounded strategy (owner only)", tag: "agents", auth: true, idempotencyKey: "optional", params: z.object({ id: AgentId }), body: PatchAgentRequest, response: AgentResponse },
   agentActivity: { method: "get", path: `${P}/agents/:id/activity`, operationId: "listAgentActivity", summary: "Agent decision/action log (newest first)", tag: "agents", auth: false, params: z.object({ id: AgentId }), query: PageQuerySchema, response: AgentActionPage },
 

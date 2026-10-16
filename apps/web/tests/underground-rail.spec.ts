@@ -26,6 +26,8 @@ test("connected railway renders every transition and repeats forward without rem
   await ready(page);
   const city = page.getByTestId("city-canvas"), report = JSON.parse((await city.getAttribute("data-railway"))!);
   expect(report.issues).toEqual([]); expect(report.tunnel.hiddenSeconds).toBe(120); expect(report.tunnel.minCover).toBeGreaterThanOrEqual(.3);
+  expect(report.visibleLength).toBeLessThan(report.previousVisibleLength * .6);
+  expect(report.tunnel.west.x).toBe(20); expect(report.tunnel.east.x).toBe(148);
   expect(report.maxGrade).toBeLessThan(.045); expect(report.minWaterHeadroom).toBeGreaterThan(2);
   await page.locator("canvas").evaluate((node) => { (window as any).__undergroundCanvas = node; });
   const service = await state(page), cases = [

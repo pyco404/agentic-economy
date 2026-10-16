@@ -25,7 +25,8 @@ test("procedural city, navigation, selection, growth and draft boundaries", asyn
   await page.locator("canvas").focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("+");
-  await page.getByRole("button", { name: "Explore buildings" }).click();
+  // Selecting a building keeps the explorer open for subsequent inspection.
+  await expect(page.getByLabel("Search buildings")).toBeVisible();
   await page.getByLabel("Search buildings").fill("Windmill");
   await page
     .getByRole("button", { name: /Windmill/ })

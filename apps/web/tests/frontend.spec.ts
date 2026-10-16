@@ -54,7 +54,7 @@ test("procedural city, navigation, selection, growth and draft boundaries", asyn
   await page.getByLabel("Token name").fill("Test Community");
   await page.getByLabel("Symbol", { exact: true }).fill("TEST");
   await page.getByRole("button", { name: "Review draft" }).click();
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.getByRole("region", { name: "Launch draft review" }).getByRole("status")).toContainText(
     "No transaction created",
   );
   await expect(

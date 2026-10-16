@@ -96,12 +96,50 @@ export interface EnqueueResult {
   appliedTick: number | null;
 }
 
-/** Atomic admission check for agent creation: reject if the wallet already has `maxPending` or more queued creates. */
-export interface EnqueueGuard {
-  wallet: string;
+/** Immutable token-linked activation (0.3.0). Never updated, freed or deleted. */
+export interface ActivationRecord {
+  id: string;
+  agentId: string;
   communityId: string;
-  maxPending: number;
+  launchId: string;
+  tokenMint: string;
+  activatingWallet: string;
+  displayName: string;
+  /** The `agent.activate` inbox command reserved with this row. */
+  inboxId: number;
+  requestedAt: string;
+  /** Derived from the inbox: the simulation has applied the create command. */
+  applied: boolean;
 }
+
+/**
+ * Identity rows reserved in the SAME transaction as the create command's inbox row, so an agent is never
+ * queued without its identity and an identity is never reserved without its agent. The first free name
+ * in `nameCandidates` is taken (all display names share one uniqueness domain).
+ */
+export type IdentityReservation =
+  | {
+      kind: "house";
+      agentId: string;
+      /** Authenticated caller, recorded for quotas and audit only; never an owner. */
+      requestedBy: string;
+      maxPerRequester: number;
+      /** Cap on house agents across the whole city (protects the shared simulation). */
+      maxTotal: number;
+      nameCandidates: string[];
+    }
+  | {
+      kind: "token_linked";
+      agentId: string;
+      nameCandidates: string[];
+      activation: Pick<ActivationRecord, "id" | "agentId" | "communityId" | "launchId" | "tokenMint" | "activatingWallet">;
+    };
+
+export type IdentityEnqueueResult =
+  | { ok: true; enqueued: EnqueueResult; displayName: string; activation: ActivationRecord | null }
+  /** Another activation already holds this wallet or mint (it may still be pending). */
+  | { ok: false; reason: "wallet_taken" | "mint_taken"; activation: ActivationRecord }
+  | { ok: false; reason: "names_exhausted" | "quota_reached" };
 
 export interface Coordinator {
   readonly kind: "memory" | "postgres";
@@ -109,10 +147,15 @@ export interface Coordinator {
   tryAcquireLease(name: string, holder: string): Promise<Lease | null>;
 
   /** Durable command submission. `dedupeKey` makes retries return the original command. */
-  /** Returns null when `guard` rejects the command (nothing is enqueued). */
-  enqueueCommand(command: SimCommand, dedupeKey: string | null, guard?: EnqueueGuard): Promise<EnqueueResult | null>;
+  enqueueCommand(command: SimCommand, dedupeKey: string | null): Promise<EnqueueResult>;
+  /**
+   * Atomically reserve an agent identity and queue its create command (`build` receives the chosen name).
+   * Serialised cluster-wide; a repeated `dedupeKey` returns the original reservation unchanged.
+   */
+  enqueueIdentityCommand(dedupeKey: string, reservation: IdentityReservation, build: (displayName: string) => SimCommand): Promise<IdentityEnqueueResult>;
+  activationByWallet(wallet: string): Promise<ActivationRecord | null>;
+  activationByAgent(agentId: string): Promise<ActivationRecord | null>;
   inboxStatus(id: number): Promise<{ appliedTick: number | null } | null>;
-  pendingAgentCreates(wallet: string, communityId: string): Promise<number>;
 
   /** Append stream records from non-sim producers (API, indexer); duplicates by key are skipped. */
   appendStream(drafts: StreamDraft[]): Promise<StreamRecord[]>;

@@ -1,6 +1,6 @@
 # AgenticPad camera controls (branch `claude/camera-controls`)
 
-Written by Claude for Codex's review. Based on `codex/frontend` at `a077ad9`; touches `City.tsx` only for wiring, so it should merge cleanly with your work in progress (your uncommitted `City.tsx` edits are in other regions).
+Written by Claude for Codex's review. Based on `codex/frontend` at `a077ad9`; touches `City.tsx` only for wiring. A three-way merge with your uncommitted `City.tsx` edits (composition/edges) has exactly one conflict: both add an import after `./selection`. Keep both lines; everything else merges automatically.
 
 ## What AgenticPad actually does
 

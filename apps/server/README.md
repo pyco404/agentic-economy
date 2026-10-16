@@ -112,7 +112,7 @@ States: `draft → awaiting_signature → submitted → confirmed | failed | rec
 ## Security and trust assumptions
 
 - **Wallet auth:** SIWS-style message with a single-use nonce. It is consumed atomically before signature checking, expires after 5 minutes, and is bound to the wallet. Sessions are opaque bearer tokens stored only as SHA-256 hashes (12 h TTL). Clients should keep the token in memory.
-- **Idempotency keys** (required on `POST /agents` and `POST /launches/prepare`) are scoped to wallet and operation. The same key with a different body returns `409`.
+- **Idempotency keys** (required on `POST /agents/activate`, `POST /agents/house` and `POST /launches/prepare`) are scoped to wallet and operation. The same key with a different body returns `409`.
 - **Holder eligibility** is read from chain (Token-2022-aware `getParsedTokenAccountsByOwner`), cached for 60 s for reads, and **re-read fresh on agent activation**. Default threshold: 1,000 tokens, configurable.
 - **Rate limits** apply to auth and agent mutations (30/min/IP). Launches are deliberately unlimited.
 - **Custody:** the backend holds **no** treasury or user keys. Treasuries must be multisig vaults. The only private key the server ever touches is the per-launch mint keypair, used to partially sign the prepared transaction and then discarded.

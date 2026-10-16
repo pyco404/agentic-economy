@@ -85,7 +85,8 @@ export const TaskReceipt = z
     id: z.string(),
     taskId: TaskId,
     agentId: AgentId,
-    ownerWallet: PublicKey,
+    /** Owner-control wallet of the performing agent at completion; null for house agents (0.3.0). */
+    ownerWallet: PublicKey.nullable(),
     kind: TaskKind,
     claimedTick: z.number().int(),
     pickupTick: z.number().int().nullable(),
@@ -116,7 +117,8 @@ export const RewardRecord = z
     id: z.string(),
     epoch: z.number().int().min(0),
     agentId: AgentId,
-    ownerWallet: PublicKey,
+    /** Owner-control wallet of the agent; null for house agents, whose dry-run points have no beneficiary (0.3.0). */
+    ownerWallet: PublicKey.nullable(),
     points: z.number().int().min(0),
     /** Share of the epoch's total verified points, in bps. An estimate, not an entitlement. */
     estimatedShareBps: z.number().int().min(0).max(10_000),

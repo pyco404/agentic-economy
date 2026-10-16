@@ -1,5 +1,6 @@
 import { cityPalette } from "./palette";
 import { clearAccidentalWorldSelection } from "./selection";
+import { composeCityEdges } from "./composition";
 import {
   forwardRef,
   useEffect,
@@ -615,14 +616,17 @@ export const City = forwardRef<CityHandle, CityProps>(
             }
             const frontier = generateFrontier(p.seed ?? WORLD_SEED, all, p.chunkCatalog, frontierStyle);
             if (ambient) { scene.remove(ambient.group); disposeGroup(ambient.group, shared); }
-            ambient = createAmbientScene(planAmbient(all, frontier,
-              buildPathNetwork(all, p.seed ?? WORLD_SEED, true), p.seed ?? WORLD_SEED, streets), library);
+            const ambientPlan = planAmbient(all, frontier,
+              buildPathNetwork(all, p.seed ?? WORLD_SEED, true), p.seed ?? WORLD_SEED, streets);
+            ambient = createAmbientScene(ambientPlan, library);
             scene.add(ambient.group);
             container.dataset.ambientActors = JSON.stringify(ambient.counts);
             container.dataset.railway = JSON.stringify(ambient.railway);
             container.dataset.railFrame = "-1";
+            const composition = composeCityEdges(all, frontier, p.seed ?? WORLD_SEED, ambientPlan.railway, p.chunkCatalog);
+            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens });
             scenic = createFrontierScene(
-              frontier,
+              { ...frontier, parts: [...frontier.parts, ...composition.parts] },
               library,
               ambient.cuts,
             );

@@ -297,14 +297,36 @@ export function ribbon(path: RailPath, offset: number, width: number, height: nu
   const mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color })); mesh.castShadow = true; mesh.receiveShadow = true;
   return mesh;
 }
-export function createRiversideScene(plan: RiversidePlan, library: GeometryLibrary) {
+export function createRiversideScene(plan: RiversidePlan, library: GeometryLibrary,
+  urbanBounds?: { minX: number; maxX: number; minZ: number; maxZ: number }) {
   const group = new THREE.Group();
   if (!plan.path) return group;
   group.name = "Riverside urban railway";
-  group.add(createBatch(plan.parts, library, false));
+  const station = new THREE.Vector3(), direction = new THREE.Vector3();
+  if (plan.underground) sampleRail(plan.path, plan.underground.station, station, direction);
+  const approachColor = (color: string, x: number, z: number) => {
+    const tint = new THREE.Color(color);
+    if (!urbanBounds || !plan.underground || (x >= urbanBounds.minX && x <= urbanBounds.maxX &&
+      z >= urbanBounds.minZ && z <= urbanBounds.maxZ)) return tint;
+    // Solid, quieter aggregate on country approaches; no opacity, fog or
+    // disappearing track. Keep the district and station rail detail crisp.
+    return tint.lerp(new THREE.Color("#cdd0b5"), THREE.MathUtils.smoothstep(
+      Math.hypot(x - station.x, z - station.z), 24, 86) * .52);
+  };
+  group.add(createBatch(plan.parts.map((part) => part.color === "#a58c6c"
+    ? { ...part, color: `#${approachColor(part.color, part.position[0], part.position[2]).getHexString()}` }
+    : part), library, false));
   const renderedPath = plan.underground?.surface ?? plan.path;
-  group.add(ribbon(renderedPath, 0, 1.5, 0.18, -0.27, "#c1b18f"), ribbon(renderedPath, 0, 1.32, 0.13, -0.13, "#a9a69a"));
-  for (const side of [-0.36, 0.36]) group.add(ribbon(renderedPath, side, 0.065, 0.07, 0, "#63776f"));
+  const track = (offset: number, width: number, height: number, level: number, color: string) => {
+    const mesh = ribbon(renderedPath, offset, width, height, level, color);
+    const positions = mesh.geometry.getAttribute("position"), colors: number[] = [];
+    for (let i = 0; i < positions.count; i++) colors.push(...approachColor(color, positions.getX(i), positions.getZ(i)).toArray());
+    mesh.geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    mesh.material.color.set("white"); mesh.material.vertexColors = true;
+    return mesh;
+  };
+  group.add(track(0, 1.5, .18, -.27, "#c1b18f"), track(0, 1.32, .13, -.13, "#a9a69a"));
+  for (const side of [-.36, .36]) group.add(track(side, .065, .07, 0, "#63776f"));
   // Physical station sign, not an economic label or backend building.
   if (typeof document === "undefined") return group;
   const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 96;

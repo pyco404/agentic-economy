@@ -1,6 +1,7 @@
 import { gunzipSync } from "node:zlib";
 import type { ServerEvent, ServerEventOf, ServerEventType } from "@agentic-economy/shared";
-import type { Coordinator, EnqueueGuard, EnqueueResult, StreamRecord } from "../coord/types.js";
+import type { Coordinator, EnqueueResult, IdentityEnqueueResult, IdentityReservation, StreamRecord } from "../coord/types.js";
+import { upgradeState, type SimStateV1 } from "../sim/identity.js";
 import type { SimCommand, SimState } from "../sim/types.js";
 import { AppError } from "../util/errors.js";
 import type { Logger, SimWorker } from "./sim-worker.js";
@@ -47,7 +48,7 @@ export class StateReader {
       try {
         const v = await this.coord.loadView();
         if (v && (!this.cache || v.tick > this.cache.tick)) {
-          this.cache = { tick: v.tick, state: JSON.parse(gunzipSync(v.stateGz).toString("utf8")) as SimState };
+          this.cache = { tick: v.tick, state: upgradeState(JSON.parse(gunzipSync(v.stateGz).toString("utf8")) as SimState | SimStateV1) };
           this.wake();
         }
       } catch (e) {
@@ -212,8 +213,21 @@ export class CommandBus {
     await this.unlisten?.();
   }
 
-  enqueue(command: SimCommand, dedupeKey: string | null, guard?: EnqueueGuard): Promise<EnqueueResult | null> {
-    return this.coord.enqueueCommand(command, dedupeKey, guard);
+  enqueue(command: SimCommand, dedupeKey: string | null): Promise<EnqueueResult> {
+    return this.coord.enqueueCommand(command, dedupeKey);
+  }
+
+  /** Reserve an agent identity and queue its create command atomically (see Coordinator.enqueueIdentityCommand). */
+  enqueueIdentity(dedupeKey: string, reservation: IdentityReservation, build: (displayName: string) => SimCommand): Promise<IdentityEnqueueResult> {
+    return this.coord.enqueueIdentityCommand(dedupeKey, reservation, build);
+  }
+
+  activationByWallet(wallet: string) {
+    return this.coord.activationByWallet(wallet);
+  }
+
+  activationByAgent(agentId: string) {
+    return this.coord.activationByAgent(agentId);
   }
 
   /** Wait until inbox command `id` is applied AND visible to this process's reads. */

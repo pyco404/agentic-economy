@@ -1,0 +1,27 @@
+.launch-quotes { margin: 28px 0; padding: 0; border: 0; min-width: 0; }
+.launch-quotes legend { font-size: 18px; font-weight: 550; margin-bottom: 10px; }
+.launch-quote-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0 12px; }
+.launch-quotes .launch-quote-card { display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+  min-width: 0; margin: 0; padding: 14px 12px; background: #fffaf2; border: 1px solid #e2d9c7;
+  border-radius: 10px; color: #3e5345; font-size: 12px; cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease; }
+.launch-quotes .launch-quote-card[data-selected="true"] { border-color: #497557; background: #eef2e4; box-shadow: inset 0 0 0 1px #497557; }
+.launch-quote-card[data-available="false"] { cursor: not-allowed; }
+.launch-quote-card:focus-within { outline: 2px solid #33664d; outline-offset: 3px; }
+.launch-quote-heading { display: flex; align-items: center; gap: 9px; min-height: 28px; }
+.surface .launch-quotes .launch-quote-heading input[type="radio"] { width: 17px; height: 17px; padding: 0; margin: 0; accent-color: #33664d; flex: 0 0 auto; }
+.launch-quote-heading strong { font-size: 15px; }
+.launch-quote-description { line-height: 1.6; min-height: 58px; }
+.launch-quote-pair { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.launch-quote-status { font-size: 10px; color: #41664b; padding-top: 8px; border-top: 1px solid #e1e4d5; }
+.launch-quote-requirement { font-size: 10px; line-height: 1.65; color: #626e5e; }
+.launch-pair-preview { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center;
+  padding: 13px 15px; background: #f3f1e8; border-radius: 8px; margin-bottom: 12px; font-size: 12px; }
+.launch-pair-preview b { color: #33664d; overflow-wrap: anywhere; }
+.launch-quote-error { color: #914d35; font-size: 12px; line-height: 1.7; margin-bottom: 12px; }
+.launch-review { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.launch-review .fee-list { font-size: 12px; }
+@media (max-width: 1100px) { .launch-quote-options { grid-template-columns: 1fr; }
+  .launch-quote-description { min-height: 0; }
+  .launch-quotes .launch-quote-card { padding: 15px; gap: 8px; } }
+@media (prefers-reduced-motion: reduce) { .launch-quotes .launch-quote-card { transition: none; } }

@@ -1,4 +1,5 @@
 import { cityPalette } from "./palette";
+import { clearAccidentalWorldSelection } from "./selection";
 import {
   forwardRef,
   useEffect,
@@ -403,6 +404,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       };
       const down = (e: PointerEvent) => {
         if (current.current.interactive === false) return;
+        if (e.button === 0 || e.button === 2) clearAccidentalWorldSelection();
         current.current.onHover?.(null, 0, 0);
         pointerDown = { x: e.clientX, y: e.clientY };
       };

@@ -4,6 +4,7 @@ import { hashSeed, isLand, random, type ChunkVisual } from "./layout";
 import { cityPalette } from "./palette";
 import { districtSpecies } from "./vegetation";
 import { generateTreeParts } from "./vegetationGeometry";
+import { turfColor } from "./terrainSurface";
 
 export type FrontierStyle = "frontier" | "coastal";
 export const FRONTIER_WATER = { reach: 36, straightReach: 12, taperStart: 18 } as const;
@@ -116,13 +117,12 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
     });
   };
   const land = new THREE.Color(cityPalette.terrain), far = new THREE.Color(cityPalette.parchment),
-    meadow = new THREE.Color("#d7d6b7"), waterColor = new THREE.Color(cityPalette.water);
+    waterColor = new THREE.Color(cityPalette.water);
   const tintCache = new Map<string, number[]>();
   const tint = (x: number, z: number, water = false) => {
     const key = `${x}:${z}:${water}`, cached = tintCache.get(key);
     if (cached) return cached;
-    const d = distance(x, z), color = (water ? waterColor : land).clone();
-    if (!water) color.lerp(meadow, field(x + 18, z - 17) * 0.22 * ease(0, 16, d));
+    const d = distance(x, z), color = water ? waterColor.clone() : turfColor(seed, x, z);
     if (water && style !== "coastal") color.lerp(land, ease(12, FRONTIER_WATER.reach, d) * .66);
     color.lerp(far, ease(36, 152, d) * (water ? 0.65 : 1));
     const rgb = color.toArray(); tintCache.set(key, rgb); return rgb;

@@ -6,23 +6,23 @@ import { abortable, IpfsReference, LogoReference, LOGO_LIMITS, metadataKey, read
   type LaunchMediaAdapter, type MetadataInput } from "../api/launchMedia";
 
 // A file survives route changes in memory, never browser storage. Refresh needs reselection.
-let pending: { file: File; requestId: string } | null = null;
+let pending: { file: File; requestId: string; scope:string } | null = null;
 export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageUrl, onImage,
-  adapter = unavailableLaunchMedia }: {
+  adapter = unavailableLaunchMedia, automaticMetadata=true, trustedImage=null, scope="local", maxBytes=LOGO_LIMITS.maxBytes }: {
   name: string; symbol: string; description: string; quoteAsset: string; imageUrl: string;
-  onImage: (uri: string) => void; adapter?: LaunchMediaAdapter;
+  onImage: (uri: string) => void; adapter?: LaunchMediaAdapter; automaticMetadata?:boolean; trustedImage?:LogoReference|null; scope?:string; maxBytes?:number;
 }) {
-  const [stored, saveReference] = useDraftField<string>("launchpad:logoReference", "");
-  const [hint, saveHint] = useDraftField<string>("launchpad:pendingLogo", "");
-  const [metadata, saveMetadata] = useDraftField<string>("launchpad:preparedMetadata", "");
-  const [file, setFile] = useState<File | null>(pending?.file ?? null), [preview, setPreview] = useState("");
+  const [stored, saveReference] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"logoReference", "");
+  const [hint, saveHint] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"pendingLogo", "");
+  const [metadata, saveMetadata] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"preparedMetadata", "");
+  const [file, setFile] = useState<File | null>(pending?.scope===scope ? pending.file : null), [preview, setPreview] = useState("");
   const [state, setState] = useState<"idle" | "validating" | "uploading" | "success" | "error">("idle");
   const [error, setError] = useState(""), [progress, setProgress] = useState(0);
   const [metadataState, setMetadataState] = useState("idle"), [metadataError, setMetadataError] = useState("");
   const [retry, setRetry] = useState(0);
   const input = useRef<HTMLInputElement>(null), operation = useRef(0), active = useRef<AbortController | null>(null), busy = useRef(false);
   const savedReference = readLogoReference(stored);
-  const reference = savedReference?.ipfsUri === imageUrl ? savedReference : null;
+  const reference = trustedImage ?? (savedReference?.ipfsUri === imageUrl ? savedReference : null);
   const metadataInput: MetadataInput = { name: name.trim(), symbol: symbol.trim(), description: description.trim(), quoteAsset, imageUploadId: reference?.uploadId ?? "" };
   const key = metadataKey(metadataInput);
   let prepared: IpfsReference | null = null;
@@ -34,7 +34,7 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
   useEffect(() => () => { operation.current++; active.current?.abort(); }, []);
   useEffect(() => {
     setMetadataError("");
-    if (!adapter.available || launchQuoteError(quoteAsset) || !metadataInput.imageUploadId || !metadataInput.name || !metadataInput.symbol) { setMetadataState("idle"); return; }
+    if (!automaticMetadata || !adapter.available || launchQuoteError(quoteAsset) || !metadataInput.imageUploadId || !metadataInput.name || !metadataInput.symbol) { setMetadataState("idle"); return; }
     const controller = new AbortController(); let alive = true;
     let deadline: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(() => {
@@ -47,20 +47,20 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
     }, 600);
     return () => { alive = false; clearTimeout(timer); clearTimeout(deadline); controller.abort(); };
     // The stable serialized key includes every reviewed metadata input.
-  }, [adapter, key, retry, saveMetadata, quoteAsset, metadataInput.imageUploadId, metadataInput.name, metadataInput.symbol]);
+  }, [automaticMetadata, adapter, key, retry, saveMetadata, quoteAsset, metadataInput.imageUploadId, metadataInput.name, metadataInput.symbol]);
   const choose = async (candidate?: File) => {
     if (!candidate) return;
     const version = ++operation.current; active.current?.abort(); busy.current = false;
     setState("validating"); setError("");
     try {
-      await validateLogo(candidate);
+      await validateLogo(candidate,maxBytes);
       if (version !== operation.current) return;
-      pending = { file: candidate, requestId: crypto.randomUUID() }; setFile(candidate); saveHint(candidate.name);
+      pending = { file: candidate, requestId: crypto.randomUUID(),scope }; setFile(candidate); saveHint(candidate.name);
       saveReference(""); saveMetadata(""); onImage(""); setState("idle");
     } catch (e) { if (version === operation.current) { setState("error"); setError(e instanceof Error ? e.message : "Unable to read this image."); } }
   };
   const upload = async () => {
-    if (!adapter.available || !pending || busy.current) return;
+    if (!adapter.available || !pending || pending.scope!==scope || busy.current) return;
     busy.current = true; const version = ++operation.current, selected = pending;
     const controller = new AbortController(); active.current = controller;
     setState("uploading"); setProgress(0); setError("");
@@ -70,8 +70,8 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
         onProgress: (percent) => { if (version === operation.current && Number.isFinite(percent)) setProgress(Math.max(0, Math.min(100, percent))); } }), controller.signal));
       if (version !== operation.current || controller.signal.aborted) return;
       saveReference(JSON.stringify(result)); onImage(result.ipfsUri); saveHint(""); pending = null; setFile(null); setState("success");
-    } catch {
-      if (version === operation.current) { setState("error"); setError(controller.signal.aborted ? "Upload cancelled or timed out. You can retry." : "Upload failed or was rejected. Retry after checking your connection and authentication."); }
+    } catch (cause) {
+      if (version === operation.current) { setState("error"); setError(controller.signal.aborted ? "Upload cancelled or timed out. You can retry." : cause instanceof Error ? cause.message : "Upload failed or was rejected. Retry after checking your connection and authentication."); }
     } finally { clearTimeout(timeout); if (version === operation.current) busy.current = false; }
   };
   const remove = () => {
@@ -86,7 +86,7 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
       <input ref={input} type="file" className="logo-file-input" aria-label="Token logo file" accept={LOGO_LIMITS.mimeTypes.join(",")}
         onChange={(event) => { void choose(event.target.files?.[0]); event.target.value = ""; }} />
       <button type="button" className="secondary" onClick={() => input.current?.click()}>{file || reference ? "Replace image" : "Upload Token Logo"}</button>
-      <p className="small muted">Drop an image here or browse. PNG, JPEG or WebP · up to 5 MB.</p>
+      <p className="small muted">Drop an image here or browse. PNG, JPEG or WebP · up to {maxBytes / 1_000_000} MB.</p>
       {file && <span className="small">{file.name}</span>}
     </div>
     <div className="logo-actions">
@@ -102,11 +102,11 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
     </div>
     {error && <p role="alert" className="small">{error}</p>}
     {!adapter.available && <p className="small muted">{adapter.unavailableReason}</p>}
-    <div className="logo-metadata" aria-label="Metadata readiness">
+    {automaticMetadata && <div className="logo-metadata" aria-label="Metadata readiness">
       <b>Metadata {prepared ? "prepared" : metadataState === "preparing" ? "preparing…" : "not ready"}</b>
       <p className="small muted">{prepared ? "Prepared for these token details. Backend review is required before any launch." : "The backend will prepare metadata automatically from your latest token details and verified logo. No manual JSON is needed."}</p>
       {prepared && <code className="ui-select-text">{prepared.ipfsUri}</code>}
       {metadataError && <><p role="alert" className="small">{metadataError}</p><button type="button" className="secondary" onClick={() => setRetry((n) => n + 1)}>Retry metadata</button></>}
-    </div>
+    </div>}
   </section>;
 }

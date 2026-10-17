@@ -8,8 +8,9 @@ import { AppError } from "../util/errors.js";
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
-/** Sign-In-With-Solana style message. The exact text is what the wallet signs. */
-export function buildChallengeMessage(p: { domain: string; uri: string; wallet: string; cluster: string; nonce: string; issuedAt: string; expiresAt: string }): string {
+/** SIWS-compatible text. Chain ID is optional; demo is not a Solana chain.
+ * https://github.com/phantom/sign-in-with-solana#specification */
+export function buildChallengeMessage(p: { domain: string; uri: string; wallet: string; cluster?: AppConfig["solana"]["cluster"]; nonce: string; issuedAt: string; expiresAt: string }): string {
   return [
     `${p.domain} wants you to sign in with your Solana account:`,
     p.wallet,
@@ -18,7 +19,7 @@ export function buildChallengeMessage(p: { domain: string; uri: string; wallet: 
     "",
     `URI: ${p.uri}`,
     "Version: 1",
-    `Chain ID: ${p.cluster}`,
+    ...(p.cluster ? [`Chain ID: ${p.cluster === "mainnet-beta" ? "mainnet" : p.cluster}`] : []),
     `Nonce: ${p.nonce}`,
     `Issued At: ${p.issuedAt}`,
     `Expiration Time: ${p.expiresAt}`,
@@ -44,7 +45,7 @@ export class AuthService {
       domain: this.config.auth.domain,
       uri: this.config.auth.uri,
       wallet,
-      cluster: this.config.mode === "demo" ? "demo" : this.config.solana.cluster,
+      cluster: this.config.mode === "demo" ? undefined : this.config.solana.cluster,
       nonce,
       issuedAt: now.toISOString(),
       expiresAt,

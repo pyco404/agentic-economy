@@ -117,9 +117,11 @@ export function demoDashboard(): Dashboard {
       name:
         ["Rowan", "Ada", "Finn", "Mira", "Theo", "Jun"][i % 6] +
         ` ${Math.floor(i / 6) + 1}`,
+      displayName: `Citizen_${String(i).padStart(3, "0")}`,
+      identity: { kind: "house", syntheticName: `Citizen_${String(i).padStart(3, "0")}` },
       profession: professions[i % 6],
       communityId: communities[i % 3]!.id,
-      ownerWallet: wallet,
+      ownerWallet: "identity" in AgentSummary.shape ? null : wallet,
       status: "active",
       state: i % 2 ? "delivering" : "working",
       pos: { x: -32 + (i % 6) * 16, y: -32 },
@@ -257,9 +259,11 @@ export class DemoAdapter implements ApiAdapter {
     const agent = AgentSummary.parse({
       id,
       name: input.name,
+      displayName: `Citizen_${String(this.data.agents.length).padStart(3, "0")}`,
+      identity: { kind: "house", syntheticName: `Citizen_${String(this.data.agents.length).padStart(3, "0")}` },
       profession: input.profession,
       communityId: input.communityId,
-      ownerWallet: wallet,
+      ownerWallet: "identity" in AgentSummary.shape ? null : wallet,
       status: "active",
       state: "idle",
       pos: { x: 0, y: 0 },

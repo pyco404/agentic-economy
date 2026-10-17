@@ -9,6 +9,15 @@ describe("world agent labels", () => {
     expect(name).toMatch(/^[A-Z][A-Za-z]+_\d{3}$/);
     expect(name).not.toContain("0x"); expect(name).not.toContain("...");
   });
+  it("uses the same authoritative display name on world labels as in profiles", () => {
+    expect(agentLabelName({ id: "agt_house", name: "old name", displayName: "Fern_506",
+      identity: { kind: "house", syntheticName: "Fern_506" } })).toBe("Fern_506");
+    expect(agentLabelName({ id: "agt_legacy", name: "old name", displayName: "Bow_1940",
+      identity: { kind: "legacy", syntheticName: "Bow_1940", legacyOwnerWallet: "1".repeat(32) } })).toBe("Bow_1940");
+    expect(agentLabelName({ id: "agt_wallet", name: "old name", displayName: "CMYxA...B6Wec",
+      identity: { kind: "token_linked", activatingWallet: "CMYxA" + "1".repeat(23) + "B6Wec",
+        tokenMint: "1".repeat(32), activationId: "act_verified" } })).toBe("CMYxA...B6Wec");
+  });
   it("keeps selected and hovered labels at far zoom and suppresses ordinary names", () => {
     const result = chooseAgentLabels([agent("ordinary"), { ...agent("selected"), selected: true },
       { ...agent("hovered", 400), hovered: true }], 0.5, 800, 600);

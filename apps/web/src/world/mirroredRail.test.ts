@@ -59,6 +59,26 @@ describe("opposite-side railway", () => {
     expect(original.visible).toBe(true); expect(opposite.visible).toBe(true);
     disposeGroup(scene.group, new Set(Object.values(library))); Object.values(library).forEach((g) => g.dispose());
   });
+  it("updates a backward railway review seek even when ambient time is unchanged", () => {
+    const library = geometryLibrary();
+    const scene = createAmbientScene({ railway: source, rail: source.path, mirroredRail: mirror, cars: [],
+      center: new THREE.Vector3(64, 0, 64), width: 128, depth: 128, altitude: 12, seed }, library);
+    try {
+      const base = undergroundService(0, source.path!, source.underground!);
+      const target = base.emergesAt + .5 - MIRRORED_RAIL.phaseSeconds;
+      scene.update(10, true, base.period - 5);
+      scene.update(10, true, target);
+      expect(scene.railState().elapsed).toBeCloseTo(target, 8);
+      expect(scene.railState().mirrored!.state).toBe("emerging-tunnel");
+      const before = scene.railState();
+      scene.update(10, true, target + 1 / 120);
+      expect(scene.railState()).toEqual(before); // Keep the normal 30Hz throttle.
+      expect(before.hiddenSeconds).toBe(120);
+    } finally {
+      disposeGroup(scene.group, new Set(Object.values(library)));
+      Object.values(library).forEach(g => g.dispose());
+    }
+  });
   it("fails closed for a future parcel spanning the opposite corridor", () => {
     const changed = structuredClone(chunks);
     changed[0]!.buildings.push({ ...changed[0]!.buildings[0]!, id: "opposite-reservation", x: 100, z: 134, width: 8, depth: 26 });

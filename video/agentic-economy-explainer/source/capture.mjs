@@ -1,3 +1,5 @@
+/* global window, document */
+import { Buffer } from "node:buffer";
 import { createServer } from '../../../apps/web/node_modules/vite/dist/node/index.js';
 import { chromium } from '../../../apps/web/node_modules/@playwright/test/index.mjs';
 import { mkdir, writeFile, rename } from 'node:fs/promises';

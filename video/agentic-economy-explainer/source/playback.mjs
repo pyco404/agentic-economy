@@ -1,6 +1,7 @@
+/* global document, setTimeout */
 /** Browser decoding/playback check for the actual MP4, including a middle-frame seek. */
 import http from 'node:http';
-import { readFile, stat, writeFile } from 'node:fs/promises';
+import { stat, writeFile } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { chromium } from '../../../apps/web/node_modules/@playwright/test/index.mjs';
 const file=new URL('../output/agentic-economy-15s-review.mp4',import.meta.url), size=(await stat(file)).size;

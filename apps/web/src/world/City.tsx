@@ -62,6 +62,7 @@ export interface CityHandle {
   rotate: () => void;
 }
 interface CityProps {
+  touchPan?: boolean;
   interactive?: boolean;
   background?: boolean;
   visualStill?: boolean;
@@ -190,7 +191,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       container.appendChild(renderer.domElement);
       renderer.domElement.setAttribute(
         "aria-label",
-        "Interactive procedural Genesis city. Drag to orbit, right-drag to pan, scroll to zoom. Arrow keys pan, plus and minus zoom, Home resets.",
+        "Interactive procedural Genesis city. Drag with one finger to orbit; use Pan with one finger to move the field. Two fingers rotate and pinch to zoom. Mouse drag orbits, right-drag pans, scroll zooms. Arrow keys pan, plus and minus zoom, Home resets.",
       );
       renderer.domElement.setAttribute("role", "img");
       renderer.domElement.tabIndex = 0;
@@ -222,7 +223,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         RIGHT: THREE.MOUSE.PAN,
       };
       controls.touches = {
-        ONE: THREE.TOUCH.PAN,
+        ONE: current.current.touchPan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE,
         TWO: THREE.TOUCH.DOLLY_ROTATE,
       };
       controls.update();
@@ -632,6 +633,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (presentation.background && now - lastBackgroundFrame < 1000 / 24) return;
         lastBackgroundFrame = now;
         const interactive = presentation.interactive !== false;
+        controls.touches.ONE = presentation.touchPan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
         controls.enabled = interactive;
         renderer.domElement.tabIndex = interactive ? 0 : -1;
         if (!interactive && wasInteractive) { runtime.current!.focus = null; hoveredAgentId = null; }

@@ -1,0 +1,46 @@
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { DraftFields, SavedLaunchDraft, VerifyRequest, launchpadPaths } from '@agentic-economy/shared';
+import type { AppContext } from '../context.js';
+import { hashToken } from '../services/auth.js';
+import { LaunchpadService } from '../services/launchpad.js';
+import { LaunchpadStore } from '../store/launchpad.js';
+import { PostgresStore } from '../store/postgres.js';
+import { AppError } from '../util/errors.js';
+const version=z.object({version:z.number().int().nonnegative()}).strict();
+const idOf=(req:FastifyRequest)=>z.object({id:z.string().uuid()}).parse(req.params).id;
+/** Cookie-only browser API. Explicit Origin on all mutations provides CSRF protection across allowed sibling origins. */
+export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
+ const service=new LaunchpadService(new LaunchpadStore(ctx.store instanceof PostgresStore?ctx.store.pool:undefined),ctx.config);
+ const secure=ctx.config.mode!=='demo'||new URL(ctx.config.auth.uri).protocol==='https:';
+ const cookieName=secure?'__Host-aeco_session':'aeco_session';
+ const token=(req:FastifyRequest)=>new RegExp(`(?:^|;\\s*)${cookieName}=([A-Za-z0-9_-]{20,200})(?:;|$)`).exec(req.headers.cookie??'')?.[1];
+ const cookie=(value:string,seconds:number)=>`${cookieName}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${seconds}${secure?'; Secure':''}`;
+ const csrf=(req:FastifyRequest)=>{if(!req.headers.origin||!ctx.config.corsOrigins.includes(req.headers.origin))throw new AppError('forbidden','This browser origin is not authorized');};
+ const wallet=async(req:FastifyRequest)=>(await ctx.auth.authenticate(`Bearer ${token(req)??''}`)).wallet;
+ const key=(req:FastifyRequest)=>z.string().regex(/^[A-Za-z0-9_.:-]{8,128}$/).parse(req.headers['idempotency-key']);
+ let uploadsInFlight=0;const uploading=new WeakSet<FastifyRequest>();const release=(req:FastifyRequest)=>{if(uploading.delete(req))uploadsInFlight--;};
+ app.addHook('onRequestAbort',async(req)=>release(req));
+ const hits=new Map<string,{n:number;until:number}>();
+ const rate=(req:FastifyRequest,owner:string)=>{const k=`${owner}:${req.routeOptions.url}`,now=Date.now(),r=hits.get(k);if(!r||r.until<now){if(hits.size>10000)for(const [k,v]of hits)if(v.until<now)hits.delete(k);hits.set(k,{n:1,until:now+60000});}else if(++r.n>20)throw new AppError('forbidden','Too many requests. Retry in a minute.');};
+ const mutation=async(req:FastifyRequest)=>{csrf(req);const owner=await wallet(req);rate(req,owner);return owner;};
+ app.get(launchpadPaths.capabilities,async()=>({version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:false,quotes:{SOL:'draft',USDC:'planned',AECO:'future'}}));
+ app.post(launchpadPaths.verify,async(req,reply)=>{csrf(req);rate(req,req.ip);const input=VerifyRequest.parse(req.body);const verified=await ctx.auth.verify(input.wallet,input.nonce,input.signature);reply.header('Cache-Control','no-store').header('Set-Cookie',cookie(verified.token,ctx.config.auth.sessionTtlSeconds));return verified.identity;});
+ app.get(launchpadPaths.session,async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.auth.authenticate(`Bearer ${token(req)??''}`);});
+ app.post(launchpadPaths.logout,async(req,reply)=>{csrf(req);if(token(req))await ctx.store.revokeSession(hashToken(token(req)!));reply.header('Set-Cookie',cookie('',0)).header('Cache-Control','no-store');return{ok:true};});
+ app.get(launchpadPaths.drafts,async(req,reply)=>{reply.header('Cache-Control','no-store');return{items:await service.store.list(await wallet(req))};});
+ app.post(launchpadPaths.drafts,async(req)=>service.create(await mutation(req),key(req),DraftFields.parse(req.body)));
+ const path=launchpadPaths.drafts+'/:id';
+ app.get(path,async(req,reply)=>{reply.header('Cache-Control','no-store');return service.store.get(await wallet(req),idOf(req));});
+ app.patch(path,async(req)=>{const owner=await mutation(req),body=z.object({version:version.shape.version,fields:DraftFields}).strict().parse(req.body);return service.update(owner,idOf(req),body.version,body.fields);});
+ app.delete(path,async(req)=>{const owner=await mutation(req),body=version.parse(req.body);await service.store.remove(owner,idOf(req),body.version);return{ok:true};});
+ app.delete(path+'/logo',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);const draft=await service.store.get(owner,idOf(req));const next={...draft,image:null,metadata:null,version:draft.version+1,updatedAt:new Date().toISOString()};await service.store.save(next,body.version);return next;});
+ app.post(path+'/metadata',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
+ app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');return service.review(await wallet(req),idOf(req));});
+ // The parser is scoped to image/octet-stream uploads. Authenticate before buffering any body.
+ app.addContentTypeParser('application/octet-stream',{parseAs:'buffer',bodyLimit:ctx.config.pinata.maxBytes},(_req,body,done)=>done(null,body));
+ app.route({method:'POST',url:path+'/logo',bodyLimit:ctx.config.pinata.maxBytes,
+  onRequest:async(req)=>{await mutation(req);if(uploadsInFlight>=2)throw new AppError('unavailable','Uploads are busy. Retry shortly.');uploadsInFlight++;uploading.add(req);},
+  onResponse:async(req)=>release(req),
+  handler:async(req)=>{const owner=await wallet(req),query=version.parse({version:Number((req.query as {version?:string}).version)});if(!Buffer.isBuffer(req.body))throw new AppError('bad_request','Send a binary image');return SavedLaunchDraft.parse(await service.image(owner,idOf(req),query.version,key(req),req.body));}});
+}

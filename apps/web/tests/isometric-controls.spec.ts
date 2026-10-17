@@ -50,9 +50,20 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
     const client = await context.newCDPSession(page);
     const touch = async (type: "touchStart" | "touchMove" | "touchEnd", points: {x: number; y: number; id: number}[]) =>
       client.send("Input.dispatchTouchEvent", { type, touchPoints: points });
-    const x = viewport.width * .38, y = viewport.height * .54;
+    // Live labels move over the canvas. Start both fingers on uncovered canvas,
+    // rather than assuming fixed screen coordinates are always unobstructed.
+    const start = await page.locator("canvas").evaluate((canvas) => {
+      for (const fy of [.54, .64, .44, .74]) for (const fx of [.38, .48, .58]) {
+        const x = innerWidth * fx, y = innerHeight * fy;
+        if ([-50, 50].every((dx) => document.elementFromPoint(x + dx, y) === canvas)) return { x, y };
+      }
+      return null;
+    });
+    expect(start, "two-finger gesture needs two unobstructed canvas targets").not.toBeNull();
+    const { x, y } = start!;
     // Translation of a two-finger gesture rotates; widening it also zooms.
     // This is the original DOLLY_ROTATE mapping, not the experimental DOLLY_PAN.
+    await touch("touchStart", [{ x: x - 50, y, id: 1 }]);
     await touch("touchStart", [{ x: x - 50, y, id: 1 }, { x: x + 50, y, id: 2 }]);
     for (let step = 1; step <= 8; step++) await touch("touchMove", [
       { x: x - 50 + step * 3, y: y - step * 7, id: 1 },

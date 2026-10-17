@@ -15,7 +15,7 @@ The existing challenge verifier and financial launch lifecycle remain intact. Th
 - Wallet-owned create/list/get/update/delete drafts, optimistic version checks, bounded idempotent retries and persistent per-wallet upload/pinning quotas. Current list shows the latest 100 drafts; older drafts remain retrievable by canonical ID. Pagination is a later convenience improvement.
 - Binary image uploads authenticated before buffering, maximum 5 MB (configurable downward), PNG/JPEG/WebP, decoded pixel limit, rejection of animated/corrupt/active-content files, and decode/re-encode before Pinata. Two concurrent upload bodies/decoder tasks per process bound memory/CPU pressure. Frontend progress stops short of success until the backend confirms pinning and persistence.
 - Public Pinata V3 multipart uploads use only server credentials. Verified image CID/URI is attached to the owned draft. The browser cannot supply a trusted image/metadata reference. Replacement/removal invalidates metadata.
-- Explicit metadata generation uses the latest saved name, symbol, description, verified image IPFS URI, and optional HTTPS website/X/Telegram links. JSON includes conventional Pump metadata fields `showName` and `createdOn`. Later field/image edits invalidate metadata. Pinning is not proof of an on-chain launch or protocol acceptance.
+- Explicit metadata generation uses the latest saved name, symbol, description, verified image IPFS URI, and optional HTTPS website/X/Telegram links. JSON includes `showName` and attributes `createdOn` to the configured application origin; pinning does not claim the draft was created on Pump.fun. Later field/image edits invalidate metadata. Pinning is not proof of an on-chain launch or protocol acceptance.
 - Backend review returns the saved fields, image/metadata IPFS references, verified wallet, SOL quote, planned 0.05 SOL charge, issues and `launchEnabled:false`.
 - Import is explicit: browser-saved text is copied into the form and saved only after user action. Untrusted old image/metadata URLs are not imported. Old browser data is retained.
 
@@ -57,6 +57,7 @@ The gated Postgres integration test requires both a disposable `*_test` TEST_DAT
 - Staging frontend: branch `codex/frontend`, commit `eb00cb8`, https://staging.useaeco.xyz.
 - API: https://api-staging.useaeco.xyz; WebSocket: wss://api-staging.useaeco.xyz/api/v1/ws.
 - Production contains an existing failed main-branch service; it was not altered or activated.
+- Auth domain and URI already match https://staging.useaeco.xyz; its origin is already in CORS_ORIGINS. PINATA_JWT is currently unset (presence checked without displaying any credential). Preserve the other approved staging origins when coordinating deployment.
 - No deployment trigger, CORS setting, environment variable, database, branch or remote reference was changed by the inspection.
 
 The frontend probes capabilities; older backends keep the local draft experience and report authentication unavailable instead of calling nonexistent upload endpoints. This compatibility fallback does not constitute a deployed Phase 2 backend.
@@ -90,7 +91,7 @@ Deterministic tests use real Ed25519 signatures and the real authenticated API. 
 - `artifacts/launch-workspace-review-1440.png`
 - `artifacts/launch-workspace-review-390.png`
 
-A physical wallet/mobile device, actual Pinata credentials, and approved Postgres migrations remain external validation gates. The functional local test backend is in memory; its drafts intentionally do not survive backend restarts. Production persistence uses the Postgres repository once the migration is approved.
+A physical wallet/mobile device, actual Pinata credentials, and approved Postgres migrations remain external validation gates. The functional local demo backend is in memory; the UI explicitly warns that its drafts survive refresh but not backend restarts. Production persistence uses the Postgres repository once the migration is approved.
 
 ## Commit and push boundary
 
@@ -100,42 +101,46 @@ No push, merge, deployment or database migration is authorized by this report. T
 
 ### Reviewed individual-file commit plan
 
-| File | Conventional Commit |
-| --- | --- |
-| `packages/shared/src/launchpad.ts` | `feat(contracts): define authenticated launch workspace schemas` |
-| `packages/shared/src/index.ts` | `feat(contracts): export launch workspace contracts` |
-| `packages/shared/test/launchpad.test.ts` | `test(contracts): reject untrusted draft assets and unsupported quotes` |
-| `apps/server/package.json` | `build(server): add native image validation dependency` |
-| `apps/web/package.json` | `build(web): add wallet discovery and signature test dependencies` |
-| `pnpm-lock.yaml` | `build(deps): lock wallet and image validation packages` |
-| `apps/server/src/store/types.ts` | `feat(auth): define session revocation persistence` |
-| `apps/server/src/store/memory.ts` | `feat(auth): revoke in-memory wallet sessions` |
-| `apps/server/src/store/postgres.ts` | `feat(auth): persist wallet session revocation` |
-| `apps/server/src/store/migrations/004_launchpad_workspace.sql` | `feat(storage): prepare owned launch draft and operation tables` |
-| `apps/server/src/store/launchpad.ts` | `feat(storage): persist owned drafts with versioned operations and quotas` |
-| `apps/server/src/config.ts` | `feat(config): configure server-only Pinata credentials and image limits` |
-| `apps/server/.env.example` | `docs(config): document private Pinata and image settings` |
-| `apps/server/src/services/launchpad.ts` | `feat(launchpad): validate and pin draft logos and metadata` |
-| `apps/server/src/http/launchpad.ts` | `feat(api): expose cookie-authenticated launch workspace routes` |
-| `apps/server/src/http/app.ts` | `feat(api): register launch workspace with credentialed CORS` |
-| `apps/server/scripts/bundle.mjs` | `fix(build): package native image decoder with backend bundle` |
-| `apps/server/test/migrations.test.ts` | `test(storage): allow reserved migration numbers without duplicates` |
-| `apps/server/test/launchpad.test.ts` | `test(launchpad): cover authenticated drafts uploads and metadata` |
-| `apps/server/test/launchpad-postgres.test.ts` | `test(storage): gate durable launch workspace checks on database approval` |
-| `apps/web/src/api/walletSession.tsx` | `feat(auth): authenticate Solana wallets with secure browser sessions` |
-| `apps/web/src/api/walletSession.test.ts` | `test(auth): verify wallet discovery and expired session handling` |
-| `apps/web/src/components/WalletButton.tsx` | `feat(auth): connect and sign out through the navigation wallet control` |
-| `apps/web/src/wallet-session.css` | `style(launchpad): fit wallet dialogs and draft review to mobile screens` |
-| `apps/web/src/main.tsx` | `feat(web): provide a persistent wallet session context` |
-| `apps/web/src/api/launchMedia.ts` | `docs(launchpad): clarify authenticated upload adapter ownership` |
-| `apps/web/src/api/launchQuotes.ts` | `docs(launchpad): distinguish draft quotes from financial capabilities` |
-| `apps/web/src/components/LaunchLogoUpload.tsx` | `feat(launchpad): bind scoped logos to trusted backend upload state` |
-| `apps/web/src/components/LaunchWorkspace.tsx` | `feat(launchpad): save owned drafts upload logos and review pinned metadata` |
-| `apps/web/src/components/Pages.tsx` | `feat(launchpad): open the authenticated workspace when supported` |
-| `apps/web/src/App.tsx` | `feat(auth): enable the existing navigation wallet control` |
-| `apps/web/tests/launch-logo.spec.ts` | `test(launchpad): assert backend upload rejection details` |
-| `apps/web/tests/launch-workspace.spec.ts` | `test(launchpad): exercise authenticated desktop and mobile draft journeys` |
-| `apps/web/PHASE2_LAUNCHPAD_REVIEW.md` | `docs(launchpad): record implementation validation and staging approval gates` |
+| Commit | File | Conventional Commit |
+| --- | --- | --- |
+| `be0d404` | `packages/shared/src/launchpad.ts` | `feat(contracts): define authenticated launch workspace schemas` |
+| `7d78d78` | `packages/shared/src/index.ts` | `feat(contracts): export launch workspace contracts` |
+| `237d52e` | `packages/shared/test/launchpad.test.ts` | `test(contracts): reject untrusted draft assets and unsupported quotes` |
+| `0015cf6` | `apps/server/package.json` | `build(server): add native image validation dependency` |
+| `7dbdc06` | `apps/web/package.json` | `build(web): add wallet discovery and signature test dependencies` |
+| `142d85a` | `pnpm-lock.yaml` | `build(deps): lock wallet and image validation packages` |
+| `47a17c0` | `apps/server/src/store/types.ts` | `feat(auth): define session revocation persistence` |
+| `d16cc3d` | `apps/server/src/store/memory.ts` | `feat(auth): revoke in-memory wallet sessions` |
+| `82979b4` | `apps/server/src/store/postgres.ts` | `feat(auth): persist wallet session revocation` |
+| `de3c40d` | `apps/server/src/store/migrations/004_launchpad_workspace.sql` | `feat(storage): prepare owned launch draft and operation tables` |
+| `b035783` | `apps/server/src/store/launchpad.ts` | `feat(storage): persist owned drafts with versioned operations and quotas` |
+| `5b54db6` | `apps/server/src/config.ts` | `feat(config): configure server-only Pinata credentials and image limits` |
+| `59160f0` | `apps/server/.env.example` | `docs(config): document private Pinata and image settings` |
+| `6db9757` | `apps/server/src/services/launchpad.ts` | `feat(launchpad): validate and pin draft logos and metadata` |
+| `d82a026` | `apps/server/src/http/launchpad.ts` | `feat(api): expose cookie-authenticated launch workspace routes` |
+| `a263179` | `apps/server/src/http/app.ts` | `feat(api): register launch workspace with credentialed CORS` |
+| `782849b` | `apps/server/scripts/bundle.mjs` | `fix(build): package native image decoder with backend bundle` |
+| `43b24ed` | `apps/server/test/migrations.test.ts` | `test(storage): allow reserved migration numbers without duplicates` |
+| `2f79d5e` | `apps/server/test/launchpad.test.ts` | `test(launchpad): cover authenticated drafts uploads and metadata` |
+| `9bf16c2` | `apps/server/test/launchpad-postgres.test.ts` | `test(storage): gate durable launch workspace checks on database approval` |
+| `23ceee3` | `apps/web/src/api/walletSession.tsx` | `feat(auth): authenticate Solana wallets with secure browser sessions` |
+| `3594c94` | `apps/web/src/api/walletSession.test.ts` | `test(auth): verify wallet discovery and expired session handling` |
+| `cd2a72f` | `apps/web/src/components/WalletButton.tsx` | `feat(auth): connect and sign out through the navigation wallet control` |
+| `97e5506` | `apps/web/src/wallet-session.css` | `style(launchpad): fit wallet dialogs and draft review to mobile screens` |
+| `f5dedbd` | `apps/web/src/main.tsx` | `feat(web): provide a persistent wallet session context` |
+| `21ed68a` | `apps/web/src/api/launchMedia.ts` | `docs(launchpad): clarify authenticated upload adapter ownership` |
+| `758a385` | `apps/web/src/api/launchQuotes.ts` | `docs(launchpad): distinguish draft quotes from financial capabilities` |
+| `978aae6` | `apps/web/src/components/LaunchLogoUpload.tsx` | `feat(launchpad): bind scoped logos to trusted backend upload state` |
+| `ea37099` | `apps/web/src/components/LaunchWorkspace.tsx` | `feat(launchpad): save owned drafts upload logos and review pinned metadata` |
+| `d7098da` | `apps/web/src/components/Pages.tsx` | `feat(launchpad): open the authenticated workspace when supported` |
+| `4226ab9` | `apps/web/src/App.tsx` | `feat(auth): enable the existing navigation wallet control` |
+| `d6fe452` | `apps/web/tests/launch-logo.spec.ts` | `test(launchpad): assert backend upload rejection details` |
+| `0308ec0` | `apps/web/tests/launch-workspace.spec.ts` | `test(launchpad): exercise authenticated desktop and mobile draft journeys` |
+| `596bd31` | `apps/web/PHASE2_LAUNCHPAD_REVIEW.md` | `docs(launchpad): record implementation validation and staging approval gates` |
+| `f143720` | `apps/web/scripts/serve-launch-workspace-test.mjs` | `test(launchpad): serve an isolated authenticated Pinata fixture` |
+| `ee53f1a` | `apps/web/playwright.launchpad.config.ts` | `test(launchpad): make the authenticated browser suite reproducible` |
+| `3d4f97c` | `apps/server/src/services/launchpad.ts` | `fix(launchpad): attribute draft metadata to the application origin` |
+| `1e63133` | `apps/web/src/components/LaunchWorkspace.tsx` | `fix(launchpad): disclose memory-backed demo draft persistence` |
 
 ### Validation results
 
@@ -149,3 +154,20 @@ No push, merge, deployment or database migration is authorized by this report. T
 No actual installed wallet, physical mobile device, live Pinata upload, PostgreSQL migration or staging deployment was exercised. Those are separate approval/configuration gates, not silently simulated successes.
 
 Protocol references: [Pinata V3 public uploads](https://github.com/PinataCloud/pinata/blob/main/ai-instructions), [Phantom integration](https://docs.phantom.com/solana/integrating-phantom), [Pump program interfaces](https://github.com/pump-fun/pump-public-docs/blob/main/docs/PUMP_PROGRAM_README.md). Protocol support for quote assets does not imply this application's transaction adapter has verified support.
+
+### Reproducible browser validation
+
+```sh
+pnpm build
+PLAYWRIGHT_NATIVE_GPU=1 pnpm --filter @agentic-economy/web exec playwright test --config=playwright.launchpad.config.ts
+```
+
+Omit PLAYWRIGHT_NATIVE_GPU for software-rendered CI. This explicit configuration starts a memory-only API on 8796 and frontend on 5186, uses a test-only wallet provider with real Ed25519 signatures, and intercepts only Pinata/gateway responses. The fixture never reads a database URL or live Pinata credentials. It is not imported by the production application or server entrypoint. All three scenarios pass.
+
+### Committed snapshot validation
+
+A separate `git archive` of the completed series in `/tmp/aeco-phase2-committed-review` was installed from the frozen lockfile using cached dependencies. It excludes all unrelated pending world/navigation/boat/readiness work. That snapshot passes root build, frontend build, workspace typecheck, root/frontend lint, and all **229 available package tests**: 137 frontend, 63 backend, 22 shared contracts and 7 world-spec tests. Twelve database tests remain skipped. The dedicated authenticated browser suite passes all three scenarios from that archive. The working tree additionally passes its earlier preview-specific tests (171 frontend / 66 backend); these are not misrepresented as part of the committed checkpoint.
+
+The final metadata-origin correction was separately exercised against the ten authenticated workspace API tests. Every implementation commit contains exactly one file. The report itself is updated after validation; commit hashes above refer to the implementation history preceding this report update. No published history was changed.
+
+Final follow-up validation rechecked the committed metadata attribution and memory-storage notice in the isolated snapshot: builds, typecheck, lint, all ten workspace API tests and all three browser scenarios pass. The local disposable-database migration approval request remains pending, so no SQL migration or Postgres durability test was run. Current functional preview: http://127.0.0.1:5176/launchpad?source=backend, using the actual memory-only demo API with Pinata disabled until configured; the earlier city preview is preserved.

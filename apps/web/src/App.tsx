@@ -15,6 +15,7 @@ import {
   Maximize2,
   Minimize2,
   Minus,
+  Move,
   MousePointer2,
   Navigation,
   Pause,
@@ -31,7 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { createAdapter, numericSeed } from "./api/adapter";
-import { displayActivity } from "./api/agentIdentity";
+import { displayActivity, type IdentityAgent } from "./api/agentIdentity";
 import { useWorld } from "./api/useWorld";
 import { readRoute, routeUrl, type Page } from "./navigation/routes";
 import { hasMemoryOnlyDrafts, useDraftUnloadGuard } from "./navigation/drafts";
@@ -71,6 +72,7 @@ export default function App() {
     [tokenMint, setTokenMint] = useState<string | null>(() => readRoute(window.location).mint),
     [pageOpen, setPageOpen] = useState(true),
     [menu, setMenu] = useState(false),
+    [touchPan, setTouchPan] = useState(false),
     [paused, setPaused] = useState(
       () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     ),
@@ -254,7 +256,7 @@ export default function App() {
       <header className="topbar">
         <a href={routeUrl("world")} className="brand" aria-label="Agentic Economy home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("world"); }}>
           <span className="brand-mark">
-            <Building2 size={24} />
+            <img src="/aeco-website-logo.png" alt="" width={32} height={32} />
           </span>
           <span>
             Agentic <b>Economy</b>
@@ -309,13 +311,16 @@ export default function App() {
         inert={!worldVisible} aria-hidden={!worldVisible}>
                   <City
                     ref={city}
+                    touchPan={touchPan}
                     seed={seed}
                     population={population}
                     chunks={data.chunks}
                     agents={data.agents.map((a) => ({
                       id: a.id,
                       name: a.name,
-                      ownerWallet: a.ownerWallet,
+                      ownerWallet: a.ownerWallet ?? undefined,
+                      identity: (a as IdentityAgent).identity,
+                      displayName: (a as IdentityAgent).displayName,
                       demoName: api.kind === "demo",
                       x: a.pos.x,
                       z: a.pos.y,
@@ -672,6 +677,11 @@ export default function App() {
                     </div>
                   </aside>
                   <div className="camera-tools" aria-label="Camera controls">
+                    <button className="touch-pan-control" aria-label="Pan with one finger"
+                      aria-pressed={touchPan} title={touchPan ? "Pan mode on · tap to restore one-finger rotation" : "Pan with one finger · tap to enable"}
+                      onClick={() => setTouchPan((enabled) => !enabled)}>
+                      <Move size={18} /><span>{touchPan ? "Orbit" : "Pan"}</span>
+                    </button>
                     <button
                       aria-label="Zoom in"
                       onClick={() => city.current?.zoom(1.2)}

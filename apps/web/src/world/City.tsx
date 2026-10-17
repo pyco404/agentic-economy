@@ -44,7 +44,7 @@ function finishCameraMotion(controls: OrbitControls) {
   controls.enableDamping = damping;
 }
 
-export interface AgentVisual {
+export interface AgentVisual extends Pick<LabelAgent, "identity" | "displayName"> {
   id: string;
   name: string;
   ownerWallet?: string;
@@ -62,6 +62,7 @@ export interface CityHandle {
   rotate: () => void;
 }
 interface CityProps {
+  touchPan?: boolean;
   interactive?: boolean;
   background?: boolean;
   visualStill?: boolean;
@@ -190,7 +191,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       container.appendChild(renderer.domElement);
       renderer.domElement.setAttribute(
         "aria-label",
-        "Interactive procedural Genesis city. Drag to orbit, right-drag to pan, scroll to zoom. Arrow keys pan, plus and minus zoom, Home resets.",
+        "Interactive procedural Genesis city. Drag with one finger to orbit; use Pan with one finger to move the field. Two fingers rotate and pinch to zoom. Mouse drag orbits, right-drag pans, scroll zooms. Arrow keys pan, plus and minus zoom, Home resets.",
       );
       renderer.domElement.setAttribute("role", "img");
       renderer.domElement.tabIndex = 0;
@@ -222,7 +223,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         RIGHT: THREE.MOUSE.PAN,
       };
       controls.touches = {
-        ONE: THREE.TOUCH.PAN,
+        ONE: current.current.touchPan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE,
         TWO: THREE.TOUCH.DOLLY_ROTATE,
       };
       controls.update();
@@ -596,7 +597,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             container.dataset.railway = JSON.stringify(ambient.railway);
             container.dataset.mirroredRailway = JSON.stringify(ambient.mirroredRailway);
             container.dataset.railFrame = "-1";
-            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens });
+            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens, outskirts: composition.outskirts });
             if (scenic) { reveal.forget(scenic.group); scene.remove(scenic.group); disposeGroup(scenic.group, shared); }
             scenic = createFrontierScene({ ...frontier, parts: [...frontier.parts.filter((_, i) => !ambient!.clearedFrontierParts.has(i)), ...composition.parts] }, library, ambient.cuts);
             reveal.register("frontier", scenic.group, 1, revealNow());
@@ -632,6 +633,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (presentation.background && now - lastBackgroundFrame < 1000 / 24) return;
         lastBackgroundFrame = now;
         const interactive = presentation.interactive !== false;
+        controls.touches.ONE = presentation.touchPan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
         controls.enabled = interactive;
         renderer.domElement.tabIndex = interactive ? 0 : -1;
         if (!interactive && wasInteractive) { runtime.current!.focus = null; hoveredAgentId = null; }
@@ -852,6 +854,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             interacting,
           );
           labelAgents.push({ id: a.id, name: a.name, ownerWallet: a.ownerWallet,
+            identity: a.identity, displayName: a.displayName,
             demoName: a.demoName ?? p.demo, x: streetPoint.x, z: streetPoint.y,
             state: a.paused ? "paused" : walking ? "walking" : interacting ? "interacting" : "idle",
             activity: a.state, visualOnly: p.demo,

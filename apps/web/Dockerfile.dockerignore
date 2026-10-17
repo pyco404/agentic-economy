@@ -26,3 +26,7 @@
 **/*.keypair.json
 **/id.json
 **/package-lock.json
+
+# Required tracked brand assets; screenshots and other PNGs remain excluded.
+!apps/web/public/aeco-tab-logo.png
+!apps/web/public/aeco-website-logo.png

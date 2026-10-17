@@ -1,5 +1,11 @@
 /* World chrome floats over one uninterrupted, responsive WebGL viewport. */
 .agent-world-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+.camera-tools .touch-pan-control { display: none; }
+@media (any-pointer: coarse) {
+  .camera-tools .touch-pan-control { display: flex; flex-direction: column; gap: 1px; }
+  .camera-tools .touch-pan-control > span { display: block; width: auto; height: auto; margin: 0; background: none; font-size: 8px; }
+  .camera-tools .touch-pan-control[aria-pressed="true"] { background: #e5ecda; }
+}
 .agent-world-label { position: absolute; left: 0; top: 0; max-width: 176px; padding: 2px 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto;
   background: transparent; color: #fff0b7; font: 650 10.5px/1.2 "DM Sans", sans-serif;

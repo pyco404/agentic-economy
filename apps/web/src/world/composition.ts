@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { planOutskirts } from "./outskirts";
+import type { MirroredRail } from "./mirroredRail";
 import type { Part } from "./geometry";
 import type { FrontierData } from "./frontier";
 import { hashSeed, isLand, type ChunkVisual } from "./layout";
@@ -12,7 +14,7 @@ export const WORLD_COMPOSITION = {
 } as const;
 
 export function composeCityEdges(chunks: ChunkVisual[], frontier: FrontierData, seed: number,
-  railway: RiversidePlan | null, catalog?: { cx: number; cy: number }[]) {
+  railway: RiversidePlan | null, catalog?: { cx: number; cy: number }[], mirrored?: MirroredRail | null) {
   const parts: Part[] = [];
   const occupied = new Set((catalog?.length ? catalog : chunks.map((c) => ({ cx: c.x, cy: c.z })))
     .map((c) => `${c.cx}:${c.cy}`));
@@ -114,5 +116,16 @@ export function composeCityEdges(chunks: ChunkVisual[], frontier: FrontierData, 
       }
     }
   }
-  return { parts, edgeSegments, railGardens };
+  const mirror = mirrored?.report.mode === "mirrored" ? mirrored : null;
+  const routes = [...(path ? [{ points: path.points }] : []), ...(mirror ? [{
+    points: (mirror.source.underground?.surface ?? mirror.source.path)!.points.map(p => ({ x: p.x, z: mirror.reflectionZ-p.z })),
+  }] : [])];
+  const infrastructure = [...(railway?.parts ?? []), ...(mirror?.source.parts ?? []).map(p => ({ ...p,
+    position: [p.position[0],p.position[1],mirror!.reflectionZ-p.position[2]] as Part["position"],
+    rotation: [p.rotation?.[0]??0,-(p.rotation?.[1]??0),p.rotation?.[2]??0] as Part["rotation"],
+  }))];
+  const outskirts = planOutskirts(chunks,frontier,seed,catalog,routes,infrastructure);
+  const start = parts.length;
+  parts.push(...outskirts.parts);
+  return { parts, edgeSegments, railGardens, outskirts: { ...outskirts.report, start } };
 }

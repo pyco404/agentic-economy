@@ -122,6 +122,12 @@ hr {
   height: 43px;
   color: #38684d;
 }
+.brand-mark img {
+  display: block;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
 .nav {
   display: flex;
   justify-content: center;

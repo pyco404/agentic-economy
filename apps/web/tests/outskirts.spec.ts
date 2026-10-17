@@ -1,0 +1,26 @@
+import { expect, test } from "@playwright/test";
+for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`seeded outskirts preserve the live world at ${viewport.width}px`,async({page})=>{
+  test.setTimeout(240000);await page.setViewportSize(viewport);
+  const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
+  await page.goto("/?source=backend&railReview=1");
+  const city=page.getByTestId("city-canvas");await expect(city).toHaveAttribute("data-reveal-stage","complete",{timeout:180000});
+  await expect(page.getByTestId("connection-status")).toContainText("connected");
+  const report=JSON.parse((await city.getAttribute("data-composition"))!);
+  expect(report.outskirts.plannedSites).toBeGreaterThan(30);
+  expect(report.outskirts.plannedSites).toBeLessThanOrEqual(144);
+  expect(report.outskirts.groves).toBeGreaterThan(0);expect(report.outskirts.meadows).toBeGreaterThan(0);
+  expect(report.outskirts.parts).toBeLessThan(144*22);
+  const actors=JSON.parse((await city.getAttribute("data-ambient-actors"))!);
+  expect(actors.train).toBe(2);
+  expect(JSON.parse((await city.getAttribute("data-mirrored-railway"))!).mode).toBe("mirrored");
+  const initial=JSON.parse((await city.getAttribute("data-camera"))!);
+  await page.screenshot({path:`artifacts/outskirts-reviewed-default-${viewport.width}.png`});
+  const focus={x:64,z:64,zoom:viewport.width>700?1.12:.43};
+  await city.evaluate((node,focus)=>node.dispatchEvent(new CustomEvent("city-rail-review",{detail:{focus}})),focus);
+  await expect.poll(async()=>JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBe(focus.zoom);
+  await page.screenshot({path:`artifacts/outskirts-reviewed-overview-${viewport.width}.png`});
+  await page.getByRole("button",{name:"Reset camera",exact:true}).click();
+  await expect.poll(async()=>JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBe(initial.zoom);
+  expect(JSON.parse((await city.getAttribute("data-composition"))!).outskirts).toEqual(report.outskirts);
+  expect(await page.locator("canvas").count()).toBe(1);expect(errors).toEqual([]);
+});

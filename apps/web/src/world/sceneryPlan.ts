@@ -31,7 +31,7 @@ export function prepareScenery(request: SceneryRequest, send: (message: SceneryM
   });
   const frontier = generateFrontier(seed, chunks, request.catalog, request.style);
   const ambient = planAmbient(chunks, frontier, buildPathNetwork(chunks, seed, true), seed, streets);
-  const composition = composeCityEdges(chunks, frontier, seed, ambient.railway, request.catalog);
+  const composition = composeCityEdges(chunks, frontier, seed, ambient.railway, request.catalog, ambient.mirroredRail);
   send({ kind: "scenery", revision, frontier, ambient, composition });
 }
 export type SceneryMessage = { kind: "roads"; revision: number; pathNetwork: ReturnType<typeof buildPathNetwork>; streets: ReturnType<typeof planStreets> } |

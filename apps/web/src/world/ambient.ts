@@ -190,7 +190,7 @@ export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "m
   const update = (time: number, enabled: boolean, railTime = time) => {
     // Track, bridges and portals are static infrastructure, independent of trains.
     moving.visible = enabled;
-    if (!enabled || (time - previousTime < 1 / 30 && railTime - previousRailTime < 1 / 30)) return;
+    if (!enabled || (Math.abs(time - previousTime) < 1 / 30 && Math.abs(railTime - previousRailTime) < 1 / 30)) return;
     const delta = Number.isFinite(previousTime) ? Math.max(0, time - previousTime) : 0;
     previousTime = time;
     previousRailTime = railTime;

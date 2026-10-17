@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { agentIdentity } from "./agentIdentity";
 import {
   DemoAdapter,
   HttpAdapter,
@@ -21,6 +22,10 @@ describe("API adapter boundary", () => {
     WorldStats.parse(d.stats);
     d.communities.forEach((c) => Community.parse(c));
     d.agents.forEach((a) => AgentSummary.parse(a));
+    if ("identity" in AgentSummary.shape) {
+      expect(new Set(d.agents.map((a) => agentIdentity(a).displayName)).size).toBe(d.agents.length);
+      d.agents.forEach((a) => expect(agentIdentity(a)).toMatchObject({ kind: "house", owner: null }));
+    }
     TreasurySummary.parse(d.treasury);
     MarketsResponse.parse(d.markets);
     expect(d.treasury.recentEntries).toEqual([]);
@@ -35,6 +40,7 @@ describe("API adapter boundary", () => {
       profession: "farmer",
     });
     expect((await api.load()).agents).toHaveLength(d.agents.length + 1);
+    if ("identity" in AgentSummary.shape) expect(agentIdentity(a)).toMatchObject({ kind: "house", owner: null });
     expect((await api.updateAgent(a.id, { status: "paused" })).state).toBe(
       "paused",
     );

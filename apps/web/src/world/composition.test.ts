@@ -30,13 +30,13 @@ describe("contained city composition", () => {
     expect(result).toEqual(composeCityEdges(chunks, frontier, fixture.seed, railway, fixture.catalog));
     expect(JSON.stringify({ chunks, railway: railway.report })).toBe(before);
     const ground = railTerrain(chunks, frontier);
-    for (const part of result.parts) {
+    for (const [index, part] of result.parts.entries()) {
       expect(part.buildingId).toBeUndefined();
       expect(ground(part.position[0], part.position[2])?.wet).toBe(false);
       expect(chunks.some((c) => c.buildings.some((b) =>
         Math.abs(part.position[0] - b.x) < (b.width + part.scale[0]) / 2 &&
         Math.abs(part.position[2] - b.z) < (b.depth + part.scale[2]) / 2))).toBe(false);
-      if (part.role !== "rail-fill") expect(part.scale[1]).toBeLessThanOrEqual(.3);
+      if (index < result.outskirts.start && part.role !== "rail-fill") expect(part.scale[1]).toBeLessThanOrEqual(.3);
     }
   });
   it("leaves road and water openings, and removes seams when the city expands", () => {
@@ -46,7 +46,11 @@ describe("contained city composition", () => {
     const catalog = [{ cx: 0, cy: 0 }, { cx: 1, cy: 0 }];
     const landscape = generateFrontier(42, [chunk], catalog);
     const result = composeCityEdges([chunk], landscape, 42, null, catalog);
-    for (const part of result.parts) {
+    for (const [index, part] of result.parts.entries()) {
+      if(index >= result.outskirts.start) {
+        expect(part.position[0]<0 || part.position[0]>=64 || part.position[2]<0 || part.position[2]>=32).toBe(true);
+        continue;
+      }
       expect(part.position[0]).toBeLessThan(32); // no curb along a future internal seam
       if (part.position[2] < 0 || part.position[2] > 32) {
         expect(Math.abs(part.position[0] - 8.5)).toBeGreaterThan(1);

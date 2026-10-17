@@ -31,6 +31,27 @@ describe("authoritative agent identities", () => {
     expect(agentIdentity(house).primary).toBe("Ovenkeeper_302"); expect(agentIdentity(house).owner).toBeNull();
     expect(agentIdentity({ ...house, identity: { kind: "house", syntheticName: "0xfern_108" } }).primary).not.toContain("0x");
   });
+  it("uses persisted house and legacy names without exposing IDs or treating historical owners as activations", () => {
+    const house: IdentityAgent = { ...roster[0]!, ownerWallet: null, displayName: "Fern_506",
+      identity: { kind: "house", syntheticName: "Fern_506" } };
+    const legacy: IdentityAgent = { ...roster[1]!, displayName: "Bow_1940",
+      identity: { kind: "legacy", syntheticName: "Bow_1940", legacyOwnerWallet: roster[1]!.ownerWallet } };
+    expect(displayAgentName(house)).toBe("Fern_506");
+    expect(displayAgentName(legacy)).toBe("Bow_1940");
+    expect(agentIdentity(legacy)).toMatchObject({ kind: "legacy", owner: null });
+    expect(displayActivity({ agentId: legacy.id, summary: "Integration Courier completed delivery" }, [legacy]))
+      .toBe("Bow_1940 completed delivery");
+    expect(displayAgentName(JSON.parse(JSON.stringify(legacy)))).toBe("Bow_1940");
+  });
+  it("preserves backend collision-expanded wallet names and rejects names unrelated to that wallet", () => {
+    const wallet = "CMYxA" + "1".repeat(23) + "B6Wec";
+    const linked: IdentityAgent = { ...roster[0]!, displayName: "CMYxA...B6Wec",
+      identity: { kind: "token_linked", activatingWallet: wallet, tokenMint: "1".repeat(32), activationId: "act_verified" } };
+    expect(displayAgentName(linked)).toBe("CMYxA...B6Wec");
+    expect(displayAgentName({ ...linked, displayName: wallet })).toBe(wallet);
+    expect(displayAgentName({ ...linked, displayName: "Fake...Addr" })).toBe("CMYx...6Wec");
+    expect(agentIdentity({ ...linked, identity: undefined }).owner).toBeNull();
+  });
   it("attributes historical events without modifying persisted summaries", () => {
     const event = { agentId: roster[0]!.id, summary: "Integration Courier completed delivery" };
     expect(displayActivity(event, roster)).toContain(displayAgentName(roster[0]!));

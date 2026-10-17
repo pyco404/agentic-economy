@@ -597,7 +597,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             container.dataset.railway = JSON.stringify(ambient.railway);
             container.dataset.mirroredRailway = JSON.stringify(ambient.mirroredRailway);
             container.dataset.railFrame = "-1";
-            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens });
+            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens, outskirts: composition.outskirts });
             if (scenic) { reveal.forget(scenic.group); scene.remove(scenic.group); disposeGroup(scenic.group, shared); }
             scenic = createFrontierScene({ ...frontier, parts: [...frontier.parts.filter((_, i) => !ambient!.clearedFrontierParts.has(i)), ...composition.parts] }, library, ambient.cuts);
             reveal.register("frontier", scenic.group, 1, revealNow());

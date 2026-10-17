@@ -32,7 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { createAdapter, numericSeed } from "./api/adapter";
-import { displayActivity } from "./api/agentIdentity";
+import { displayActivity, type IdentityAgent } from "./api/agentIdentity";
 import { useWorld } from "./api/useWorld";
 import { readRoute, routeUrl, type Page } from "./navigation/routes";
 import { hasMemoryOnlyDrafts, useDraftUnloadGuard } from "./navigation/drafts";
@@ -318,7 +318,9 @@ export default function App() {
                     agents={data.agents.map((a) => ({
                       id: a.id,
                       name: a.name,
-                      ownerWallet: a.ownerWallet,
+                      ownerWallet: a.ownerWallet ?? undefined,
+                      identity: (a as IdentityAgent).identity,
+                      displayName: (a as IdentityAgent).displayName,
                       demoName: api.kind === "demo",
                       x: a.pos.x,
                       z: a.pos.y,

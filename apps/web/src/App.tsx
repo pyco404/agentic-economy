@@ -1,3 +1,4 @@
+import { WalletButton } from "./components/WalletButton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -26,7 +27,6 @@ import {
   Search,
   ShieldCheck,
   Users,
-  Wallet,
   Wind,
   TrainFront,
   X,
@@ -285,14 +285,7 @@ export default function App() {
             <i />
             {isDemo ? "Demo Mode" : `${data?.mode ?? "API"} · ${streamStatus}`}
           </span>
-          <button
-            className="wallet-button"
-            disabled
-            title="Wallet integration awaits backend verification"
-          >
-            <Wallet size={15} />
-            <span>Connect wallet</span>
-          </button>
+          <WalletButton />
           <button
             className="menu-button"
             aria-label="Toggle navigation"

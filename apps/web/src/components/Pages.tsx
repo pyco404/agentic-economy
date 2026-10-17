@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDraftField } from "../navigation/drafts";
 import { LaunchQuotePicker } from "./LaunchQuotePicker";
+import { LaunchLogoUpload } from "./LaunchLogoUpload";
 import { FutureFees } from "./Ecosystem";
 import { launchQuote, launchQuoteError, tradingPair } from "../api/launchQuotes";
 import {
@@ -63,7 +64,7 @@ export function Launchpad() {
     [symbol, setSymbol, symbolSaved] = useDraftField<string>("launchpad:symbol", ""),
     [description, setDescription, descriptionSaved] = useDraftField<string>("launchpad:description", ""),
     [imageUrl, setImageUrl, imageSaved] = useDraftField<string>("launchpad:image", ""),
-    [metadataUrl, setMetadataUrl, metadataSaved] = useDraftField<string>("launchpad:metadata", ""),
+    [metadataUrl, , metadataSaved] = useDraftField<string>("launchpad:metadata", ""),
     [quoteAsset, setQuoteAsset, quoteSaved] = useDraftField<string>("launchpad:quoteAsset", "SOL");
   const locallySaved = nameSaved && symbolSaved && descriptionSaved && imageSaved && metadataSaved && quoteSaved;
   const selectedQuote = launchQuote(quoteAsset), quoteError = launchQuoteError(quoteAsset);
@@ -124,14 +125,19 @@ export function Launchpad() {
               placeholder="What will your community build?"
             />
           </label>
-          <label>
-            Image URL
-            <input type="url" placeholder="https://…" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setReview(false); }} />
-          </label>
-          <label>
-            Metadata URL
-            <input type="url" placeholder="Supported Pump.fun metadata URI" value={metadataUrl} onChange={(e) => { setMetadataUrl(e.target.value); setReview(false); }} />
-          </label>
+          <LaunchLogoUpload name={name} symbol={symbol} description={description} quoteAsset={quoteAsset}
+            imageUrl={imageUrl} onImage={(uri) => { setImageUrl(uri); setReview(false); }} />
+          <details className="launch-advanced">
+            <summary>Advanced image and metadata settings</summary>
+            <label>Image URL
+              <input type="url" placeholder="https://…" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setReview(false); }} />
+            </label>
+            <p className="small muted">Manual image URLs still require backend validation. They do not count as verified uploads.</p>
+            <label>Metadata URL
+              <input type="url" value={metadataUrl} readOnly disabled placeholder="Automatic metadata · backend integration pending" />
+            </label>
+            <p className="small muted">Manual metadata overrides are unavailable until the backend can validate them. Any previous draft value is retained.</p>
+          </details>
           <LaunchQuotePicker value={quoteAsset} symbol={symbol} onChange={(quote) => { setQuoteAsset(quote); setReview(false); }} />
           <button className="primary wide" type="submit" disabled={!!quoteError}>
             Review draft <ArrowRight size={16} />
@@ -142,6 +148,8 @@ export function Launchpad() {
                 <Check size={17} /> Draft reviewed: {name} ({symbol}). No transaction created.
               </div>
               <dl className="fee-list">
+                <div><dt>Logo</dt><dd>{imageUrl ? "Reference provided · backend verification required" : "Not uploaded"}</dd></div>
+                <div><dt>Metadata readiness</dt><dd>Automatic preparation awaits backend API</dd></div>
                 <div><dt>Trading pair</dt><dd>{tradingPair(symbol, selectedQuote.asset)}</dd></div>
                 <div><dt>Quote asset</dt><dd>{selectedQuote.label}</dd></div>
                 <div><dt>Initial token price ({selectedQuote.asset})</dt><dd>Unavailable — backend quote required</dd></div>
@@ -490,13 +498,13 @@ export function Economy({ data }: { data: Dashboard }) {
           </div>
         ))}
       </div>
-      <div className="two-column">
-        <section className="surface">
-          <h2>Resource market</h2>
+      <div className="two-column economy-panels">
+        <section className="surface scroll-panel economy-panel" aria-labelledby="resource-market-title">
+          <h2 id="resource-market-title">Resource market</h2>
           <p className="muted small">
             Prices in simulated City Credits per unit
           </p>
-          <div className="table-wrap">
+          <div className="table-wrap panel-scroll-content slim-scroll" role="region" aria-label="Resource market rows" tabIndex={0}>
             <table>
               <thead>
                 <tr>
@@ -524,8 +532,9 @@ export function Economy({ data }: { data: Dashboard }) {
             </table>
           </div>
         </section>
-        <section className="surface">
-          <h2>Useful work queue</h2>
+        <section className="surface scroll-panel economy-panel" aria-labelledby="work-queue-title">
+          <h2 id="work-queue-title">Useful work queue</h2>
+          <div className="panel-scroll-content slim-scroll" role="region" aria-label="Useful work entries" tabIndex={0}>
           {data.tasks.map((t) => (
             <div className="task-row" key={t.id}>
               <Truck size={18} />
@@ -544,6 +553,7 @@ export function Economy({ data }: { data: Dashboard }) {
           {!data.tasks.length && (
             <div className="empty">The work queue is empty.</div>
           )}
+          </div>
         </section>
       </div>
       <Notice>
@@ -626,13 +636,13 @@ export function Treasury({ data }: { data: Dashboard }) {
         </section>
       </div>
       <section className="surface"><h2>Future creator-fee policy</h2><FutureFees /></section>
-      <section className="surface">
+      <section className="surface scroll-panel receipt-ledger" aria-labelledby="receipt-ledger-title">
         <div className="surface-title">
-          <h2>Public receipt ledger</h2>
+          <h2 id="receipt-ledger-title">Public receipt ledger</h2>
           <span className="tag">{readable(t.creatorFees.reconciliation)}</span>
         </div>
+        <div className="table-wrap panel-scroll-content slim-scroll ui-select-text" role="region" aria-label="Public receipt rows" tabIndex={0}>
         {t.recentEntries.length ? (
-          <div className="table-wrap">
             <table>
               <thead>
                 <tr>
@@ -655,7 +665,6 @@ export function Treasury({ data }: { data: Dashboard }) {
                 ))}
               </tbody>
             </table>
-          </div>
         ) : (
           <div className="empty">
             <ShieldCheck size={24} />
@@ -667,6 +676,7 @@ export function Treasury({ data }: { data: Dashboard }) {
             </p>
           </div>
         )}
+        </div>
       </section>
     </>
   );

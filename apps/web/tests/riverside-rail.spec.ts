@@ -19,7 +19,7 @@ test("live Riverside through railway preserves the bridge and persisted parcels"
   expect(report.issues).toEqual([]); expect(report.minRoadHeadroom).toBeGreaterThan(1.65);
   expect(report.tunnel.continuous).toBe(true); expect(report.tunnel.hiddenSeconds).toBe(120);
   expect(report.minWaterHeadroom).toBeGreaterThan(2); expect(report.maxGrade).toBeLessThan(0.045);
-  expect(JSON.parse((await city.getAttribute("data-ambient-actors"))!)).toEqual({ train: 1, cars: 6, plane: 1, helicopter: 1, balloon: 1 });
+  expect(JSON.parse((await city.getAttribute("data-ambient-actors"))!)).toEqual({ train: 2, cars: 6, plane: 1, helicopter: 1, balloon: 1 });
   const state = async () => JSON.parse(await city.getAttribute("data-rail-service") ?? "{}");
   await expect.poll(async () => (await state()).cars?.length).toBe(3);
   await page.getByRole("button", { name: "Collapse city activity" }).press("Enter");

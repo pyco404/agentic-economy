@@ -1,3 +1,4 @@
+/* global fetch */
 /** Read-only local demo snapshot. Never sends commands or connects to a wallet. */
 import { mkdir, writeFile } from 'node:fs/promises';
 const base=process.env.VIDEO_DEMO_API??'http://127.0.0.1:8787';

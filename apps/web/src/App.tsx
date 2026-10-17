@@ -256,7 +256,7 @@ export default function App() {
       <header className="topbar">
         <a href={routeUrl("world")} className="brand" aria-label="Agentic Economy home" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("world"); }}>
           <span className="brand-mark">
-            <Building2 size={24} />
+            <img src="/aeco-website-logo.png" alt="" width={32} height={32} />
           </span>
           <span>
             Agentic <b>Economy</b>

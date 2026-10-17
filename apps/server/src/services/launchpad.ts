@@ -59,7 +59,7 @@ export class LaunchpadService {
    const d=await this.store.get(wallet,id);if(d.version!==version)throw new AppError('conflict','Draft changed. Reload before preparing metadata.');
    required.parse(d.fields);if(!d.image)throw new AppError('bad_request','A backend-verified logo is required');
    const {name,symbol,description,website,twitter,telegram}=d.fields;
-   const json={name,symbol,description,image:d.image.ipfsUri,showName:true,createdOn:'https://pump.fun',...(website?{website}:{}),...(twitter?{twitter}:{}),...(telegram?{telegram}:{})};
+   const json={name,symbol,description,image:d.image.ipfsUri,showName:true,createdOn:new URL(this.config.auth.uri).origin,...(website?{website}:{}),...(twitter?{twitter}:{}),...(telegram?{telegram}:{})};
    const metadata=await this.pinning.pin(new TextEncoder().encode(JSON.stringify(json)),'application/json',`metadata-${id}.json`);
    const next={...d,metadata,version:d.version+1,updatedAt:new Date().toISOString()};await this.store.save(next,version);return next;
   });

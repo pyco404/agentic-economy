@@ -5,7 +5,9 @@ import type { ChunkVisual } from "./layout";
  * zoom changes apparent scale only; the original isometric eye direction stays.
  * Portrait screens retain enough horizontal room for the civic neighborhood.
  */
-export const WORLD_CAMERA = { desktopZoom: 2.85, civicWidth: 58, minDefaultZoom: .8 } as const;
+export const WORLD_CAMERA = { id: "civic-isometric", eye: [100, 90, 100], desktopZoom: 2.85, civicWidth: 58, minDefaultZoom: .8 } as const;
+/** Initialization, reset and framing all use the same named camera preset. */
+export const worldCameraOffset = () => new THREE.Vector3(...WORLD_CAMERA.eye);
 export function defaultWorldFrame(chunks: ChunkVisual[], width: number, height: number) {
   const buildings = chunks.flatMap((c) => c.buildings);
   if (!buildings.length) return overviewFrame(chunks, width, height);
@@ -28,7 +30,7 @@ export function overviewFrame(chunks: ChunkVisual[], width: number, height: numb
   const maxZ = Math.max(...chunks.map((c) => (c.z + 1) * 32));
   const center = new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
   const camera = new THREE.PerspectiveCamera();
-  camera.position.copy(center).add(new THREE.Vector3(100, 90, 100));
+  camera.position.copy(center).add(worldCameraOffset());
   camera.lookAt(center);
   camera.updateMatrixWorld();
   const points = chunks.flatMap((c) => [

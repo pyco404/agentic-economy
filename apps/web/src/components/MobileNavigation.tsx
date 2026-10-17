@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { ArrowUpRight, Building2, ChevronRight, Info, X, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Info, X, type LucideIcon } from "lucide-react";
 import { routeUrl, type Page } from "../navigation/routes";
 
 interface Props {
@@ -45,7 +45,7 @@ export function MobileNavigation({ items, active, modeLabel, onNavigate, onClose
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }}>
       <header className="mobile-navigation-heading">
-        <div className="mobile-navigation-brand"><span className="brand-mark"><Building2 size={22} aria-hidden="true" /></span>
+        <div className="mobile-navigation-brand"><span className="brand-mark"><img src="/aeco-website-logo.png" alt="" width={32} height={32} /></span>
           <span>Agentic <b>Economy</b><small>A WORLD THAT WORKS</small></span></div>
         <button type="button" className="mobile-navigation-close" aria-label="Close navigation" onClick={onClose}><X size={20} /></button>
       </header>

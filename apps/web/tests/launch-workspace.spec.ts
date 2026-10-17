@@ -28,8 +28,8 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
  });
  await page.addInitScript(({wallet})=>{
   const callbacks:Record<string,(()=>void)[]>={};
-  (window as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async(message:Uint8Array)=>({signature:new Uint8Array(await (window as TestWalletWindow).__aecoSign(Array.from(message)))}),disconnect:async()=>{},on:(name:string,cb:()=>void)=>{(callbacks[name]??=[]).push(cb);},removeListener:(name:string,cb:()=>void)=>{callbacks[name]=callbacks[name]?.filter(f=>f!==cb)??[];}}};
-  (window as TestWalletWindow).__aecoWalletChanged=()=>callbacks.accountChanged?.forEach(cb=>cb());
+  (window as unknown as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async(message:Uint8Array)=>({signature:new Uint8Array(await (window as unknown as TestWalletWindow).__aecoSign(Array.from(message)))}),disconnect:async()=>{},on:(name:string,cb:()=>void)=>{(callbacks[name]??=[]).push(cb);},removeListener:(name:string,cb:()=>void)=>{callbacks[name]=callbacks[name]?.filter(f=>f!==cb)??[];}}};
+  (window as unknown as TestWalletWindow).__aecoWalletChanged=()=>callbacks.accountChanged?.forEach(cb=>cb());
  },{wallet});
  const errors:string[]=[],financial:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/launches\/(prepare|confirm)|demo\/launches/.test(r.url()))financial.push(r.url());});
  await page.goto(origin!+'/launchpad?source=backend');await expect(page.getByRole('button',{name:'Connect wallet',exact:true}).first()).toBeVisible();
@@ -48,7 +48,7 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
  await page.getByRole('button',{name:'Review saved draft',exact:true}).click();await expect(page.getByRole('heading',{name:'Backend draft review'})).toBeVisible();
  await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Save draft',exact:true}).click();await page.getByRole('button',{name:'Review saved draft',exact:true}).click();await expect(page.getByText('Generate metadata for the latest saved details')).toBeVisible();
  // Wallet changes revoke the cookie session; drafts disappear immediately.
- await page.evaluate(()=>(window as TestWalletWindow).__aecoWalletChanged?.());
+ await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoWalletChanged?.());
 
  await expect(page.getByText('Your launch workspace')).toBeVisible();expect(financial).toEqual([]);expect(errors).toEqual([]);
 });
@@ -56,6 +56,6 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
 test('missing wallet and rejected signatures leave drafts unauthenticated',async({page})=>{
  test.setTimeout(120000);await page.goto(origin!+'/launchpad?source=backend');await expect(page.getByText('Your launch workspace')).toBeVisible({timeout:30000});await page.getByRole('button',{name:'Connect wallet',exact:true}).first().click();await expect(page.getByText(/No supported wallet detected/)).toBeVisible();await page.getByRole('button',{name:'Close wallet selection'}).click();
  const key=nacl.sign.keyPair(),wallet=bs58.encode(key.publicKey);
- await page.evaluate(wallet=>{(window as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async()=>{throw new Error('Signature rejected by user');},disconnect:async()=>{}}};},wallet);
+ await page.evaluate(wallet=>{(window as unknown as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async()=>{throw new Error('Signature rejected by user');},disconnect:async()=>{}}};},wallet);
  await page.getByRole('button',{name:'Connect wallet',exact:true}).first().click();await page.getByRole('button',{name:'Phantom',exact:true}).click();await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Signature rejected by user');await page.getByRole('button',{name:'Close wallet selection'}).click();await expect(page.getByText('Your launch workspace')).toBeVisible();
 });

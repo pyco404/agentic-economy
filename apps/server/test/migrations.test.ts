@@ -14,7 +14,11 @@ describe("migration files (static)", () => {
 
   it("are numbered, ordered and unique", () => {
     expect(files.length).toBeGreaterThan(0);
-    files.forEach((f, i) => expect(f).toMatch(new RegExp(`^${String(i + 1).padStart(3, "0")}_[a-z0-9_]+\\.sql$`)));
+    // 003 is reserved for main's separately reviewed identity migration.
+    files.forEach(f=>expect(f).toMatch(/^\d{3}_[a-z0-9_]+\.sql$/));
+    const numbers=files.map(f=>Number(f.slice(0,3)));
+    expect(new Set(numbers).size).toBe(files.length);
+    expect(numbers).toEqual([...numbers].sort((a,b)=>a-b));
   });
 
   it("contain no destructive statements (forward-only, additive)", () => {

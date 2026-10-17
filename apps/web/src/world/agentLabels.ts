@@ -5,11 +5,11 @@ export const AGENT_LABELS = { farZoom: 1.2, closeZoom: 3.6,
   farLimit: 4, mediumLimit: 18, closeLimit: 48, interval: 1 / 30,
   headHeight: 1.7, gap: 8, estimatedCharacterWidth: 6.2 } as const;
 export interface LabelAgent { id: string; name: string; ownerWallet?: string;
-  identity?: AuthoritativeIdentity; demoName?: boolean; x: number; z: number; state: string;
+  identity?: AuthoritativeIdentity; displayName?: string; demoName?: boolean; x: number; z: number; state: string;
   selected?: boolean; hovered?: boolean; important?: boolean; activity?: string; visualOnly?: boolean; }
 export interface LabelCandidate extends LabelAgent { screenX: number; screenY: number; }
 
-export function agentLabelName(agent: Pick<LabelAgent, "id" | "name" | "ownerWallet" | "demoName" | "identity">) {
+export function agentLabelName(agent: Pick<LabelAgent, "id" | "name" | "ownerWallet" | "demoName" | "identity" | "displayName">) {
   return agentIdentity(agent).primary;
 }
 /** Bounded collision packing using estimated text bounds, never DOM measurements. */

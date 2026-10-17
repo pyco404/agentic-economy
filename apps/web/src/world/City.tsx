@@ -44,7 +44,7 @@ function finishCameraMotion(controls: OrbitControls) {
   controls.enableDamping = damping;
 }
 
-export interface AgentVisual {
+export interface AgentVisual extends Pick<LabelAgent, "identity" | "displayName"> {
   id: string;
   name: string;
   ownerWallet?: string;
@@ -854,6 +854,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             interacting,
           );
           labelAgents.push({ id: a.id, name: a.name, ownerWallet: a.ownerWallet,
+            identity: a.identity, displayName: a.displayName,
             demoName: a.demoName ?? p.demo, x: streetPoint.x, z: streetPoint.y,
             state: a.paused ? "paused" : walking ? "walking" : interacting ? "interacting" : "idle",
             activity: a.state, visualOnly: p.demo,

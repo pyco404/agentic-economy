@@ -11,6 +11,7 @@ import { generateTreeParts } from "./vegetationGeometry";
 import { buildingWallColor, pastelWalls } from "./buildingPalette";
 import { createWaterMaterial } from "./waterFlow";
 import { shadeFacade } from "./facadeShading";
+import { createTurfSampler } from "./terrainSurface";
 
 export interface Part {
   geometry: string;
@@ -735,6 +736,7 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
   const x0 = chunk.x * CHUNK_SIZE,
     z0 = chunk.z * CHUNK_SIZE;
   const size = chunk.size ?? 32;
+  const turf = createTurfSampler(seed, context.filter(c => Math.abs(c.x - chunk.x) <= 1 && Math.abs(c.z - chunk.z) <= 1));
   const adjacent = new Map(context.map((c) => [`${c.x}:${c.z}`, c]));
   const at = (x: number, z: number) => {
     const wx = x0 + x, wz = z0 + z;
@@ -770,8 +772,10 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
         const elevation = Number(chunk.elevation?.[j * size + i] ?? "0") * 0.08;
         parts.push({
           geometry: "box",
-          color: code === "r" && arterial(i, j)
-            ? cityPalette.arterialRoad : colors[code] ?? colors.g!,
+          color: code === "g"
+            ? `#${turf(chunk.x * size + i + .5, chunk.z * size + j + .5).getHexString()}`
+            : code === "r" && arterial(i, j)
+              ? cityPalette.arterialRoad : colors[code] ?? colors.g!,
           position: [
             chunk.x * size + i + 0.5,
             elevation - 0.1,
@@ -794,7 +798,7 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
             color:
               x > shoreline(z, seed) - 3
                 ? cityPalette.sand
-                : cityPalette.terrain,
+                : `#${turf(x, z).getHexString()}`,
             position: [x, -0.13, z],
             scale: [2, 0.22, 2],
           });

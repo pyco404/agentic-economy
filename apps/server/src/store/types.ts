@@ -66,6 +66,7 @@ export interface Store {
   consumeChallenge(nonce: string, wallet: string, now: Date): Promise<ChallengeRecord | null>;
   createSession(s: SessionRecord): Promise<void>;
   getSession(tokenHash: string, now: Date): Promise<SessionRecord | null>;
+  revokeSession(tokenHash: string): Promise<void>;
 
   getIdempotent(key: string, wallet: string, route: string): Promise<IdempotencyRecord | null>;
   saveIdempotent(key: string, wallet: string, route: string, rec: IdempotencyRecord): Promise<void>;

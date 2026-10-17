@@ -72,3 +72,13 @@ Intermediate one-file commits introducing an import before its final consumer is
 | `0bcd9a6` | `apps/web/tests/outskirts.spec.ts` | test(world): inspect seeded outskirts on desktop and mobile |
 
 This report and the main-PR scope update are separate documentation-only commits; their hashes are available in Git history.
+
+## Zoned turf follow-up
+
+`terrainSurface.ts` now supplies deterministic, world-coordinate turf colors using two smooth noise scales (24 and 7 units). Existing grass tiles use lighter worn greens near civic/taller buildings, restrained residential turf, and fuller meadow greens in undeveloped areas. Industrial surroundings remain subdued. The same meadow sampler colors the outer frontier, and existing woodland/bank ground lenses blend into it. The page/background palette stays unchanged.
+
+Only grass-cell colors change inside canonical chunks: roads, sidewalks, plazas, sand, fields, reserved cells, bridges, water, buildings and elevations retain their existing treatment and geometry. Existing orchards, gardens, shrubs and clustered trees provide ground context without additional foliage density. Turf is diffuse instance/vertex color, not an extra mesh layer, texture download, transparency effect or animation. Camera and navigation inputs are unchanged.
+
+Matched review captures use the ignored `artifacts/turf-coverage-before-*` and `artifacts/turf-coverage-after-*` files. The targeted terrain/landscaping run passed 23 tests, including continuous seeded variation, civic/residential zoning, preserved surface codes, and source-data immutability. These changes remain local pending review and release coordination.
+
+The full frontend unit suite passed 151 tests across 37 files, and all four desktop/mobile landmass/outskirts browser checks passed against the local backend. Build (including typecheck) and lint passed. The existing bundle-size advisory remains. No screenshot, generated build output or browser artifact is intended for a commit.

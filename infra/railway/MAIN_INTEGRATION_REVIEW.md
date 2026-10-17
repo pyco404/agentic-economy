@@ -76,3 +76,12 @@ gh pr create --repo pyco404/agentic-economy --base main --head codex/frontend \
 If a PR already exists for this branch, update its title/body with `gh pr edit <number> --repo pyco404/agentic-economy --title "fix(web): integrate touch branding and identity compatibility" --body-file infra/railway/MAIN_INTEGRATION_REVIEW.md` instead. The CLI was unauthenticated in this workspace, so no live GitHub PR or private checks were inspected or changed. Browser alternative: `https://github.com/pyco404/agentic-economy/compare/main...codex/frontend?expand=1`.
 
 Review GitHub checks and approve the PR manually. Use **Create a merge commit** to preserve the individual-file history; do not squash, rebase, enable auto-merge, or force-push. If the normal push is rejected because the remote advanced, stop and coordinate; never force it.
+
+
+## Reviewed follow-up: outer-world composition
+
+This PR scope now also includes the completed outer-scenery refinement documented in `apps/web/OUTSKIRTS_REFINEMENT.md`: deterministic groves, meadow/crop plots, short paths, bank planting and occasional prop sheds, with actual rail/portal/road/water clearance. It adds no economic buildings or events and changes no authoritative parcels, camera settings, water geometry or train route. A focused animation-throttle correction handles backward development-clock seeks without changing the 120-second production interval.
+
+The follow-up passed frontend build/typecheck/lint, all 147 unit tests in the full local working tree, and five final desktop/tablet/mobile scenery/railway browser cases. Its isolated commit-scope candidate, excluding the pending navigation/terrain implementation, also passed typecheck and 11 focused scenery/railway unit tests. Paired camera captures show approximately 4–6% more triangles and 1–4 more total draw calls; this is scene-complexity evidence rather than an isolated FPS benchmark.
+
+Only these new scenery and clock-fix hunks are committed from mixed files. The earlier 25-file irregular-landmass/boat/navigation series is still uncommitted and excluded. Consequently local review screenshots include pending terrain features that publishing this follow-up alone will not deploy. Screenshots and generated reports remain ignored. The staging/migration/production gates above remain unchanged; the project owner still performs the normal push and approves any merge.

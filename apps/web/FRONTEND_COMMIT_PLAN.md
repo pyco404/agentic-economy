@@ -213,3 +213,59 @@ Ordered actual commits are listed below. The final commit introducing this docum
 ## Publication checks
 
 Before a normal `git push origin codex/frontend:codex/frontend`, re-fetch remote references, verify the remote remains an ancestor, check all commit file counts, check the index is empty, confirm committed frontend bytes match the tested working tree, and verify the only remaining tracked work is the preserved integration-note append. Never force-push, rewrite published history, or target `main`. Confirm remote HEAD after pushing.
+
+
+## 2026-10-17 touch, branding and video-source checkpoint
+
+The user authorized normal commit and push on `codex/frontend`. This checkpoint preserves the original four one-file touch-control commits, adds twenty individually reviewed files, and includes three one-file follow-ups for video-script lint compatibility. A final one-file documentation commit records the checkpoint. No reset, rebase, branch switch, force-push or main-branch push is involved.
+
+Touch changes map one finger to the existing OrbitControls rotation behavior, retain two-finger rotation/pinch and all desktop mappings, and add a touch-only explicit Pan toggle. Branding uses the two approved PNG assets in the favicon, persistent header and mobile menu. These PNG files are required source artwork, not generated screenshots.
+
+The isolated video directory contains a completed **15-second review-sample pipeline**, licensed local Kokoro narration, an original procedural score, captions, validation and reproducible setup. Its eight-scene JSON is the full-film plan, not a completed 120-second video. Full-film production still awaits sample approval. Source publication does not imply approval or publication of the rendered media.
+
+### Preservation and exclusions
+
+- Safety backup and reviewed-file hashes: `/tmp/aeco-branding-video-push-20261017/`.
+- The backend-owned `contracts/integration-notes.md` append remains uncommitted and byte-for-byte unchanged (SHA-256 `cc94e59ce0ef7eb2f95b4dbd89feab1cd2b81e747f955f8871a1cb73ba0dec22`).
+- Unused `apps/web/public/aeco-cbg.png` stays local.
+- All generated video/audio, screenshots, models, fonts, demo snapshots, caches and test/build artifacts remain excluded. No live website video dependencies, backend code, deployment settings or financial behavior changed.
+
+### Validation
+
+- Frontend production build, strict typecheck and lint passed. Existing dependency-annotation and large-bundle advisories are unchanged.
+- All **124 unit tests across 33 files passed**, with a 30-second per-test timeout for CPU-heavy procedural railway cases.
+- All **eight targeted Chrome browser cases passed across three batches**, covering desktop orbit/pan/zoom/reset and inspection, phone/tablet two-finger rotation and pinch, phone/tablet one-finger orbit and explicit Pan mode, and mobile-menu navigation/accessibility. The initial eight-case process was terminated after four passes without a test assertion failure; the remaining four cases passed in two focused batches. Tests use software WebGL and genuine CDP touch-event sequences in emulated viewports; no physical-device certification is claimed.
+- Repository-config ESLint over all four new video JavaScript/TypeScript files passed after declaring the relevant browser/Node globals and removing an unused import. JavaScript, Python and shell syntax checks also passed.
+- Video media validation and syntax checks passed. The actual sample is exactly 15 seconds, 1080×1350, 30 FPS, H.264/AAC, with narration and music, no detected blank sampled frames or clipping, and successful Chrome playback/seeking. The preview city plate is intentionally 720×720 at 15 FPS; the typography/composite is native-resolution at 30 FPS.
+
+### Individual-file ledger
+
+| Commit | Conventional Commit | Explicit file |
+|---|---|---|
+| `592ce4ca3343a41a1bd789c23feb40adce3963f7` | fix(world): orbit with one touch while preserving two-finger gestures | `apps/web/src/world/City.tsx` |
+| `ee5969caccfe2ab14fef5a0b1230df911af49ae5` | style(world): expose a touch-only pan mode control | `apps/web/src/world.css` |
+| `bdefa6c061977d44fadb6618eefbc8a1aed07c97` | feat(world): add an explicit one-finger pan toggle | `apps/web/src/App.tsx` |
+| `be94872b811938e7044892d1e54c00c2e5a9a7cf` | test(world): cover one-finger orbit and touch pan mode | `apps/web/tests/touch-orbit.spec.ts` |
+| `5866d35fb1d68a00b651f17f2f76034dc9c1c67b` | feat(web): add approved browser tab logo | `apps/web/public/aeco-tab-logo.png` |
+| `e720b0cb6554634ba4498b216e6a32ff29b01e9b` | feat(web): add approved website emblem | `apps/web/public/aeco-website-logo.png` |
+| `9c64f48eac11105ffedbfff56f94007c1fdb4571` | style(web): fit approved logo within responsive brand marks | `apps/web/src/styles.css` |
+| `c365ce8146bfc6ef5e0e2f06558b2a99fe43c567` | feat(web): use AECO artwork as the browser favicon | `apps/web/index.html` |
+| `4a330241e1d9cd14d92207114591f5f85a834dbe` | feat(web): display approved logo in the persistent header | `apps/web/src/App.tsx` |
+| `4a1f06e044b4ad38cb38dc07599ee9f1647e035d` | feat(web): use approved emblem in mobile navigation | `apps/web/src/components/MobileNavigation.tsx` |
+| `cbc3d618a58ed9d1608cfad588c4d064dd5e6ca3` | chore(video): exclude generated media models and production caches | `video/agentic-economy-explainer/.gitignore` |
+| `9b869779d3f25c3c7d1157a2b55548e348ddf66c` | build(video): pin isolated CPU narration and compositing dependencies | `video/agentic-economy-explainer/requirements.txt` |
+| `9059d5ec33f614a991a129e62479b401edb36e20` | docs(video): record voice music font and artwork provenance | `video/agentic-economy-explainer/LICENSES.md` |
+| `8efa1cbb75b694cdd5d2b596b0e9e5ce320b5ff8` | build(video): prepare isolated tools and verify Kokoro model hashes | `video/agentic-economy-explainer/source/setup.sh` |
+| `f7ababfdbe9a3602adf44712ec192e8c013d9664` | docs(video): define the eight-scene explainer script and roadmap labels | `video/agentic-economy-explainer/source/scenes.json` |
+| `5f08729b8e73873c1a5bf0d3a65d7d08fbc369f2` | feat(video): capture read-only demo world snapshots | `video/agentic-economy-explainer/source/snapshot.mjs` |
+| `a9bde99c25b778575bfde7caa0aa6d41db4ee77e` | feat(video): animate the existing procedural city for the review sample | `video/agentic-economy-explainer/source/city.ts` |
+| `672d5ffba98b04dcd6ba53bf342d96ac93d9f6e5` | feat(video): add an isolated city capture document | `video/agentic-economy-explainer/source/city.html` |
+| `5b71d68fa6db65d2108a4175a50e5dd98e208968` | feat(video): export deterministic city frames with atomic writes | `video/agentic-economy-explainer/source/capture.mjs` |
+| `63a48c4c39b4de6362348508d134fe55adf3a964` | feat(video): synthesize local narration an original score and timed subtitles | `video/agentic-economy-explainer/source/audio.py` |
+| `6d7e0fdbe0a1a909df3a8409c3df9a53266917d2` | feat(video): compose the branded fifteen-second H264 review sample | `video/agentic-economy-explainer/source/render_sample.py` |
+| `1967d66616f731dc9cda1700b8445efdc842a0ed` | test(video): validate media timing codecs audio and sampled frames | `video/agentic-economy-explainer/source/validate.py` |
+| `a20375371a3cb1d66255127449599f0fa85ddcae` | test(video): verify rendered sample playback and seeking in Chrome | `video/agentic-economy-explainer/source/playback.mjs` |
+| `0fadc1673a785efbe8bf8c7e0ec67897d084b94c` | docs(video): document sample scope licensing and reproducible rendering | `video/agentic-economy-explainer/README.md` |
+| `1d316c5775233d9047ffc77ec6796cb5369cedd2` | chore(video): declare capture globals and import Node buffers | `video/agentic-economy-explainer/source/capture.mjs` |
+| `d8eb58977c19cdf1d065c441ef0c62afcd8701a0` | chore(video): declare playback globals and remove an unused import | `video/agentic-economy-explainer/source/playback.mjs` |
+| `c2fcdcb4d1464f13817409df5dd836a2a1a17ae0` | chore(video): declare Node fetch for snapshot linting | `video/agentic-economy-explainer/source/snapshot.mjs` |

@@ -238,6 +238,7 @@ export class PostgresStore implements Store {
     await this.pool.query("INSERT INTO sessions (token_hash, wallet, expires_at) VALUES ($1,$2,$3)", [s.tokenHash, s.wallet, s.expiresAt]);
   }
 
+  async revokeSession(tokenHash:string) { await this.pool.query("UPDATE sessions SET revoked_at = now() WHERE token_hash = $1",[tokenHash]); }
   async getSession(tokenHash: string, now: Date) {
     const r = await this.pool.query("SELECT token_hash, wallet, expires_at FROM sessions WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > $2", [tokenHash, now.toISOString()]);
     const row = r.rows[0];

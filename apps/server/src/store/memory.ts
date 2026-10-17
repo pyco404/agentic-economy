@@ -104,6 +104,7 @@ export class MemoryStore implements Store {
   async createSession(s: SessionRecord) {
     this.sessions.set(s.tokenHash, s);
   }
+  async revokeSession(tokenHash:string) { this.sessions.delete(tokenHash); }
   async getSession(tokenHash: string, now: Date) {
     const s = this.sessions.get(tokenHash);
     return s && new Date(s.expiresAt) > now ? s : null;

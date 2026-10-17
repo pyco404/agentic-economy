@@ -1,0 +1,23 @@
+import {randomUUID} from 'node:crypto';
+import pg from 'pg';
+import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import {DraftFields,type SavedLaunchDraft} from '@agentic-economy/shared';
+import {LaunchpadStore} from '../src/store/launchpad.js';
+import {migrate} from '../src/store/postgres.js';
+import {assertDisposableTestDb,newWallet} from './helpers.js';
+const url=process.env.TEST_DATABASE_URL;
+const approved=!!url&&process.env.LAUNCHPAD_TEST_MIGRATIONS_APPROVED==='true';
+(approved?describe:describe.skip)('Postgres launch workspace (explicit disposable-database approval required)',()=>{
+ let pool:pg.Pool;const wallet=newWallet().wallet;
+ beforeAll(async()=>{assertDisposableTestDb(url!);pool=new pg.Pool({connectionString:url});await migrate(pool);});
+ afterAll(async()=>{if(pool){await pool.query('DELETE FROM launchpad_operations WHERE wallet=$1',[wallet]);await pool.query('DELETE FROM launchpad_drafts WHERE wallet=$1',[wallet]);await pool.end();}});
+ it('persists across connections, isolates owners and atomically resolves concurrent versions and quota claims',async()=>{
+  const at=new Date().toISOString();const draft:SavedLaunchDraft={id:randomUUID(),wallet,version:0,fields:DraftFields.parse({name:'Durable Moss',symbol:'MOSS'}),image:null,metadata:null,createdAt:at,updatedAt:at};
+  const store=new LaunchpadStore(pool);await store.create(draft);
+  const fresh=new pg.Pool({connectionString:url});try{expect(await new LaunchpadStore(fresh).get(wallet,draft.id)).toEqual(draft);}finally{await fresh.end();}
+  await expect(store.get(newWallet().wallet,draft.id)).rejects.toThrow('not found');
+  const next={...draft,version:1};const writes=await Promise.allSettled([store.save(next,0),store.save(next,0)]);expect(writes.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  const key=randomUUID(),claims=await Promise.allSettled([store.claim(wallet,key,'image','hash'),store.claim(wallet,key,'image','hash')]);expect(claims.filter(r=>r.status==='fulfilled')).toHaveLength(1);await store.finish(wallet,key,'image',{receipt:'persisted'});expect(await new LaunchpadStore(pool).claim(wallet,key,'image','hash')).toMatchObject({replayed:true,result:{receipt:'persisted'}});
+  await store.remove(wallet,draft.id,1);await expect(store.get(wallet,draft.id)).rejects.toThrow('not found');
+ });
+});

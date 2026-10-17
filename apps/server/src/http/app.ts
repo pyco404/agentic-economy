@@ -8,6 +8,7 @@ import type { AppContext } from "../context.js";
 import { AppError } from "../util/errors.js";
 import { registerHandlers } from "./handlers.js";
 import { registerWebSocket } from "../ws/gateway.js";
+import { registerLaunchpad } from "./launchpad.js";
 import { health, metrics, readiness } from "./system.js";
 
 export interface HandlerCtx<N extends RouteName> {
@@ -53,7 +54,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     bodyLimit: 64 * 1024,
     trustProxy: true,
   });
-  await app.register(cors, { origin: ctx.config.corsOrigins, methods: ["GET", "POST", "PATCH", "OPTIONS"], allowedHeaders: ["Authorization", "Content-Type", "Idempotency-Key"] });
+  await app.register(cors, { origin: ctx.config.corsOrigins, credentials: true, methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"], allowedHeaders: ["Authorization", "Content-Type", "Idempotency-Key"] });
   await app.register(websocket, { options: { maxPayload: 16 * 1024 } });
 
   const limiter = new WindowLimiter(30, 60_000);
@@ -129,7 +130,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   register("health", () => health(ctx));
   register("readiness", () => readiness(ctx));
   registerHandlers(ctx, register);
-  if (servesApi) registerWebSocket(app, ctx);
+  if (servesApi) { await registerLaunchpad(app,ctx); registerWebSocket(app, ctx); }
 
   app.get("/metrics", async (_req, reply) => reply.type("text/plain; version=0.0.4").send(metrics(ctx, counters)));
 

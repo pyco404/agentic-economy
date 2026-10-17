@@ -46,9 +46,9 @@ All draft mutations enforce wallet ownership on the server. A completed pin may 
 
 `apps/server/src/store/migrations/004_launchpad_workspace.sql` adds only draft and operation tables/indexes. Number 003 is reserved for main's separately reviewed agent-identity migration; the static migration test checks unique increasing numbers without requiring that unrelated migration here.
 
-**No database migration has been applied.** Existing PostgreSQL startup and Railway pre-deploy run pending migrations automatically: do not deploy this backend until this SQL and the target database are approved. Do not copy or apply identity migration 003 to make numbering consecutive. Existing world, ledger, launch, agent and ownership tables are untouched (session revocation uses the already existing revoked_at column).
+**Migration 004 has been applied only to an explicitly approved, newly created disposable local test database. No existing development, staging or production database was migrated.** Existing PostgreSQL startup and Railway pre-deploy run pending migrations automatically: do not deploy this backend until this SQL and the target database are approved. Do not copy or apply identity migration 003 to make numbering consecutive. Existing world, ledger, launch, agent and ownership tables are untouched (session revocation uses the already existing revoked_at column).
 
-The gated Postgres integration test requires both a disposable `*_test` TEST_DATABASE_URL and `LAUNCHPAD_TEST_MIGRATIONS_APPROVED=true`. It must not target Railway staging or production. Without that explicit authorization, persistence across actual Postgres reconnects remains unverified; memory/API tests are not represented as durable database proof.
+The gated Postgres integration test requires both a disposable `*_test` TEST_DATABASE_URL and `LAUNCHPAD_TEST_MIGRATIONS_APPROVED=true`. It must not target Railway staging or production. The approved isolated run verifies Postgres reconnects, cross-replica concurrency and persisted operation replay. Staging migration remains a separate approval gate.
 
 ## Current Railway findings (read-only inspection)
 
@@ -91,7 +91,7 @@ Deterministic tests use real Ed25519 signatures and the real authenticated API. 
 - `artifacts/launch-workspace-review-1440.png`
 - `artifacts/launch-workspace-review-390.png`
 
-A physical wallet/mobile device, actual Pinata credentials, and approved Postgres migrations remain external validation gates. The functional local demo backend is in memory; the UI explicitly warns that its drafts survive refresh but not backend restarts. Production persistence uses the Postgres repository once the migration is approved.
+A physical wallet/mobile device, actual Pinata credentials, and approved staging Postgres migrations remain external validation gates. The functional local demo backend is in memory; the UI explicitly warns that its drafts survive refresh but not backend restarts. Production persistence uses the Postgres repository once the migration is approved.
 
 ## Commit and push boundary
 
@@ -151,7 +151,7 @@ No push, merge, deployment or database migration is authorized by this report. T
 - Legacy API regression: desktop/tablet/mobile logo preview and SOL/unsupported-quote behavior passed. Upload fixture asserts actual backend rejection details while preserving retry/cancellation tests.
 - Workspace typecheck, root/frontend lint, root backend/shared build, frontend build and isolated production-bundle startup passed. Existing frontend large-bundle warning remains.
 
-No actual installed wallet, physical mobile device, live Pinata upload, PostgreSQL migration or staging deployment was exercised. Those are separate approval/configuration gates, not silently simulated successes.
+No actual installed wallet, physical mobile device, live Pinata upload or staging deployment was exercised. The separately approved local PostgreSQL validation is recorded below. Those are separate approval/configuration gates, not silently simulated successes.
 
 Protocol references: [Pinata V3 public uploads](https://github.com/PinataCloud/pinata/blob/main/ai-instructions), [Phantom integration](https://docs.phantom.com/solana/integrating-phantom), [Pump program interfaces](https://github.com/pump-fun/pump-public-docs/blob/main/docs/PUMP_PROGRAM_README.md). Protocol support for quote assets does not imply this application's transaction adapter has verified support.
 
@@ -170,4 +170,23 @@ A separate `git archive` of the completed series in `/tmp/aeco-phase2-committed-
 
 The final metadata-origin correction was separately exercised against the ten authenticated workspace API tests. Every implementation commit contains exactly one file. The report itself is updated after validation; commit hashes above refer to the implementation history preceding this report update. No published history was changed.
 
-Final follow-up validation rechecked the committed metadata attribution and memory-storage notice in the isolated snapshot: builds, typecheck, lint, all ten workspace API tests and all three browser scenarios pass. The local disposable-database migration approval request remains pending, so no SQL migration or Postgres durability test was run. Current functional preview: http://127.0.0.1:5176/launchpad?source=backend, using the actual memory-only demo API with Pinata disabled until configured; the earlier city preview is preserved.
+Final follow-up validation rechecked the committed metadata attribution and memory-storage notice in the isolated snapshot: builds, typecheck, lint, all ten workspace API tests and all three browser scenarios pass. The subsequent approved disposable-database validation is recorded below. Current functional preview: http://127.0.0.1:5176/launchpad?source=backend, using the actual memory-only demo API with Pinata disabled until configured; the earlier city preview is preserved.
+
+### Approved local PostgreSQL validation — 17 October 2026
+
+The user approved migration 004 exclusively in a newly created isolated local disposable database. A separate PostgreSQL 16 cluster was initialized at `/tmp/aeco-phase2-pg-20261017-2235/data`, using only a private Unix socket at `/tmp/aeco-phase2-pg-20261017-2235/socket` (port 55439; TCP listening disabled). The sole application database is `agentic_economy_phase2_20261017_2235_test`. Existing PostgreSQL servers, development databases, Railway staging and production were untouched.
+
+The normal migration runner applied prerequisites `001_init.sql`, `002_coordination.sql`, and `004_launchpad_workspace.sql` to this fresh database. Migration 003 was not introduced. All applied SHA-256 checksums were recorded; 004 checksum: `ca4aa60f3414149589c75525c9f1f4e35638ab5b239c874e0988ef3c12def277`. Concurrent repeat migration calls were no-ops. No migration errors occurred.
+
+- Three gated PostgreSQL tests passed: exact draft/image/metadata round trips via independent connections, owner isolation, one-winner optimistic edits and operation claims, persisted idempotency replay/fingerprint rejection, atomic final quota-slot allocation across replicas, soft deletion, and repeat-start migration integrity.
+- A separate committed draft and operation receipt survived a real restart of this isolated PostgreSQL cluster; both were read and compared through a new connection. Only those exact sentinel rows were removed afterward.
+- Ten authenticated workspace API tests and three static migration checks passed (13 total). Their Pinata calls use test transport, not live credentials. Three schema-reset migration tests were deliberately skipped; no DROP SCHEMA, broad cleanup, or existing-database reset was run.
+- Cleanup was scoped to this run's wallet/record IDs. The isolated cluster was stopped after validation; its files remain available for inspection.
+
+Staging remains unapproved for migrations/deployment. Before staging, review the SQL and backend branch, configure server-only Pinata credentials securely, and explicitly approve that target database. Local durability proof does not establish a live Pinata or installed-wallet smoke test.
+
+### Phantom formatting correction and staging release approval
+
+Phantom rejected the previous SIWS-shaped challenge because it emitted `Chain ID: demo`, which is not permitted by the SIWS grammar. Demo authentication now omits that optional field; configured `mainnet-beta` maps to the SIWS identifier `mainnet`. Domain, exact-message verification, expiry, replay protection and financial restrictions remain unchanged. Five new message tests plus 28 existing authentication/API checks pass (33 total); all three isolated desktop/mobile browser scenarios pass using a test signer that now rejects unsupported chain identifiers. Build, server typecheck and source/browser-fixture lint pass. Actual installed-wallet approval remains a manual check.
+
+The user has now approved a normal commit/push and Railway staging deployment, and separately explicitly approved migration 004 on staging PostgreSQL. Production, identity migration 003 and financial operations remain excluded. This supersedes the earlier pending staging-approval notes above. Release only the reviewed Launchpad checkpoint, authentication correction and durable-test/report follow-ups; preserve pending city/navigation/terrain work outside the deployment archive. Deploy the backend first, verify readiness/capabilities/authentication origin, then verify the frontend. Pinata uploads stay unavailable if the server credential is not configured; do not invent or reuse credentials from another project.

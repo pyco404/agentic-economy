@@ -19,7 +19,7 @@ describe("contained city composition", () => {
   it("keeps the validated railway continuous with the same portals and two-minute service", () => {
     expect(railway.report.issues).toEqual([]);
     expect(railway.report.tunnel).toMatchObject({ continuous: true, hiddenSeconds: 120,
-      west: { x: -40.75, z: -7 }, east: { x: 214.75, z: 1 } });
+      west: { x: 20, z: -7 }, east: { x: 148, z: 1 } });
   });
   it("adds deterministic, low landscape geometry without changing parcels, roads or rail state", () => {
     const before = JSON.stringify({ chunks, railway: railway.report });

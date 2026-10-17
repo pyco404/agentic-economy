@@ -1,0 +1,36 @@
+.ecosystem-agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 22px 0; }
+.ecosystem-agent-card { border: 1px solid #dcd7c5; border-radius: 10px; background: #f6f5ea; padding: 24px; min-width: 0; }
+.ecosystem-status { display: inline-block; font-size: 10px; line-height: 1.6; letter-spacing: .3px; color: #47634c; background: #e7eddd; padding: 5px 9px; border-radius: 5px; }
+.ecosystem-agent-card p, .ecosystem-agent-card li, .ecosystem-fees p, .ecosystem-faq p, .roadmap-detail p, .roadmap-detail li { font-size: 13px; color: #52624e; line-height: 1.8; }
+.about-page .ecosystem-agent-card ul, .about-page .roadmap-detail ul { padding-left: 18px; margin-top: 12px; }
+.ecosystem-agent-card li + li, .roadmap-detail li + li { margin-top: 9px; }
+.ecosystem-fees { margin-top: 22px; }
+.ecosystem-fees > p { margin: 14px 0; }
+.ecosystem-fees table { width: 100%; font-size: 12px; border-collapse: collapse; margin: 18px 0; }
+.ecosystem-fees caption { text-align: left; font-size: 11px; color: #5f6c56; margin-bottom: 14px; }
+.ecosystem-fees th, .ecosystem-fees td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e3dece; white-space: normal; min-width: 88px; }
+.ecosystem-fees th { font-weight: 550; }
+.ecosystem-fees tbody th { min-width: 170px; }
+.ecosystem-fees summary, .ecosystem-faq summary, .roadmap-phases summary { cursor: pointer; min-height: 48px; padding: 16px 0; color: #31563e; font-size: 13px; }
+.ecosystem-fees summary:focus-visible, .ecosystem-faq summary:focus-visible, .roadmap-phases summary:focus-visible { outline: 2px solid #33664d; outline-offset: 3px; }
+.ecosystem-fees details > p, .ecosystem-faq details > p { margin: 0 0 16px; }
+.ecosystem-faq details, .roadmap-phases details { border-bottom: 1px solid #e3dece; }
+.ecosystem-roadmap > p:not(.about-kicker) { color: #5e6b57; font-size: 13px; margin: 18px 0 24px; }
+.roadmap-number { display: inline-block; font-size: 12px; background: #e9eddf; border-radius: 6px; padding: 10px; margin-right: 14px; vertical-align: top; }
+.roadmap-phases summary > span:last-child { display: inline-block; max-width: calc(100% - 80px); vertical-align: middle; }
+.roadmap-phases summary strong { font-size: 15px; font-weight: 550; display: block; line-height: 1.6; }
+.roadmap-phases summary small { display: block; font-size: 11px; color: #6c785f; margin-top: 4px; }
+.roadmap-detail { padding: 4px 0 24px; }
+.roadmap-detail h3 { font-size: 13px; }
+.ecosystem-page-note { margin: 20px 0; font-size: 12px; }
+.launch-origin-tag { display: inline-flex; width: fit-content; padding: 4px 7px; border-radius: 5px; font-size: 9px; line-height: 1.6; background: #eeeadd; color: #626956; border: 1px solid #dfdacb; }
+.launch-origin-tag[data-origin="PLATFORM"] { background: #e5eddf; color: #375c42; }
+.launch-origin-tag[data-origin="HUMAN"] { background: #e9eee9; color: #476477; }
+.launch-origin-tag[data-origin="SUPER-AGENT"] { background: #f0e5d7; color: #876644; }
+.world-header .world-vision-note { max-width: 420px; font-size: 10px; margin-top: 10px; }
+.world-vision-actions { display: flex; gap: 16px; flex-wrap: wrap; pointer-events: auto; }
+.world-vision-actions button { background: transparent; padding: 10px 0; min-height: 44px; font-size: 11px; color: #335b43; }
+@media (max-width: 700px) { .ecosystem-agent-grid { grid-template-columns: 1fr; gap: 14px; }
+ .ecosystem-agent-card { padding: 20px; }
+ .world-header .world-vision-note { max-width: 260px; font-size: 9px; }
+ .world-vision-actions { gap: 12px; } }

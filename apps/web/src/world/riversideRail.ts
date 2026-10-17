@@ -6,6 +6,7 @@ import type { StreetPlan } from "./streets";
 import { railConflicts } from "./railClearance";
 import { railTerrain } from "./railTerrain";
 import type { UndergroundRoute } from "./undergroundRail";
+import { cityPalette } from "./palette";
 
 export const RIVERSIDE_RAIL = { speed: 1.6, acceleration: 0.45, dwell: 7, spacing: 2.6,
   initialDwell: 0.5,
@@ -17,7 +18,8 @@ export interface RiversidePlan {
   underground?: UndergroundRoute;
   path: RailPath | null; parts: Part[];
   report: { mode: "riverside" | "unavailable"; issues: string[]; maxGrade: number; minRoadHeadroom: number;
-    roadTiles: number; supports: number; minWaterHeadroom: number; length: number; depot: { x: number; z: number };
+    roadTiles: number; supports: number; minWaterHeadroom: number; length: number;
+    visibleLength?: number; previousVisibleLength?: number; depot: { x: number; z: number };
     tunnel?: { west: UndergroundRoute["west"]; east: UndergroundRoute["east"]; hiddenSeconds: number; minCover: number;
       station: { x: number; z: number }; continuous: boolean; originalDepotPreserved: boolean; cuts: UndergroundRoute["cuts"]; supports: number };
   };
@@ -316,6 +318,26 @@ export function createRiversideScene(plan: RiversidePlan, library: GeometryLibra
   group.add(createBatch(plan.parts.map((part) => part.color === "#a58c6c"
     ? { ...part, color: `#${approachColor(part.color, part.position[0], part.position[2]).getHexString()}` }
     : part), library, false));
+  // Continuous graded earth skin over the physical gallery roof. Adjacent
+  // samples share vertices, avoiding a striped row of overlapping wedges.
+  for (const gallery of plan.underground?.galleries ?? []) {
+    const positions: number[] = [], indices: number[] = [];
+    gallery.forEach((p, i) => {
+      for (const [z, y] of [[p.z - p.left, p.leftY], [p.z - 1.6, p.y], [p.z + 1.6, p.y], [p.z + p.right, p.rightY]])
+        positions.push(p.x, y!, z!);
+      if (!i) return;
+      const forward = p.x > gallery[i - 1]!.x;
+      for (let band = 0; band < 3; band++) {
+        const a = (i - 1) * 4 + band, b = a + 1, c = i * 4 + band, d = c + 1;
+        indices.push(...(forward ? [a, b, c, b, d, c] : [a, c, b, b, c, d]));
+      }
+    });
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices); geometry.computeVertexNormals();
+    const soil = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: cityPalette.terrain }));
+    soil.receiveShadow = true; soil.name = "Landscaped rail cover"; group.add(soil);
+  }
   const renderedPath = plan.underground?.surface ?? plan.path;
   const track = (offset: number, width: number, height: number, level: number, color: string) => {
     const mesh = ribbon(renderedPath, offset, width, height, level, color);

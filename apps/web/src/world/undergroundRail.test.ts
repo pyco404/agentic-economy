@@ -23,7 +23,16 @@ describe("connected Riverside underground service", () => {
     const result = planUndergroundRail(planRiversideRail(chunks, frontier, seed, streets), chunks, frontier, seed, streets);
     expect(result.report.issues).toEqual([]); expect(result.underground).toBeDefined();
     expect(result.underground!.maxGrade).toBeLessThan(.045); expect(result.underground!.minCover).toBeGreaterThanOrEqual(.3);
-    expect(result.underground!.west.x).toBe(-40.75); expect(result.underground!.east.x).toBe(214.75);
+    expect(result.underground!.west.x).toBe(20); expect(result.underground!.east.x).toBe(148);
+    expect(result.report.visibleLength).toBeLessThan(result.report.previousVisibleLength! * .6);
+    expect(result.underground!.surface.points.every((p) => p.x >= 18 && p.x <= 150)).toBe(true);
+    // Every shortened-off approach is physically roofed; no open-air hiding.
+    const roofs = result.parts.filter((p) => p.color === "#d4c6aa");
+    for (const p of result.path!.points.filter((p) => (p.z === -7 && p.x < 20 && p.x >= -40.75) ||
+      (p.z === 1 && p.x > 148 && p.x <= 214.75))) {
+      expect(roofs.some((roof) => Math.abs(roof.position[0] - p.x) <= roof.scale[0] / 2 + 1e-6 &&
+        Math.abs(roof.position[2] - p.z) < .01 && roof.position[1] - roof.scale[1] / 2 >= p.y + 1.49)).toBe(true);
+    }
     expect(result.path!.points[0]!.distanceTo(result.path!.points.at(-1)!)).toBeLessThan(1e-8);
     expect(result.parts.some((p) => p.role === "rail-buffer")).toBe(false);
     expect(JSON.stringify(chunks)).toBe(before); expect(JSON.stringify(frontier)).toBe(terrain); expect(JSON.stringify([...streets.tiles])).toBe(paving);
@@ -51,13 +60,15 @@ describe("connected Riverside underground service", () => {
       for (let i = 0; i < 3; i++) {
         const d = ((service.distance - i * 2.6) % path.length + path.length) % path.length;
         sampleRail(path, d, point, direction);
-        if (previous[i]) expect(point.distanceTo(previous[i]!)).toBeLessThan(.7);
+        if (previous[i]) expect(point.distanceTo(previous[i]!)).toBeLessThan(.1 * Math.max(1.6, service.speed) + .04);
         previous[i] = point.clone();
         if (service.state === "underground") expect(railCarHidden(d, path, route)).toBe(true);
       }
     }
     for (const offset of [0, 1 / 15, .25, 10, 119.9]) expect(undergroundService(first.hiddenAt + offset + 1e-6, path, route).state).toBe("underground");
     expect(undergroundService(first.emergesAt + .01, path, route).state).toBe("emerging-tunnel");
+    expect(undergroundService(first.emergesAt + 4, path, route).state).toBe("emerging-tunnel");
+    expect(undergroundService(first.emergesAt + 8, path, route).state).toBe("surface");
   });
   it("keeps static railway visible as each carriage enters and emerges, using independent elapsed time", () => {
     const library = geometryLibrary(), scene = createAmbientScene({ railway: plan, rail: plan.path, cars: [],

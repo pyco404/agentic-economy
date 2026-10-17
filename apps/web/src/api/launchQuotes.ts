@@ -1,0 +1,32 @@
+/** Frontend draft choices, NOT protocol eligibility or a launch API contract.
+ * Shared v0.2.0 (and the inspected v0.3.0 identity contract) has no quote field.
+ * Until Claude publishes that contract, only the existing SOL draft is reviewable.
+ * No mint, price, transaction, or financial capability is inferred here.
+ */
+export type LaunchQuoteAsset = "SOL" | "USDC" | "AECO";
+export const LAUNCH_QUOTE_OPTIONS = [
+  { asset: "SOL", label: "SOL", description: "Trade against Solana’s native currency.",
+    draftAvailable: true, status: "Default · draft only",
+    requirement: "SOL is the existing draft option. Live launches and wallet signing remain disabled." },
+  { asset: "USDC", label: "USDC", description: "Trade against USD Coin.",
+    draftAvailable: false, status: "Backend support pending",
+    requirement: "The backend must support and verify the network’s USDC quote mint before this pair can be selected." },
+  { asset: "AECO", label: "$AECO", description: "Trade within the Agentic Economy ecosystem.",
+    draftAvailable: false, status: "Coming soon",
+    requirement: "A configured AECO mint, Pump.fun eligibility, and quote-specific fee routing must be verified by the backend first." },
+] as const satisfies readonly { asset: LaunchQuoteAsset; label: string; description: string;
+  draftAvailable: boolean; status: string; requirement: string }[];
+
+export function launchQuote(value: unknown) {
+  return LAUNCH_QUOTE_OPTIONS.find((option) => option.asset === value) ?? null;
+}
+export function tradingPair(symbol: string, quote: LaunchQuoteAsset) {
+  return `${symbol.trim() || "TOKEN"}/${quote}`;
+}
+/** Preserve a saved unsupported choice; require an explicit change, never silently use SOL. */
+export function launchQuoteError(value: unknown): string | null {
+  const option = launchQuote(value);
+  if (!option) return "The saved quote asset is not recognized. Choose a trading pair explicitly before reviewing.";
+  if (!option.draftAvailable) return `${option.label} pairing is unavailable. ${option.requirement} Choose SOL explicitly to review an existing SOL draft.`;
+  return null;
+}

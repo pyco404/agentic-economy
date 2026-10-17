@@ -38,7 +38,7 @@ test("ambient actors stay decorative, toggle without recreating WebGL and respec
   const city = page.getByTestId("city-canvas");
   await expect.poll(async () => JSON.parse((await city.getAttribute("data-ambient-actors")) ?? "{}").cars).toBe(6);
   const counts = JSON.parse((await city.getAttribute("data-ambient-actors"))!);
-  expect(counts).toEqual({ train: 1, cars: 6, plane: 1, helicopter: 1, balloon: 1 });
+  expect(counts).toEqual({ train: 2, cars: 6, plane: 1, helicopter: 1, balloon: 1 });
   await page.locator("canvas").evaluate((canvas) => { (window as any).__ambientCanvas = canvas; });
   await page.getByRole("button", { name: "Toggle ambient scenery" }).click();
   await page.waitForTimeout(100);

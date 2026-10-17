@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDraftField } from "../navigation/drafts";
+import { LaunchQuotePicker } from "./LaunchQuotePicker";
+import { LaunchLogoUpload } from "./LaunchLogoUpload";
+import { FutureFees } from "./Ecosystem";
+import { launchQuote, launchQuoteError, tradingPair } from "../api/launchQuotes";
 import {
   ArrowRight,
   Check,
@@ -60,21 +64,23 @@ export function Launchpad() {
     [symbol, setSymbol, symbolSaved] = useDraftField<string>("launchpad:symbol", ""),
     [description, setDescription, descriptionSaved] = useDraftField<string>("launchpad:description", ""),
     [imageUrl, setImageUrl, imageSaved] = useDraftField<string>("launchpad:image", ""),
-    [metadataUrl, setMetadataUrl, metadataSaved] = useDraftField<string>("launchpad:metadata", "");
-  const locallySaved = nameSaved && symbolSaved && descriptionSaved && imageSaved && metadataSaved;
+    [metadataUrl, , metadataSaved] = useDraftField<string>("launchpad:metadata", ""),
+    [quoteAsset, setQuoteAsset, quoteSaved] = useDraftField<string>("launchpad:quoteAsset", "SOL");
+  const locallySaved = nameSaved && symbolSaved && descriptionSaved && imageSaved && metadataSaved && quoteSaved;
+  const selectedQuote = launchQuote(quoteAsset), quoteError = launchQuoteError(quoteAsset);
   return (
     <>
       <PageHeading
         eyebrow="BUILD A PRESENCE"
         title="Give your community a home."
-        description="Launch through Pump.fun. Bring your community into a shared, living economy."
+        description="Token Launchpad · Phase 2 in development. Prepare your community draft; verified Pump.fun execution and SOL/USDC launches are not enabled here."
       />
       <div className="two-column">
         <form
           className="surface"
           onSubmit={(e) => {
             e.preventDefault();
-            setReview(true);
+            if (!launchQuoteError(quoteAsset)) setReview(true);
           }}
         >
           <p className="small draft-storage" role="note">{locallySaved ? "Draft fields are retained in this browser tab, including across refresh. Not saved to the backend." : "Browser storage unavailable. Draft fields are kept while this app stays open; refreshing may lose them."}</p>
@@ -119,22 +125,38 @@ export function Launchpad() {
               placeholder="What will your community build?"
             />
           </label>
-          <label>
-            Image URL
-            <input type="url" placeholder="https://…" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setReview(false); }} />
-          </label>
-          <label>
-            Metadata URL
-            <input type="url" placeholder="Supported Pump.fun metadata URI" value={metadataUrl} onChange={(e) => { setMetadataUrl(e.target.value); setReview(false); }} />
-          </label>
-          <button className="primary wide" type="submit">
+          <LaunchLogoUpload name={name} symbol={symbol} description={description} quoteAsset={quoteAsset}
+            imageUrl={imageUrl} onImage={(uri) => { setImageUrl(uri); setReview(false); }} />
+          <details className="launch-advanced">
+            <summary>Advanced image and metadata settings</summary>
+            <label>Image URL
+              <input type="url" placeholder="https://…" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setReview(false); }} />
+            </label>
+            <p className="small muted">Manual image URLs still require backend validation. They do not count as verified uploads.</p>
+            <label>Metadata URL
+              <input type="url" value={metadataUrl} readOnly disabled placeholder="Automatic metadata · backend integration pending" />
+            </label>
+            <p className="small muted">Manual metadata overrides are unavailable until the backend can validate them. Any previous draft value is retained.</p>
+          </details>
+          <LaunchQuotePicker value={quoteAsset} symbol={symbol} onChange={(quote) => { setQuoteAsset(quote); setReview(false); }} />
+          <button className="primary wide" type="submit" disabled={!!quoteError}>
             Review draft <ArrowRight size={16} />
           </button>
-          {review && (
-            <div className="review-result" role="status">
-              <Check size={17} /> Draft reviewed: {name} ({symbol}). No
-              transaction created.
-            </div>
+          {review && !quoteError && selectedQuote && (
+            <section className="launch-review" aria-label="Launch draft review">
+              <div className="review-result" role="status">
+                <Check size={17} /> Draft reviewed: {name} ({symbol}). No transaction created.
+              </div>
+              <dl className="fee-list">
+                <div><dt>Logo</dt><dd>{imageUrl ? "Reference provided · backend verification required" : "Not uploaded"}</dd></div>
+                <div><dt>Metadata readiness</dt><dd>Automatic preparation awaits backend API</dd></div>
+                <div><dt>Trading pair</dt><dd>{tradingPair(symbol, selectedQuote.asset)}</dd></div>
+                <div><dt>Quote asset</dt><dd>{selectedQuote.label}</dd></div>
+                <div><dt>Initial token price ({selectedQuote.asset})</dt><dd>Unavailable — backend quote required</dd></div>
+                <div><dt>Network &amp; account costs (SOL)</dt><dd>Backend estimate required</dd></div>
+              </dl>
+              <p className="small muted">The fixed platform charge remains 0.05 SOL, independent of the pair. No transaction total is quoted or approved. The backend must verify the quote mint, costs, and fee routing before wallet confirmation can be offered.</p>
+            </section>
           )}
         </form>
         <aside>
@@ -163,7 +185,7 @@ export function Launchpad() {
               <span>40% platform</span>
             </div>
             <p className="small muted">
-              Target split of eligible creator fees actually received, where
+              Target split of eligible, verified creator-fee receipts in their actual received asset, where
               supported and verified. Protocol and liquidity-provider fees
               remain governed by Pump.fun.
             </p>
@@ -177,7 +199,7 @@ export function Launchpad() {
             </p>
           </section>
           <div className="launch-steps">
-            <b>Launch lifecycle</b>
+            <b>Planned launch lifecycle</b>
             <span>Draft → Wallet approval → Submitted</span>
             <span>Confirmed / Failed / Recovery needed</span>
           </div>
@@ -259,8 +281,9 @@ export function Studio({
       <PageHeading
         eyebrow="AUTONOMY, WITH INTENTION"
         title="Meet your next city worker."
-        description="Choose a profession, set a bounded strategy, and watch your agent find useful work."
+        description="Explore supported city workers today. Holder-access Common Agents and a separate rentable Super-Agent class are planned; neither entitlement system is live."
       />
+      <Notice>Common Agents are planned for qualifying holdings; Super Agents are a separate future class rented by locking $AECO. Multiple holder-based positions and rentals are not enabled in today’s demo.</Notice>
       <div className="two-column">
         <form className="surface" onSubmit={submit}>
           <h2>Agent configuration</h2>
@@ -434,6 +457,7 @@ export function Economy({ data }: { data: Dashboard }) {
         title="From fields to front doors."
         description="Finite resources. Useful services. A city that works together."
       />
+      <Notice>Credits are simulation units, not withdrawable tokens. Funded, performance-based $AECO conversion and advanced agent businesses are planned; no conversion rate or payout is guaranteed.</Notice>
       <div className="production-flow">
         {[
           {
@@ -474,13 +498,13 @@ export function Economy({ data }: { data: Dashboard }) {
           </div>
         ))}
       </div>
-      <div className="two-column">
-        <section className="surface">
-          <h2>Resource market</h2>
+      <div className="two-column economy-panels">
+        <section className="surface scroll-panel economy-panel" aria-labelledby="resource-market-title">
+          <h2 id="resource-market-title">Resource market</h2>
           <p className="muted small">
             Prices in simulated City Credits per unit
           </p>
-          <div className="table-wrap">
+          <div className="table-wrap panel-scroll-content slim-scroll" role="region" aria-label="Resource market rows" tabIndex={0}>
             <table>
               <thead>
                 <tr>
@@ -508,8 +532,9 @@ export function Economy({ data }: { data: Dashboard }) {
             </table>
           </div>
         </section>
-        <section className="surface">
-          <h2>Useful work queue</h2>
+        <section className="surface scroll-panel economy-panel" aria-labelledby="work-queue-title">
+          <h2 id="work-queue-title">Useful work queue</h2>
+          <div className="panel-scroll-content slim-scroll" role="region" aria-label="Useful work entries" tabIndex={0}>
           {data.tasks.map((t) => (
             <div className="task-row" key={t.id}>
               <Truck size={18} />
@@ -528,6 +553,7 @@ export function Economy({ data }: { data: Dashboard }) {
           {!data.tasks.length && (
             <div className="empty">The work queue is empty.</div>
           )}
+          </div>
         </section>
       </div>
       <Notice>
@@ -546,7 +572,7 @@ export function Treasury({ data }: { data: Dashboard }) {
       <PageHeading
         eyebrow="TRANSPARENCY BY DESIGN"
         title="Every stream, accounted for."
-        description="Launch charges and creator fees are separate. Real rewards remain disabled during MVP."
+        description="Launch charges and eligible creator fees are separate. Current demo receipts and proposed future policies remain distinct; real settlements and rewards are disabled."
       />
       {data.mode === "demo" && (
         <Notice>
@@ -590,8 +616,8 @@ export function Treasury({ data }: { data: Dashboard }) {
             <span>Platform</span>
           </div>
           <p className="small muted">
-            Launcher allocation: 0%. Applies only to creator fees actually
-            received; excludes protocol and liquidity-provider fees.
+            Human-launched tokens: 0% to the launcher. Applies only to eligible,
+            verified creator fees actually received; excludes protocol and liquidity-provider fees.
           </p>
           <span className="tag">
             Routing {t.feeRouting.verified ? "verified" : "unverified"}
@@ -609,13 +635,14 @@ export function Treasury({ data }: { data: Dashboard }) {
           </p>
         </section>
       </div>
-      <section className="surface">
+      <section className="surface"><h2>Future creator-fee policy</h2><FutureFees /></section>
+      <section className="surface scroll-panel receipt-ledger" aria-labelledby="receipt-ledger-title">
         <div className="surface-title">
-          <h2>Public receipt ledger</h2>
+          <h2 id="receipt-ledger-title">Public receipt ledger</h2>
           <span className="tag">{readable(t.creatorFees.reconciliation)}</span>
         </div>
+        <div className="table-wrap panel-scroll-content slim-scroll ui-select-text" role="region" aria-label="Public receipt rows" tabIndex={0}>
         {t.recentEntries.length ? (
-          <div className="table-wrap">
             <table>
               <thead>
                 <tr>
@@ -638,7 +665,6 @@ export function Treasury({ data }: { data: Dashboard }) {
                 ))}
               </tbody>
             </table>
-          </div>
         ) : (
           <div className="empty">
             <ShieldCheck size={24} />
@@ -650,6 +676,7 @@ export function Treasury({ data }: { data: Dashboard }) {
             </p>
           </div>
         )}
+        </div>
       </section>
     </>
   );

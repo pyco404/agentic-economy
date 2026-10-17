@@ -1026,6 +1026,62 @@ hr {
   max-height: 500px;
   overflow: auto;
 }
+.launch-logo { margin-top: 24px; }
+.launch-logo h3 { font-size: 12px; font-weight: 500; margin-bottom: 12px; }
+.logo-dropzone { display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 22px 16px; border: 1px dashed #bcc7af; border-radius: 8px; background: #faf7ef; text-align: center; }
+.logo-dropzone img { width: 120px; height: 120px; object-fit: contain; border-radius: 8px; background: #fffaf2; }
+.logo-dropzone p { margin: 0; }
+.logo-dropzone button { min-height: 44px; }
+.surface .logo-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; padding: 0; overflow: hidden; clip-path: inset(50%); }
+.logo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block: 12px; }
+.logo-actions button { min-height: 44px; }
+.logo-status span, .logo-status code { display: block; margin-block: 8px; }
+.logo-status code, .logo-metadata code { overflow-wrap: anywhere; font-size: 10px; }
+.logo-status progress { display: block; width: 100%; height: 6px; margin-block: 12px; accent-color: #537e6d; }
+.logo-metadata { padding: 14px; background: #eef1e5; border-radius: 6px; margin-block: 14px; font-size: 11px; }
+.logo-metadata p { margin-bottom: 0; }
+.launch-advanced { margin-block: 16px; font-size: 11px; }
+.launch-advanced summary { cursor: pointer; padding-block: 8px; }
+/* Shared native scrolling: retain keyboard/touch support without wheel handlers. */
+.slim-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #9aa78e transparent;
+}
+.slim-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+.slim-scroll::-webkit-scrollbar-track { background: transparent; }
+.slim-scroll::-webkit-scrollbar-thumb { background: #9aa78e; border-radius: 4px; }
+.slim-scroll::-webkit-scrollbar-thumb:hover { background: #7f9376; }
+.slim-scroll::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+@supports selector(::-webkit-scrollbar) {
+  .slim-scroll { scrollbar-width: auto; scrollbar-color: auto; }
+}
+.economy-panels { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.scroll-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.scroll-panel > h2, .scroll-panel > p, .scroll-panel > .surface-title { flex-shrink: 0; }
+.economy-panel { height: clamp(440px, 46dvh, 480px); }
+.receipt-ledger { height: clamp(460px, 50dvh, 500px); }
+.panel-scroll-content { flex: 1; min-height: 0; min-width: 0; padding-right: 6px; }
+.panel-scroll-content:focus-visible { outline: 2px solid #7f9376; outline-offset: 3px; border-radius: 3px; }
+.scroll-panel table { border-collapse: separate; border-spacing: 0; }
+.scroll-panel th { position: sticky; top: 0; z-index: 1; background: #fffaf2; }
+.economy-panel table { table-layout: fixed; }
+.economy-panel td, .economy-panel th { overflow-wrap: anywhere; }
+.economy-panel .task-row > span:first-of-type { min-width: 0; overflow-wrap: anywhere; }
+.economy-panel .task-row > svg, .economy-panel .task-row > .tag { flex-shrink: 0; }
+.receipt-ledger .panel-scroll-content { overflow-x: auto; }
+.receipt-ledger table { min-width: 560px; }
+.receipt-ledger td { white-space: nowrap; }
+@media (max-width: 1000px) {
+  .economy-panels { grid-template-columns: minmax(0, 1fr); }
+  .economy-panel, .receipt-ledger { height: clamp(320px, 45dvh, 400px); }
+}
 .agent-row {
   background: none;
   border-bottom: 1px solid var(--line);

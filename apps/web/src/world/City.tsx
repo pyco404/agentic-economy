@@ -1,6 +1,5 @@
 import { cityPalette } from "./palette";
 import { clearAccidentalWorldSelection } from "./selection";
-import { composeCityEdges } from "./composition";
 import {
   forwardRef,
   useEffect,
@@ -10,13 +9,15 @@ import {
 } from "react";
 import * as THREE from "three";
 import { createCitizens } from "./citizens";
-import { generateFrontier, type FrontierStyle } from "./frontier";
+import type { FrontierStyle } from "./frontier";
 import { createFrontierScene } from "./frontierScene";
 import { updateWaterFlow } from "./waterFlow";
-import { defaultWorldFrame, overviewFrame, inspectionTarget } from "./framing";
+import { defaultWorldFrame, overviewFrame, inspectionTarget, worldCameraOffset } from "./framing";
 import { createAgentLabels, type LabelAgent } from "./agentLabels";
 import { AGENT_MOTION, agentSeed, buildPathNetwork, createDemoWalkers, pathBetween, samplePath } from "./agentMotion";
-import { createAmbientScene, planAmbient } from "./ambient";
+import { createAmbientScene } from "./ambient";
+import { CityReveal } from "./reveal";
+import { prepareScenery, reviveScenery, type SceneryRequest, type SceneryMessage } from "./sceneryPlan";
 import { excavateRailTerrain } from "./railExcavation";
 import { pedestrianStreetPoint, planStreets } from "./streets";
 import type { CityActivity } from "../api/state";
@@ -24,8 +25,6 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
   createBatch,
   disposeGroup,
-  generateBuilding,
-  generateLandscape,
   geometryLibrary,
 } from "./geometry";
 import {
@@ -34,6 +33,17 @@ import {
   type BuildingVisual,
   type ChunkVisual,
 } from "./layout";
+/** Flush pending orbit/pan inertia before restoring the home pose. Temporarily
+ * disabling damping consumes the accumulated deltas synchronously; normal
+ * gestures retain their original damping and mapping.
+ */
+function finishCameraMotion(controls: OrbitControls) {
+  const damping = controls.enableDamping;
+  controls.enableDamping = false;
+  controls.update();
+  controls.enableDamping = damping;
+}
+
 export interface AgentVisual {
   id: string;
   name: string;
@@ -124,11 +134,12 @@ export const City = forwardRef<CityHandle, CityProps>(
         reset() {
           const r = runtime.current;
           if (r) {
+            finishCameraMotion(r.controls);
             r.focus = r.home.clone();
             r.camera.zoom = r.homeZoom;
             r.camera.position
               .copy(r.controls.target)
-              .add(new THREE.Vector3(100, 90, 100).setLength(400 / r.controls.minZoom));
+              .add(worldCameraOffset().setLength(400 / r.controls.minZoom));
             r.camera.updateProjectionMatrix();
           }
         },
@@ -197,7 +208,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       const controls = new OrbitControls(camera, renderer.domElement);
       const initialCenter = initialFrame.center;
       controls.target.copy(initialCenter);
-      camera.position.copy(initialCenter).add(new THREE.Vector3(100, 90, 100));
+      camera.position.copy(initialCenter).add(worldCameraOffset());
       controls.enableDamping = true;
       controls.dampingFactor = 0.09;
       controls.minZoom = 0.3;
@@ -215,6 +226,8 @@ export const City = forwardRef<CityHandle, CityProps>(
         TWO: THREE.TOUCH.DOLLY_ROTATE,
       };
       controls.update();
+      const stopAutomaticFocus = () => { if (runtime.current) runtime.current.focus = null; };
+      controls.addEventListener("start", stopAutomaticFocus);
       runtime.current = {
         camera,
         controls,
@@ -265,7 +278,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       scene.add(selection);
       const chunks = new Map<
           string,
-          { group: THREE.Group; data: ChunkVisual; landscapeDependencies: (string | undefined)[] }
+          { group: THREE.Group; data: ChunkVisual; signature: string }
         >(),
         buildings = new Map<string, BuildingVisual>();
       const frustum = new THREE.Frustum(),
@@ -377,12 +390,12 @@ export const City = forwardRef<CityHandle, CityProps>(
         const pickables: THREE.Object3D[] = [...chunks.values()]
           .filter((c) => c.group.visible)
           .map((c) => c.group);
-        pickables.push(...citizens.meshes);
+        pickables.push(...citizens.meshes.filter((mesh) => mesh.visible));
         const hits = raycaster.intersectObjects(pickables, true);
         const hit = hits.find(
-          (h) =>
+          (h) => h.object.visible && !h.object.userData.revealHidden && (
             h.object.userData.citizenStride ||
-            h.object.userData.buildingIds?.[h.instanceId ?? 0],
+            h.object.userData.buildingIds?.[h.instanceId ?? 0]),
         );
         if (hit?.object.userData.citizenStride) {
           const id =
@@ -427,10 +440,10 @@ export const City = forwardRef<CityHandle, CityProps>(
           .intersectObjects(
             [...chunks.values()]
               .filter((c) => c.group.visible)
-              .map((c) => c.group as THREE.Object3D).concat(citizens.meshes),
+              .map((c) => c.group as THREE.Object3D).concat(citizens.meshes.filter((mesh) => mesh.visible)),
             true,
           )
-          .find((h) => h.object.userData.citizenStride || h.object.userData.buildingIds?.[h.instanceId ?? 0]);
+          .find((h) => h.object.visible && !h.object.userData.revealHidden && (h.object.userData.citizenStride || h.object.userData.buildingIds?.[h.instanceId ?? 0]));
         hoveredAgentId = hit?.object.userData.citizenStride
           ? displayAgentIds[Math.floor((hit.instanceId ?? 0) / hit.object.userData.citizenStride)] ?? null : null;
         const id = hit?.object.userData.buildingIds?.[hit.instanceId ?? 0];
@@ -460,8 +473,9 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (e.key === "-") camera.zoom = Math.max(controls.minZoom, camera.zoom / 1.15);
         if (e.key === "Home") {
           e.preventDefault();
+          finishCameraMotion(controls);
           runtime.current!.focus = runtime.current!.home.clone();
-          camera.position.copy(controls.target).add(new THREE.Vector3(100, 90, 100).setLength(400 / controls.minZoom));
+          camera.position.copy(controls.target).add(worldCameraOffset().setLength(400 / controls.minZoom));
           camera.zoom = runtime.current!.homeZoom;
         }
         if (e.key === "Escape") {
@@ -515,10 +529,101 @@ export const City = forwardRef<CityHandle, CityProps>(
         );
       };
       renderer.domElement.addEventListener("webglcontextlost", onLost);
-      let alive = true,
-        animation = 0;
+      let alive = true, animation = 0;
+      const reveal = new CityReveal(motionPreference.matches);
+      const revealReview = import.meta.env.DEV && new URLSearchParams(window.location.search).has("revealReview");
+      let reviewTime: number | null = revealReview ? 0 : null;
+      const revealNow = () => reviewTime ?? clock.getElapsedTime();
+      const previewReveal = (event: Event) => {
+        const time = (event as CustomEvent<{ time: number }>).detail?.time;
+        if (Number.isFinite(time)) reviewTime = Math.max(0, time);
+      };
+      if (revealReview) container.addEventListener("city-reveal-review", previewReveal);
+      let scenicRevision = 0, preparing = false, sceneryReady = false;
+      let worker: Worker | null = null;
+      let latestRequest: SceneryRequest | null = null;
+      const acceptScenery = (raw: SceneryMessage) => {
+        if (!alive || raw.revision !== scenicRevision) return;
+        const message = reviveScenery(raw);
+        if (message.kind === "error") {
+          preparing = false; container.dataset.sceneryError = message.error; return;
+        }
+        if (message.kind === "roads") {
+          pathNetwork = message.pathNetwork; streets = message.streets;
+          container.dataset.streetConstraints = JSON.stringify(streets.constraints);
+          if (current.current.demo) demoWalkers = createDemoWalkers(pathNetwork, current.current.chunks?.flatMap((c) => c.buildings) ?? []);
+        }
+        if (message.kind === "chunk") {
+          const chunk = message.chunk;
+          let group: THREE.Group;
+          reveal.jobs.push(() => {
+            if (!alive || message.revision !== scenicRevision) return;
+            group = createBatch([...chunk.landscape, ...(streets.parts.get(chunk.data.id) ?? [])], library);
+            group.userData.treeCount = chunk.landscape.filter((part) => part.role === "tree-trunk").length;
+            reveal.register(`land:${chunk.data.id}`, group, chunk.rank, revealNow());
+            if (!chunks.has(chunk.data.id)) {
+              chunks.set(chunk.data.id, { group, data: chunk.data, signature: "pending" }); scene.add(group);
+            }
+          });
+          reveal.jobs.push(() => {
+            if (!group) return;
+            if (!alive || message.revision !== scenicRevision) {
+              if (!group.parent) { reveal.forget(group); disposeGroup(group, shared); }
+              return;
+            }
+            const architecture = createBatch(chunk.architecture, library);
+            reveal.register(`buildings:${chunk.data.id}`, architecture, chunk.rank, revealNow(), "buildings");
+            group.add(architecture);
+            group.traverse((o) => { if (o.userData.detail) o.visible = camera.zoom > 2.3 && !o.userData.revealHidden; });
+            const old = chunks.get(chunk.data.id);
+            if (old && old.group !== group) {
+              reveal.forget(old.group); scene.remove(old.group); disposeGroup(old.group, shared);
+              old.data.buildings.forEach((b) => buildings.delete(b.id));
+            }
+            chunks.set(chunk.data.id, { group, data: chunk.data, signature: chunk.signature });
+            chunk.data.buildings.forEach((b) => buildings.set(b.id, b)); scene.add(group); geometryBuilds++;
+          });
+        }
+        if (message.kind === "scenery") {
+          reveal.jobs.push(() => {
+            if (!alive || message.revision !== scenicRevision) return;
+            const { frontier, composition } = message;
+            if (ambient) { reveal.forget(ambient.group); scene.remove(ambient.group); disposeGroup(ambient.group, shared); }
+            ambient = createAmbientScene(message.ambient, library);
+            ambient.update(ambientTime, current.current.ambientEnabled !== false, railTime);
+            reveal.register("infrastructure", ambient.group, 1, revealNow(), "environment"); scene.add(ambient.group);
+            container.dataset.ambientActors = JSON.stringify(ambient.counts);
+            container.dataset.railway = JSON.stringify(ambient.railway);
+            container.dataset.mirroredRailway = JSON.stringify(ambient.mirroredRailway);
+            container.dataset.railFrame = "-1";
+            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens });
+            if (scenic) { reveal.forget(scenic.group); scene.remove(scenic.group); disposeGroup(scenic.group, shared); }
+            scenic = createFrontierScene({ ...frontier, parts: [...frontier.parts.filter((_, i) => !ambient!.clearedFrontierParts.has(i)), ...composition.parts] }, library, ambient.cuts);
+            reveal.register("frontier", scenic.group, 1, revealNow());
+            const ground = excavateRailTerrain([-3000, -.5, -3000, -3000, -.5, 3000, 3000, -.5, 3000,
+              -3000, -.5, -3000, 3000, -.5, 3000, 3000, -.5, -3000], [], ambient.cuts);
+            backdrop.geometry.dispose(); backdrop.geometry = new THREE.BufferGeometry();
+            backdrop.geometry.setAttribute("position", new THREE.Float32BufferAttribute(ground.positions, 3));
+            backdrop.geometry.computeVertexNormals(); backdrop.rotation.set(0, 0, 0); backdrop.position.y = 0;
+            scene.add(scenic.group);
+            container.dataset.frontierStyle = frontierStyle;
+            container.dataset.frontierRevision = String(++frontierRevision);
+            container.dataset.frontierShimmers = String(frontier.shimmer.length);
+            preparing = false; sceneryReady = true;
+          });
+        }
+      };
+      try {
+        worker = new Worker(new URL("./scenery.worker.ts", import.meta.url), { type: "module" });
+        worker.onmessage = (event: MessageEvent<SceneryMessage>) => acceptScenery(event.data);
+        worker.onerror = () => {
+          worker?.terminate(); worker = null; container.dataset.sceneryWorker = "fallback";
+          if (latestRequest) { const request = latestRequest; setTimeout(() => { if (alive && request.revision === scenicRevision) prepareScenery(request, acceptScenery); }, 0); }
+        };
+      } catch { container.dataset.sceneryWorker = "unavailable"; }
+      container.dataset.sceneryWorker = worker ? "active" : "fallback";
       let inspectionKey = "", lastBackgroundFrame = 0, wasInteractive = true,
-        wasStill = false, renderedSizeRevision = -1;
+        wasStill = false, renderedSizeRevision = -1, initialSlowRender = false, lastInitialRenderEnd = 0;
       const render = () => {
         if (!alive) return;
         animation = requestAnimationFrame(render);
@@ -591,121 +696,50 @@ export const City = forwardRef<CityHandle, CityProps>(
           buildings.clear();
           scenicKey = "";
         }
-        if (t - lastStream > 0.25 || chunks.size === 0) {
+        if (t - lastStream > .25 || (!chunks.size && !preparing)) {
           lastStream = t;
-          const all =
-            p.chunks ?? generateWorld(p.seed ?? WORLD_SEED, p.population);
-          const nextScenicKey = (
-            p.chunkCatalog ?? all.map((c) => ({ cx: c.x, cy: c.z }))
-          )
-            .map((c) => `${c.cx}:${c.cy}`)
-            .join(",");
-          const nextScenicDependencies = [...all].sort((a, b) => a.id.localeCompare(b.id))
-            .flatMap((c) => [c.id, c.geometryKey]);
+          const all = p.chunks ?? generateWorld(p.seed ?? WORLD_SEED, p.population);
+          const nextScenicKey = (p.chunkCatalog ?? all.map((c) => ({ cx: c.x, cy: c.z }))).map((c) => `${c.cx}:${c.cy}`).join(",");
+          const nextScenicDependencies = [...all].sort((a, b) => a.id.localeCompare(b.id)).flatMap((c) => [c.id, c.geometryKey]);
+          const wanted = all.filter((chunk) => frustum.intersectsSphere(new THREE.Sphere(new THREE.Vector3(chunk.x * 32 + 16, 2, chunk.z * 32 + 16), 26))).map((c) => c.id);
           if (scenicKey !== nextScenicKey || scenicDependencies.length !== nextScenicDependencies.length ||
-            scenicDependencies.some((key, i) => key !== nextScenicDependencies[i])) {
-            scenicKey = nextScenicKey;
-            scenicDependencies = nextScenicDependencies;
-            pathNetwork = buildPathNetwork(all, p.seed ?? WORLD_SEED);
-            streets = planStreets(all, p.seed ?? WORLD_SEED);
-            container.dataset.streetConstraints = JSON.stringify(streets.constraints);
-            if (p.demo) demoWalkers = createDemoWalkers(pathNetwork, all.flatMap((c) => c.buildings));
-            if (scenic) {
-              scene.remove(scenic.group);
-              disposeGroup(scenic.group, shared);
-            }
-            const frontier = generateFrontier(p.seed ?? WORLD_SEED, all, p.chunkCatalog, frontierStyle);
-            if (ambient) { scene.remove(ambient.group); disposeGroup(ambient.group, shared); }
-            const ambientPlan = planAmbient(all, frontier,
-              buildPathNetwork(all, p.seed ?? WORLD_SEED, true), p.seed ?? WORLD_SEED, streets);
-            ambient = createAmbientScene(ambientPlan, library);
-            scene.add(ambient.group);
-            container.dataset.ambientActors = JSON.stringify(ambient.counts);
-            container.dataset.railway = JSON.stringify(ambient.railway);
-            container.dataset.railFrame = "-1";
-            const composition = composeCityEdges(all, frontier, p.seed ?? WORLD_SEED, ambientPlan.railway, p.chunkCatalog);
-            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens });
-            scenic = createFrontierScene(
-              { ...frontier, parts: [...frontier.parts, ...composition.parts] },
-              library,
-              ambient.cuts,
-            );
-            // Excavate the low background ground plane too; otherwise it seals
-            // deep cuttings at Y=-.5 and clips carriages approaching the portals.
-            const ground = excavateRailTerrain([-3000, -.5, -3000, -3000, -.5, 3000, 3000, -.5, 3000,
-              -3000, -.5, -3000, 3000, -.5, 3000, 3000, -.5, -3000], [], ambient.cuts);
-            backdrop.geometry.dispose(); backdrop.geometry = new THREE.BufferGeometry();
-            backdrop.geometry.setAttribute("position", new THREE.Float32BufferAttribute(ground.positions, 3));
-            backdrop.geometry.computeVertexNormals(); backdrop.rotation.set(0, 0, 0); backdrop.position.y = 0;
-            scene.add(scenic.group);
-            container.dataset.frontierStyle = frontierStyle;
-            container.dataset.frontierRevision = String(++frontierRevision);
-            container.dataset.frontierShimmers = String(frontier.shimmer.length);
+            scenicDependencies.some((key, i) => key !== nextScenicDependencies[i]) ||
+            (!preparing && wanted.some((id) => !chunks.has(id)))) {
+            scenicKey = nextScenicKey; scenicDependencies = nextScenicDependencies;
+            const request: SceneryRequest = { revision: ++scenicRevision, chunks: all, seed: p.seed ?? WORLD_SEED,
+              catalog: p.chunkCatalog, style: frontierStyle, center: { x: runtime.current!.home.x, z: runtime.current!.home.z },
+              wanted, known: Object.fromEntries([...chunks].map(([id, c]) => [id, c.signature])) };
+            latestRequest = request; preparing = true; sceneryReady = false;
+            if (worker) worker.postMessage(request);
+            else setTimeout(() => { if (alive && request.revision === scenicRevision) prepareScenery(request, acceptScenery); }, 0);
           }
           for (const chunk of all) {
-            const center = new THREE.Vector3(
-              chunk.x * 32 + 16,
-              2,
-              chunk.z * 32 + 16,
-            );
-            const visible = frustum.intersectsSphere(
-              new THREE.Sphere(center, 26),
-            );
-            const existing = chunks.get(chunk.id);
-            const landscapeDependencies = all
-              .filter((c) => Math.abs(c.x - chunk.x) <= 1 && Math.abs(c.z - chunk.z) <= 1)
-              .sort((a, b) => a.id.localeCompare(b.id))
-              .flatMap((c) => [c.id, c.geometryKey]);
-            if (existing && existing.data.geometryKey === chunk.geometryKey &&
-              existing.landscapeDependencies.length === landscapeDependencies.length &&
-              existing.landscapeDependencies.every((key, i) => key === landscapeDependencies[i])) {
-              existing.group.visible = visible;
-              existing.data = chunk;
-              chunk.buildings.forEach((b) => buildings.set(b.id, b));
-              continue;
+            const cached = chunks.get(chunk.id);
+            if (cached && cached.data.geometryKey === chunk.geometryKey) {
+              cached.data = chunk;
+              if (cached.signature !== "pending") chunk.buildings.forEach((building) => buildings.set(building.id, building));
             }
-            if (existing) {
-              scene.remove(existing.group);
-              disposeGroup(existing.group, shared);
-              existing.data.buildings.forEach((b) => buildings.delete(b.id));
-              chunks.delete(chunk.id);
-            }
-            if (!visible) continue;
-            geometryBuilds++;
-            const landscape = generateLandscape(chunk, p.seed ?? WORLD_SEED, all).filter((part) => {
-              if (part.role !== "field-row") return true;
-              return ![-1, 0, 1].some((side) => streets.tiles.has(`${Math.floor((part.position[0] + side * part.scale[0] / 2) / 0.25)}:${Math.floor((part.position[2] + side * part.scale[2] / 2) / 0.25)}`));
-            });
-            const group = createBatch(
-              [
-                ...landscape,
-                ...(streets.parts.get(chunk.id) ?? []),
-                ...chunk.buildings.flatMap(generateBuilding),
-              ],
-              library,
-            );
-            group.traverse((o) => {
-              if (o.userData.detail) o.visible = camera.zoom > 2.3;
-            });
-            group.userData.treeCount = landscape.filter((part) => part.role === "tree-trunk").length;
-            chunks.set(chunk.id, { group, data: chunk, landscapeDependencies });
-            chunk.buildings.forEach((b) => buildings.set(b.id, b));
-            scene.add(group);
           }
-          // Unload distant chunks; repeated geometry is retained only by the shared library.
           for (const [id, c] of chunks) {
-            const distance = Math.hypot(
-              c.data.x * 32 + 16 - controls.target.x,
-              c.data.z * 32 + 16 - controls.target.z,
-            );
-            if (!c.group.visible && distance > 220 / camera.zoom + 100) {
-              scene.remove(c.group);
-              disposeGroup(c.group, shared);
-              chunks.delete(id);
+            c.group.visible = frustum.intersectsSphere(new THREE.Sphere(new THREE.Vector3(c.data.x * 32 + 16, 2, c.data.z * 32 + 16), 26));
+            if (!c.group.visible && Math.hypot(c.data.x * 32 + 16 - controls.target.x, c.data.z * 32 + 16 - controls.target.z) > 220 / camera.zoom + 100) {
+              reveal.forget(c.group); scene.remove(c.group); disposeGroup(c.group, shared); chunks.delete(id);
               c.data.buildings.forEach((b) => buildings.delete(b.id));
             }
           }
         }
+        reveal.work();
+        reveal.setReady(sceneryReady); reveal.setReduced(motionPreference.matches);
+        reveal.update(reviewTime ?? t, revealReview ? 0 : frameSeconds * 1000, camera.zoom > 2.3);
+        container.dataset.revealStage = reveal.stage;
+        container.dataset.revealTime = String(reviewTime ?? t);
+        container.dataset.revealVisible = JSON.stringify(reveal.counts);
+        container.dataset.revealPending = String(reveal.jobs.length);
+        container.dataset.revealSceneryReady = String(sceneryReady);
+        const actorsReady = reveal.actorsVisible;
+        ambient?.setActorsVisible(actorsReady);
+        citizens.meshes.forEach((mesh) => { mesh.visible = actorsReady; });
+        cargo.visible = actorsReady; pulses.visible = actorsReady;
         const visible = (
           p.chunkCatalog ??
           [...chunks.values()].map((c) => ({ cx: c.data.x, cy: c.data.z }))
@@ -726,7 +760,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           lastLOD = camera.zoom > 2.3;
           for (const c of chunks.values())
             c.group.traverse((o) => {
-              if (o.userData.detail) o.visible = lastLOD;
+              if (o.userData.detail) o.visible = lastLOD && !o.userData.revealHidden;
             });
         }
         const agentData = p.agents ?? [];
@@ -835,7 +869,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           count++;
         }
         citizens.finish(count);
-        labels.update(t, camera, labelAgents, container.clientWidth, container.clientHeight);
+        labels.update(t, camera, actorsReady ? labelAgents : [], container.clientWidth, container.clientHeight);
         container.dataset.agentVisualStates = JSON.stringify(labelAgents.reduce<Record<string, number>>((states, agent) => {
           states[agent.state] = (states[agent.state] ?? 0) + 1; return states;
         }, {}));
@@ -865,7 +899,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         trailGeometry.setDrawRange(0, trailOffset / 3);
         trailGeometry.getAttribute("position").needsUpdate = true;
         trailGeometry.computeBoundingSphere();
-        trails.visible = p.overlay && !p.demo;
+        trails.visible = actorsReady && p.overlay && !p.demo;
         let pulseCount = 0;
         const colors = {
           production: "#c1a456",
@@ -922,8 +956,16 @@ export const City = forwardRef<CityHandle, CityProps>(
           ? `${displayAgentIds[0]}:${agentPositions.get(displayAgentIds[0])?.toArray().join(":")}`
           : "";
         // Treasury holds the last visual frame while authoritative data still updates.
-        if (!p.visualStill || !wasStill || renderedSizeRevision !== sizeRevision) {
+        const yieldRevealFrame = !reveal.complete && initialSlowRender && reveal.jobs.length > 0 && performance.now() - lastInitialRenderEnd < 120;
+        if (!yieldRevealFrame && (!p.visualStill || !wasStill || renderedSizeRevision !== sizeRevision || !reveal.complete)) {
+          const renderStarted = performance.now();
           renderer.render(scene, camera); renderedSizeRevision = sizeRevision;
+          lastInitialRenderEnd = performance.now();
+          if (!reveal.complete && lastInitialRenderEnd - renderStarted > 80) {
+            initialSlowRender = true;
+            if (!revealReview) reveal.accelerate();
+          }
+          container.dataset.revealRenderedTime = String(reviewTime ?? t);
         }
         wasStill = !!p.visualStill;
         frames++;
@@ -972,6 +1014,9 @@ export const City = forwardRef<CityHandle, CityProps>(
       return () => {
         alive = false;
         cancelAnimationFrame(animation);
+        worker?.terminate(); reveal.jobs.length = 0;
+        controls.removeEventListener("start", stopAutomaticFocus);
+        container.removeEventListener("city-reveal-review", previewReveal);
         observer.disconnect();
         labels.dispose();
         if (ambient) { scene.remove(ambient.group); disposeGroup(ambient.group, shared); }

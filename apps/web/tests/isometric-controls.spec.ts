@@ -25,22 +25,70 @@ test("isometric orbit, pan, zoom, reset and single-line labels", async ({ page }
     await expect(label.locator("small")).toHaveCount(0);
     expect(await label.innerText()).toMatch(/^[A-Z][A-Za-z]+_\d{3}$/);
   }
+  await page.getByRole("button", { name: "Explore buildings" }).click();
+  await page.locator(".building-list button").first().click();
+  await expect(page.getByRole("complementary", { name: "Building details", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Close building details" }).click();
+  await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+  await expect.poll(() => page.locator(".agent-world-label:visible").count()).toBeGreaterThan(0);
+  await page.locator(".agent-world-label:visible").first().press("Enter");
+  await expect(page.getByRole("complementary", { name: "Agent details", exact: true })).toBeVisible();
+  await expect(page.getByTestId("agent-canonical-id")).toContainText("agt_");
 });
-test("touch pan and pinch retain isometric camera limits", async ({ browser }) => {
-  test.setTimeout(180000);
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-  const page = await context.newPage(); await page.goto("/?source=backend");
-  const city = page.getByTestId("city-canvas");
-  await expect.poll(async () => Number(await city.getAttribute("data-rendered-buildings"))).toBeGreaterThan(100);
-  const client = await context.newCDPSession(page);
-  const touch = async (type: "touchStart" | "touchMove" | "touchEnd", points: {x: number; y: number; id: number}[]) => client.send("Input.dispatchTouchEvent", { type, touchPoints: points });
-  await touch("touchStart", [{ x: 160, y: 430, id: 1 }]);
-  await touch("touchMove", [{ x: 160, y: 250, id: 1 }]); await touch("touchEnd", []);
-  await touch("touchStart", [{ x: 130, y: 420, id: 1 }, { x: 230, y: 420, id: 2 }]);
-  await touch("touchMove", [{ x: 100, y: 400, id: 1 }, { x: 260, y: 440, id: 2 }]); await touch("touchEnd", []);
-  await page.waitForTimeout(500);
-  const p = JSON.parse((await city.getAttribute("data-camera"))!), d = p.position.map((v: number, i: number) => v - p.target[i]);
-  expect(Math.acos(d[1] / Math.hypot(...d))).toBeLessThanOrEqual(1.20001);
-  await page.getByRole("button", { name: "Reset camera" }).click();
-  await page.screenshot({ path: "artifacts/isometric-restored-mobile.png" }); await context.close();
-});
+for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
+  test(`original two-finger orbit and pinch work at ${viewport.width}px`, async ({ browser }) => {
+    test.setTimeout(180000);
+    const context = await browser.newContext({ viewport, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    const errors: string[] = []; page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto("/?source=backend");
+    await expect(page.getByTestId("connection-status")).toContainText("connected", { timeout: 60000 });
+    const city = page.getByTestId("city-canvas");
+    await expect.poll(async () => Number(await city.getAttribute("data-rendered-buildings"))).toBeGreaterThan(100);
+    const camera = async () => JSON.parse((await city.getAttribute("data-camera"))!);
+    const initial = await camera();
+    const client = await context.newCDPSession(page);
+    const touch = async (type: "touchStart" | "touchMove" | "touchEnd", points: {x: number; y: number; id: number}[]) =>
+      client.send("Input.dispatchTouchEvent", { type, touchPoints: points });
+    // Live labels move over the canvas. Start both fingers on uncovered canvas,
+    // rather than assuming fixed screen coordinates are always unobstructed.
+    const start = await page.locator("canvas").evaluate((canvas) => {
+      for (const fy of [.54, .64, .44, .74]) for (const fx of [.38, .48, .58]) {
+        const x = innerWidth * fx, y = innerHeight * fy;
+        if ([-50, 50].every((dx) => document.elementFromPoint(x + dx, y) === canvas)) return { x, y };
+      }
+      return null;
+    });
+    expect(start, "two-finger gesture needs two unobstructed canvas targets").not.toBeNull();
+    const { x, y } = start!;
+    // Translation of a two-finger gesture rotates; widening it also zooms.
+    // This is the original DOLLY_ROTATE mapping, not the experimental DOLLY_PAN.
+    await touch("touchStart", [{ x: x - 50, y, id: 1 }]);
+    await touch("touchStart", [{ x: x - 50, y, id: 1 }, { x: x + 50, y, id: 2 }]);
+    for (let step = 1; step <= 8; step++) await touch("touchMove", [
+      { x: x - 50 + step * 3, y: y - step * 7, id: 1 },
+      { x: x + 50 + step * 9, y: y - step * 7, id: 2 },
+    ]);
+    await touch("touchEnd", []);
+    await expect.poll(async () => (await camera()).zoom).toBeGreaterThan(initial.zoom);
+    await expect.poll(async () => (await camera()).position[0]).not.toBe(initial.position[0]);
+    expect((await camera()).target).toEqual(initial.target);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    expect(await page.evaluate(() => window.getSelection()?.toString() ?? "")).toBe("");
+    const p = await camera(), d = p.position.map((v: number, i: number) => v - p.target[i]);
+    expect(Math.acos(d[1] / Math.hypot(...d))).toBeLessThanOrEqual(1.20001);
+    expect(Math.acos(d[1] / Math.hypot(...d))).toBeGreaterThanOrEqual(.24999);
+    await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+    await expect.poll(async () => Math.hypot(...(await camera()).target.map((v: number, i: number) => v - initial.target[i]))).toBeLessThan(.05);
+    await expect.poll(async () => (await camera()).zoom).toBe(initial.zoom);
+    const reset = await camera(), delta = reset.position.map((v: number, i: number) => v - reset.target[i]);
+    await expect.poll(async () => {
+      const c = await camera(), diff = c.position.map((v: number, i: number) => v - c.target[i]);
+      return Math.acos(diff[1] / Math.hypot(...diff));
+    }).toBeCloseTo(Math.acos(90 / Math.hypot(100, 90, 100)), 2);
+    expect(delta.every(Number.isFinite)).toBe(true);
+    await page.screenshot({ path: `artifacts/restored-world-${viewport.width}.png` });
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+}

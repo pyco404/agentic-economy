@@ -99,6 +99,7 @@ export default function App() {
       drawCalls: 0,
       fps: 0,
     });
+  const [roadmapRequest, setRoadmapRequest] = useState(0);
   const city = useRef<CityHandle>(null);
   const closeMenu = useCallback(() => setMenu(false), []);
   useEffect(() => {
@@ -366,7 +367,7 @@ export default function App() {
       >
         {page === "about" && <div hidden={worldVisible} className="page-content about-shell">
           <div className="page-overlay-controls"><OverlayClose onClose={closePage} /></div>
-          <About onNavigate={go} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />
+          <About onNavigate={go} roadmapRequest={roadmapRequest} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />
           <footer className="page-footer"><span>Agentic Economy</span><span>One living world. Every page built above it.</span></footer>
         </div>}
         {(page !== "about" || worldVisible) && (loading ? (
@@ -438,7 +439,7 @@ export default function App() {
                       </div>
                       <h1>A city in motion.</h1>
                       <p>
-                        Small decisions. Useful work. A world built together.
+                        A World That Works. A persistent AI-powered economy on Solana.
                       </p>
                       <button
                         className="world-cta"
@@ -446,6 +447,8 @@ export default function App() {
                       >
                         Find your place in the city <ArrowRight size={16} />
                       </button>
+                      <p className="world-vision-note">Token communities and useful work today in demo. Holder-access Common Agents, rentable Super Agents, and funded $AECO rewards are planned.</p>
+                      <div className="world-vision-actions"><button onClick={() => go("economy")}>Explore Economy</button><button onClick={() => go("launchpad")}>Launchpad</button><button onClick={() => { if (go("about")) setRoadmapRequest((n) => n + 1); }}>View Roadmap</button></div>
                     </div>
                     <div className="district-badge">
                       <Leaf size={17} />

@@ -5,6 +5,7 @@ import { agentSeed, pathBetween, type PathNetwork } from "./agentMotion";
 import { random, type ChunkVisual } from "./layout";
 import { createRiversideScene, planRiversideRail, railService, sampleRail, RIVERSIDE_RAIL } from "./riversideRail";
 import { planUndergroundRail, undergroundService, railCarHidden } from "./undergroundRail";
+import { planMirroredRail, MIRRORED_RAIL, type MirroredRail } from "./mirroredRail";
 import { carsOverlap, lanePoints, streetShuttleLoops, vehicleFitsStreet, type StreetPlan } from "./streets";
 
 /** Decorative transport only. These actors never become agents, deliveries or receipts. */
@@ -78,6 +79,7 @@ export function planAmbient(chunks: ChunkVisual[], frontier: FrontierData, netwo
   const minZ = Math.min(...chunks.map((c) => c.z * 32)), maxZ = Math.max(...chunks.map((c) => (c.z + 1) * 32));
   const railway = streets ? planUndergroundRail(planRiversideRail(chunks, frontier, seed, streets), chunks, frontier, seed, streets) : null;
   const rail = railway?.path ?? null;
+  const mirroredRail = railway && streets ? planMirroredRail(railway, chunks, frontier, streets, seed) : null;
   let cars = vehicleLoops(network);
   if (streets) {
     const raw = vehicleLoops(streets.vehicles), lanes: AmbientPath[] = [];
@@ -98,27 +100,41 @@ export function planAmbient(chunks: ChunkVisual[], frontier: FrontierData, netwo
       levels.get(`${Math.floor(point.x)}:${Math.floor(point.z)}`) ?? 0) + 0.04; });
     path.length = ambientPath(path.points).length;
   }
-  return { rail, railway, cars, center: new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2),
+  return { rail, railway, mirroredRail, cars, center: new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2),
     width: maxX - minX, depth: maxZ - minZ,
     altitude: Math.max(12, ...chunks.flatMap((c) => c.buildings.map((b) => b.height))), seed };
 }
 
 type ActorKind = "train" | "car" | "plane" | "helicopter" | "balloon";
-export function createAmbientScene(plan: ReturnType<typeof planAmbient>, library: GeometryLibrary) {
+export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "mirroredRail"> & { mirroredRail?: MirroredRail | null }, library: GeometryLibrary) {
   const group = new THREE.Group();
   if (AMBIENT.train.enabled && plan.railway) group.add(createRiversideScene(plan.railway, library, {
     minX: plan.center.x - plan.width / 2, maxX: plan.center.x + plan.width / 2,
     minZ: plan.center.z - plan.depth / 2, maxZ: plan.center.z + plan.depth / 2,
   }));
+  const mirror = plan.mirroredRail?.report.mode === "mirrored" ? plan.mirroredRail : null;
+  if (AMBIENT.train.enabled && mirror) {
+    const railway = createRiversideScene(mirror.source, library, {
+      minX: plan.center.x - plan.width / 2, maxX: plan.center.x + plan.width / 2,
+      minZ: plan.center.z - plan.depth / 2, maxZ: plan.center.z + plan.depth / 2,
+    });
+    // The copied sign belongs to the active through-platform, rather than the
+    // disconnected legacy depot ornament retained only on the original side.
+    railway.children.filter((child) => child instanceof THREE.Sprite)
+      .forEach((sign) => sign.position.set(56, 5.8, -5));
+    railway.name = "Opposite urban railway";
+    railway.scale.z = -1; railway.position.z = mirror.reflectionZ;
+    group.add(railway);
+  }
   const moving = new THREE.Group(); group.add(moving);
   const actors: { kind: ActorKind; index: number; path?: AmbientPath; phase: number; speed: number; pose: THREE.Object3D;
-    delay: number; initialized: boolean; hidden: boolean }[] = [];
+    delay: number; initialized: boolean; hidden: boolean; mirrored: boolean }[] = [];
   const parts: { actor: number; part: Part; rotor?: boolean }[] = [];
-  const add = (kind: ActorKind, index: number, path?: AmbientPath) => {
+  const add = (kind: ActorKind, index: number, path?: AmbientPath, mirrored = false) => {
     const rng = random(agentSeed(`${plan.seed}:${kind}:${index}`));
     const id = actors.length;
     actors.push({ kind, index, path, phase: rng(), speed: AMBIENT.cars.minSpeed + rng() * AMBIENT.cars.speedVariation,
-      pose: new THREE.Object3D(), delay: 0, initialized: false, hidden: false });
+      pose: new THREE.Object3D(), delay: 0, initialized: false, hidden: false, mirrored });
     const box = (color: string, position: Part["position"], scale: Part["scale"], geometry = "box", rotor = false) =>
       parts.push({ actor: id, part: { geometry, color, position, scale }, rotor });
     const cream = "#f2e7ce", green = "#537e6d", blue = "#82aabd", clay = "#c77f66", dark = "#526761";
@@ -150,6 +166,7 @@ export function createAmbientScene(plan: ReturnType<typeof planAmbient>, library
     }
   };
   if (AMBIENT.train.enabled && plan.rail) for (let i = 0; i <= AMBIENT.train.carriages; i++) add("train", i, plan.rail);
+  if (AMBIENT.train.enabled && mirror && plan.rail) for (let i = 0; i <= AMBIENT.train.carriages; i++) add("train", i, plan.rail, true);
   if (AMBIENT.cars.enabled && plan.cars.length) for (let i = 0; i < AMBIENT.cars.count; i++) add("car", i, plan.cars[i % plan.cars.length]);
   for (const kind of ["plane", "helicopter", "balloon"] as const) if (AMBIENT[kind].enabled)
     for (let i = 0; i < AMBIENT[kind].count; i++) add(kind, i);
@@ -169,7 +186,7 @@ export function createAmbientScene(plan: ReturnType<typeof planAmbient>, library
   const serviceOffset = RIVERSIDE_RAIL.dwell - RIVERSIDE_RAIL.initialDwell;
   const serviceAt = (seconds: number) => !plan.rail ? null : plan.railway?.underground
     ? undergroundService(seconds, plan.rail, plan.railway.underground) : railService(seconds + serviceOffset, plan.rail.length);
-  let service = serviceAt(0);
+  let service = serviceAt(0), mirrorService = serviceAt(MIRRORED_RAIL.phaseSeconds);
   const update = (time: number, enabled: boolean, railTime = time) => {
     // Track, bridges and portals are static infrastructure, independent of trains.
     moving.visible = enabled;
@@ -178,16 +195,18 @@ export function createAmbientScene(plan: ReturnType<typeof planAmbient>, library
     previousTime = time;
     previousRailTime = railTime;
     service = serviceAt(railTime);
+    mirrorService = serviceAt(railTime + MIRRORED_RAIL.phaseSeconds);
     for (const actor of actors) {
       const { kind, phase, pose, path, index } = actor;
       if (path) {
         let distance = kind === "train"
-          ? (service?.distance ?? 0) + (plan.railway?.underground ? -index : index - 1) * RIVERSIDE_RAIL.spacing
+          ? ((actor.mirrored ? mirrorService : service)?.distance ?? 0) + (plan.railway?.underground ? -index : index - 1) * RIVERSIDE_RAIL.spacing
           : loopDistance(time - actor.delay, path.length, actor.speed, actor.phase, index % 2 ? AMBIENT.cars.stopSeconds : 0);
         if (kind === "train" && plan.rail) {
           if (plan.railway?.underground) distance = ((distance % plan.rail.length) + plan.rail.length) % plan.rail.length;
           sampleRail(plan.rail, distance, position, direction);
           actor.hidden = !!plan.railway?.underground && railCarHidden(distance, plan.rail, plan.railway.underground);
+          if (actor.mirrored && mirror) { position.z = mirror.reflectionZ - position.z; direction.z *= -1; }
         }
         else sampleAmbient(path, distance, position, direction);
         if (kind === "car") {
@@ -229,16 +248,25 @@ export function createAmbientScene(plan: ReturnType<typeof planAmbient>, library
     }
   };
   update(0, true);
-  return { group, update, railway: plan.railway?.report ?? null, cuts: plan.railway?.underground?.cuts ?? [],
+  return { group, update, setActorsVisible: (visible: boolean) => { moving.visible = visible && moving.visible; }, railway: plan.railway?.report ?? null,
+    mirroredRailway: plan.mirroredRail?.report ?? null,
+    clearedFrontierParts: new Set(mirror?.clearedFrontierParts ?? []),
+    cuts: [...(plan.railway?.underground?.cuts ?? []), ...(mirror?.cuts ?? [])],
     railState: () => ({ distance: service?.distance ?? null, speed: service?.speed ?? 0,
       state: service?.state ?? "unavailable", period: service?.period ?? null,
       ...(service && "hiddenAt" in service ? { hiddenAt: service.hiddenAt, emergesAt: service.emergesAt,
         hiddenSeconds: service.hiddenSeconds, elapsed: service.elapsed, dwelling: service.dwelling } : {}),
       trackVisible: group.visible && group.children.some((child) => child.name === "Riverside urban railway" && child.visible),
-      cars: actors.filter((a) => a.kind === "train").map((a) => ({ position: a.pose.position.toArray(), heading: a.pose.rotation.y, visible: !a.hidden && enabledForDiagnostics() })) }),
+      mirrored: mirror ? { state: mirrorService?.state, distance: mirrorService?.distance,
+        period: mirrorService?.period, phaseSeconds: MIRRORED_RAIL.phaseSeconds,
+        ...(mirrorService && "hiddenSeconds" in mirrorService ? { hiddenSeconds: mirrorService.hiddenSeconds } : {}),
+        reflectionZ: mirror.reflectionZ,
+        trackVisible: group.visible && group.children.some((child) => child.name === "Opposite urban railway" && child.visible),
+        cars: actors.filter((a) => a.kind === "train" && a.mirrored).map((a) => ({ position: a.pose.position.toArray(), heading: a.pose.rotation.y, visible: !a.hidden && enabledForDiagnostics() })) } : null,
+      cars: actors.filter((a) => a.kind === "train" && !a.mirrored).map((a) => ({ position: a.pose.position.toArray(), heading: a.pose.rotation.y, visible: !a.hidden && enabledForDiagnostics() })) }),
     traffic: () => actors.filter((actor) => actor.kind === "car")
     .map((actor) => ({ position: actor.pose.position.clone(), heading: actor.pose.rotation.y })),
-    counts: { train: plan.rail && AMBIENT.train.enabled ? 1 : 0,
+    counts: { train: plan.rail && AMBIENT.train.enabled ? 1 + Number(!!mirror) : 0,
     cars: AMBIENT.cars.enabled && plan.cars.length ? AMBIENT.cars.count : 0,
     plane: Number(AMBIENT.plane.enabled), helicopter: Number(AMBIENT.helicopter.enabled), balloon: Number(AMBIENT.balloon.enabled) } };
   function enabledForDiagnostics() { return moving.visible; }

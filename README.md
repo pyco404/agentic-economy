@@ -82,7 +82,27 @@ API references: [HTTP/OpenAPI contract](contracts/openapi.yaml) and [WebSocket e
 
 Requirements: **Node.js 22 or newer** and **pnpm 11.5.1**. Docker builds currently pin Node 24.13.0. A database, Solana RPC, wallet, and Pinata account are not required to view the demo city.
 
-From the repository root:
+Run these commands from the **main checkout**, not a preserved legacy worktree.
+Vite serves files from the checkout that started it; fetching/pushing main or deploying
+Railway does not update a running dev server in another checkout. Check before starting:
+
+```bash
+git branch --show-current  # must be main
+git worktree list          # locate main when older worktrees are preserved
+```
+
+Keep unfinished files in their existing worktrees. Stop only the stale frontend dev
+server, then start the frontend from main. Both Vite development and the production
+build use the same complete-world readiness barrier and 2.6-second cinematic reveal;
+reduced-motion settings intentionally skip the presentation animation.
+
+The frontend and API must also use compatible contracts. An older 0.2.0 local API
+lacks the 0.3.x agent identity fields and can render the terrain while the dashboard
+reports unavailable. Do not fix that by fabricating identities or automatically
+migrating an existing database. The isolated in-memory demo below provides a safe
+main-version API without altering persisted worlds.
+
+From that main repository root:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -106,6 +126,20 @@ pnpm --filter @agentic-economy/web dev
 ```
 
 Open **http://localhost:5173/**. The World home is `/`; other pages open as overlays. A disconnected visitor can open Launch and prepare fields or preview a logo. **Connect wallet** opens wallet selection; authentication signs a message, not a payment or launch transaction.
+
+If an older API already occupies port 8787, leave it and its database alone. Start
+the isolated main demo with `PORT=8795` in the backend command above, and start the
+frontend with matching public addresses:
+
+```bash
+VITE_API_URL=http://localhost:8795 VITE_WS_URL=ws://localhost:8795/api/v1/ws \
+pnpm --filter @agentic-economy/web dev
+```
+
+These two public addresses may also go in the main checkout's ignored
+`apps/web/.env.local` for subsequent local starts. Use the same addresses when
+building a local production preview. Local env files are not a Railway deployment
+configuration; staging retains its existing API and WebSocket addresses.
 
 Once connected, **Review token** saves the latest details, uploads the selected logo, prepares metadata, and opens the review in one action. Draft management and technical references are available under **Manage drafts & technical details**. If uploads are unavailable, the draft is saved and a plain retry notice appears.
 

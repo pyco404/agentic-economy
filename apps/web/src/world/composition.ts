@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { planOutskirts } from "./outskirts";
+import { planOutskirts, type ScenicFootprint } from "./outskirts";
+import { planSupportDistricts } from "./supportDistricts";
 import type { MirroredRail } from "./mirroredRail";
 import type { Part } from "./geometry";
 import type { FrontierData } from "./frontier";
@@ -14,7 +15,7 @@ export const WORLD_COMPOSITION = {
 } as const;
 
 export function composeCityEdges(chunks: ChunkVisual[], frontier: FrontierData, seed: number,
-  railway: RiversidePlan | null, catalog?: { cx: number; cy: number }[], mirrored?: MirroredRail | null) {
+  railway: RiversidePlan | null, catalog?: { cx: number; cy: number }[], mirrored?: MirroredRail | null, footprint?: ScenicFootprint) {
   const parts: Part[] = [];
   const occupied = new Set((catalog?.length ? catalog : chunks.map((c) => ({ cx: c.x, cy: c.z })))
     .map((c) => `${c.cx}:${c.cy}`));
@@ -36,7 +37,7 @@ export function composeCityEdges(chunks: ChunkVisual[], frontier: FrontierData, 
     }));
   };
   const box = (color: string, x: number, y: number, z: number, w: number, h: number, d: number) =>
-    parts.push({ geometry: "box", color, position: [x, y, z], scale: [w, h, d] });
+    parts.push({ geometry: "box", color, position: [x, y, z], scale: [w, h, d], role: "city-edge" });
   let edgeSegments = 0, railGardens = 0;
   for (const chunk of chunks) for (const [nx, nz] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
     if (occupied.has(`${chunk.x + nx}:${chunk.z + nz}`)) continue;
@@ -118,14 +119,21 @@ export function composeCityEdges(chunks: ChunkVisual[], frontier: FrontierData, 
   }
   const mirror = mirrored?.report.mode === "mirrored" ? mirrored : null;
   const routes = [...(path ? [{ points: path.points }] : []), ...(mirror ? [{
-    points: (mirror.source.underground?.surface ?? mirror.source.path)!.points.map(p => ({ x: p.x, z: mirror.reflectionZ-p.z })),
+    points: (mirror.source.underground?.surface ?? mirror.source.path)!.points.map(p => ({ x: p.x, y: p.y, z: mirror.reflectionZ-p.z })),
   }] : [])];
   const infrastructure = [...(railway?.parts ?? []), ...(mirror?.source.parts ?? []).map(p => ({ ...p,
     position: [p.position[0],p.position[1],mirror!.reflectionZ-p.position[2]] as Part["position"],
     rotation: [p.rotation?.[0]??0,-(p.rotation?.[1]??0),p.rotation?.[2]??0] as Part["rotation"],
   }))];
-  const outskirts = planOutskirts(chunks,frontier,seed,catalog,routes,infrastructure);
+  const support = footprint ? planSupportDistricts(chunks,frontier,seed,catalog,routes,infrastructure,footprint) : null;
+  const reserved = support?.report.sites ?? [];
+  const fillerFootprint = footprint && { contains: (x:number,z:number) => footprint.contains(x,z) &&
+    !reserved.some(s => Math.abs(s.x-x)<s.width/2+1.5 && Math.abs(s.z-z)<s.depth/2+1.5 ||
+      s.access.some(p=>Math.abs(p.x-x)<2.5&&Math.abs(p.z-z)<2.5)) };
+  const outskirts = planOutskirts(chunks,frontier,seed,catalog,routes,infrastructure,fillerFootprint);
   const start = parts.length;
   parts.push(...outskirts.parts);
-  return { parts, edgeSegments, railGardens, outskirts: { ...outskirts.report, start } };
+  parts.push(...(support?.parts??[]));
+  return { parts, edgeSegments, railGardens, outskirts: { ...outskirts.report, start },
+    support: support?.report ?? null, clearedFrontierParts: support?.clearedFrontierParts ?? [] };
 }

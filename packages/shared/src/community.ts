@@ -34,6 +34,7 @@ export const Community = z
       prominence: z.number().int(),
     }),
     registeredAt: z.iso.datetime({ offset: true }),
+    provenance:z.object({platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),network:z.enum(["devnet","localnet"]),quoteAsset:z.literal("SOL")}).optional(),
   })
   .meta({ id: "Community" });
 export type Community = z.infer<typeof Community>;

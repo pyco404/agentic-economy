@@ -36,6 +36,9 @@ export function registerHandlers(ctx: AppContext, register: Register) {
   register("worldStats", async () => worldStats(mode, state()));
   register("worldAgents", async () => ({ mode, tick: runtime.tick, agents: runtime.agentSummaries() }));
 
+  register("tokenMarket",async({params})=>ctx.tokenMarket.snapshot(params.mint));
+  register("tokenHistory",async({params})=>ctx.tokenMarket.history(params.mint));
+
   /* ---------------- economy ---------------- */
 
   register("activities", async ({ query }) => ({ mode, ...(await ctx.store.listEvents(query.cursor ?? null, query.limit)) }));

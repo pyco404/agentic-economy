@@ -19,7 +19,7 @@ for (const width of [1440, 390]) test(`financial surfaces and reduced motion rem
   expect(await page.locator(".page-content").evaluate((node) => getComputedStyle(node).animationName)).toBe("none");
   await page.screenshot({ path: `artifacts/global-${width}-treasury.png` });
   if (width === 390) await page.getByRole("button", { name: "Toggle navigation" }).click();
-  await page.getByRole("link", { name: "Launchpad", exact: true }).click();
+  await page.getByRole("link", { name: "Launch", exact: true }).click();
   await expect(page.getByLabel("Token name")).toBeVisible();
   await page.screenshot({ path: `artifacts/global-${width}-launchpad.png` });
 });

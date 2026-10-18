@@ -1,0 +1,43 @@
+{
+  "network": "isolated-localnet",
+  "genesis": "6ipNj9MegH4hTivNXuiPn13ACBJouXzNaakdGW36gfpB",
+  "database": "aeco_launch_execution_20261018_test",
+  "walletSigner": "automated Wallet Standard, not actual Phantom",
+  "pinata": "actual service",
+  "checks": [
+    "Actual wallet-auth API, PostgreSQL draft and real Pinata image/metadata through existing UI",
+    "Real program simulation precedes signing; preparation remains private and unconfirmed",
+    "Wallet rejection creates no broadcast or platform charge",
+    "Submitted transaction and owned draft survived an actual backend/context restart and concurrent chain confirmation",
+    "Actual token confirmation, one atomic 0.05 local SOL charge, duplicate submission and concurrent confirmation are idempotent",
+    "Real IPFS metadata remains associated with the correct owned launch",
+    "Verified platform/human localnet provenance is discoverable in existing Explore without invented market metrics"
+  ],
+  "launch": {
+    "id": "lch_862c5a0e5229c2b648a4cdae",
+    "mint": "Dp3YWYh4gTwQDcy9o6nR8gSLfvh5ETGE2BzKyEbjZ6bD",
+    "signature": "3YkGTsh8Au4prugo8e3y8bq3Cbw75RtUqrbELiMUrFoDm8mjhbmfJQdwsd9RwMTfAN3bGAw77bQnFcsptZtFHmqu",
+    "network": "localnet",
+    "metadataUri": "ipfs://bafkreid3obgvfzljuwlfnaewwpc3ejn4o3wkvsrcp6byggh6q4rjh47yve"
+  },
+  "assets": {
+    "image": {
+      "cid": "bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi",
+      "mime": "image/png",
+      "width": 300,
+      "height": 300,
+      "status": "verified",
+      "ipfsUri": "ipfs://bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi",
+      "uploadId": "9bbeb354-1261-4c2f-9aec-a05c0cce8bc1",
+      "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi"
+    },
+    "metadata": {
+      "cid": "bafkreid3obgvfzljuwlfnaewwpc3ejn4o3wkvsrcp6byggh6q4rjh47yve",
+      "ipfsUri": "ipfs://bafkreid3obgvfzljuwlfnaewwpc3ejn4o3wkvsrcp6byggh6q4rjh47yve",
+      "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreid3obgvfzljuwlfnaewwpc3ejn4o3wkvsrcp6byggh6q4rjh47yve"
+    }
+  },
+  "platformBalance": 50000000,
+  "broadcasts": 1,
+  "result": "passed"
+}

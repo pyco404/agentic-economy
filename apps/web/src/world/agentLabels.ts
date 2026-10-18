@@ -5,7 +5,7 @@ export const AGENT_LABELS = { farZoom: 1.2, closeZoom: 3.6,
   farLimit: 4, mediumLimit: 18, closeLimit: 48, interval: 1 / 30,
   headHeight: 1.7, gap: 8, estimatedCharacterWidth: 6.2 } as const;
 export interface LabelAgent { id: string; name: string; ownerWallet?: string;
-  identity?: AuthoritativeIdentity; displayName?: string; demoName?: boolean; x: number; z: number; state: string;
+  identity?: AuthoritativeIdentity; displayName?: string; demoName?: boolean; x: number; z: number; elevation?: number; state: string;
   selected?: boolean; hovered?: boolean; important?: boolean; activity?: string; visualOnly?: boolean; }
 export interface LabelCandidate extends LabelAgent { screenX: number; screenY: number; }
 
@@ -49,7 +49,7 @@ export function createAgentLabels(host: HTMLElement, select: (id: string) => voi
       if (seconds - last < AGENT_LABELS.interval) return;
       last = seconds;
       const candidates = agents.map((agent) => {
-        point.set(agent.x, AGENT_LABELS.headHeight, agent.z);
+        point.set(agent.x, AGENT_LABELS.headHeight + (agent.elevation ?? 0), agent.z);
         point.project(camera);
         return { ...agent, screenX: (point.x + 1) * width / 2,
           screenY: (1 - point.y) * height / 2 - 9 };

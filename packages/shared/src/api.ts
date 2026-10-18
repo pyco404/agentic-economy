@@ -1,5 +1,6 @@
+import {TokenMarket,TokenHistory} from './market.js';
 import { z } from "zod";
-import { page, PageQuery, DataMode, AgentId, CommunityId, LaunchId } from "./primitives.js";
+import { page, PageQuery, PublicKey, DataMode, AgentId, CommunityId, LaunchId } from "./primitives.js";
 import { WorldBootstrap, WorldChunk, WorldStats } from "./world.js";
 import { EconomicEvent, EconomySummary, MarketsResponse, Task, TaskStatus, TaskReceipt, RewardRecord } from "./economy.js";
 import {
@@ -142,6 +143,8 @@ export const routes = {
   patchAgent: { method: "patch", path: `${P}/agents/:id`, operationId: "updateAgent", summary: "Pause/resume or update bounded strategy (owner only)", tag: "agents", auth: true, idempotencyKey: "optional", params: z.object({ id: AgentId }), body: PatchAgentRequest, response: AgentResponse },
   agentActivity: { method: "get", path: `${P}/agents/:id/activity`, operationId: "listAgentActivity", summary: "Agent decision/action log (newest first)", tag: "agents", auth: false, params: z.object({ id: AgentId }), query: PageQuerySchema, response: AgentActionPage },
 
+  tokenMarket: {method:'get',path:`${P}/token-markets/:mint`,operationId:'getTokenMarket',summary:'Attributed market data for verified platform tokens',tag:'communities',auth:false,params:z.object({mint:PublicKey}),response:TokenMarket},
+  tokenHistory: {method:'get',path:`${P}/token-markets/:mint/history`,operationId:'getTokenHistory',summary:'Hourly pool candles where available',tag:'communities',auth:false,params:z.object({mint:PublicKey}),response:TokenHistory},
   treasury: { method: "get", path: `${P}/treasury`, operationId: "getTreasury", summary: "Public fee/allocation summary with reconciliation state", tag: "treasury", auth: false, response: TreasurySummary },
   treasurySummary: { method: "get", path: `${P}/treasury/summary`, operationId: "getTreasurySummary", summary: "Alias of /treasury", tag: "treasury", auth: false, response: TreasurySummary },
   treasuryEntries: { method: "get", path: `${P}/treasury/entries`, operationId: "listTreasuryEntries", summary: "Append-only treasury ledger (newest first)", tag: "treasury", auth: false, query: PageQuerySchema, response: TreasuryEntryPage },

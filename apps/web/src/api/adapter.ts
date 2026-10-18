@@ -15,6 +15,7 @@ import {
   type PatchAgentRequest,
   type Agent,
   type AgentAction,
+  type TaskReceipt,
   type HolderEligibility,
   type WorldChunk,
 } from "./shared";
@@ -36,6 +37,7 @@ export interface Dashboard {
   agents: AgentSummary[];
   markets: MarketsResponse;
   tasks: Task[];
+  receipts?: TaskReceipt[];
   activities: EconomicEvent[];
   treasury: TreasurySummary;
   worldChunks?: WorldChunk[];
@@ -534,6 +536,7 @@ export class HttpAdapter implements ApiAdapter {
       tasks,
       activities,
       treasury,
+      receipts,
     ] = await Promise.all([
       get(routes.worldBootstrap),
       get(routes.worldStats),
@@ -543,6 +546,7 @@ export class HttpAdapter implements ApiAdapter {
       get(routes.tasks),
       get(routes.activities),
       get(routes.treasury),
+      get(routes.receipts),
     ]);
     const coords = bootstrap.chunks;
     const centerX = coords.length
@@ -565,6 +569,7 @@ export class HttpAdapter implements ApiAdapter {
       agents: agents.agents,
       markets,
       tasks: tasks.items,
+      receipts: receipts.items,
       activities: activities.items,
       treasury,
       chunks: chunks.chunks.map(worldChunkToVisual),
@@ -594,13 +599,15 @@ export class HttpAdapter implements ApiAdapter {
     return output;
   }
   async refreshSummary(signal?: AbortSignal) {
-    const [stats, tasks] = await Promise.all([
+    const [stats, tasks, agents, receipts] = await Promise.all([
       this.request(routes.worldStats.path, routes.worldStats.response, {
         signal,
       }),
       this.request(routes.tasks.path, routes.tasks.response, { signal }),
+      this.request(routes.worldAgents.path, routes.worldAgents.response, { signal }),
+      this.request(routes.receipts.path, routes.receipts.response, { signal }),
     ]);
-    return { stats, tasks: tasks.items };
+    return { stats, tasks: tasks.items, agents: agents.agents, agentTick: agents.tick, receipts: receipts.items };
   }
 
   async createAgent(input: CreateAgentRequest) {

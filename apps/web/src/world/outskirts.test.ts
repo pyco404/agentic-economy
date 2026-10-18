@@ -15,7 +15,7 @@ describe("decorative outer town parcels",()=>{
     expect(a.parts.some(p=>p.geometry==="cone")).toBe(true);
     expect(a.parts.some(p=>p.geometry==="roof")).toBe(true);
     expect(a.parts.every(p=>!p.buildingId&&p.position.every(Number.isFinite)&&p.scale.every(v=>v>0))).toBe(true);
-    expect(a.parts.length).toBeLessThan(OUTSKIRTS.maxSites*22);
+    expect(a.parts.length).toBeLessThan(OUTSKIRTS.maxParts);
     expect(planOutskirts([chunk],frontier,43)).not.toEqual(a);
   });
   it("reserves complete occupied catalogs including unloaded and newly developed chunks",()=>{
@@ -53,4 +53,19 @@ describe("decorative outer town parcels",()=>{
       expect(Math.abs(p.position[2]-s.z)+p.scale[2]/2).toBeLessThanOrEqual(4);
     }
   });
+  it("allocates its budget inside the retained footprint and builds denser coherent stands",()=>{
+    const frontier=generateFrontier(42,[chunk]);
+    const footprint={contains:(x:number,z:number)=>x>=-16&&x<48&&z>=-16&&z<48};
+    const plan=planOutskirts([chunk],frontier,42,undefined,[],[],footprint);
+    expect(plan.report.footprintAware).toBe(true);
+    expect(plan.sites.length).toBeGreaterThan(10);
+    expect(plan.report.trees).toBeGreaterThanOrEqual(plan.report.groves*5);
+    for(const site of plan.sites)for(const dx of [-3.5,0,3.5])for(const dz of [-3.5,0,3.5])
+      expect(footprint.contains(site.x+dx,site.z+dz)).toBe(true);
+    for(const part of plan.parts)expect(footprint.contains(part.position[0],part.position[2])).toBe(true);
+    expect(plan).toEqual(planOutskirts([chunk],frontier,42,undefined,[],[],footprint));
+    const empty=planOutskirts([chunk],frontier,42,undefined,[],[],{contains:()=>false});
+    expect(empty.sites).toEqual([]);expect(empty.parts).toEqual([]);
+  });
+
 });

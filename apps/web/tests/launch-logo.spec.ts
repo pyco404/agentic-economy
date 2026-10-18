@@ -86,7 +86,7 @@ test("isolated adapter fixture covers progress, duplicate guard, retry, cancella
   const upload = page.getByRole("button", { name: "Upload to IPFS", exact: true });
   await upload.evaluate((node: HTMLButtonElement) => { node.click(); node.click(); });
   await expect(page.getByRole("progressbar")).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("Upload failed");
+  await expect(page.getByRole("alert")).toContainText("fixture rejection");
   expect(await page.evaluate(() => (window as any).mediaReview.uploads)).toBe(1);
   await page.evaluate(() => { (window as any).mediaReview.fail = false; (window as any).mediaReview.hold = true; });
   await page.getByRole("button", { name: "Retry upload" }).click();

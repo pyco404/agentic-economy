@@ -4,6 +4,7 @@ import type { FrontierData } from "./frontier";
 import { railTerrain } from "./railTerrain";
 import { generateTreeParts } from "./vegetationGeometry";
 import type { TreeSpecies } from "./vegetation";
+import { turfColor } from "./terrainSurface";
 
 /** Scenic parcels only: no buildings, tasks, inventories or navigable roads. */
 export const OUTSKIRTS = { tile: 8, reach: 32, maxSites: 144, occupancy: .82,
@@ -84,7 +85,7 @@ export function planOutskirts(chunks: ChunkVisual[], frontier: FrontierData, see
       parts.push({geometry,color,position:[x+dx,level+y,z+dz],scale:[w,h,d]});
     // A shallow lens blends into rolling ground rather than floating above it.
     if(theme==="bank" || theme==="grove" && rng()>.45)
-      box(theme==="bank"?"#d8e0bf":"#e0e4c9",0,-.025,0,4.8+rng()*1.5,.12,3.8+rng()*1.7,"round");
+      box(`#${turfColor(seed,x,z).getHexString()}`,0,-.025,0,4.8+rng()*1.5,.12,3.8+rng()*1.7,"round");
     const tree=(dx:number,dz:number,kind:TreeSpecies,scale:number)=>{
       const px=x+dx,pz=z+dz;
       parts.push(...generateTreeParts({x:px,z:pz,scale,elevation:ground(px,pz)!.height,kind,zone:"natural",placement:"natural"}));

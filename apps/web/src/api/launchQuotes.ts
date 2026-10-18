@@ -1,7 +1,6 @@
-/** Frontend draft choices, NOT protocol eligibility or a launch API contract.
- * Shared v0.2.0 (and the inspected v0.3.0 identity contract) has no quote field.
- * Until Claude publishes that contract, only the existing SOL draft is reviewable.
- * No mint, price, transaction, or financial capability is inferred here.
+/** Draft quote choices, not transaction capabilities. The authenticated workspace
+ * supports SOL drafts only. USDC requires a verified quote-aware launch adapter;
+ * AECO remains a future phase. No price, mint or financial permission is inferred.
  */
 export type LaunchQuoteAsset = "SOL" | "USDC" | "AECO";
 export const LAUNCH_QUOTE_OPTIONS = [

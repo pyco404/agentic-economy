@@ -52,6 +52,10 @@ const Env = z.object({
   CORS_ORIGINS: z.string().default("http://localhost:5173,http://127.0.0.1:5173"),
   /** Must be set to "true" explicitly, and only after the devnet test plan in docs passes. */
   FEE_ROUTING_VERIFIED: z.enum(["true", "false"]).default("false"),
+  PINATA_JWT: z.string().optional(),
+  IPFS_GATEWAY: z.string().url().default("https://gateway.pinata.cloud"),
+  LOGO_MAX_BYTES: z.coerce.number().int().min(1024).max(5_000_000).default(5_000_000),
+  LOGO_MAX_PIXELS: z.coerce.number().int().min(1).max(32_000_000).default(16_000_000),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
 });
 
@@ -114,6 +118,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
      * once fee routing has been verified. Demo mode uses the mock chain and never touches money.
      */
     financialFeaturesEnabled: !demo && feeRoutingVerified,
+    pinata: {jwt:e.PINATA_JWT??null,gateway:e.IPFS_GATEWAY,maxBytes:e.LOGO_MAX_BYTES,maxPixels:e.LOGO_MAX_PIXELS},
     logLevel: e.LOG_LEVEL,
   };
 }

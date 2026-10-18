@@ -1,6 +1,8 @@
 import { CurrentAgentWork, JobFacts, ProductionFacilities, WorkingAgents } from "./AgentWork";
 import { observableTasks, workDescription } from "../api/agentWork";
 import "../agent-work.css";
+import { LaunchWorkspace } from "./LaunchWorkspace";
+import { useWalletSession } from "../api/walletSession";
 import { useEffect, useState } from "react";
 import { useDraftField } from "../navigation/drafts";
 import { LaunchQuotePicker } from "./LaunchQuotePicker";
@@ -62,6 +64,10 @@ export function PageHeading({
   );
 }
 export function Launchpad() {
+  const session=useWalletSession();
+  return session.available ? <LaunchWorkspace /> : <LocalLaunchpad />;
+}
+function LocalLaunchpad() {
   const [review, setReview] = useState(false),
     [name, setName, nameSaved] = useDraftField<string>("launchpad:name", ""),
     [symbol, setSymbol, symbolSaved] = useDraftField<string>("launchpad:symbol", ""),

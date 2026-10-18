@@ -10,7 +10,7 @@ export const LogoReference = IpfsReference.and(z.object({ uploadId: z.string().m
 export type LogoReference = z.infer<typeof LogoReference>;
 export type IpfsReference = z.infer<typeof IpfsReference>;
 export interface MetadataInput { name: string; symbol: string; description: string; quoteAsset: string; imageUploadId: string; }
-/** Frontend port, not a published HTTP contract. Claude owns endpoint/auth binding. */
+/** Reusable upload port. The authenticated launch workspace binds it to the shared Launchpad API. */
 export interface LaunchMediaAdapter {
   available: boolean;
   unavailableReason?: string;

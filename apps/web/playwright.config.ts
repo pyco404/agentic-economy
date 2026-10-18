@@ -12,11 +12,10 @@ export default defineConfig({
     viewport: { width: 1440, height: 1000 },
     launchOptions: {
       executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome",
-      args: [
-        "--no-sandbox",
-        "--enable-unsafe-swiftshader",
-        "--use-angle=swiftshader",
-      ],
+      // Native GPU is opt-in for local hardware validation; CI keeps software WebGL.
+      args: process.env.PLAYWRIGHT_NATIVE_GPU === "1"
+        ? ["--no-sandbox", "--enable-gpu", "--use-gl=angle", "--use-angle=gl", "--ignore-gpu-blocklist"]
+        : ["--no-sandbox", "--enable-unsafe-swiftshader", "--use-angle=swiftshader"],
     },
   },
   webServer: [

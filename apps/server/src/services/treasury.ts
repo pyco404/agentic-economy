@@ -55,13 +55,14 @@ export class TreasuryService {
     launchId: string | null;
     supersedes: string | null;
     direction?: TreasuryEntry["direction"];
+    accountAddress?:string;
   }): TreasuryEntry {
     return {
       id: newId("tre"),
       seq: 0,
       stream: p.stream,
       account: p.account,
-      accountAddress: p.account === "platform" ? this.config.treasuries.platform : this.config.treasuries.agentRewards,
+      accountAddress: p.accountAddress??(p.account === "platform" ? this.config.treasuries.platform : this.config.treasuries.agentRewards),
       assetMint: WRAPPED_SOL_MINT,
       assetSymbol: "SOL",
       decimals: 9,
@@ -82,6 +83,7 @@ export class TreasuryService {
   launchFeeEntry(launch: TokenLaunch, signature: string, feeIxIndex: number, slot: number, commitment: "confirmed" | "finalized"): TreasuryEntry {
     return this.entry({
       stream: "launch_fee",
+      accountAddress:launch.fees.platformTreasury,
       account: "platform",
       amount: LAUNCH_FEE_LAMPORTS,
       signature,

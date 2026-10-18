@@ -1,7 +1,8 @@
 # Phase 2 — external Launchpad verification
 
 Checkpoint: 18 October 2026. **The real-service milestone is not complete.**
-Actual Phantom approvals and actual Pinata image/metadata uploads remain unverified.
+Phantom desktop authentication is user-confirmed. Real Pinata uploads remain blocked
+by HTTP 401 from the provider upload endpoint; no image or metadata CID is claimed.
 No city appearance work is included.
 
 ## Existing systems retained and current release baseline
@@ -41,48 +42,78 @@ out. This verifies API persistence across sessions; no database restart or migra
 was performed. Intermittent connection/DNS timeouts interrupted earlier probes;
 the completed pooled HTTP-client audit passed all checks.
 
-## Real Phantom — manual approval required
+## Real Phantom — evidence boundary
 
-Open <https://staging.useaeco.xyz/#launchpad> in Chrome/Brave with the actual Phantom
-extension, connect and approve only the domain-matched authentication message,
-then refresh to check restoration. Connection and signature rejection, disconnect,
-wallet switching and supported Phantom mobile in-app browsing still require real
-wallet interaction. Automated signers and responsive viewport tests do not establish
-Phantom compatibility. Never share recovery phrases, private keys or session cookies.
+The user confirmed real Phantom desktop authentication succeeded. This checkpoint
+independently verified the staging authentication API with automated message signers,
+not an actual extension approval. Real Phantom mobile, wallet switching, rejection
+and physical-device gestures remain separate manual checks. No private key or
+recovery phrase is requested. Authenticated sessions restore without signing again
+in the automated checks.
 
 The configured AUTH_DOMAIN, AUTH_URI and CORS allowlist match staging.useaeco.xyz.
 Mobile external-wallet handoff is not implemented; the current mobile path requires
 a compatible injected/Wallet Standard provider in the wallet's in-app browser.
 
-## Pinata — confirmed missing credential
+## Pinata — credential present, upload authorization blocked
 
-The staging backend has no nonempty PINATA_JWT and reports uploads=false. No real
-image or metadata CID was obtained in this checkpoint. Credential presence alone
-will not prove authorization, account quota or gateway retrieval.
+Read-only Railway configuration inspection confirmed a nonempty PINATA_JWT in the
+staging backend and no Pinata variable in the frontend. Secret values were neither
+printed nor written to evidence. Staging backend deployment
+`dd073642-bbec-479e-807c-19adef7cef96` succeeded at `bdeb505`; health reports demo,
+PostgreSQL and contract 0.3.1, with financial features and launch execution disabled.
 
-In the existing Pinata account, API Keys → New Key: create a staging-specific key,
-leave Admin disabled, and grant Files upload/write (`org:files:write`). Copy its JWT
-directly into Railway → agentic-economy → staging → backend API → Variables:
+Actual external checks, not mocks:
+
+- Pinata GET `https://api.pinata.cloud/data/testAuthentication`: HTTP 200.
+- POST `https://uploads.pinata.cloud/v3/files`, using the configured credential,
+  multipart public network and public AECO logo: HTTP 401. No CID was returned.
+- Existing staging UI authenticated an ephemeral automated Wallet Standard signer,
+  previewed that logo and created its owned PostgreSQL draft (HTTP 200).
+- The backend logo endpoint returned sanitized HTTP 503 for the provider failure;
+  Review Token did not report readiness or fabricate assets.
+- Only each audit-owned test draft was deleted and its session logged out. No
+  token-launch, payment, transaction-signing or submission request was made.
+
+The successful authentication probe establishes connectivity and credential
+recognition for that endpoint; it does not establish upload authorization. HTTP 401
+from the v3 upload endpoint needs key-permission/account investigation. Pinata's
+current endpoint requires `org:files:write`. JWT payload scope guesses are not
+accepted as authoritative permission evidence.
+
+In Pinata API Keys, create a staging-specific key with Files upload/write permission
+for the v3 endpoint. Replace its JWT directly in Railway staging backend Variables
+and deploy the variable change. Do not paste the secret in chat or add frontend
+variables. If that exact permission already exists, investigate account access with
+Pinata rather than assuming a successful upload or silently changing providers.
 
 | Variable | Configuration |
 |---|---|
-| PINATA_JWT | Required server-side secret; never put the value in chat, logs, source or VITE_* variables. |
+| PINATA_JWT | Backend secret with upload/write permission. No frontend/VITE_* copy. |
 | IPFS_GATEWAY | Optional HTTPS public gateway origin; default https://gateway.pinata.cloud. |
 | LOGO_MAX_BYTES | Optional, defaults to 5000000; supported maximum 5 MB. |
 | LOGO_MAX_PIXELS | Optional, defaults to 16000000. |
 
-The existing service calls https://uploads.pinata.cloud/v3/files with network=public
-for both validated images and metadata JSON. Upload-only permission is sufficient
-for this path; public gateway retrieval must not require a frontend secret.
-Keep MODE=demo, FEE_ROUTING_VERIFIED=false and launch execution disabled.
-Do not apply any additional migration when configuring the variable.
+After replacement, retry the existing authenticated UI flow and verify both returned
+CIDs by retrieving the actual bytes/JSON, checking artwork identity and metadata
+references, then refresh/reopen/review the saved draft. Actual image upload, metadata
+pinning, gateway retrieval and review using real Pinata data are **not yet verified**.
+Provider-backed duplicate/retry checks also remain pending; mocked retry checks pass.
 
 Official references: [API keys](https://docs.pinata.cloud/account-management/api-keys)
 and [upload endpoint / scope](https://docs.pinata.cloud/api-reference/endpoint/upload-a-file).
-After configuration, use the existing UI to prepare controlled, non-sensitive token
-branding, retrieve the actual image and metadata through the gateway, validate their
-contents, refresh/reopen the wallet-owned draft and review the saved information.
-Do not label mocked receipts as real Pinata evidence.
+
+## Readiness fix deployed during the audit
+
+A real UI attempt exposed Review Token becoming available before authenticated
+capabilities finished loading. The button now waits for that response, while the
+anonymous Connect wallet action remains usable. There is no fixed delay or new
+upload system. Regression coverage deliberately holds the capabilities response and
+checks that no draft/upload mutation starts early.
+
+One-file commits: `8b99eeb` (component), `653fb01` (browser regression). Staging web
+deployment `a5d29502-f078-4059-bfb7-e812725c0418` succeeded at `653fb01`. The backend
+remained at `bdeb505`; no backend/shared-contract/schema changes were required.
 
 ## Tests and limits
 
@@ -118,3 +149,32 @@ SOL/USDC denominations, 60% Agent Rewards / 40% Platform allocations, retained d
 idempotency and separation from launch charges. Protocol/LP fees are not assumed to
 belong to the platform. Real fee collection, reconciliation against an actual chain
 receipt, and payouts remain unverified; no signing or disbursement was enabled.
+
+## Next safe-network Solana launch verification task — prepared, not started
+
+Start only after the real wallet/artwork/metadata milestone is verified:
+
+1. Inspect the existing launch execution guards and pinned Pump program/IDL/SDK.
+   Establish current official public devnet support using primary sources and
+   read-only RPC checks of the expected genesis, executable program, global accounts,
+   supported instructions and fee-sharing configuration. Do not infer support from
+   an isolated local clone or fall back to mainnet.
+2. If public testing support is absent or incompatible, report the exact gap; retain
+   disabled execution. An explicitly isolated local-validator rehearsal may validate
+   builder behavior, but must be labeled local, not public Pump.fun verification.
+3. Propose an isolated non-production test configuration and test-only wallets,
+   treasury addresses, RPC and spend limits for review before changing execution
+   flags. Keep existing demo staging operational; no production changes, real
+   treasury signing, payments or database migrations are included in this task.
+4. Once separately authorized for a supported safe network, reuse an owned verified
+   draft. Inspect the decoded transaction and simulate it before any signature:
+   SOL quote only, exact approved programs/accounts, atomic planned launch charge,
+   authorized creator-fee recipients and no unexpected instructions.
+5. Test actual wallet rejection, expired blockhash, RPC failure, duplicate prepare/
+   confirm, ownership and version conflicts. Verify any authorized test submission
+   against finalized on-chain mint/provenance evidence and verify Explore labels.
+   Separate provider mocks, local-chain results and public-network results.
+
+Current milestone does not enable that task or Phase 3. MODE=demo,
+FEE_ROUTING_VERIFIED=false and PUMP_LAUNCH_ENABLED=false/default-disabled remain
+in effect; no mainnet launch or disbursement has been performed.

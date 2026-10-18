@@ -1,13 +1,15 @@
+import { bridgeSurface } from "./bridgeSurface";
 import type { FrontierData } from "./frontier";
 import type { ChunkVisual } from "./layout";
 
 /** Exact barycentric samples of the existing frontier mesh, plus persisted cells. */
 export function railTerrain(chunks: ChunkVisual[], frontier: FrontierData) {
+  const bridges = bridgeSurface(chunks);
   const cells = new Map<string, { height: number; wet: boolean }>();
   for (const c of chunks) for (let z = 0; z < 32; z++) for (let x = 0; x < 32; x++)
     cells.set(`${c.x * 32 + x}:${c.z * 32 + z}`, {
-      height: c.terrain?.[z * 32 + x] === "w" ? -0.25 : Number(c.elevation?.[z * 32 + x] ?? 0) * 0.08,
-      wet: c.terrain?.[z * 32 + x] === "w",
+      height: (c.terrain?.[z * 32 + x] === "w" || bridges.navigableUnder(c.x * 32 + x,c.z * 32 + z)) ? -0.25 : Number(c.elevation?.[z * 32 + x] ?? 0) * 0.08,
+      wet: (c.terrain?.[z * 32 + x] === "w" || bridges.navigableUnder(c.x * 32 + x,c.z * 32 + z)),
     });
   const buckets = new Map<string, number[][]>();
   for (const [positions, wet] of [[frontier.positions, false], [frontier.water, true]] as const)

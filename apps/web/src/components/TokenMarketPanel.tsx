@@ -1,0 +1,17 @@
+import {useEffect,useState} from 'react';
+import {HttpAdapter,type ApiAdapter} from '../api/adapter';
+import {TokenHistory,type TokenHistory as History,type TokenMarket} from '../api/shared';
+import {marketNumber} from '../api/tokenMarkets';
+export function TokenMarketPanel({market,mint,api}:{market?:TokenMarket;mint:string;api:ApiAdapter}){
+ const [history,setHistory]=useState<History|null>(null);
+ useEffect(()=>{setHistory(null);if(!(api instanceof HttpAdapter)||market?.status!=='available')return;const abort=new AbortController();void api.request(`/api/v1/token-markets/${mint}/history`,TokenHistory,{signal:abort.signal}).then(h=>{if(!abort.signal.aborted&&h.mint===mint&&h.pairAddress===market.pairAddress)setHistory(h);}).catch(()=>{});return()=>abort.abort();},[api,mint,market?.pairAddress,market?.status]);
+ const candles=history?.candles??[],prices=candles.map(c=>c.close!).filter(n=>n!==null),min=Math.min(...prices),max=Math.max(...prices);
+ return <section className="surface" aria-label="Token market data"><div className="market-metrics">{[['Price',market?.priceUsd],['Market cap',market?.marketCapUsd],['Trading volume · 24h',market?.volume24hUsd],['Liquidity',market?.liquidityUsd]].map(([name,value])=><div key={name}><span>{name}</span><b>{marketNumber(value as number|null|undefined)}</b></div>)}</div>
+  <p className="small muted">{market?.reason??(market?'Provider-reported market metrics.':'Market data pending or unavailable.')} City Credits and useful services are simulation metrics.</p>
+  {market?.sourceUrl&&<p className="small"><a href={market.sourceUrl} target="_blank" rel="noreferrer">DEX Screener · selected pool ↗</a> · Retrieved {market.fetchedAt?new Date(market.fetchedAt).toLocaleString():'unavailable'}{market.status==='stale'?' · Stale':''}. Provider trade freshness is not supplied.</p>}
+  <p className="small">24h price change: {market?.priceChange24h==null?'Unavailable':`${market.priceChange24h}%`} · Holders: {market?.holders?.toLocaleString()??'Unavailable'} · 24h buys / sells: {market?.buys24h??'Unavailable'} / {market?.sells24h??'Unavailable'}</p>
+  <p className="small">Graduation: {market?.graduation?.replaceAll('_',' ')??'unknown'} · Progress: {market?.graduationProgress==null?'Unavailable':`${market.graduationProgress}%`}</p>
+  <h3>Price history · hourly USD closes</h3>
+  {prices.length>1?<><svg viewBox="0 0 600 140" role="img" aria-label="Hourly USD closing prices from GeckoTerminal" style={{width:'100%',maxHeight:180}}><polyline fill="none" stroke="currentColor" strokeWidth="2" points={prices.map((v,i)=>`${10+i*580/(prices.length-1)},${130-(v-min)/(max-min||1)*120}`).join(' ')}/></svg><p className="small"><a href={`https://www.geckoterminal.com/solana/pools/${history!.pairAddress}`} target="_blank" rel="noreferrer">GeckoTerminal ↗</a> · {new Date(candles[0]!.time*1000).toLocaleString()} – {new Date(candles.at(-1)!.time*1000).toLocaleString()} · Retrieved {history?.fetchedAt&&new Date(history.fetchedAt).toLocaleString()}</p><details><summary>Price history values</summary><div className="ui-select-text" tabIndex={0} style={{maxHeight:240,overflow:'auto'}}><table><thead><tr><th>Time</th><th>Close USD</th><th>Volume USD</th></tr></thead><tbody>{candles.map(c=><tr key={c.time}><td>{new Date(c.time*1000).toLocaleString()}</td><td>{marketNumber(c.close)}</td><td>{marketNumber(c.volume)}</td></tr>)}</tbody></table></div></details></>:<p className="small muted">{history?.reason??'Historical chart unavailable.'}</p>}
+ </section>;
+}

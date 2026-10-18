@@ -5,8 +5,8 @@
 export type LaunchQuoteAsset = "SOL" | "USDC" | "AECO";
 export const LAUNCH_QUOTE_OPTIONS = [
   { asset: "SOL", label: "SOL", description: "Trade against Solana’s native currency.",
-    draftAvailable: true, status: "Default · draft only",
-    requirement: "SOL is the existing draft option. Live launches and wallet signing remain disabled." },
+    draftAvailable: true, status: "Default",
+    requirement: "SOL is the default trading pair. Execution is available only on enabled testing networks; mainnet launches remain disabled." },
   { asset: "USDC", label: "USDC", description: "Trade against USD Coin.",
     draftAvailable: false, status: "Backend support pending",
     requirement: "The backend must support and verify the network’s USDC quote mint before this pair can be selected." },

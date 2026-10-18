@@ -73,10 +73,11 @@ export class MockChain implements ChainGateway {
     return { transaction: Buffer.from(JSON.stringify(intent)).toString("base64"), lastValidBlockHeight: null, demo: true };
   }
 
-  async listSignaturesForAddress(address: string, until: string | null, limit: number): Promise<string[]> {
+  async listSignaturesForAddress(address: string, until: string | null, limit: number, before?:string): Promise<string[]> {
     const all = [...this.txs.values()].filter((t) => t.lamportDeltas[address] !== undefined).sort((a, b) => b.slot - a.slot).map((t) => t.signature);
     const stop = until ? all.indexOf(until) : -1;
-    return (stop >= 0 ? all.slice(0, stop) : all).slice(0, limit);
+    const start=before?all.indexOf(before)+1:0;
+    return (stop >= 0 ? all.slice(start, stop) : all.slice(start)).slice(0, limit);
   }
 
   /* -------------------------------------------------- mock-only controls */
@@ -156,6 +157,8 @@ export class MockChain implements ChainGateway {
     });
     return signature;
   }
+
+  async isTransactionOrphaned(signature:string){return !this.txs.has(signature);}
 
   /** Drop a transaction (simulates a fork/reorg at `confirmed` commitment). */
   dropTransaction(signature: string) {

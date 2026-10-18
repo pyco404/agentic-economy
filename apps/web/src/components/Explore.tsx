@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Copy, Search, ShieldCheck } from "lucide-react";
 import type { ApiAdapter, Dashboard } from "../api/adapter";
 import { useTokens, type VerifiedToken } from "../api/tokens";
+import { orderTokens, type DiscoveryOrder } from "../api/tokenDiscovery";
+import { ExploreSpotlights } from "./ExploreSpotlights";
 import { LaunchOriginTag } from "./LaunchOriginTag";
 import { CommunityArt } from "./CommunityArt";
 import { displayAgentName, displayActivity } from "../api/agentIdentity";
@@ -14,7 +16,13 @@ export function Explore({ api, data, mint, onToken, onBack, onWorld, onAgent, on
 }) {
   const { tokens, loading, error, retry } = useTokens(api, data);
   const [query, setQuery] = useState(""), [filter, setFilter] = useState("newest"),
-    [sort, setSort] = useState("newest"), [page, setPage] = useState(0);
+    [sort, setSort] = useState<DiscoveryOrder>("newest"), [page, setPage] = useState(0);
+  const allHeading = useRef<HTMLHeadingElement>(null);
+  const seeAll = (order: DiscoveryOrder) => {
+    setSort(order); setFilter("newest"); setPage(0);
+    allHeading.current?.focus({preventScroll:true});
+    allHeading.current?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth",block:"start"});
+  };
   const selected = tokens.find((t) => t.community.mint === mint);
   const buildings = data.chunks?.flatMap((c) => c.buildings) ?? [];
   const hq = (id: string | null) => api.kind === "http" ? buildings.find((b) => b.id === id) : undefined;
@@ -23,10 +31,8 @@ export function Explore({ api, data, mint, onToken, onBack, onWorld, onAgent, on
     {loading ? <div className="discovery-skeleton" role="status" aria-label="Verifying token launch"/> : selected ?
       <TokenDetail token={selected} data={data} source={source} building={hq(selected.community.headquartersBuildingId)} onWorld={onWorld} onAgent={onAgent} onCommunity={onCommunity}/> :
       <div className="discovery-empty"><h1>Verified token not found.</h1><p>{error || "This mint has no matching confirmed platform launch in the registered community records."}</p><button className="secondary" onClick={retry}>Retry verification</button></div>}</div>;
-  const results = tokens.filter(({ community: c }) => `${c.name} ${c.symbol} ${c.mint}`.toLowerCase().includes(query.trim().toLowerCase()) &&
-    (filter !== "active" || c.stats.activeAgents > 0)).sort((a, b) => sort === "services" ?
-      b.community.stats.verifiedTasks - a.community.stats.verifiedTasks || a.community.name.localeCompare(b.community.name) : sort === "name" ?
-      a.community.name.localeCompare(b.community.name) : Date.parse(b.launch.createdAt) - Date.parse(a.launch.createdAt));
+  const results = orderTokens(tokens.filter(({ community: c }) => `${c.name} ${c.symbol} ${c.mint}`.toLowerCase().includes(query.trim().toLowerCase()) &&
+    (filter !== "active" || c.stats.activeAgents > 0)), sort);
   const pageCount = Math.max(1, Math.ceil(results.length / 6)), current = Math.min(page, pageCount - 1);
   return <div className="discovery explore-discovery"><header className="discovery-hero"><div><span className="eyebrow">EXPLORE AGENTIC ECONOMY</span><h1 aria-label="Discover what's being built.">Discover what's<br/>being built.</h1>
     <p>Tokens with a place in the city. Discover verified Launchpad communities and the autonomous agents putting their ideas to work.</p><span className="source-pill">{source}</span></div>
@@ -34,8 +40,10 @@ export function Explore({ api, data, mint, onToken, onBack, onWorld, onAgent, on
     <div className="discovery-summary"><div><b>{loading ? "…" : tokens.length}</b><span>Verified token listings</span></div><div><b>{loading ? "…" : tokens.reduce((n, t) => n + t.community.stats.activeAgents, 0)}</b><span>Community agents active</span></div><div><b>{loading ? "…" : tokens.reduce((n, t) => n + t.community.stats.verifiedTasks, 0).toLocaleString()}</b><span>Verified useful services</span></div><p>Discovery grounded<br/>in a shared world.</p></div>
     <div className="discovery-toolbar"><label className="search"><Search size={17}/><input aria-label="Search tokens" placeholder="Search name, ticker or mint address…" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }}/></label>
       <label>Quote asset<select aria-label="Filter quote asset" disabled aria-describedby="quote-data-note"><option>Quote data unavailable</option></select></label>
-      <label>Sort by<select aria-label="Sort tokens" value={sort} onChange={(e) => { setSort(e.target.value); setPage(0); }}><option value="newest">Newest recorded launch</option><option value="services">Community useful services</option><option value="name">Name A–Z</option></select></label></div>
+      <label>Sort by<select aria-label="Sort tokens" value={sort} onChange={(e) => { setSort(e.target.value as DiscoveryOrder); setPage(0); }}><option value="newest">Newest recorded launch</option><option value="agents">Most active agents</option><option value="services">Community useful services</option><option value="name">Name A–Z</option></select></label></div>
     <p id="quote-data-note" className="small muted">Trading pair data is unavailable for these launch records. Quote filtering will be available when verified pair data is provided.</p>
+    {!query.trim()&&<ExploreSpotlights tokens={tokens} loading={loading} error={error} onToken={onToken} onAll={seeAll}/>}
+    <div className="discovery-section-label"><h2 id="explore-all-tokens" className="explore-all-heading" ref={allHeading} tabIndex={-1}>{query.trim()?"Search results":"All launches"}</h2><span>{loading?"Verifying listings…":`${results.length} verified listings`}</span></div>
     <div className="discovery-tabs" aria-label="Token filters"><button aria-pressed={filter === "newest"} onClick={() => { setFilter("newest"); setSort("newest"); setPage(0); }}>Newest</button><button aria-pressed={filter === "active"} onClick={() => { setFilter("active"); setPage(0); }}>Active communities</button><button disabled title="Trusted market data is unavailable">Trending · unavailable</button><button disabled title="Graduation status is not in the API">Graduated · unavailable</button></div>
     <p className="small muted">PLATFORM, HUMAN, and SUPER-AGENT origin tags require backend-verified provenance; origin is currently unverified. Newest uses the recorded launch time. Active means at least one active community agent. Useful services ranks backend-verified tasks, not trading volume.</p>
     {error && <div className="discovery-error" role="alert">{error} <button className="secondary" onClick={retry}>Retry</button></div>}

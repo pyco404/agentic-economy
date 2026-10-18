@@ -37,13 +37,27 @@ export class AuthService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  async challenge(wallet: string): Promise<ChallengeResponse> {
+  private audience(origin?: string) {
+    const uri = new URL(this.config.auth.uri);
+    if (origin !== undefined) {
+      if (!this.config.corsOrigins.includes(origin)) throw new AppError("forbidden", "This browser origin is not authorized for wallet sign-in");
+      let requested: URL;
+      try { requested = new URL(origin); } catch { throw new AppError("bad_request", "Invalid browser origin"); }
+      if (requested.origin !== origin || !["http:", "https:"].includes(requested.protocol)) throw new AppError("bad_request", "Invalid browser origin");
+      return { domain: requested.host, uri: requested.origin };
+    }
+    // Legacy non-browser clients use the configured URI. Keep the port: a
+    // hostname-only AUTH_DOMAIN does not represent the browser's authority.
+    return { domain: uri.host, uri: uri.origin };
+  }
+
+  async challenge(wallet: string, origin?: string): Promise<ChallengeResponse> {
+    const audience = this.audience(origin);
     const now = this.now();
     const nonce = bs58.encode(randomBytes(16));
     const expiresAt = new Date(now.getTime() + this.config.auth.challengeTtlSeconds * 1000).toISOString();
     const message = buildChallengeMessage({
-      domain: this.config.auth.domain,
-      uri: this.config.auth.uri,
+      ...audience,
       wallet,
       cluster: this.config.mode === "demo" ? undefined : this.config.solana.cluster,
       nonce,
@@ -54,10 +68,14 @@ export class AuthService {
     return { nonce, message, expiresAt };
   }
 
-  async verify(wallet: string, nonce: string, signatureB58: string): Promise<VerifyResponse> {
+  async verify(wallet: string, nonce: string, signatureB58: string, origin?: string): Promise<VerifyResponse> {
+    const audience = origin === undefined ? null : this.audience(origin);
     // Consume first: a nonce can be presented exactly once, valid signature or not.
     const ch = await this.store.consumeChallenge(nonce, wallet, this.now());
     if (!ch) throw new AppError("unauthorized", "challenge is unknown, expired, already used, or for a different wallet");
+    if (audience && (!ch.message.startsWith(`${audience.domain} wants you to sign in with your Solana account:\n`) ||
+      !ch.message.split("\n").includes(`URI: ${audience.uri}`)))
+      throw new AppError("unauthorized", "Sign-in challenge belongs to a different browser origin. Connect again on this page.");
     let sig: Uint8Array;
     let pub: Uint8Array;
     try {

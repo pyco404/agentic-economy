@@ -1,5 +1,9 @@
 # Main-only integration and staging gate — 18 October 2026
 
+## Current Task 1 status
+
+Staging was recovered to a compatible **0.2.0 frontend/API pair** on 18 October 2026 after live browser checks exposed the previously deployed 0.3 frontend / 0.2 API mismatch. The full upgrade to main remains blocked at the explicitly required backup/restore gate. No migration was applied. See the Task 1 recheck below for exact deployment IDs, evidence and outstanding acceptance criteria.
+
 ## Git integration
 
 PR #8 head `ed8ce09208b73bc3e3556bad4bf3b4658568e79c` contains 52 commits relative to remote main `3cdeb793a93202edf662f3dc206bf36d85640ba8`: 51 single-file commits and one historical merge. They cover zoned turf, authenticated Launchpad drafts, verified IPFS assets, wallet sessions, persistence, tests, and release notes. Preserve all original hashes.
@@ -33,3 +37,52 @@ The integrated follow-up tree passes workspace typecheck, root lint, backend/sha
 Browser coverage uses an isolated memory-only main API, real Ed25519 test signatures, mocked Pinata, and native touch events: agent assignment/travel/work/receipt, mobile/tablet discovery, two-finger orbit/pinch, desktop camera interactions, and disconnected/connected Launchpad workflows. An old house-name-only assertion failed on a legitimate shortened wallet name; it was corrected to compare labels with canonical API identities. The corrected desktop case passed with explicit native GPU settings and a smaller framebuffer after software-rendered stress runs timed out. All nine scenarios passed across the full run plus that focused rerun, not as a clean initial run. The optional native-GPU test configuration is also preserved; CI retains software rendering. No real wallet extension, live Pinata, production transaction, or staging schema rehearsal is claimed.
 
 Detailed logs and per-commit manifest remain at `/tmp/aeco-main-transition-20261018/`. The existing histories have not been squashed, rebased, or force-pushed. Intermediate one-file dependency revisions are not claimed to build independently; validation covers the final combined tree.
+
+
+## Task 1 recheck and staging recovery — 18 October 2026
+
+### Git and preserved work
+
+- Reviewed code revision: `eb399b580c2b45197f9df4ff405111fd3b894605`; local main and origin/main matched before this documentation update. No new development branch, PR, force push or history rewrite was used.
+- Inventoried 101 modified/untracked files in the older checkout. Nine already match main, 51 differ, and 41 have no main counterpart. File hashes were checked again after recovery; all 101 remain unchanged. The inventory includes local documentation/assets as well as source. Differing city/navigation/terrain experiments remain excluded from the release; prior functional auth fixes already on main were not committed again.
+
+### Actual failure and recovery
+
+The original live browser smoke checks failed on both desktop and mobile. Frontend deployment `2c6786f7-8670-4be2-a1bc-ab03ebb0e6d9` served commit `ed8ce09208b73bc3e3556bad4bf3b4658568e79c`, whose agent parser requires 0.3.0 `identity` and `displayName`. The live API reports 0.2.0 and omits those fields. The result was “Couldn’t load the city”; Launchpad content was also blocked by world initialization. HTTP 200 and Railway SUCCESS had concealed the incompatibility.
+
+A clean archive of published commit `74085709342074c8366f8021bfcbec4ded2cb627` was built without switching branches. Its 0.2 frontend passed desktop/mobile checks against the real API using isolated browser-only asset interception. The previously successful frontend artifact for that same commit was then restored using Railway rollback. The target was explicitly checked to be the staging web service, with no pre-deploy migration command. This is temporary incident recovery, not completion of the main-branch upgrade.
+
+| Service | Current deployment | Source evidence |
+| --- | --- | --- |
+| Staging frontend | `782235db-f44c-4208-912d-fb00c2290dad` | Native commit metadata: `74085709342074c8366f8021bfcbec4ded2cb627` |
+| Staging API | `5925f299-12f7-41ed-96c3-0f4bcd4e054a` — unchanged | Manual-upload label records source `7408570`; the full corresponding Git revision is `74085709342074c8366f8021bfcbec4ded2cb627`. Native backend commit metadata is absent, so the label is not independent image/source attestation. |
+
+The web recovery restored only an existing static frontend artifact. No API deployment, application database migration, agent activation, draft creation, image upload, launch or financial operation was performed. Browser authentication checks used ephemeral test keys, created ordinary auth challenges/sessions, and revoked the sessions from successful smoke flows through logout. The normal demo simulation continued writing its own events and receipts.
+
+### Database and migration gate
+
+A staging PostgreSQL SSH audit used forced read-only transactions and rollback, without starting application code or invoking the migration runner:
+
+- Applied migrations remain `001_init.sql`, `002_coordination.sql`, and `004_launchpad_workspace.sql`. All three SHA-256 checksums match main. `003_agent_identity.sql` is the only pending migration in main.
+- `agent_names` and `agent_activations` are absent; both Launchpad tables exist. Migration 003 was not applied or rehearsed on staging data.
+- The latest snapshot remains state version 1 with nine agents, no duplicate legacy names/wallets, and no pending inbox commands. The read-only identity upgrade audit produces nine unique proposed legacy names and canonical IDs. No existing agent was converted into a token-linked activation.
+- Before/after recovery counts: three communities, three launches, 15 treasury entries, three Launchpad drafts and three Launchpad operations. Agent count remains nine. Task receipts and reward records continued increasing with the running demo economy. Existing API agent IDs remained present after browser checks.
+- Migration 004's application timestamp is 17 October 2026, 22:41 UTC. The backend's recorded source `7408570` contains migrations 001, 002 and 004, but no 003; this explains the gap rather than implying a failed migration. The SQL additions for 003 and 004 target separate tables.
+- Railway backup inventory was queried again before and after recovery and returned **zero backups**. No other current restorable staging backup was verified. Consequently no restore into an isolated staging copy, staging-data migration rehearsal, or approval to execute 003 can be claimed. Stop at this gate.
+
+### Validation results
+
+- Main: 160 frontend, 91 backend, 26 shared-contract and seven world-spec tests passed (**284 total**). Eighteen database-dependent tests were explicitly skipped; no test was pointed at staging or an existing development database.
+- Workspace typecheck, root/frontend lint, backend/shared builds, frontend production build and generated contract consistency pass. The existing large frontend bundle advisory remains.
+- Prior-release candidate: two desktop/mobile browser cases passed against live API data with browser-only asset interception; this was predeployment compatibility evidence, not a live deployment claim.
+- Main frontend/API 0.3.0 local integration: five Launchpad browser scenarios passed, including desktop/mobile authentication, automatic asset preparation, unavailable uploads, retry idempotency and rejected signatures. These use an isolated memory API and mocked Pinata, not staging uploads.
+- Actual recovered staging: two browser cases passed at 1440px and 390px, without frontend asset interception. Verified city rendering, PostgreSQL readiness, simulation leadership, WebSocket snapshot/pong/heartbeat and movement/activity events, one message signature per ephemeral test wallet, authenticated session, Launchpad form access after sign-in, logout and subsequent HTTP 401, retained original agent IDs, and zero page JavaScript errors.
+- Anonymous visitors still see the older wallet-gated workspace; the improved public form, one-action preparation, Explore sections and other newer main functionality are not claimed as deployed. Pinata remains unconfigured, uploads unavailable, and launch execution disabled. No installed Phantom extension, physical device or live Pinata upload was tested.
+
+### Outstanding acceptance criteria
+
+Both staging triggers remain on their historical sources: frontend `codex/frontend`, API `staging`. They were deliberately not switched to main while a backend pre-deploy command would automatically apply the conditionally approved but unrehearsed 003. Production was rechecked to have zero deployment triggers and was not modified. Current API mode remains demo with financial features disabled.
+
+Task 1 is **not complete**: establish and verify a current restorable staging backup, restore an isolated copy, audit and rehearse 003 with record-preservation checks, then apply only approved 003, coordinate both services from main, identify their native deployed Git SHAs, and rerun the live acceptance checks. Phase 2 wallet/upload rollout must wait for that complete main release; recovery to the compatible older pair does not satisfy it.
+
+Private local evidence: `/tmp/aeco-staging-integration-20261018/` contains logs, read-only audits, inventories, browser results and screenshots. Credential-variable exports were removed; detailed identity data stays private and is not committed.

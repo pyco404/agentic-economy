@@ -1,0 +1,7 @@
+.work-facts { display: grid; gap: 6px; min-width: 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.work-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.work-actions button[aria-pressed="true"] { background: #e6edd7; border-color: #80936d; }
+.work-facilities { max-height: 250px; overflow: auto; overscroll-behavior: contain; }
+.production-facilities { margin-block: 20px; }
+.work-facts .work-actions { margin-top: 4px; }
+.agent-detail .selectable { user-select: text; -webkit-user-select: text; overflow-wrap: anywhere; }

@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {Connection,Keypair,PublicKey} from '@solana/web3.js';
+import {AddressLookupTableAccount,AddressLookupTableProgram,Connection,Keypair,PublicKey,type VersionedTransactionResponse} from '@solana/web3.js';
 import {PUMP_PROGRAM_ID} from '@agentic-economy/shared';
 import {pumpLaunchInstructions} from '../src/chain/pump-builder.js';
 import {MockChain} from '../src/chain/mock.js';
@@ -35,5 +35,32 @@ describe('authoritative launch verification',()=>{
   await expect(chain.submitLaunchTransaction('anything')).rejects.toThrow('safe testing network');
   const proxy=new SolanaRpcChain('http://127.0.0.1:1',{enabled:true,lookupTable:Keypair.generate().publicKey.toBase58(),localGenesisHash:'5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d',cluster:'localnet'});
   await expect(proxy.submitLaunchTransaction('anything')).rejects.toThrow('safe testing network');
+ });
+});
+
+describe('RPC evidence and simulation failure gates',()=>{
+ it('keeps missing execution metadata or unconfirmed signature status pending',async()=>{
+  const read=vi.spyOn(Connection.prototype,'getTransaction').mockResolvedValue({meta:null} as VersionedTransactionResponse);
+  const status=vi.spyOn(Connection.prototype,'getSignatureStatuses');const chain=new SolanaRpcChain('http://127.0.0.1:1');
+  expect(await chain.getTransaction('test-signature')).toBeNull();expect(status).not.toHaveBeenCalled();
+  read.mockResolvedValue({meta:{err:null}} as VersionedTransactionResponse);
+  for(const value of [null,{slot:1,confirmations:0,confirmationStatus:'processed',err:null}]){status.mockResolvedValue({context:{slot:1},value:[value]} as Awaited<ReturnType<Connection['getSignatureStatuses']>>);expect(await chain.getTransaction('test-signature')).toBeNull();}
+ });
+ it('rejects contradictory transaction/status errors instead of accepting RPC success',async()=>{
+  vi.spyOn(Connection.prototype,'getTransaction').mockResolvedValue({meta:{err:null}} as VersionedTransactionResponse);
+  vi.spyOn(Connection.prototype,'getSignatureStatuses').mockResolvedValue({context:{slot:1},value:[{slot:1,confirmations:1,confirmationStatus:'confirmed',err:{InstructionError:[0,'InvalidArgument']}}]} as Awaited<ReturnType<Connection['getSignatureStatuses']>>);
+  await expect(new SolanaRpcChain('http://127.0.0.1:1').getTransaction('test-signature')).rejects.toThrow('contradicts');
+ });
+ it.each(['BlockhashNotFound','InsufficientFundsForRent',{InstructionError:[2,'InvalidInstructionData']}])('never broadcasts a failed simulation: %j',async err=>{
+  const f=await fixture(),ix=await pumpLaunchInstructions(f.input);
+  const table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses:[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()]}});
+  vi.spyOn(Connection.prototype,'getGenesisHash').mockResolvedValue('EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG');
+  vi.spyOn(Connection.prototype,'getAccountInfo').mockResolvedValue({owner:AddressLookupTableProgram.programId,data:Buffer.alloc(0),lamports:1,executable:false,rentEpoch:0});
+  vi.spyOn(Connection.prototype,'getAddressLookupTable').mockResolvedValue({context:{slot:1},value:table});
+  vi.spyOn(Connection.prototype,'getLatestBlockhash').mockResolvedValue({blockhash:Keypair.generate().publicKey.toBase58(),lastValidBlockHeight:100});
+  vi.spyOn(Connection.prototype,'simulateTransaction').mockResolvedValue({context:{slot:1},value:{err,logs:[]}} as Awaited<ReturnType<Connection['simulateTransaction']>>);
+  const send=vi.spyOn(Connection.prototype,'sendRawTransaction');
+  const chain=new SolanaRpcChain('http://127.0.0.1:1',{enabled:true,lookupTable:table.key.toBase58(),localGenesisHash:null,cluster:'devnet'});
+  await expect(chain.buildLaunchTransaction(f.input)).rejects.toMatchObject({code:'pump_simulation_failed'});expect(send).not.toHaveBeenCalled();
  });
 });

@@ -30,8 +30,9 @@ async function setup(){
  });
  const get=chain.getTransaction.bind(chain);vi.spyOn(chain,'getTransaction').mockImplementation(async signature=>{
   if(!landed)return null;
-  const mock=chain.simulateLaunch({launcherWallet:input.launcherWallet,mint:input.mint,platformTreasury:input.platformTreasury,agentRewardsTreasury:input.agentRewardsTreasury});return{...(await get(mock))!,signature};
+  const mock=chain.simulateLaunch({launcherWallet:input.launcherWallet,mint:input.mint,platformTreasury:input.platformTreasury,agentRewardsTreasury:input.agentRewardsTreasury});return{...(await get(mock))!,signature,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG'};
  });
+ chain.getGenesisHash=async()=>'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
  chain.getFinalizedBlockHeight=async()=>finalizedHeight;
  chain.submitLaunchTransaction=vi.fn(async transaction=>{pendingSig=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);if(rpcFailure)throw new Error('RPC timed out');return pendingSig;});
  env.ctx.config.mode='devnet';env.ctx.config.financialFeaturesEnabled=true;env.ctx.config.pumpLaunch.enabled=true;
@@ -116,4 +117,28 @@ it('allows more than twenty intentional launches from the same wallet and draft 
  const f=await setup(),ids=new Set<string>();
  for(let n=0;n<26;n++){const result=await f.prepare(`policy-intent-${n}`);expect(result.statusCode).toBe(200);ids.add(result.json().launch.id);}
  expect(ids.size).toBe(26);
+});
+
+it('preserves attempts and prevents broadcast or expiry when the RPC network changes',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+ f.chain.getGenesisHash=async()=>'5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';f.expire();
+ expect((await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})).statusCode).toBe(503);
+ expect((await f.call('GET',url)).statusCode).toBe(503);
+ expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch.status).toBe('awaiting_signature');
+ expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();expect(await env!.ctx.store.allTreasuryEntries()).toEqual([]);
+});
+it('rejects mismatched transaction-network evidence even when the RPC reports the expected genesis',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),get=vi.mocked(f.chain.getTransaction).getMockImplementation()!;f.setLanded();
+ vi.mocked(f.chain.getTransaction).mockImplementation(async signature=>({...await get(signature),genesisHash:'wrong-network'}) as Awaited<ReturnType<ChainGateway['getTransaction']>>);
+ expect((await f.call('POST',`/api/v1/launchpad/launches/${p.launch.id}/submit`,{transaction:f.signed(p.transaction)})).statusCode).toBe(503);
+ expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch.status).toBe('awaiting_signature');
+ expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();expect(await env!.ctx.store.allTreasuryEntries()).toEqual([]);
+});
+it('sanitizes unavailable genesis checks and permits recovery with the same attempt',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+ f.chain.getGenesisHash=async()=>{throw new Error('secret-rpc-credential');};
+ const unavailable=await f.call('GET',url);expect(unavailable.statusCode).toBe(503);expect(unavailable.body).not.toContain('secret-rpc-credential');
+ f.chain.getGenesisHash=async()=>'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
+ expect((await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})).json().launch.status).toBe('submitted');
+ f.setLanded();expect((await f.call('GET',url)).json().launch.status).toBe('confirmed');
 });

@@ -1,5 +1,8 @@
 # Phase 2 — verified Solana launch execution
 
+Historical checkpoint. See the [final blockchain audit](phase2-final-blockchain-audit.md)
+for subsequent public-devnet SOL/USDC evidence and the current remaining gates.
+
 Audit date: 18 October 2026. **The existing SOL pipeline passed actual local-validator
 execution and the existing Launchpad UI with real Pinata and PostgreSQL. Production
 rollout is still blocked by the external acceptance items below.** Staging stays demo;

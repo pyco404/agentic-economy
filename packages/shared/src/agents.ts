@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AgentId, BuildingId, CommunityId, DataMode, PublicKey, TaskId, WorldPos, GridPos } from "./primitives.js";
-import { Resource } from "./economy.js";
+import { Resource, Task } from "./economy.js";
+import { BuildingKind } from "./world.js";
 import { AgentActivation, AgentIdentity, DisplayName } from "./identity.js";
 
 export const Profession = z
@@ -50,6 +51,17 @@ export type AgentState = z.infer<typeof AgentState>;
 
 export const AgentStatus = z.enum(["active", "paused"]).meta({ id: "AgentStatus" });
 
+/** Read-only projection of the authoritative assignment, not a client job command. */
+export const AgentWork = z.object({
+  tick: z.number().int().min(0),
+  task: Task.nullable(),
+  destination: z.object({ id: BuildingId, name: z.string(), kind: BuildingKind, entrance: GridPos }).nullable(),
+  target: GridPos.nullable(),
+  remainingWorkTicks: z.number().int().min(0),
+  cargo: z.partialRecord(Resource, z.number().int().min(0)),
+}).meta({ id: "AgentWork" });
+export type AgentWork = z.infer<typeof AgentWork>;
+
 export const AgentSummary = z
   .object({
     id: AgentId,
@@ -66,6 +78,7 @@ export const AgentSummary = z
     ownerWallet: PublicKey.nullable(),
     status: AgentStatus,
     state: AgentState,
+    work: AgentWork.optional().describe("Absent on older servers; never infer a job from walking alone."),
     pos: WorldPos,
     credits: z.number().int().describe("City Credit balance (mCC). Simulated; not withdrawable."),
     verifiedTasks: z.number().int(),

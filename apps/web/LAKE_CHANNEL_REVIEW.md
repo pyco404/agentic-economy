@@ -34,3 +34,12 @@ Ignored evidence in `apps/web/artifacts/`: `lake-channel-before.png`, `lake-chan
 ## Release gate
 
 Follow main-only, one-file Conventional Commits and normal pushes. The files form a dependent series; validation applies to the combined final tree, not every intermediate revision. Do not deploy the frontend alone against the existing staging contract 0.2.0 backend: main is contract 0.3.0. The earlier staging release remains blocked because the required current restorable PostgreSQL backup was not verified (Railway backup inventory was empty). No migration, source switch, staging deployment, or production change is part of this channel refinement. See `infra/railway/MAIN_TRANSITION.md` for the conditional identity-migration prerequisites.
+
+## Revalidation — 18 October 2026
+
+- The existing local API was checked read-only across all 16 chunks and 413 building records. The same alignment passes: `(23.5,111.5)` to `(79.5,111.5)`. Parcel data is unchanged, pedestrian nodes are identical, and no vehicle-navigation nodes are lost. This did not write to the API or database.
+- Eleven focused channel, worker-preparation, and street tests pass. Frontend typecheck, lint, and production build also pass.
+- A fresh browser run passes for the completed terrain cut, three bridge crossings, advancing water animation, matching before/after cameras, bridge close-up, and mobile view. Latest local draw-call comparison: 298 before and 315 after. Screenshots and the JSON comparison remain in the ignored `apps/web/artifacts/` directory.
+- Clearance still admits the tested low service-craft envelope (0.6 beam, 0.2 above water) and rejects the taller envelope (1.2 beam, 1.12 above water). Main still has no active boat router; no boat service or economic events are claimed.
+- The visible discrepancy was traced to different local checkouts: the running `localhost:5173` worker source has no `planLakeChannel` integration, while the reviewed main preview on `localhost:5190` includes it. The older checkout and its unfinished files were preserved. The implementation is already in GitHub main; an older running dev server is not evidence that the connector is absent from main.
+- Both staging health checks returned HTTP 200. This verifies existing service health, not deployment of the connector. The existing coordinated-deployment/migration backup gate remains in force; no staging or production deployment or database migration was performed.

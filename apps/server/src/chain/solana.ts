@@ -1,6 +1,7 @@
+import bs58 from "bs58";
 import { AddressLookupTableProgram, Connection, PublicKey, VersionedTransaction, type VersionedTransactionResponse } from "@solana/web3.js";
-import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID } from "@agentic-economy/shared";
-import { bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
+import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
+import { anchorAccountDiscriminator, bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
 import { ChainFeatureUnavailable, type BuildLaunchInput, type BuiltLaunchTransaction, type ChainGateway, type FeeRoutingState, type ObservedTransaction, type TokenBalance } from "./types.js";
 
 /**
@@ -16,12 +17,29 @@ export class SolanaRpcChain implements ChainGateway {
     this.conn = new Connection(rpcUrl, "confirmed");
   }
 
+  getGenesisHash(){return this.conn.getGenesisHash();}
+  async verifyMarketPool(pool:string,mint:string,quoteMint:string){
+    const a=await this.conn.getAccountInfo(new PublicKey(pool),'confirmed');
+    if(pool===bondingCurvePda(mint)&&a?.owner.toBase58()===PUMP_PROGRAM_ID){
+      const {default:sdk}=await import('./pump-sdk.cjs');
+      const curve=sdk.PUMP_SDK.decodeBondingCurve(a),quote=curve.quoteMint.toBase58();
+      return quoteMint===(quote==='11111111111111111111111111111111'?'So11111111111111111111111111111111111111112':quote);
+    }
+    // Pinned official Pool layout: discriminator, u8 bump, u16 index, creator, base, quote.
+    return !!a&&a.owner.toBase58()===PUMP_AMM_PROGRAM_ID&&a.data.length>=107&&a.data.subarray(0,8).equals(anchorAccountDiscriminator('Pool'))&&new PublicKey(a.data.subarray(43,75)).toBase58()===mint&&new PublicKey(a.data.subarray(75,107)).toBase58()===quoteMint;
+  }
+  async isTransactionOrphaned(signature:string,slot:number){
+    // A missing/pruned transaction alone is not evidence of a fork. Require a rooted,
+    // available block at the original slot that explicitly excludes this signature.
+    if(await this.conn.getSlot('finalized')<=slot)return false;
+    try{const block=await this.conn.getBlockSignatures(slot,'finalized');return !!block&&!block.signatures.includes(signature);}catch{return false;}
+  }
   async getTransaction(signature: string): Promise<ObservedTransaction | null> {
     const tx = await this.conn.getTransaction(signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
     if (!tx) return null;
     const status = await this.conn.getSignatureStatuses([signature], { searchTransactionHistory: true });
     const finalized = status.value[0]?.confirmationStatus === "finalized";
-    return normalizeTransaction(signature, tx, finalized ? "finalized" : "confirmed");
+    return {...normalizeTransaction(signature, tx, finalized ? "finalized" : "confirmed"),genesisHash:await this.conn.getGenesisHash()};
   }
 
   async getFeeRoutingState(mint: string): Promise<FeeRoutingState> {
@@ -51,8 +69,8 @@ export class SolanaRpcChain implements ChainGateway {
     return { amount, decimals, slot: res.context.slot };
   }
 
-  async listSignaturesForAddress(address: string, until: string | null, limit: number): Promise<string[]> {
-    const sigs = await this.conn.getSignaturesForAddress(new PublicKey(address), { until: until ?? undefined, limit }, "confirmed");
+  async listSignaturesForAddress(address: string, until: string | null, limit: number, before?:string): Promise<string[]> {
+    const sigs = await this.conn.getSignaturesForAddress(new PublicKey(address), { until: until ?? undefined, limit, before }, "confirmed");
     return sigs.map((s) => s.signature);
   }
 
@@ -110,8 +128,15 @@ export function normalizeTransaction(signature: string, tx: VersionedTransaction
     const d = BigInt(post[i] ?? 0) - BigInt(pre[i] ?? 0);
     if (d !== 0n) lamportDeltas[k] = d;
   });
+  const innerInstructions=(tx.meta?.innerInstructions??[]).flatMap(group=>group.instructions.map(ix=>({parentIndex:group.index,programId:keys[ix.programIdIndex]!,accounts:ix.accounts.map(i=>keys[i]!),dataBase64:Buffer.from(bs58.decode(ix.data)).toString('base64'),stackHeight:(ix as typeof ix & {stackHeight?:number}).stackHeight??null})));
+  const tokenAccounts:NonNullable<ObservedTransaction['tokenAccounts']>={};
+  for(const b of tx.meta?.postTokenBalances??[]){
+    const before=tx.meta?.preTokenBalances?.find(p=>p.accountIndex===b.accountIndex);
+    if(!b.owner||before&&(before.mint!==b.mint||before.owner!==b.owner||before.uiTokenAmount.decimals!==b.uiTokenAmount.decimals))continue;
+    tokenAccounts[keys[b.accountIndex]!]={mint:b.mint,owner:b.owner,decimals:b.uiTokenAmount.decimals,pre:BigInt(before?.uiTokenAmount.amount??'0'),post:BigInt(b.uiTokenAmount.amount)};
+  }
   return {
-    signature,
+    signature,source:'solana_rpc',feeLamports:BigInt(tx.meta?.fee??0),innerInstructions,tokenAccounts,
     messageBase64:Buffer.from(msg.serialize()).toString("base64"),
     slot: tx.slot,
     commitment,

@@ -6,13 +6,51 @@ Agentic Economy is a procedural 3D city with a backend-authoritative simulated e
 
 **Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
+## About the project
+
+Agentic Economy brings token communities into one shared, explorable city. Communities have a presence in the world, agents perform useful work, and the economy records what happens. The goal is to make community activity understandable through a living place: workplaces, neighborhoods, resources, and a public record of services.
+
+The city is the permanent foundation of the website. Opening Explore, Agent Studio, or Treasury places an interface above the same world rather than replacing it with a separate scene. Visitors can look around without connecting a wallet.
+
+### What you can do
+
+| Page | Purpose |
+| --- | --- |
+| World (`/`) | Explore the isometric city, inspect buildings and agents, and follow city activity |
+| Launch | Enter token details, choose a logo, authenticate your wallet, and prepare a saved token draft for review |
+| Explore | Browse confirmed platform listings through New launches, agent rankings, search, and token details |
+| Communities | Discover the communities represented in the city and their associated agents |
+| Agent Studio | Inspect agent identities, current assignments, work progress, and supported controls |
+| Economy | Inspect resource markets, production, and the useful-work queue |
+| Treasury | Review accounting, receipts, and reconciliation information |
+| About | Learn about the project, ecosystem, and roadmap |
+
+Explore also includes Hot volume, Top market cap, Graduating soon, and Most holders sections. These currently show unavailable states because verified token-market data is not connected; agent activity is never presented as trading performance.
+
+### How the living economy works
+
+1. The backend maintains the authoritative world, community records, agents, inventory, and accounting state.
+2. A deterministic simulation assigns work and advances travel, production, delivery, and maintenance tasks.
+3. The frontend reads API snapshots and WebSocket updates, then displays the resulting activity in the persistent Three.js city.
+4. Environmental motion such as ambient transport adds life to the scene. Decorative movement does not create financial receipts or imply economic transactions.
+
+Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Future holder-access agents, rentable Super-Agents, funded $AECO rewards, and real token execution are roadmap items rather than enabled capabilities.
+
+### Technology
+
+- **Frontend:** React, TypeScript, Vite, Three.js, and responsive floating page interfaces.
+- **Backend:** Node.js, Fastify, WebSocket updates, and separate API/simulation/indexer roles where configured.
+- **Data:** PostgreSQL for persistence, an in-memory local demo option, and shared Zod contracts.
+- **Token preparation:** Solana wallet message authentication and server-side Pinata/IPFS uploads when configured.
+- **Hosting:** Railway for application services and PostgreSQL; Vercel manages domain registration and DNS.
+
 ## What works on main
 
 | Area | Implemented | Limits |
 | --- | --- | --- |
 | World | Procedural architecture, roads, animated water, railways, ambient transport, agent labels, inspection, camera controls, and a lake–river connector with bridges | Some newer terrain, boat, and navigation experiments remain outside the reviewed main release |
 | Agents and economy | Authoritative assignments, travel, workplace activity, production, deliveries, maintenance, receipts, and observable work progress | Agents currently use a deterministic utility planner, not a live LLM service |
-| Communities and Explore | Platform launch/community discovery, search, details, and available backend data | Demo records are labelled; unavailable market statistics and charts are not invented |
+| Communities and Explore | Grouped discovery sections, confirmed launch/community listings, search, agent rankings, and token details | Demo records are labelled; unavailable market statistics and charts are not invented |
 | Launch workspace | Publicly visible form and logo picker; wallet message authentication; owned drafts; verified image upload and IPFS metadata when configured | Disconnected primary action is **Connect wallet**; **Review token** saves details, uploads the logo, and prepares metadata automatically; transaction execution remains disabled |
 | Trading pairs | SOL draft selection | USDC execution is planned; optional AECO pairing is a future phase |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |

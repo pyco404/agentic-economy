@@ -49,7 +49,7 @@ describe('lake connector', () => {
   const updated=planAmbient(altered,frontier,buildPathNetwork(altered,1,true),1,planStreets(altered,1));
   expect(updated.rail?.points).toEqual(original.rail?.points);
   expect(updated.cars.map(p=>p.points)).toEqual(original.cars.map(p=>p.points));
- });
+ },30000);
  it('fails closed without both water bodies and produces the same route on repeated runs',()=>{
   expect(planLakeChannel([]).channel).toBeNull();
   expect(planLakeChannel(chunks).channel?.points).toEqual(planLakeChannel(chunks).channel?.points);

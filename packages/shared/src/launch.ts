@@ -68,6 +68,13 @@ export const TokenLaunch = z
     mint: PublicKey,
     feeSharingConfig: PublicKey,
     fees: FeeBreakdown,
+    /** Server-owned safe-network preparation; absent on legacy/demo records. No private key. */
+    execution: z.object({
+      draftId:z.string().uuid(),draftVersion:z.number().int().nonnegative(),
+      transaction:z.string().max(1644),lastValidBlockHeight:z.number().int().nonnegative(),genesisHash:PublicKey,
+      network:z.enum(["devnet","localnet"]),quoteAsset:z.literal("SOL"),
+      platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
+    }).optional(),
     signature: TxSignature.nullable(),
     slot: z.number().int().nullable(),
     communityId: CommunityId.nullable(),

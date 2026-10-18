@@ -1,5 +1,5 @@
 import { describe,expect,it } from 'vitest';
-import { Community,LaunchResponse } from './shared';
+import { Community,LaunchResponse,type TokenMarket } from './shared';
 import type { VerifiedToken } from './tokens';
 import { orderTokens } from './tokenDiscovery';
 import communities from '../../../../packages/shared/fixtures/communities.json';
@@ -18,4 +18,11 @@ describe('verified discovery rankings',()=>{
  it('preserves input order and records and supports name sorting and empty results',()=>{
   const before=structuredClone(tokens);expect(orderTokens(tokens,'name').map(t=>t.community.name)).toEqual(['Aster','Birch','Cedar']);expect(tokens).toEqual(before);expect(orderTokens([],'newest')).toEqual([]);
  });
+});
+
+it('ranks available provider metrics with stable ties, excluding stale data from market rank values',()=>{
+ const items=tokens.map((t,i)=>({...t,market:{status:i===0?'stale':'available',volume24hUsd:i===0?9999:10,marketCapUsd:i===1?null:100} as TokenMarket}));
+ expect(orderTokens(items,'volume').map(t=>t.community.mint)).toEqual(['A','B','C']);
+ expect(orderTokens(items,'marketCap').map(t=>t.community.mint)[0]).toBe('B');
+ expect(orderTokens(items,'holders').map(t=>t.community.mint)).toEqual(['A','B','C']);
 });

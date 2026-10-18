@@ -83,6 +83,13 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  }
  const review=page.getByRole('region',{name:'Token review'});
  await expect(review).toContainText('Your token details and logo are ready.',{timeout:30000});await expect(review).toContainText(wallet);
+ await review.getByText('Verified token assets',{exact:true}).click();
+ const references=review.locator('details code');
+ await expect(references).toHaveCount(2);
+ for(const reference of await references.all())await expect(reference).toHaveText('ipfs://bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m');
+ await expect(review).toContainText('Backend checks passed');
+ await expect(review).toContainText('MOSS/SOL');
+ await expect(review).toContainText('0.05 SOL');
  await expect(page.getByRole('button',{name:'Generate metadata',exact:true})).toHaveCount(0);
  expect(preparation.map(p=>p.split(' ')[0])).toEqual(viewport.mode==='retry'?['POST','POST','POST','POST','POST','GET']:['POST','POST','POST','GET']);
  expect(preparation[1]).toMatch(/\/logo$/);

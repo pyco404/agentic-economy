@@ -10,3 +10,6 @@ coverage/
 id.json
 .DS_Store
 /note.txt
+
+# Private, locally retained database backups.
+/.backups/

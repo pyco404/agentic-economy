@@ -6,7 +6,7 @@ for(const supported of [true,false])test(`disconnected launch form stays visible
  await page.goto('/launchpad?source=backend');
  await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible();
  await expect(page.getByLabel('Token name',{exact:true})).toBeEditable();
- await expect(page.getByRole('button',{name:'Upload Token Logo',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Choose logo',exact:true})).toBeVisible();
  const connect=page.locator('form').getByRole('button',{name:'Connect wallet',exact:true});
  await expect(connect).toBeVisible();await expect(connect).toBeEnabled();
  // Empty/invalid details must never prevent opening wallet selection.

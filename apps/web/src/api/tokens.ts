@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { HttpAdapter, type ApiAdapter, type Dashboard } from "./adapter";
-import { routes, LaunchResponse, Community, type TokenLaunch } from "./shared";
+import { routes, LaunchResponse, Community, type TokenLaunch, type TokenMarket } from "./shared";
 import launchFixture from "../../../../packages/shared/fixtures/launch.json";
 import communityFixture from "../../../../packages/shared/fixtures/communities.json";
-export interface VerifiedToken { community: Community; launch: TokenLaunch }
+export interface VerifiedToken { community: Community; launch: TokenLaunch; market?:TokenMarket }
 export function isVerifiedPlatformToken(c: Community, launch: TokenLaunch, mode: Dashboard["mode"]) {
   if(launch.execution){const p=c.provenance,e=launch.execution;
     if(!p||p.platformOrigin!==e.platformOrigin||p.initiator!==e.initiator||p.network!==e.network||p.quoteAsset!==e.quoteAsset||c.creatorWallet!==launch.launcherWallet||c.metadataUri!==launch.draft.metadataUri)return false;

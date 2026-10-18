@@ -1,0 +1,60 @@
+{
+  "officialDocsCommit": "639b87fb45c3adeffa6f7c4a1bf0cb85e392bf22",
+  "sourceNetwork": "public-devnet",
+  "executionNetwork": "isolated-localnet",
+  "programs": [
+    {
+      "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "programData": "B5MvUwXdiW1NMM6QFFD3ssPKBujD4zMohncbM73Z2BQu",
+      "sourceDeploymentSlot": 510657843,
+      "binaryBytes": 1996760,
+      "binarySha256": "bcee35d3eeb158090dd08764a8c5c03a2852c3cee553a0ce61dd5482469a5ec7",
+      "clonedBinaryMatches": true
+    },
+    {
+      "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "programData": "DoU57AYuPFu2QU514RktNPG22QhApEjnKxnBcu4BHDTY",
+      "sourceDeploymentSlot": 503153936,
+      "binaryBytes": 711008,
+      "binarySha256": "b781b71d230a9910de4d3c103e72608f597fc73c83ee207242ac82b708382a6a",
+      "clonedBinaryMatches": true
+    },
+    {
+      "program": "MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e",
+      "programData": "4TXghKDfUy26yBMjicyfSfAp995GbLtNvW1d1uPSknub",
+      "sourceDeploymentSlot": 483199576,
+      "binaryBytes": 997496,
+      "binarySha256": "25ac2612be74e8437f79dbb4c62d7e3701c21b8f4c9ed0acaf832df4fe1a821d",
+      "clonedBinaryMatches": true
+    },
+    {
+      "program": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+      "programData": "75Uu23mqWBb8LM8vDppqC1mQAnCcBuLXhVaDezVMQLRw",
+      "sourceDeploymentSlot": 508659783,
+      "binaryBytes": 920008,
+      "binarySha256": "446db24678fa22700d8eda86c48ba361b325a084e319c0c66f780c953520b317",
+      "clonedBinaryMatches": true
+    },
+    {
+      "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+      "programData": "6naEzKeUuFh1Jeeu51NXQgr5qkXgXtc9WKNct4xynVJc",
+      "sourceDeploymentSlot": 508659436,
+      "binaryBytes": 1234704,
+      "binarySha256": "494d2257ed4a9a2bc3eb210b22cdb5058d77e17f1ba5095b636e96c86b1fd4ef",
+      "clonedBinaryMatches": true
+    },
+    {
+      "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "programData": "3gvYRKWyXRR9xKWe1ZjPhLY5ZJRN7KDB4rFZFGoJfFk2",
+      "sourceDeploymentSlot": 451008000,
+      "binaryBytes": 108600,
+      "binarySha256": "8190d3f7ceb6cb7a7a8d8924bff89f9f611e15ce1f806f2b6237f3311a98f697",
+      "clonedBinaryMatches": true
+    }
+  ],
+  "idlSha256": {
+    "pump_fees.json": "6b9fa3eccc6e06273076a47b581f9fcb9e531bb7c3c88acbcd44db55a4002b29",
+    "pump.json": "7616681ea557975f9f623ac211080f22a93060781eaf4765b0a488d980997207",
+    "pump_amm.json": "b7d8c57a4d9c4dd0109a9ab893052352333252d4eedced10ac091d4d66cab89b"
+  }
+}

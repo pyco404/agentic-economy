@@ -14,7 +14,7 @@ for (const width of [1440, 390]) test(`Oxude-style hidden pages reopen over the 
     await page.getByRole("link", { name, exact: true }).press("Enter");
   };
   const close = page.getByRole("button", { name: "Close page and view city", exact: true });
-  for (const name of ["Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Launchpad"]) {
+  for (const name of ["Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Launch"]) {
     await nav(name); await expect(close).toBeFocused();
     const bounds = (await close.boundingBox())!; expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
     const url = page.url();
@@ -38,7 +38,7 @@ for (const width of [1440, 390]) test(`Oxude-style hidden pages reopen over the 
     await token.press("Enter"); const detail = page.url(); await close.press("Enter");
     expect(page.url()).toBe(detail); await page.getByRole("button", { name: "Show page", exact: true }).press("Enter"); expect(page.url()).toBe(detail);
   }
-  await nav("Economy"); await nav("Launchpad"); await close.focus(); await page.keyboard.press("Enter");
+  await nav("Economy"); await nav("Launch"); await close.focus(); await page.keyboard.press("Enter");
   await page.goBack(); await expect(page.getByRole("heading", { name: "From fields to front doors." })).toBeVisible();
   await page.goForward(); await expect(page.getByRole("heading", { name: "Give your community a home." })).toBeVisible();
   expect(sockets).toHaveLength(1);

@@ -1,18 +1,18 @@
-import { Connection, PublicKey, type VersionedTransactionResponse } from "@solana/web3.js";
-import { SYSTEM_PROGRAM_ID } from "@agentic-economy/shared";
+import { AddressLookupTableProgram, Connection, PublicKey, VersionedTransaction, type VersionedTransactionResponse } from "@solana/web3.js";
+import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID } from "@agentic-economy/shared";
 import { bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
 import { ChainFeatureUnavailable, type BuildLaunchInput, type BuiltLaunchTransaction, type ChainGateway, type FeeRoutingState, type ObservedTransaction, type TokenBalance } from "./types.js";
 
 /**
  * Solana JSON-RPC adapter (devnet / mainnet). Read paths are implemented; launch transaction
- * BUILDING is intentionally not implemented until the devnet test plan in
- * apps/server/docs/pump-fun-integration.md has been executed against the official @pump-fun/pump-sdk.
+ * Construction/submission requires explicit opt-in, safe genesis verification,
+ * a configured on-chain lookup table and successful simulation. Mainnet writes are rejected.
  */
 export class SolanaRpcChain implements ChainGateway {
   readonly source = "solana_rpc" as const;
   private readonly conn: Connection;
 
-  constructor(rpcUrl: string) {
+  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet"}) {
     this.conn = new Connection(rpcUrl, "confirmed");
   }
 
@@ -27,6 +27,8 @@ export class SolanaRpcChain implements ChainGateway {
   async getFeeRoutingState(mint: string): Promise<FeeRoutingState> {
     const scAddr = sharingConfigPda(mint);
     const [sc, bc] = await this.conn.getMultipleAccountsInfo([new PublicKey(scAddr), new PublicKey(bondingCurvePda(mint))], "confirmed");
+    if(sc && sc.owner.toBase58()!==PUMP_FEES_PROGRAM_ID)throw new Error('Sharing config account has an unexpected program owner');
+    if(bc && bc.owner.toBase58()!==PUMP_PROGRAM_ID)throw new Error('Bonding curve account has an unexpected program owner');
     const curve = bc ? decodeBondingCurveCreator(bc.data) : null;
     return {
       sharingConfig: sc ? decodeSharingConfig(scAddr, sc.data) : null,
@@ -54,12 +56,34 @@ export class SolanaRpcChain implements ChainGateway {
     return sigs.map((s) => s.signature);
   }
 
-  async buildLaunchTransaction(_input: BuildLaunchInput): Promise<BuiltLaunchTransaction> {
-    throw new ChainFeatureUnavailable(
-      "pump_launch_builder_unverified",
-      "Pump.fun launch transaction building is disabled until the devnet test plan (create_v2 + fee-sharing config + update_fee_shares_v2 in one atomic transaction) has passed. See apps/server/docs/pump-fun-integration.md.",
-    );
+  private async launchGenesis(){
+    if(!this.launchOptions?.enabled||!this.launchOptions.lookupTable)throw new ChainFeatureUnavailable("pump_launch_disabled","Safe-network Pump launches are disabled or have no verified lookup table configured");
+    const genesis=await this.conn.getGenesisHash();
+    // A configured URL or MODE label alone never authorizes a mainnet write.
+    const expected=this.launchOptions.cluster==="devnet"?"EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG":this.launchOptions.cluster==="localnet"&&["localhost","127.0.0.1","[::1]"].includes(new URL(this.conn.rpcEndpoint).hostname)?this.launchOptions.localGenesisHash:null;
+    if(!expected||genesis!==expected||genesis==="5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d")throw new ChainFeatureUnavailable("unsafe_launch_network","RPC genesis does not match the configured safe testing network");
+    return genesis;
   }
+  async buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction> {
+    const genesisHash=await this.launchGenesis(),address=new PublicKey(this.launchOptions!.lookupTable!);
+    const info=await this.conn.getAccountInfo(address,"confirmed");
+    if(!info||!info.owner.equals(AddressLookupTableProgram.programId))throw new ChainFeatureUnavailable("invalid_lookup_table","Launch lookup table has an invalid owner or is missing");
+    const table=(await this.conn.getAddressLookupTable(address)).value;
+    if(!table||!table.isActive())throw new ChainFeatureUnavailable("invalid_lookup_table","Launch lookup table is inactive");
+    const latest=await this.conn.getLatestBlockhash("confirmed"),{buildPumpLaunch}=await import("./pump-builder.js");
+    const built=await buildPumpLaunch(input,latest.blockhash,[table]);
+    const simulation=await this.conn.simulateTransaction(VersionedTransaction.deserialize(Buffer.from(built.transaction,"base64")),{sigVerify:false,commitment:"confirmed"});
+    if(simulation.value.err)throw new ChainFeatureUnavailable("pump_simulation_failed","Launch simulation failed; no launch or platform charge was submitted");
+    const fee=await this.conn.getFeeForMessage(VersionedTransaction.deserialize(Buffer.from(built.transaction,"base64")).message,"confirmed");
+    if(fee.value===null)throw new ChainFeatureUnavailable("blockhash_expired","Launch blockhash expired while estimating fees; prepare again");
+    return {transaction:built.transaction,lastValidBlockHeight:latest.lastValidBlockHeight,demo:false,genesisHash,estimatedNetworkFeesLamports:String(fee.value)};
+  }
+  async submitLaunchTransaction(transaction:string){
+    await this.launchGenesis();
+    return this.conn.sendRawTransaction(Buffer.from(transaction,"base64"),{skipPreflight:false,maxRetries:20});
+  }
+  getFinalizedBlockHeight(){return this.conn.getBlockHeight("finalized");}
+
 }
 
 export function normalizeTransaction(signature: string, tx: VersionedTransactionResponse, commitment: "confirmed" | "finalized"): ObservedTransaction {
@@ -73,7 +97,7 @@ export function normalizeTransaction(signature: string, tx: VersionedTransaction
     const programId = keys[ix.programIdIndex]!;
     const accounts = ix.accountKeyIndexes.map((i) => keys[i]!);
     const data = Buffer.from(ix.data);
-    instructions.push({ ixIndex, programId, discriminatorHex: data.length >= 8 ? data.subarray(0, 8).toString("hex") : null, accounts });
+    instructions.push({ ixIndex, programId, discriminatorHex: data.length >= 8 ? data.subarray(0, 8).toString("hex") : null, accounts, dataBase64: data.toString("base64") });
     // SystemProgram::Transfer = u32 LE 2, then u64 LE lamports.
     if (programId === SYSTEM_PROGRAM_ID && data.length === 12 && data.readUInt32LE(0) === 2) {
       systemTransfers.push({ ixIndex, from: accounts[0]!, to: accounts[1]!, lamports: data.readBigUInt64LE(4) });
@@ -88,6 +112,7 @@ export function normalizeTransaction(signature: string, tx: VersionedTransaction
   });
   return {
     signature,
+    messageBase64:Buffer.from(msg.serialize()).toString("base64"),
     slot: tx.slot,
     commitment,
     err: tx.meta?.err ?? null,

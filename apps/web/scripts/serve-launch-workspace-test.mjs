@@ -9,7 +9,7 @@ globalThis.fetch=async(input,options)=>{
  const file=options.body.get('file');await file.arrayBuffer();
  return Response.json({data:{cid:'bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m'}});
 };
-const config=loadConfig({MODE:'demo',ROLE:'all',HOST:'127.0.0.1',PORT:'8796',AUTH_DOMAIN:'127.0.0.1:5186',AUTH_URI:'http://127.0.0.1:5186',CORS_ORIGINS:'http://127.0.0.1:5186',PINATA_JWT:'isolated-test-only-no-live-pinata',FEE_ROUTING_VERIFIED:'false',LOG_LEVEL:'silent'});
+const config=loadConfig({MODE:'demo',ROLE:'all',HOST:'127.0.0.1',PORT:'8796',AUTH_DOMAIN:'localhost',AUTH_URI:'http://127.0.0.1:5186',CORS_ORIGINS:'http://127.0.0.1:5186,http://localhost:5186',PINATA_JWT:'isolated-test-only-no-live-pinata',FEE_ROUTING_VERIFIED:'false',LOG_LEVEL:'silent'});
 const context=await createContext(config);const app=await buildApp(context);
 await app.listen({host:config.host,port:config.port});context.runtime.start();await seedDemo(context);
 for(const signal of ['SIGINT','SIGTERM'])process.once(signal,async()=>{await app.close();await context.close();process.exit(0);});

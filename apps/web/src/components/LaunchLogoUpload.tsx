@@ -8,9 +8,9 @@ import { abortable, IpfsReference, LogoReference, LOGO_LIMITS, metadataKey, read
 // A file survives route changes in memory, never browser storage. Refresh needs reselection.
 let pending: { file: File; requestId: string; scope:string } | null = null;
 export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageUrl, onImage,
-  adapter = unavailableLaunchMedia, automaticMetadata=true, trustedImage=null, scope="local", maxBytes=LOGO_LIMITS.maxBytes, selectionOnly=false, disabled=false, onFileChange }: {
+  adapter = unavailableLaunchMedia, automaticMetadata=true, trustedImage=null, scope="local", maxBytes=LOGO_LIMITS.maxBytes, selectionOnly=false, disabled=false, onFileChange, onValidationChange }: {
   name: string; symbol: string; description: string; quoteAsset: string; imageUrl: string;
-  onImage: (uri: string) => void; adapter?: LaunchMediaAdapter; automaticMetadata?:boolean; trustedImage?:LogoReference|null; scope?:string; maxBytes?:number; selectionOnly?:boolean; disabled?:boolean; onFileChange?:(file:File|null)=>void;
+  onImage: (uri: string) => void; adapter?: LaunchMediaAdapter; automaticMetadata?:boolean; trustedImage?:LogoReference|null; scope?:string; maxBytes?:number; selectionOnly?:boolean; disabled?:boolean; onFileChange?:(file:File|null)=>void;onValidationChange?:(validating:boolean)=>void;
 }) {
   const [stored, saveReference] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"logoReference", "");
   const [hint, saveHint] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"pendingLogo", "");
@@ -51,13 +51,14 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
   const choose = async (candidate?: File) => {
     if (!candidate || disabled) return;
     const version = ++operation.current; active.current?.abort(); busy.current = false;
-    setState("validating"); setError("");
+    setState("validating"); onValidationChange?.(true); setError("");
     try {
       await validateLogo(candidate,maxBytes);
       if (version !== operation.current) return;
       pending = { file: candidate, requestId: crypto.randomUUID(),scope }; setFile(candidate); saveHint(candidate.name);
       saveReference(""); saveMetadata(""); if (!selectionOnly) onImage(""); onFileChange?.(candidate); setState("idle");
     } catch (e) { if (version === operation.current) { setState("error"); setError(e instanceof Error ? e.message : "Unable to read this image."); } }
+    finally { if(version===operation.current)onValidationChange?.(false); }
   };
   const upload = async () => {
     if (!adapter.available || !pending || pending.scope!==scope || busy.current) return;
@@ -75,7 +76,7 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
     } finally { clearTimeout(timeout); if (version === operation.current) busy.current = false; }
   };
   const remove = () => {
-    operation.current++; active.current?.abort(); busy.current = false; pending = null; setFile(null);
+    operation.current++; active.current?.abort(); busy.current = false; onValidationChange?.(false); pending = null; setFile(null);
     saveHint(""); saveReference(""); saveMetadata(""); onImage(""); onFileChange?.(null); setState("idle"); setError("");
     if (input.current) input.current.value = "";
   };
@@ -85,7 +86,7 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
       {preview || reference ? <img src={preview || reference!.gatewayUrl} alt="Token logo preview" /> : <ImagePlus size={30} aria-hidden="true" />}
       <input ref={input} type="file" className="logo-file-input" aria-label="Token logo file" disabled={disabled} accept={LOGO_LIMITS.mimeTypes.join(",")}
         onChange={(event) => { void choose(event.target.files?.[0]); event.target.value = ""; }} />
-      <button type="button" className="secondary" disabled={disabled} onClick={() => input.current?.click()}>{file || reference ? "Replace image" : "Upload Token Logo"}</button>
+      <button type="button" className="secondary" disabled={disabled} onClick={() => input.current?.click()}>{file || reference ? "Replace image" : selectionOnly ? "Choose logo" : "Upload Token Logo"}</button>
       <p className="small muted">Drop an image here or browse. PNG, JPEG or WebP · up to {maxBytes / 1_000_000} MB.</p>
       {file && <span className="small">{file.name}</span>}
     </div>

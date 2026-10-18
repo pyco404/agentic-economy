@@ -4,15 +4,17 @@ import { createBatch, geometryLibrary, disposeGroup } from "./geometry";
 import * as THREE from "three";
 import fixture from "./fixtures/underground-rail-world.json";
 import type { ChunkVisual } from "./layout";
-import { prepareScenery, reviveScenery, chunkSignature, type SceneryMessage } from "./sceneryPlan";
+import { createSceneryPreparer, reviveScenery, chunkSignature, type SceneryMessage, type SceneryRequest } from "./sceneryPlan";
 import { sampleRail } from "./riversideRail";
 import { undergroundService } from "./undergroundRail";
 
 describe("worker world preparation", () => {
   const chunks = fixture.chunks as unknown as ChunkVisual[], messages: SceneryMessage[] = [];
   const before = JSON.stringify(chunks);
+  // Includes full-city road/water navigation; preparation runs off the render thread.
+  const prepareScenery=createSceneryPreparer();
   beforeAll(() => prepareScenery({ revision: 7, chunks, seed: fixture.seed, catalog: fixture.catalog, style: "frontier",
-    center: { x: 48, z: 48 }, known: {}, wanted: [chunks[0]!.id, chunks[5]!.id] }, (message) => messages.push(message)), 30000);
+    center: { x: 48, z: 48 }, known: {}, wanted: [chunks[0]!.id, chunks[5]!.id] }, (message) => messages.push(message)), 60000);
   it("sends ground/roads and spatial chunks before heavy scenery without altering authoritative coordinates", () => {
     expect(messages[0]!.kind).toBe("roads"); expect(messages.at(-1)!.kind).toBe("scenery");
     const prepared = messages.filter((m) => m.kind === "chunk"); expect(prepared).toHaveLength(2);
@@ -21,6 +23,35 @@ describe("worker world preparation", () => {
     expect(prepared[0]!.chunk.rank).toBeLessThan(prepared[1]!.chunk.rank);
     expect(JSON.stringify(chunks)).toBe(before);
     expect(chunkSignature(chunks[0]!, chunks)).toBe(chunkSignature(chunks[0]!, [...chunks].reverse()));
+  });
+  it("reuses the prepared environment when only camera visibility changes",()=>{
+    const next:SceneryMessage[]=[];
+    prepareScenery({revision:8,chunks,seed:fixture.seed,catalog:fixture.catalog,style:"frontier",center:{x:100,z:100},known:{},wanted:[chunks[1]!.id]},m=>next.push(m));
+    const old=messages.find(m=>m.kind==="scenery")!,current=next.find(m=>m.kind==="scenery")!;
+    expect(current.revision).toBe(8);
+    if(old.kind!=="scenery"||current.kind!=="scenery")throw new Error("Missing environment");
+    expect(current.ambient).toBe(old.ambient);expect(current.frontier).toBe(old.frontier);
+    const previousRoads=messages.find(m=>m.kind==="roads")!,nextRoads=next.find(m=>m.kind==="roads")!;
+    if(previousRoads.kind!=="roads"||nextRoads.kind!=="roads")throw Error("Missing roads");
+    expect(nextRoads.streets).toBe(previousRoads.streets);
+    expect(nextRoads.pathNetwork).toBe(previousRoads.pathNetwork);
+    expect(next.filter(m=>m.kind==="chunk").map(m=>m.chunk.data.id)).toEqual([chunks[1]!.id]);
+  });
+  it("invalidates cached preparation for geometry, seed, catalog and terrain style changes",()=>{
+    const original=messages.find((m):m is Extract<SceneryMessage,{kind:"scenery"}>=>m.kind==="scenery")!;
+    const reused:(typeof original|undefined)[]=[];
+    // Observe the cache boundary without rebuilding unrelated coastal terrain.
+    // The preceding integration test uses the real full-city preparation.
+    const prepare=createSceneryPreparer((request,send,reusable)=>{reused.push(reusable);send({...original,revision:request.revision});});
+    const chunk:ChunkVisual={id:"0:0",x:0,z:0,seed:1,size:32,terrain:"g".repeat(1024),buildings:[],trees:[]};
+    const request:SceneryRequest={revision:1,chunks:[chunk],seed:1,catalog:[{cx:0,cy:0}],style:"frontier",center:{x:16,z:16},known:{},wanted:[]};
+    prepare(request,()=>{});expect(reused.at(-1)).toBeUndefined();
+    prepare({...request,revision:2,center:{x:30,z:30},wanted:["0:0"]},()=>{});expect(reused.at(-1)).toBeDefined();
+    const changed={...request,chunks:[{...chunk,terrain:"s"+chunk.terrain!.slice(1)}]};
+    prepare({...changed,revision:3},()=>{});expect(reused.at(-1)).toBeUndefined();
+    prepare({...changed,revision:4,seed:2},()=>{});expect(reused.at(-1)).toBeUndefined();
+    prepare({...changed,revision:5,seed:2,style:"coastal"},()=>{});expect(reused.at(-1)).toBeUndefined();
+    prepare({...changed,revision:6,seed:2,style:"coastal",catalog:[{cx:0,cy:0},{cx:1,cy:0}]},()=>{});expect(reused.at(-1)).toBeUndefined();
   });
   it("keeps final instancing, materials and coordinates identical to the original combined batches", () => {
     const road = messages.find((m) => m.kind === "roads")!, prepared = messages.find((m) => m.kind === "chunk")!;
@@ -52,7 +83,20 @@ describe("worker world preparation", () => {
     expect(roads.streets.vehicles.values().next().value).toBeInstanceOf(THREE.Vector2);
     const scenery = cloned.find((m) => m.kind === "scenery")!;
     if (scenery.kind !== "scenery") throw new Error("Missing scenery");
+    expect(scenery.landmass.cells).toBeInstanceOf(Set);
+    expect(scenery.landmass.frontier.water).toEqual(scenery.frontier.water);
+    expect(scenery.landmass.report.rectangleFill).toBeLessThan(.85);
+    expect(scenery.landmass.frontier.parts.some(p=>p.role==="city-edge")).toBe(false);
     const plan = scenery.ambient; expect(plan.mirroredRail?.report.mode).toBe("mirrored");
+    for(const p of plan.railway!.underground!.surface.points){
+      expect(scenery.landmass.cells.has(`${Math.floor(p.x/8)}:${Math.floor(p.z/8)}`)).toBe(true);
+      expect(scenery.landmass.cells.has(`${Math.floor(p.x/8)}:${Math.floor((plan.mirroredRail!.reflectionZ-p.z)/8)}`)).toBe(true);
+    }
+    expect(plan.navigation!.traffic.nodes).toBeInstanceOf(Map);
+    expect(plan.navigation!.water.graph.edges).toBeInstanceOf(Map);
+    expect(plan.navigation!.water.docks.length).toBeGreaterThanOrEqual(6);
+    const curve=[...plan.navigation!.traffic.edges.values()].flat().find(edge=>edge.curve)?.curve;
+    expect(curve).toBeInstanceOf(Float32Array);expect(curve!.length%4).toBe(0);
     expect(plan.rail).toBe(plan.railway!.path); expect(plan.mirroredRail!.source.path).toBe(plan.rail);
     const point = new THREE.Vector3(), direction = new THREE.Vector3();
     sampleRail(plan.rail!, 20, point, direction); expect(Number.isFinite(point.x)).toBe(true);

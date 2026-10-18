@@ -40,6 +40,7 @@ export function createCitizens(capacity: number) {
       carrying = false,
       interacting = false,
       work?: WorkPose,
+      elevation = 0,
     ) {
       const bob = moving ? Math.abs(Math.sin(phase)) * 0.045 : interacting ? Math.sin(phase) * 0.01 : 0;
       const step = moving ? Math.sin(phase) * 0.48 : 0;
@@ -56,7 +57,7 @@ export function createCitizens(capacity: number) {
       ) => {
         transform.position.set(
           x + side * Math.cos(heading) + forward * Math.sin(heading),
-          y,
+          y + elevation,
           z - side * Math.sin(heading) + forward * Math.cos(heading),
         );
         transform.rotation.set(0, heading, 0);

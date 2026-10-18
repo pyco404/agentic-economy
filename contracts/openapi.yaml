@@ -3118,6 +3118,29 @@ components:
           type: string
           format: date-time
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        provenance:
+          type: object
+          properties:
+            platformOrigin:
+              type: string
+              const: PLATFORM
+            initiator:
+              type: string
+              const: HUMAN
+            network:
+              type: string
+              enum:
+                - devnet
+                - localnet
+            quoteAsset:
+              type: string
+              const: SOL
+          required:
+            - platformOrigin
+            - initiator
+            - network
+            - quoteAsset
+          additionalProperties: false
       required:
         - id
         - name
@@ -3228,6 +3251,28 @@ components:
           type: string
           format: date-time
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        provenance:
+          type: object
+          properties:
+            platformOrigin:
+              type: string
+              const: PLATFORM
+            initiator:
+              type: string
+              const: HUMAN
+            network:
+              type: string
+              enum:
+                - devnet
+                - localnet
+            quoteAsset:
+              type: string
+              const: SOL
+          required:
+            - platformOrigin
+            - initiator
+            - network
+            - quoteAsset
       required:
         - id
         - name
@@ -6113,6 +6158,51 @@ components:
           $ref: "#/components/schemas/PublicKey"
         fees:
           $ref: "#/components/schemas/FeeBreakdown"
+        execution:
+          type: object
+          properties:
+            draftId:
+              type: string
+              format: uuid
+              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+            draftVersion:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            transaction:
+              type: string
+              maxLength: 1644
+            lastValidBlockHeight:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            genesisHash:
+              $ref: "#/components/schemas/PublicKey"
+            network:
+              type: string
+              enum:
+                - devnet
+                - localnet
+            quoteAsset:
+              type: string
+              const: SOL
+            platformOrigin:
+              type: string
+              const: PLATFORM
+            initiator:
+              type: string
+              const: HUMAN
+          required:
+            - draftId
+            - draftVersion
+            - transaction
+            - lastValidBlockHeight
+            - genesisHash
+            - network
+            - quoteAsset
+            - platformOrigin
+            - initiator
+          additionalProperties: false
         signature:
           anyOf:
             - $ref: "#/components/schemas/TxSignature"
@@ -6190,6 +6280,50 @@ components:
           $ref: "#/components/schemas/PublicKey"
         fees:
           $ref: "#/components/schemas/FeeBreakdownInput"
+        execution:
+          type: object
+          properties:
+            draftId:
+              type: string
+              format: uuid
+              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+            draftVersion:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            transaction:
+              type: string
+              maxLength: 1644
+            lastValidBlockHeight:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            genesisHash:
+              $ref: "#/components/schemas/PublicKey"
+            network:
+              type: string
+              enum:
+                - devnet
+                - localnet
+            quoteAsset:
+              type: string
+              const: SOL
+            platformOrigin:
+              type: string
+              const: PLATFORM
+            initiator:
+              type: string
+              const: HUMAN
+          required:
+            - draftId
+            - draftVersion
+            - transaction
+            - lastValidBlockHeight
+            - genesisHash
+            - network
+            - quoteAsset
+            - platformOrigin
+            - initiator
         signature:
           anyOf:
             - $ref: "#/components/schemas/TxSignature"

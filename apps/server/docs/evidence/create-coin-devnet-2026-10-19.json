@@ -1,0 +1,48 @@
+{
+  "network": "public-devnet",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "database": "aeco_launch_execution_20261018_test",
+  "walletSigner": "automated Wallet Standard, not actual Phantom",
+  "pinata": "actual service",
+  "publicTestSetup": {
+    "lookupTable": "GZcFdZXK1fxuKc9cLvMYu8uGTXz3TDTdk7FutDfdQmXu",
+    "platformTreasury": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+    "agentTreasury": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs"
+  },
+  "checks": [
+    "No asset writes before Create Coin; real Pinata image and metadata prepared after one commit action",
+    "Real program simulation precedes signing; preparation remains private and unconfirmed",
+    "Wallet rejection creates no broadcast or platform charge",
+    "Submitted transaction and owned draft survived an actual backend/context restart and concurrent chain confirmation",
+    "Actual token confirmation, one atomic 0.05 test-network SOL charge, duplicate submission and concurrent confirmation are idempotent",
+    "Real IPFS metadata remains associated with the correct owned launch",
+    "Verified platform/human safe-network provenance is discoverable in existing Explore without invented market metrics"
+  ],
+  "launch": {
+    "id": "lch_1ffadfb72304a248f740a5ab",
+    "mint": "Gxd1MeMoFwm1wDNrTTecMsccra3tD4o4TYixZDJLzH4S",
+    "signature": "bvdwXvdvirEWdAH2UXkFLtmdLV4UTvFr7sGC1ncd7FXWUjA9fExNRpw55W2bPtRH9B5pKb9a3S8skBpu6s66D8j",
+    "network": "devnet",
+    "metadataUri": "ipfs://bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu"
+  },
+  "assets": {
+    "image": {
+      "cid": "bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi",
+      "mime": "image/png",
+      "width": 300,
+      "height": 300,
+      "status": "verified",
+      "ipfsUri": "ipfs://bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi",
+      "uploadId": "4cd2b63f-634c-4ba9-9dda-f7bb36d6020f",
+      "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi"
+    },
+    "metadata": {
+      "cid": "bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu",
+      "ipfsUri": "ipfs://bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu",
+      "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu"
+    }
+  },
+  "platformBalance": 50000000,
+  "broadcasts": 1,
+  "result": "passed"
+}

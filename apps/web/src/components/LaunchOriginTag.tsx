@@ -1,10 +1,8 @@
 import "../ecosystem.css";
-/** No current backend field establishes PLATFORM/HUMAN/SUPER-AGENT provenance.
- * The prepared styles are dormant until a shared, verified provenance contract
- * is published. Neither wallet presence nor token names determine an origin.
- */
-export function LaunchOriginTag({ demo }: { demo: boolean }) {
-  return <span className="launch-origin-tag" data-origin="unknown" data-demo={demo}>
-    {demo ? "Demo · origin unverified" : "Origin unverified"}
-  </span>;
+import type {Community} from '../api/shared';
+/** Only confirmed, server-verified token records supply provenance. */
+export function LaunchOriginTag({demo,provenance}:{demo:boolean;provenance?:Community['provenance']}){
+ return <span className="launch-origin-tag" data-origin={provenance?'HUMAN':'unknown'} data-demo={demo}>
+  {provenance?`PLATFORM · HUMAN · ${provenance.network}`:demo?'Demo · origin unverified':'Origin unverified'}
+ </span>;
 }

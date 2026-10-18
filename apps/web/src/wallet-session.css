@@ -7,6 +7,7 @@
 .launch-review img { width:80px;height:80px;object-fit:contain;border-radius:10px; }
 .launch-workspace { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); }
 .launch-workspace > *, .launch-workspace form, .launch-workspace fieldset { min-width:0;max-width:100%; }
+.launch-workspace fieldset { border:0;padding:0;margin:0; }
 .launch-workspace .ui-select-text, .launch-workspace code { overflow-wrap:anywhere;word-break:break-word;white-space:normal; }
 .launch-workspace .fee-list dt, .launch-workspace .fee-list dd { min-width:0;flex:1; }
 @media(max-width:900px) { .launch-workspace { grid-template-columns:minmax(0,1fr); }

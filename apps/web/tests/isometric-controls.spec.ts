@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { agentIdentity } from "../src/api/agentIdentity";
+import { WorldAgentsResponse } from "../src/api/shared";
 test("isometric orbit, pan, zoom, reset and single-line labels", async ({ page }) => {
   test.setTimeout(180000);
   await page.goto("/?source=backend");
@@ -21,9 +23,13 @@ test("isometric orbit, pan, zoom, reset and single-line labels", async ({ page }
   await expect.poll(polar).toBeCloseTo(Math.acos(90 / Math.hypot(100, 90, 100)), 2);
   await page.screenshot({ path: "artifacts/isometric-restored-desktop.png" });
   await expect.poll(async () => Number(await city.getAttribute("data-agent-labels"))).toBeGreaterThan(0);
+  const agents = WorldAgentsResponse.parse(await (await page.request.get(
+    `${process.env.AGENT_WORK_API_URL ?? "http://127.0.0.1:8787"}/api/v1/world/agents`,
+  )).json()).agents;
+  const names = new Map(agents.map(agent => [agent.id, agentIdentity(agent).primary]));
   for (const label of await page.locator(".agent-world-label:visible").all()) {
     await expect(label.locator("small")).toHaveCount(0);
-    expect(await label.innerText()).toMatch(/^[A-Z][A-Za-z]+_\d{3}$/);
+    expect(await label.innerText()).toBe(names.get((await label.getAttribute("data-agent-id"))!));
   }
   await page.getByRole("button", { name: "Explore buildings" }).click();
   await page.locator(".building-list button").first().click();

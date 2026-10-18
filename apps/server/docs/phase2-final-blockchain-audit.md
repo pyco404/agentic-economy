@@ -9,7 +9,7 @@ The website, world, camera and economic simulation have not been redesigned.
 | Capability | Classification | Scope and remaining limit |
 |---|---|---|
 | Phantom desktop message authentication | Verified on actual supported public network/service | Previously user-confirmed; authentication is an off-chain signature. |
-| Phantom transaction signing | Implemented but unverified | Manual localhost devnet preview prepared and user approved testing; actual result pending. |
+| Phantom desktop transaction signing | Verified on actual supported public network | User completed the dedicated localhost Phantom flow; its matching token and atomic charge independently verified finalized on devnet. |
 | Phantom mobile transaction signing | Implemented but unverified | No physical-device acceptance result. No desktop signer result substitutes for this. |
 | SOL launch through existing UI | Verified on actual supported public network | Actual official devnet programs, real Pinata, authenticated API and PostgreSQL; automated Wallet Standard signer. |
 | USDC transaction construction and creation | Verified on actual supported public network | Devnet USDC, initialized quote vaults, exact separate SOL charge and locked shares. Dedicated protocol harness. |
@@ -118,7 +118,7 @@ The manual Phantom preview is the existing UI at `http://localhost:5187/#launchp
 using API port 8797 and only the exact approved disposable test database. Its script
 requires explicit opt-in, fixes RPC/genesis to public devnet, binds loopback only and
 uses separate public test treasury addresses. Staging launch flags are unchanged.
-The real Phantom result must be recorded separately after the user completes it.
+The user subsequently completed this flow with Phantom. [Independent finalized evidence](evidence/pump-phantom-devnet-2026-10-19.json) matches the authenticated creator, mint, metadata, exact 0.05 devnet SOL charge and locked 6000/4000 shares. This is desktop acceptance; mobile remains unverified.
 
 ## Creator fees and Explore limits
 
@@ -213,7 +213,7 @@ and production databases were not reset or migrated. No schema file was changed.
   reported with the release. Test records do not imply Phantom approval.
 
 Production is **not ready for financial enablement**. Required gates include actual
-Phantom desktop/mobile acceptance, complete USDC application contracts and recovery,
+Phantom mobile acceptance, complete USDC application contracts and recovery,
 legitimate earned-fee and graduation evidence, explicit fork/finality policy,
 mainnet program/IDL attestation, audited custody destinations/lookup table,
 independent transaction/security review, and separate approval for any mainnet

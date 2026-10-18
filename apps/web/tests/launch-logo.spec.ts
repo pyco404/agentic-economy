@@ -8,6 +8,7 @@ for (const width of [1440, 820, 390]) test(`logo preview, validation and honest 
   await page.emulateMedia({ reducedMotion: "reduce" });
   const writes: string[] = [];
   page.on("request", (r) => { if (r.method() !== "GET") writes.push(r.url()); });
+  await page.route("**/api/v1/launchpad/capabilities", route => route.fulfill({status:404,contentType:"application/json",body:"{}"}));
   await page.goto("/?source=backend#launchpad");
   const input = page.getByLabel("Token logo file", { exact: true });
   await input.setInputFiles({ name: "fake.png", mimeType: "image/png", buffer: Buffer.from("<svg>unsafe</svg>") });
@@ -18,8 +19,8 @@ for (const width of [1440, 820, 390]) test(`logo preview, validation and honest 
   await expect(page.getByRole("alert")).toContainText("corrupted");
   await input.setInputFiles(logo);
   await expect(page.getByAltText("Token logo preview")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Upload to IPFS", exact: true })).toBeDisabled();
-  await expect(page.getByText(/awaiting the authenticated backend API/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Upload to IPFS", exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Metadata readiness")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Wallet signing unavailable" })).toBeDisabled();
   await page.getByLabel("Token name", { exact: true }).fill("Logo review");
   await page.getByLabel("Symbol", { exact: true }).fill("LOGO");

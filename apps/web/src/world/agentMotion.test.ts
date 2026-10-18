@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildPathNetwork, createDemoWalkers, observedJourney, pathBetween, samplePath, type PathNetwork } from "./agentMotion";
+import { AGENT_MOTION, buildPathNetwork, createDemoWalkers, observedJourney, pathBetween, samplePath, type PathNetwork } from "./agentMotion";
 import { generateWorld, WORLD_SEED, type ChunkVisual } from "./layout";
 
 describe("citizen visual motion", () => {
@@ -39,7 +39,13 @@ describe("citizen visual motion", () => {
       const b = second.position("Kestrel", 0.5, 0.5, frame / 20, 0.05, false);
       expect(a.equals(b)).toBe(true);
       expect(network.has(`${Math.floor(a.x)}:${Math.floor(a.y)}`)).toBe(true);
-      if (previous) { if (a.equals(previous)) waited++; else moved++; }
+      if (previous) {
+        // Walking stays leisurely even when crossing several path segments.
+        expect(a.distanceTo(previous)).toBeLessThanOrEqual(
+          (AGENT_MOTION.demoMinSpeed + AGENT_MOTION.demoSpeedVariation) * AGENT_MOTION.visualSpeed * 0.05 + 1e-9,
+        );
+        if (a.equals(previous)) waited++; else moved++;
+      }
       previous = a.clone();
     }
     expect(moved).toBeGreaterThan(10); expect(waited).toBeGreaterThan(10);

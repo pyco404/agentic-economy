@@ -107,3 +107,32 @@ test('missing wallet and rejected signatures leave drafts unauthenticated',async
  await page.evaluate(wallet=>{(window as unknown as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async()=>{throw new Error('Signature rejected by user');},disconnect:async()=>{}}};},wallet);
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Signature rejected by user');await page.getByRole('button',{name:'Close wallet selection'}).click();await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible();
 });
+
+test('wallet changes during pending approval cannot establish a stale session',async({page})=>{
+ test.setTimeout(120000);
+ const key=nacl.sign.keyPair(),wallet=bs58.encode(key.publicKey);
+ let release:()=>void=()=>{};
+ const approval=new Promise<void>(resolve=>{release=resolve;});let signingStarted=false;
+ await page.exposeFunction('__aecoSign',async(bytes:number[])=>{signingStarted=true;await approval;return Array.from(nacl.sign.detached(new Uint8Array(bytes),key.secretKey));});
+ await page.addInitScript(wallet=>{
+  const callbacks:Record<string,(()=>void)[]>={};
+  const w=window as unknown as TestWalletWindow;
+  w.phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async message=>({signature:new Uint8Array(await w.__aecoSign(Array.from(message)))}),disconnect:async()=>{},
+   on:(event,cb)=>{(callbacks[event]??=[]).push(cb);},removeListener:(event,cb)=>{callbacks[event]=callbacks[event]?.filter(f=>f!==cb)??[];}}};
+  w.__aecoWalletChanged=()=>callbacks.accountChanged?.forEach(cb=>cb());
+ },wallet);
+ const verifications:string[]=[];
+ page.on('request',r=>{if(r.url().endsWith('/auth/browser/verify'))verifications.push(r.url());});
+ await page.goto(origin!+'/launchpad?source=backend');
+ await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});
+ await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();
+ await page.getByRole('button',{name:'Phantom',exact:true}).click();
+ await expect.poll(()=>signingStarted).toBe(true);
+ await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoWalletChanged?.());
+ await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Wallet changed during sign-in');
+ release();
+ await expect(page.getByRole('button',{name:'Phantom',exact:true})).toBeEnabled();
+ expect(verifications).toEqual([]);
+ await page.getByRole('button',{name:'Close wallet selection'}).click();
+ await expect(page.locator('form').getByRole('button',{name:'Connect wallet',exact:true})).toBeVisible();
+});

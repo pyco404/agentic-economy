@@ -578,6 +578,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (message.kind === "roads") {
           pathNetwork = message.pathNetwork; streets = message.streets;
           container.dataset.streetConstraints = JSON.stringify(streets.constraints);
+          container.dataset.lakeChannel = JSON.stringify(message.channel);
           if (current.current.demo) demoWalkers = createDemoWalkers(pathNetwork, current.current.chunks?.flatMap((c) => c.buildings) ?? []);
         }
         if (message.kind === "chunk") {

@@ -12,6 +12,7 @@ import { buildingWallColor, pastelWalls } from "./buildingPalette";
 import { createWaterMaterial } from "./waterFlow";
 import { shadeFacade } from "./facadeShading";
 import { createTurfSampler } from "./terrainSurface";
+import { channelTile, type LakeChannel } from "./lakeChannel";
 
 export interface Part {
   geometry: string;
@@ -24,7 +25,8 @@ export interface Part {
   buildingId?: string;
   role?: "roof" | "window" | "door" | "window-frame" | "window-reflection" | "tree-trunk" | "tree-crown"
     | "street-surface" | "street-sidewalk" | "street-marking" | "bridge-edge" | "field-row"
-    | "rail-pier" | "rail-fill" | "rail-sleeper" | "rail-buffer";
+    | "rail-pier" | "rail-fill" | "rail-sleeper" | "rail-buffer"
+    | "channel-bed" | "channel-water" | "channel-rock" | "channel-reed";
 }
 export const geometryLibrary = () => {
   return {
@@ -731,7 +733,7 @@ export function createBatch(
   return group;
 }
 export function generateLandscape(chunk: ChunkVisual, seed: number,
-  context: ChunkVisual[] = [chunk]): Part[] {
+  context: ChunkVisual[] = [chunk], channel?: LakeChannel): Part[] {
   const parts: Part[] = [];
   const x0 = chunk.x * CHUNK_SIZE,
     z0 = chunk.z * CHUNK_SIZE;
@@ -762,6 +764,8 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
       };
     for (let i = 0; i < size; i++)
       for (let j = 0; j < size; j++) {
+        const cutting = channel && channelTile(channel, chunk.x * size + i + .5, chunk.z * size + j + .5);
+        if (cutting) { parts.push(...cutting); continue; }
         const code = chunk.terrain[j * size + i] ?? "g";
         if (code === "w") {
           parts.push({ geometry: "box", color: cityPalette.water,

@@ -82,7 +82,10 @@ export function registerHandlers(ctx: AppContext, register: Register) {
   /* ---------------- agents ---------------- */
 
   register("agent", async ({ params }) => ({ mode, agent: ctx.agents.get(params.id) }));
-  register("createAgent", async ({ body, wallet, idempotencyKey }) => ({ mode, agent: await ctx.agents.create(wallet, body, idempotencyKey) }));
+  // createAgent (POST /agents) is retired: http/app.ts answers 410 for it.
+  register("activateAgent", async ({ body, wallet, idempotencyKey }) => ({ mode, ...(await ctx.agents.activate(wallet, body, idempotencyKey!)) }));
+  register("createHouseAgent", async ({ body, wallet, idempotencyKey }) => ({ mode, agent: await ctx.agents.createHouse(wallet, body, idempotencyKey!) }));
+  register("myActivation", async ({ wallet }) => ({ mode, ...(await ctx.agents.myActivation(wallet)) }));
   register("patchAgent", async ({ params, body, wallet, idempotencyKey }) => ({ mode, agent: await ctx.agents.update(wallet, params.id, body, idempotencyKey) }));
   register("agentActivity", async ({ params, query }) => {
     ctx.agents.get(params.id);

@@ -1,10 +1,10 @@
 {
   "items": [
     {
-      "id": "rwd_0_agt_z7eVqsSP1GtHPS",
+      "id": "rwd_0_agt_CNhF2H3gVpVfk7",
       "epoch": 0,
-      "agentId": "agt_z7eVqsSP1GtHPS",
-      "ownerWallet": "Dn9wy7DSwT7UYNRTW2MWKHnwCufG1HRbCRXdYaTeLJef",
+      "agentId": "agt_CNhF2H3gVpVfk7",
+      "ownerWallet": null,
       "points": 68,
       "estimatedShareBps": 1481,
       "status": "dry_run",
@@ -18,10 +18,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_3nYKmE5dFs0gBk",
+      "id": "rwd_0_agt_GhHMyUzcydXunJ",
       "epoch": 0,
-      "agentId": "agt_3nYKmE5dFs0gBk",
-      "ownerWallet": "3sRUimc1PGTQGEMjEHJY6bSGvCmhWx9Pge5W6YWVybJa",
+      "agentId": "agt_GhHMyUzcydXunJ",
+      "ownerWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
       "points": 8,
       "estimatedShareBps": 174,
       "status": "dry_run",
@@ -30,10 +30,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_yG6zwnmcRafWw2",
+      "id": "rwd_0_agt_AqFRWik0UHWvCf",
       "epoch": 0,
-      "agentId": "agt_yG6zwnmcRafWw2",
-      "ownerWallet": "5iyyzrVi7hpeSCdfPuYexyJH6V8X5sBAjE8oVz4wLSCy",
+      "agentId": "agt_AqFRWik0UHWvCf",
+      "ownerWallet": null,
       "points": 44,
       "estimatedShareBps": 958,
       "status": "dry_run",
@@ -45,10 +45,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_NBz1RAjm6Fvup8",
+      "id": "rwd_0_agt_kHHz4h28274Ep8",
       "epoch": 0,
-      "agentId": "agt_NBz1RAjm6Fvup8",
-      "ownerWallet": "CVdJRytV5AFFYBzYuysa44i1spgwjjJRjJrC6UCDCgVY",
+      "agentId": "agt_kHHz4h28274Ep8",
+      "ownerWallet": null,
       "points": 32,
       "estimatedShareBps": 697,
       "status": "dry_run",
@@ -60,10 +60,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_5PNs81CCUUmJip",
+      "id": "rwd_0_agt_9ExMCi6nJXiouj",
       "epoch": 0,
-      "agentId": "agt_5PNs81CCUUmJip",
-      "ownerWallet": "Uk4sypiPYnJbLkUtoYWFNHo32W9x2FwPphGpiogxCD2",
+      "agentId": "agt_9ExMCi6nJXiouj",
+      "ownerWallet": "3ezh9s34hx7HdfDRoXg27YYMR6KmwgQ4R6Bs5LM194oj",
       "points": 121,
       "estimatedShareBps": 2636,
       "status": "dry_run",
@@ -81,10 +81,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_CE04JuWz4dFWqD",
+      "id": "rwd_0_agt_MjSevugDSrAc0c",
       "epoch": 0,
-      "agentId": "agt_CE04JuWz4dFWqD",
-      "ownerWallet": "CjeVc5fwZrR8ws1ZFcCn3NXN5Ukz58PpGcjC1tvBqgBT",
+      "agentId": "agt_MjSevugDSrAc0c",
+      "ownerWallet": null,
       "points": 32,
       "estimatedShareBps": 697,
       "status": "dry_run",
@@ -96,10 +96,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_F2FKJ6qvD8Bd31",
+      "id": "rwd_0_agt_CJLiPwyK43GX1W",
       "epoch": 0,
-      "agentId": "agt_F2FKJ6qvD8Bd31",
-      "ownerWallet": "J8PnLPsa6535gBzia4Ys1wnSrjyaB2AAyEjbur5B9Bs9",
+      "agentId": "agt_CJLiPwyK43GX1W",
+      "ownerWallet": null,
       "points": 86,
       "estimatedShareBps": 1873,
       "status": "dry_run",
@@ -114,10 +114,10 @@
       ]
     },
     {
-      "id": "rwd_0_agt_gpie7GH5F6L1dD",
+      "id": "rwd_0_agt_ReDTBW412EvP1q",
       "epoch": 0,
-      "agentId": "agt_gpie7GH5F6L1dD",
-      "ownerWallet": "5f69YWidoxRabXTehswyHgLyRi6cUHPYaA6VJCsoQtwL",
+      "agentId": "agt_ReDTBW412EvP1q",
+      "ownerWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
       "points": 68,
       "estimatedShareBps": 1481,
       "status": "dry_run",

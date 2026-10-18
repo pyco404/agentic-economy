@@ -45,7 +45,7 @@ class WindowLimiter {
   }
 }
 
-const LIMITED: ReadonlySet<RouteName> = new Set<RouteName>(["authChallenge", "authVerify", "createAgent", "patchAgent"]);
+const LIMITED: ReadonlySet<RouteName> = new Set<RouteName>(["authChallenge", "authVerify", "activateAgent", "createHouseAgent", "patchAgent"]);
 
 export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   const app = Fastify({
@@ -87,7 +87,8 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       method: def.method.toUpperCase() as "GET" | "POST" | "PATCH",
       url: def.path,
       handler: async (req: FastifyRequest, reply: FastifyReply) => {
-        if (LIMITED.has(name) && !limiter.allow(`${name}|${req.ip}`)) throw new AppError("forbidden", "too many requests; slow down");
+        if (def.retired) throw new AppError("gone", `${def.method.toUpperCase()} ${def.path} was retired in contract ${def.retired.since}; use ${def.retired.replacements.join(" or ")}`, { replacements: def.retired.replacements });
+        if (LIMITED.has(name) && !limiter.allow(`${name}|${req.ip}`)) throw new AppError("rate_limited", "too many requests; slow down");
         // Authenticate before validating input so unauthenticated callers learn nothing about request shapes.
         let wallet = "";
         let sessionExpiresAt = "";
@@ -130,7 +131,13 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   register("health", () => health(ctx));
   register("readiness", () => readiness(ctx));
   registerHandlers(ctx, register);
-  if (servesApi) { await registerLaunchpad(app,ctx); registerWebSocket(app, ctx); }
+  // Retired routes stay registered so clients get a documented 410 (thrown before auth in the wrapper).
+  for (const [name, def] of Object.entries(routes) as Array<[RouteName, RouteDef]>)
+    if (def.retired)
+      register(name, async () => {
+        throw new AppError("gone", `${def.path} is retired`);
+      });
+  if (servesApi) registerWebSocket(app, ctx);
 
   app.get("/metrics", async (_req, reply) => reply.type("text/plain; version=0.0.4").send(metrics(ctx, counters)));
 

@@ -79,7 +79,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
   const treasury = new TreasuryService(store, config);
   const communities = new CommunityService(store, runtime.reader);
   const eligibility = new EligibilityService(chain, communities, config);
-  const agents = new AgentService(runtime.reader, runtime.bus, eligibility, config);
+  const agents = new AgentService(runtime.reader, runtime.bus, store, config);
   const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader);
 
   const runsIndexer = config.role === "indexer" || (config.role === "all" && config.mode !== "demo");

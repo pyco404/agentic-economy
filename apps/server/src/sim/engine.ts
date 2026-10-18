@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { RESOURCES, type AgentPermission, type AgentStrategy, type GridPos, type Profession, type Resource, type TaskKind } from "@agentic-economy/shared";
 import { KIND_SPECS, Rng, deriveSeed, type WorldLayout } from "@agentic-economy/world-spec";
+import { legacyIdentity, takenNames } from "./identity.js";
 import { NavGrid } from "./nav.js";
 import { UtilityPlanner, type Planner, type TaskCandidate } from "./planner.js";
 import {
@@ -181,7 +182,7 @@ export function createInitialState(layout: WorldLayout): SimState {
   const market = Object.fromEntries(RESOURCES.map((r) => [r, { price: BASE_PRICES[r], dayAgo: BASE_PRICES[r] }])) as SimState["market"];
 
   return {
-    version: 1,
+    version: 2,
     worldSeed: layout.seed,
     tick: 0,
     rngState: rng.seedState,
@@ -267,46 +268,74 @@ export class SimEngine {
 
   /* ---------------------------------------------------------- commands */
 
+  /** Shared by every create command. Idempotent: a replayed command for an existing agent is ignored. */
+  private spawnAgent(
+    c: { agentId: string; communityId: string; profession: Profession; strategy: AgentStrategy },
+    name: string,
+    ownerWallet: string | null,
+    ident: Pick<AgentSimState, "identity" | "displayName">,
+  ) {
+    const s = this.state;
+    if (s.agents[c.agentId]) return;
+    const hq = s.communities[c.communityId]?.hqBuildingId;
+    const spawnBuilding = (hq && s.buildings[hq]) || s.buildings[s.buildingOrder.find((id) => s.buildings[id]!.kind === "town_hall")!]!;
+    const agent: AgentSimState = {
+      id: c.agentId,
+      name,
+      ownerWallet,
+      communityId: c.communityId,
+      profession: c.profession,
+      status: "active",
+      activity: "idle",
+      strategy: c.strategy,
+      permissions: [...DEFAULT_PERMISSIONS],
+      createdTick: s.tick,
+      cell: { ...spawnBuilding.entrance },
+      path: [],
+      target: null,
+      taskId: null,
+      busyTicks: 0,
+      cargo: null,
+      spentToday: 0,
+      perf: { creditsEarned: 0, creditsSpent: 0, tasksCompleted: 0, tasksFailed: 0 },
+      totalPoints: 0,
+      verifiedTasks: 0,
+      nextDecisionTick: s.tick,
+      ...ident,
+    };
+    s.agents[c.agentId] = agent;
+    s.agentOrder.push(c.agentId);
+    const granted = tryTransfer(s.ledger, CITY_ACCOUNT, agentAccount(c.agentId), STARTER_GRANT);
+    // The summary keeps the creation-time name (historical text); data carries the identity for attribution.
+    this.event("agent.activated", `${name} joined the city as a ${c.profession.replace(/_/g, " ")}`, {
+      agentId: c.agentId,
+      communityId: c.communityId,
+      data: { profession: c.profession, starterGrant: granted ? STARTER_GRANT : 0, identityKind: ident.identity.kind, displayName: ident.displayName },
+    });
+  }
+
   private applyCommand(c: SimCommand) {
     const s = this.state;
     switch (c.type) {
-      case "agent.create": {
-        if (s.agents[c.agentId]) return; // idempotent
-        const hq = s.communities[c.communityId]?.hqBuildingId;
-        const spawnBuilding = (hq && s.buildings[hq]) || s.buildings[s.buildingOrder.find((id) => s.buildings[id]!.kind === "town_hall")!]!;
-        const agent: AgentSimState = {
-          id: c.agentId,
-          name: c.name,
-          ownerWallet: c.ownerWallet,
+      case "agent.create":
+        // Pre-0.3.0 command (replayed from the log): the agent is legacy, keeping its recorded owner.
+        this.spawnAgent(c, c.name, c.ownerWallet, legacyIdentity(c.agentId, c.ownerWallet, takenNames(s)));
+        return;
+      case "agent.activate": {
+        const identity = {
+          kind: "token_linked" as const,
+          activationId: c.activationId,
+          tokenMint: c.tokenMint,
+          activatingWallet: c.activatingWallet,
+          launchId: c.launchId,
           communityId: c.communityId,
-          profession: c.profession,
-          status: "active",
-          activity: "idle",
-          strategy: c.strategy,
-          permissions: [...DEFAULT_PERMISSIONS],
-          createdTick: s.tick,
-          cell: { ...spawnBuilding.entrance },
-          path: [],
-          target: null,
-          taskId: null,
-          busyTicks: 0,
-          cargo: null,
-          spentToday: 0,
-          perf: { creditsEarned: 0, creditsSpent: 0, tasksCompleted: 0, tasksFailed: 0 },
-          totalPoints: 0,
-          verifiedTasks: 0,
-          nextDecisionTick: s.tick,
         };
-        s.agents[c.agentId] = agent;
-        s.agentOrder.push(c.agentId);
-        const granted = tryTransfer(s.ledger, CITY_ACCOUNT, agentAccount(c.agentId), STARTER_GRANT);
-        this.event("agent.activated", `${c.name} joined the city as a ${c.profession.replace(/_/g, " ")}`, {
-          agentId: c.agentId,
-          communityId: c.communityId,
-          data: { profession: c.profession, starterGrant: granted ? STARTER_GRANT : 0 },
-        });
+        this.spawnAgent(c, c.displayName, c.activatingWallet, { identity, displayName: c.displayName });
         return;
       }
+      case "agent.create_house":
+        this.spawnAgent(c, c.syntheticName, null, { identity: { kind: "house", syntheticName: c.syntheticName }, displayName: c.syntheticName });
+        return;
       case "agent.update": {
         const a = s.agents[c.agentId];
         if (!a) return;
@@ -874,7 +903,8 @@ export class SimEngine {
     const adjustments: SimReceipt["pointAdjustments"] = [];
     let points = t.points;
     const payerAgent = t.payer.startsWith("agent:") ? s.agents[t.payer.slice(6)] : undefined;
-    if (payerAgent && payerAgent.ownerWallet === a.ownerWallet) {
+    // House agents have no owner, so two house agents are never "the same wallet".
+    if (payerAgent && a.ownerWallet !== null && payerAgent.ownerWallet === a.ownerWallet) {
       adjustments.push({ reason: "self_dealing: requester owned by performer's wallet", delta: -points });
       points = 0;
     }

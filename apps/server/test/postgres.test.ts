@@ -60,7 +60,8 @@ d("postgres store", () => {
     const { confirm } = await launch(env1.app, user);
     const communityId = confirm.json().launch.communityId;
     for (let i = 0; i < 25; i++) await env1.ctx.runtime.tickOnce();
-    await env1.app.inject({ method: "POST", url: "/api/v1/agents", headers: { ...user.auth, ...idem() }, payload: { communityId, name: "Crash Courier", profession: "logistics_operator" } });
+    const activated = await env1.app.inject({ method: "POST", url: "/api/v1/agents/activate", headers: { ...user.auth, ...idem() }, payload: { communityId, profession: "logistics_operator" } });
+    const crashAgentId = activated.json().agent.id as string;
     for (let i = 0; i < 12; i++) await env1.ctx.runtime.tickOnce();
     const tickAtCrash = env1.ctx.runtime.tick;
     const hashAtCrash = hashState(env1.ctx.runtime.state);
@@ -75,7 +76,7 @@ d("postgres store", () => {
       expect(rt.tick).toBeLessThanOrEqual(tickAtCrash);
       for (let i = 0; rt.tick < tickAtCrash && i < 500; i++) await rt.tickOnce();
       expect(hashState(rt.state)).toBe(hashAtCrash);
-      expect(Object.values(rt.state.agents).map((a) => a.name)).toContain("Crash Courier");
+      expect(rt.state.agents[crashAgentId]?.identity.kind).toBe("token_linked");
       // Replayed events were de-duplicated, not double-inserted.
       const pool = new pg.Pool({ connectionString: url });
       const dupes = await pool.query("SELECT id FROM events GROUP BY id HAVING count(*) > 1");

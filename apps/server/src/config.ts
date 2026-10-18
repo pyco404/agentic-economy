@@ -42,7 +42,9 @@ const Env = z.object({
   /** Raw base units (6 decimals for Pump coins). Default 1,000 tokens. */
   HOLDER_MIN_BALANCE_RAW: z.string().regex(/^\d+$/).default("1000000000"),
   ELIGIBILITY_CACHE_SECONDS: z.coerce.number().int().min(0).default(60),
-  MAX_AGENTS_PER_WALLET_PER_COMMUNITY: z.coerce.number().int().min(1).default(3),
+  /** Demo house agents: per signed-in wallet, and across the whole city. */
+  HOUSE_AGENTS_PER_WALLET: z.coerce.number().int().min(0).default(5),
+  HOUSE_AGENTS_MAX: z.coerce.number().int().min(0).default(60),
   SESSION_TTL_SECONDS: z.coerce.number().int().min(60).default(12 * 3600),
   CHALLENGE_TTL_SECONDS: z.coerce.number().int().min(30).default(300),
   AUTH_DOMAIN: z.string().default("localhost"),
@@ -101,8 +103,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     eligibility: {
       minBalanceRaw: BigInt(e.HOLDER_MIN_BALANCE_RAW),
       cacheSeconds: e.ELIGIBILITY_CACHE_SECONDS,
-      maxAgentsPerWalletPerCommunity: e.MAX_AGENTS_PER_WALLET_PER_COMMUNITY,
     },
+    houseAgents: { perWallet: e.HOUSE_AGENTS_PER_WALLET, max: e.HOUSE_AGENTS_MAX },
     auth: {
       sessionTtlSeconds: e.SESSION_TTL_SECONDS,
       challengeTtlSeconds: e.CHALLENGE_TTL_SECONDS,

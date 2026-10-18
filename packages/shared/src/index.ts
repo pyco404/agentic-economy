@@ -2,6 +2,7 @@ export * from "./constants.js";
 export * from "./primitives.js";
 export * from "./economy.js";
 export * from "./world.js";
+export * from "./identity.js";
 export * from "./agents.js";
 export * from "./community.js";
 export * from "./launch.js";

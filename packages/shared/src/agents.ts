@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AgentId, BuildingId, CommunityId, DataMode, PublicKey, TaskId, WorldPos, GridPos } from "./primitives.js";
 import { Resource } from "./economy.js";
+import { AgentActivation, AgentIdentity, DisplayName } from "./identity.js";
 
 export const Profession = z
   .enum(["farmer", "manufacturer", "merchant", "logistics_operator", "builder", "property_manager"])
@@ -52,10 +53,17 @@ export const AgentStatus = z.enum(["active", "paused"]).meta({ id: "AgentStatus"
 export const AgentSummary = z
   .object({
     id: AgentId,
+    /** Historical free-text name given at creation. Not unique; show `displayName` instead. */
     name: z.string(),
+    displayName: DisplayName,
+    identity: AgentIdentity,
     profession: Profession,
     communityId: CommunityId,
-    ownerWallet: PublicKey,
+    /**
+     * @deprecated since 0.3.0, removed in 0.4.0: use `identity`. The wallet with owner controls:
+     * `activatingWallet` (token_linked), `legacyOwnerWallet` (legacy), null (house).
+     */
+    ownerWallet: PublicKey.nullable(),
     status: AgentStatus,
     state: AgentState,
     pos: WorldPos,
@@ -108,6 +116,7 @@ export const AgentAction = z
   .meta({ id: "AgentAction" });
 export type AgentAction = z.infer<typeof AgentAction>;
 
+/** @deprecated since 0.3.0: `POST /agents` is retired (410 `gone`). Kept so 0.2.0 clients still compile. */
 export const CreateAgentRequest = z
   .object({
     communityId: CommunityId,
@@ -117,6 +126,30 @@ export const CreateAgentRequest = z
   })
   .meta({ id: "CreateAgentRequest" });
 export type CreateAgentRequest = z.infer<typeof CreateAgentRequest>;
+
+/**
+ * Activate the token-linked agent for a community's token. Only the session wallet that launched the
+ * token may call it. There is no name or mint field: the server resolves the mint from the confirmed
+ * launch and names the agent after the activating wallet.
+ */
+export const ActivateAgentRequest = z
+  .object({
+    communityId: CommunityId,
+    profession: Profession,
+    strategy: AgentStrategy.partial().optional(),
+  })
+  .meta({ id: "ActivateAgentRequest" });
+export type ActivateAgentRequest = z.infer<typeof ActivateAgentRequest>;
+
+/** DEMO ONLY. Creates a house agent; the authenticated caller does not become its owner. */
+export const CreateHouseAgentRequest = z
+  .object({
+    communityId: CommunityId,
+    profession: Profession,
+    strategy: AgentStrategy.partial().optional(),
+  })
+  .meta({ id: "CreateHouseAgentRequest" });
+export type CreateHouseAgentRequest = z.infer<typeof CreateHouseAgentRequest>;
 
 export const PatchAgentRequest = z
   .object({
@@ -145,3 +178,12 @@ export const HolderEligibility = z
 export type HolderEligibility = z.infer<typeof HolderEligibility>;
 
 export const AgentResponse = z.object({ mode: DataMode, agent: Agent }).meta({ id: "AgentResponse" });
+
+export const ActivateAgentResponse = z
+  .object({ mode: DataMode, activation: AgentActivation, agent: Agent })
+  .meta({ id: "ActivateAgentResponse" });
+
+/** The signed-in wallet's activation, looked up from the session (never from a public wallet parameter). */
+export const MyActivationResponse = z
+  .object({ mode: DataMode, activation: AgentActivation.nullable(), agent: Agent.nullable() })
+  .meta({ id: "MyActivationResponse" });

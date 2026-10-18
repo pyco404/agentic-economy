@@ -4,9 +4,11 @@ import { LOCK_KEYS, insertSimOutputs, type Queryable } from "../store/postgres.j
 import {
   LeadershipLost,
   type CoordinationListener,
+  type ActivationRecord,
   type Coordinator,
-  type EnqueueGuard,
   type EnqueueResult,
+  type IdentityEnqueueResult,
+  type IdentityReservation,
   type Lease,
   type LeaderSession,
   type Recovery,
@@ -22,6 +24,46 @@ interface Log {
 }
 
 const CHANNELS = { stream: "ae_stream", view: "ae_view", applied: "ae_applied" } as const;
+
+/** Denormalised inbox columns (cheap filtering/audit): the wallet a command acts for, and its community. */
+function inboxColumns(command: SimCommand): { wallet: string | null; community: string | null } {
+  switch (command.type) {
+    case "agent.create":
+      return { wallet: command.ownerWallet, community: command.communityId };
+    case "agent.activate":
+      return { wallet: command.activatingWallet, community: command.communityId };
+    case "agent.create_house":
+    case "community.register":
+      return { wallet: null, community: command.communityId };
+    default:
+      return { wallet: null, community: null };
+  }
+}
+
+const ACTIVATION_SELECT = `SELECT a.id, a.agent_id, a.community_id, a.launch_id, a.token_mint, a.activating_wallet, a.display_name, a.inbox_id,
+  a.requested_at, (i.applied_seq IS NOT NULL) AS applied FROM agent_activations a JOIN sim_command_inbox i ON i.id = a.inbox_id`;
+
+function toActivation(r: Record<string, unknown>): ActivationRecord {
+  return {
+    id: r.id as string,
+    agentId: r.agent_id as string,
+    communityId: r.community_id as string,
+    launchId: r.launch_id as string,
+    tokenMint: r.token_mint as string,
+    activatingWallet: r.activating_wallet as string,
+    displayName: r.display_name as string,
+    inboxId: Number(r.inbox_id),
+    requestedAt: (r.requested_at as Date).toISOString(),
+    applied: r.applied as boolean,
+  };
+}
+
+async function activationWhere(q: Queryable, column: "activating_wallet" | "token_mint" | "agent_id", value: string): Promise<ActivationRecord | null> {
+  const r = (await q.query(`${ACTIVATION_SELECT} WHERE a.${column} = $1`, [value])).rows[0];
+  return r ? toActivation(r) : null;
+}
+
+const isUniqueViolation = (e: unknown) => (e as { code?: string }).code === "23505";
 /** Bounds how long a commit on a half-dead connection can hang before the session is treated as lost. */
 const STATEMENT_TIMEOUT_MS = 10_000;
 
@@ -109,43 +151,13 @@ export class PgCoordinator implements Coordinator {
     }
   }
 
-  async enqueueCommand(command: SimCommand, dedupeKey: string | null, guard?: EnqueueGuard): Promise<EnqueueResult | null> {
-    const wallet = command.type === "agent.create" ? command.ownerWallet : null;
-    const community = command.type === "agent.create" || command.type === "community.register" ? command.communityId : null;
+  async enqueueCommand(command: SimCommand, dedupeKey: string | null): Promise<EnqueueResult> {
     const c = await this.pool.connect();
     try {
       await c.query("BEGIN");
-      if (dedupeKey) {
-        const ex = (await c.query("SELECT id, command, applied_tick FROM sim_command_inbox WHERE dedupe_key = $1", [dedupeKey])).rows[0];
-        if (ex) {
-          await c.query("COMMIT");
-          return { id: Number(ex.id), command: JSON.parse(ex.command), existing: true, appliedTick: ex.applied_tick === null ? null : Number(ex.applied_tick) };
-        }
-      }
-      if (guard) {
-        // Serialise admission per wallet+community so concurrent requests cannot both pass the cap.
-        await c.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`agent-cap:${guard.wallet}:${guard.communityId}`]);
-        const n = (
-          await c.query("SELECT count(*)::int AS n FROM sim_command_inbox WHERE applied_seq IS NULL AND kind = 'agent.create' AND wallet = $1 AND community_id = $2", [guard.wallet, guard.communityId])
-        ).rows[0].n as number;
-        if (n >= guard.maxPending) {
-          await c.query("ROLLBACK");
-          return null;
-        }
-      }
-      const ins = await c.query(
-        `INSERT INTO sim_command_inbox (dedupe_key, command, wallet, community_id, kind) VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (dedupe_key) DO NOTHING RETURNING id`,
-        [dedupeKey, JSON.stringify(command), wallet, community, command.type],
-      );
-      if (!ins.rows[0]) {
-        // Lost a race with the same dedupe key: return the winner.
-        const ex = (await c.query("SELECT id, command, applied_tick FROM sim_command_inbox WHERE dedupe_key = $1", [dedupeKey])).rows[0];
-        await c.query("COMMIT");
-        return { id: Number(ex.id), command: JSON.parse(ex.command), existing: true, appliedTick: ex.applied_tick === null ? null : Number(ex.applied_tick) };
-      }
+      const r = await this.insertInbox(c, command, dedupeKey);
       await c.query("COMMIT");
-      return { id: Number(ins.rows[0].id), command, existing: false, appliedTick: null };
+      return r;
     } catch (e) {
       await c.query("ROLLBACK").catch(() => undefined);
       throw e;
@@ -154,17 +166,109 @@ export class PgCoordinator implements Coordinator {
     }
   }
 
+  /** Inside a transaction: return the row for `dedupeKey` if it exists, else insert. */
+  private async insertInbox(c: pg.PoolClient, command: SimCommand, dedupeKey: string | null): Promise<EnqueueResult> {
+    const existingRow = async () => {
+      const ex = (await c.query("SELECT id, command, applied_tick FROM sim_command_inbox WHERE dedupe_key = $1", [dedupeKey])).rows[0];
+      return ex ? { id: Number(ex.id), command: JSON.parse(ex.command) as SimCommand, existing: true, appliedTick: ex.applied_tick === null ? null : Number(ex.applied_tick) } : null;
+    };
+    if (dedupeKey) {
+      const ex = await existingRow();
+      if (ex) return ex;
+    }
+    const { wallet, community } = inboxColumns(command);
+    const ins = await c.query(
+      `INSERT INTO sim_command_inbox (dedupe_key, command, wallet, community_id, kind) VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (dedupe_key) DO NOTHING RETURNING id`,
+      [dedupeKey, JSON.stringify(command), wallet, community, command.type],
+    );
+    // Lost a race with the same dedupe key: return the winner.
+    if (!ins.rows[0]) return (await existingRow())!;
+    return { id: Number(ins.rows[0].id), command, existing: false, appliedTick: null };
+  }
+
+  async enqueueIdentityCommand(dedupeKey: string, r: IdentityReservation, build: (displayName: string) => SimCommand): Promise<IdentityEnqueueResult> {
+    const c = await this.pool.connect();
+    try {
+      await c.query("BEGIN");
+      // One identity reservation at a time, cluster-wide (low volume). The UNIQUE constraints in
+      // 003_agent_identity.sql still hold even if this lock were bypassed.
+      await c.query("SELECT pg_advisory_xact_lock(hashtext('agent-identity'))");
+      const prior = (await c.query("SELECT id FROM sim_command_inbox WHERE dedupe_key = $1", [dedupeKey])).rows[0];
+      if (prior) {
+        const enqueued = await this.insertInbox(c, build(""), dedupeKey); // returns the existing row; `build` output is discarded
+        const agentId = (enqueued.command as { agentId: string }).agentId;
+        const name = (await c.query("SELECT name FROM agent_names WHERE agent_id = $1", [agentId])).rows[0].name as string;
+        const activation = await activationWhere(c, "agent_id", agentId);
+        await c.query("COMMIT");
+        return { ok: true, enqueued, displayName: name, activation };
+      }
+      if (r.kind === "token_linked") {
+        const byWallet = await activationWhere(c, "activating_wallet", r.activation.activatingWallet);
+        if (byWallet) return await this.abort(c, { ok: false, reason: "wallet_taken", activation: byWallet });
+        const byMint = await activationWhere(c, "token_mint", r.activation.tokenMint);
+        if (byMint) return await this.abort(c, { ok: false, reason: "mint_taken", activation: byMint });
+      } else {
+        const q = (
+          await c.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE requested_by = $1)::int AS mine FROM agent_names WHERE kind = 'house'", [r.requestedBy])
+        ).rows[0] as { total: number; mine: number };
+        if (q.total >= r.maxTotal || q.mine >= r.maxPerRequester) return await this.abort(c, { ok: false, reason: "quota_reached" });
+      }
+      const used = new Set((await c.query("SELECT name FROM agent_names WHERE name = ANY($1)", [r.nameCandidates])).rows.map((x) => x.name as string));
+      const displayName = r.nameCandidates.find((n) => !used.has(n));
+      if (!displayName) return await this.abort(c, { ok: false, reason: "names_exhausted" });
+
+      const enqueued = await this.insertInbox(c, build(displayName), dedupeKey);
+      await c.query("INSERT INTO agent_names (name, agent_id, kind, requested_by, inbox_id) VALUES ($1,$2,$3,$4,$5)", [
+        displayName,
+        r.agentId,
+        r.kind,
+        r.kind === "house" ? r.requestedBy : null,
+        enqueued.id,
+      ]);
+      let activation: ActivationRecord | null = null;
+      if (r.kind === "token_linked") {
+        const a = r.activation;
+        await c.query(
+          `INSERT INTO agent_activations (id, agent_id, community_id, launch_id, token_mint, activating_wallet, display_name, inbox_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [a.id, a.agentId, a.communityId, a.launchId, a.tokenMint, a.activatingWallet, displayName, enqueued.id],
+        );
+        activation = await activationWhere(c, "agent_id", r.agentId);
+      }
+      await c.query("COMMIT");
+      return { ok: true, enqueued, displayName, activation };
+    } catch (e) {
+      await c.query("ROLLBACK").catch(() => undefined);
+      if (isUniqueViolation(e) && r.kind === "token_linked") {
+        // Defensive: only reachable if a writer bypassed the advisory lock. Report the row that won.
+        const byWallet = await activationWhere(this.pool, "activating_wallet", r.activation.activatingWallet);
+        if (byWallet) return { ok: false, reason: "wallet_taken", activation: byWallet };
+        const byMint = await activationWhere(this.pool, "token_mint", r.activation.tokenMint);
+        if (byMint) return { ok: false, reason: "mint_taken", activation: byMint };
+      }
+      throw e;
+    } finally {
+      c.release();
+    }
+  }
+
+  private async abort<T>(c: pg.PoolClient, result: T): Promise<T> {
+    await c.query("ROLLBACK");
+    return result;
+  }
+
+  activationByWallet(wallet: string) {
+    return activationWhere(this.pool, "activating_wallet", wallet);
+  }
+
+  activationByAgent(agentId: string) {
+    return activationWhere(this.pool, "agent_id", agentId);
+  }
+
   async inboxStatus(id: number) {
     const r = (await this.pool.query("SELECT applied_tick FROM sim_command_inbox WHERE id = $1", [id])).rows[0];
     return r ? { appliedTick: r.applied_tick === null ? null : Number(r.applied_tick) } : null;
-  }
-
-  async pendingAgentCreates(wallet: string, communityId: string) {
-    const r = await this.pool.query("SELECT count(*)::int AS n FROM sim_command_inbox WHERE applied_seq IS NULL AND kind = 'agent.create' AND wallet = $1 AND community_id = $2", [
-      wallet,
-      communityId,
-    ]);
-    return r.rows[0].n as number;
   }
 
   async appendStream(drafts: StreamDraft[]) {

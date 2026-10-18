@@ -144,6 +144,9 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
                       ? summary.stats
                       : d.stats,
                   tasks: summary.tasks,
+                  receipts: summary.receipts,
+                  agents: summary.agents.map((a) => (d.agentTicks?.[a.id] ?? 0) > summary.agentTick ? d.agents.find((prior) => prior.id === a.id) ?? a : a),
+                  agentTicks: Object.fromEntries(summary.agents.map((a) => [a.id, Math.max(d.agentTicks?.[a.id] ?? 0, summary.agentTick)])),
                 }
               : d,
           );

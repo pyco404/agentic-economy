@@ -72,7 +72,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     store = mem;
     coord = new MemoryCoordinator(mem);
   }
-  const chain = overrides.chain ?? (config.mode === "demo" ? new MockChain() : config.role === "sim" ? new NoChain() : new SolanaRpcChain(config.solana.rpcUrl!));
+  const chain = overrides.chain ?? (config.mode === "demo" ? new MockChain() : config.role === "sim" ? new NoChain() : new SolanaRpcChain(config.solana.rpcUrl!,{...config.pumpLaunch,cluster:config.solana.cluster}));
 
   const runtime = await CityRuntime.create(config, store, coord, logger);
   const auth = new AuthService(store, config);

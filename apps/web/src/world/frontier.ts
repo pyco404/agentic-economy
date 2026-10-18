@@ -1,3 +1,4 @@
+import { planWesternRiver, landscapeWesternRiver, type WesternRiverReport } from "./westernRiver";
 import * as THREE from "three";
 import type { Part } from "./geometry";
 import { hashSeed, isLand, random, type ChunkVisual } from "./layout";
@@ -16,6 +17,8 @@ export interface FrontierData {
   parts: Part[];
   shimmer: { x: number; y: number; z: number; phase: number }[];
   style: FrontierStyle;
+  paths?: { x: number; y: number; z: number }[];
+  westernRiver?: WesternRiverReport;
 }
 const ease = (a: number, b: number, value: number) => {
   const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
@@ -102,10 +105,12 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
     }
   }
   const channels = exits.filter((e) => e.water);
+  const western = style === "frontier" ? planWesternRiver(seed, {minX,maxX,minZ,maxZ}, exits) : null;
   const waterAt = (x: number, z: number) => {
     if (inside(x, z)) return false;
     if (style === "coastal" && ((x - maxX - 140) / 130) ** 2 +
       ((z - (minZ + maxZ) / 2 - 24) / 150) ** 2 < 1) return true;
+    if(western?.contains(x,z))return true;
     return channels.some((e) => {
       const dx = x - e.x, dz = z - e.z, along = dx * e.nx + dz * e.nz;
       // A short canal outlet becomes a quiet tapered drainage reach, rather
@@ -123,7 +128,7 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
     const key = `${x}:${z}:${water}`, cached = tintCache.get(key);
     if (cached) return cached;
     const d = distance(x, z), color = water ? waterColor.clone() : turfColor(seed, x, z);
-    if (water && style !== "coastal") color.lerp(land, ease(12, FRONTIER_WATER.reach, d) * .66);
+    if (water && style !== "coastal" && !western?.near(x,z)) color.lerp(land, ease(12, FRONTIER_WATER.reach, d) * .66);
     color.lerp(far, ease(36, 152, d) * (water ? 0.65 : 1));
     const rgb = color.toArray(); tintCache.set(key, rgb); return rgb;
   };
@@ -155,7 +160,7 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
     for (let z = minZ - 192; z < maxZ + 192; z += 8) {
       if (inside(x + 4, z + 4)) continue;
       const nearWater = [[0, 0], [4, 4], [8, 8], [0, 8], [8, 0]].some(([dx, dz]) => waterAt(x + dx!, z + dz!));
-      const step = nearWater ? 2 : distance(x + 4, z + 4) < 48 ? 4 : 8;
+      const step = nearWater || western?.near(x+4,z+4) ? 2 : distance(x + 4, z + 4) < 48 ? 4 : 8;
       for (let dx = 0; dx < 8; dx += step) for (let dz = 0; dz < 8; dz += step) tile(x + dx, z + dz, step);
     }
   const clear = (x: number, z: number, radius = 1) => distance(x, z) > radius + 1 &&
@@ -198,5 +203,15 @@ export function generateFrontier(seed: number, chunks: ChunkVisual[],
           output.shimmer.push({ x: x + 2, y: height(x + 2, z) + 0.12, z, phase: rng() * Math.PI * 2 });
       }
     }
+  if(western){
+    for(let i=0;i<output.water.length;i+=9){
+      const x=(output.water[i]!+output.water[i+3]!+output.water[i+6]!)/3;
+      const z=(output.water[i+2]!+output.water[i+5]!+output.water[i+8]!)/3;
+      if(!western.near(x,z))continue;
+      const ax=output.water[i]!,az=output.water[i+2]!,bx=output.water[i+3]!,bz=output.water[i+5]!,cx=output.water[i+6]!,cz=output.water[i+8]!;
+      western.report.waterArea+=Math.abs((bx-ax)*(cz-az)-(cx-ax)*(bz-az))/2;
+    }
+    landscapeWesternRiver(output,chunks,seed,western);
+  }
   return output;
 }

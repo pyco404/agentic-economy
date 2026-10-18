@@ -42,6 +42,10 @@ export function toBuilding(layout: WorldLayout, placement: BuildingPlacement, b:
 }
 
 export function toAgentSummary(s: SimState, a: AgentSimState): AgentSummary {
+  const task = a.taskId ? s.tasks[a.taskId] : undefined;
+  const destination = task ? s.buildings[task.fromBuildingId && task.pickupTick === null ? task.fromBuildingId : task.toBuildingId] : undefined;
+  const cargo: Partial<Record<Resource, number>> = {};
+  if (a.cargo) cargo[a.cargo.resource] = a.cargo.lots.reduce((n, lot) => n + lot.qty, 0);
   return {
     id: a.id,
     name: a.name,
@@ -52,6 +56,13 @@ export function toAgentSummary(s: SimState, a: AgentSimState): AgentSummary {
     ownerWallet: a.ownerWallet,
     status: a.status,
     state: a.status === "paused" ? "paused" : a.activity,
+    work: {
+      tick: s.tick, task: task ? toTask(task) : null,
+      destination: destination ? { id: destination.id, name: destination.name, kind: destination.kind, entrance: { ...destination.entrance } } : null,
+      target: a.target ? { ...a.target } : null,
+      remainingWorkTicks: a.activity === "working" ? a.busyTicks : task?.workTicksRemaining ?? 0,
+      cargo,
+    },
     pos: cellCenter(a.cell),
     credits: balanceOf(s.ledger, agentAccount(a.id)),
     verifiedTasks: a.verifiedTasks,

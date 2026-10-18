@@ -1,3 +1,6 @@
+import { CurrentAgentWork, JobFacts, ProductionFacilities, WorkingAgents } from "./AgentWork";
+import { observableTasks, workDescription } from "../api/agentWork";
+import "../agent-work.css";
 import { useEffect, useState } from "react";
 import { useDraftField } from "../navigation/drafts";
 import { LaunchQuotePicker } from "./LaunchQuotePicker";
@@ -449,7 +452,7 @@ export function Studio({
     </>
   );
 }
-export function Economy({ data }: { data: Dashboard }) {
+export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { data: Dashboard; onViewBuilding?: (id:string)=>void; onViewAgent?: (id:string)=>void; onHighlight?: (ids:string[])=>void }) {
   return (
     <>
       <PageHeading
@@ -498,6 +501,8 @@ export function Economy({ data }: { data: Dashboard }) {
           </div>
         ))}
       </div>
+      <ProductionFacilities data={data} onViewBuilding={onViewBuilding} onHighlight={onHighlight}/>
+      <WorkingAgents data={data} onViewAgent={onViewAgent}/>
       <div className="two-column economy-panels">
         <section className="surface scroll-panel economy-panel" aria-labelledby="resource-market-title">
           <h2 id="resource-market-title">Resource market</h2>
@@ -535,17 +540,12 @@ export function Economy({ data }: { data: Dashboard }) {
         <section className="surface scroll-panel economy-panel" aria-labelledby="work-queue-title">
           <h2 id="work-queue-title">Useful work queue</h2>
           <div className="panel-scroll-content slim-scroll" role="region" aria-label="Useful work entries" tabIndex={0}>
-          {data.tasks.map((t) => (
+          {observableTasks(data.tasks,data.agents).map((t) => (
             <div className="task-row" key={t.id}>
               <Truck size={18} />
               <span>
                 <b>{readable(t.kind)}</b>
-                <small>
-                  {t.quantity > 0
-                    ? `${t.quantity} units of ${t.resource}`
-                    : "Maintain city infrastructure"}{" "}
-                  · {t.points} contribution points
-                </small>
+                <JobFacts task={t} data={data} onViewBuilding={onViewBuilding} onViewAgent={onViewAgent}/>
               </span>
               <span className="tag">{t.status}</span>
             </div>
@@ -698,6 +698,9 @@ export function AgentPanel({
   onRefresh,
   liveActions,
   onFollow,
+  following,
+  data,
+  onViewBuilding,
 }: {
   id: string;
   api: ApiAdapter;
@@ -705,6 +708,9 @@ export function AgentPanel({
   onRefresh: () => void;
   liveActions?: AgentAction[];
   onFollow?: (x: number, y: number) => void;
+  following?: boolean;
+  data?: Dashboard;
+  onViewBuilding?: (id:string)=>void;
 }) {
   const [agent, setAgent] = useState<Agent | null>(null),
     [logs, setLogs] = useState<AgentAction[]>([]),
@@ -739,6 +745,8 @@ export function AgentPanel({
       clearInterval(timer);
     };
   }, [id, api]);
+  const observed = agent && data?.agents.find(a=>a.id===agent.id);
+  const displayed = agent && observed && (observed.work?.tick ?? -1) >= (agent.work?.tick ?? -1) ? {...agent,...observed} : agent;
   const toggle = async () => {
     if (!agent) return;
     setBusy(true);
@@ -776,28 +784,29 @@ export function AgentPanel({
           {onFollow && (
             <button
               className="secondary wide"
-              onClick={() => onFollow(agent.pos.x, agent.pos.y)}
+              onClick={() => onFollow(displayed?.pos.x??agent.pos.x, displayed?.pos.y??agent.pos.y)}
             >
-              Locate agent in city <ArrowRight size={14} />
+              {following ? "Stop following agent" : "Follow agent"} <ArrowRight size={14} />
             </button>
           )}
+          {data&&displayed&&<CurrentAgentWork agent={displayed} data={data} onViewBuilding={onViewBuilding}/>}
           <dl className="detail-list">
             <div><dt>Canonical ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>
             <div><dt>Given name</dt><dd>{agent.name}</dd></div>
             <div><dt>Identity type</dt><dd>{agentIdentity(agent).kind === "unclassified" ? "Unclassified legacy agent" : readable(agentIdentity(agent).kind)}</dd></div>
             <div><dt>Verified activating wallet</dt><dd className="agent-identity-value" data-testid="agent-owner">{agentIdentity(agent).owner ?? "Unavailable · no verified activation record"}</dd></div>
-            <div><dt>Current activity</dt><dd>{readable(agent.state)}</dd></div>
+            <div><dt>Current activity</dt><dd>{workDescription(displayed??agent)}</dd></div>
             <div>
               <dt>City Credits</dt>
-              <dd>{credits(agent.credits)} CC</dd>
+              <dd>{credits(displayed?.credits??agent.credits)} CC</dd>
             </div>
             <div>
               <dt>Verified tasks</dt>
-              <dd>{agent.verifiedTasks}</dd>
+              <dd>{displayed?.verifiedTasks??agent.verifiedTasks}</dd>
             </div>
             <div>
               <dt>Contribution points</dt>
-              <dd>{agent.points}</dd>
+              <dd>{displayed?.points??agent.points}</dd>
             </div>
             <div>
               <dt>Daily budget</dt>
@@ -806,7 +815,7 @@ export function AgentPanel({
             <div>
               <dt>Cargo</dt>
               <dd>
-                {Object.entries(agent.cargo)
+                {Object.entries(displayed?.work?.cargo??agent.cargo)
                   .map(([k, v]) => `${v} ${k}`)
                   .join(", ") || "Empty"}
               </dd>
@@ -830,6 +839,7 @@ export function AgentPanel({
               checks protect agent controls.
             </p>
           )}
+          <p className="small">Resource preferences: {agent.strategy.preferredResources.join(", ")||"Any permitted resource"} · earned {credits(agent.performance.creditsEarned)} simulated CC</p>
           <h3>Decision log</h3>
           {[
             ...new Map(

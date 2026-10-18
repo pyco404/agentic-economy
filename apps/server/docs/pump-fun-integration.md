@@ -1,6 +1,6 @@
 # Pump.fun Integration: Findings, Route, Trust Boundaries, Test Plan
 
-**Status (2026-10-14):** research complete and the route is designed. Verification, chain reads, mock-chain tests and treasury accounting are implemented. **Real launch-transaction building is NOT implemented, and launches are disabled outside demo mode** (`FEE_ROUTING_VERIFIED=false`) until the devnet test plan below passes.
+**Status (2026-10-18):** the SOL atomic builder, authenticated draft execution API, wallet-signing UI and strict confirmation/provenance checks are implemented behind default-off safe-network gates. The actual route passed on an isolated validator with cloned devnet programs; mainnet remains hard-disabled. Staging rollout, real Phantom and real Pinata acceptance remain blocked. See [Task 3 execution report](phase2-task3-execution.md) and [recorded local-chain evidence](evidence/pump-local-2026-10-18.json). The earlier research below remains relevant; its broader fee-distribution test plan is not claimed complete.
 
 ## 1. Sources checked
 
@@ -44,16 +44,16 @@ Program IDs (in `packages/shared/src/constants.ts`):
 4. **Treasury custody.** `PLATFORM_TREASURY` and `AGENT_REWARDS_TREASURY` must be **Squads multisig vault addresses** (or equivalent), never a server hot key. For SOL-quoted coins `distribute_creator_fees_v2` pays shareholders in lamports, so a system-owned vault PDA works as a recipient. Verify on devnet that the program accepts a PDA shareholder.
 5. **Quote assets.** USDC-quoted and pump-coin-quoted pairs pay creator fees in that token to the shareholders' ATAs (`initialize_ata`). MVP launches only SOL-quoted coins. The ledger already records `assetMint` per entry and never sums across assets.
 
-## 4. Our launch route (designed, not yet built)
+## 4. Implemented SOL launch route (default-off safe-network gates)
 
 One **atomic** v0 transaction prepared by the backend, partially signed by a fresh mint keypair, then signed and sent by the launcher's wallet:
 
 | # | Instruction | Purpose |
 |---|---|---|
-| 0 | ComputeBudget (limit + price) | landing |
+| 0 | ComputeBudget (600,000 unit limit, no priority-price instruction) | bounded compute |
 | 1 | `SystemProgram.transfer(launcher → PLATFORM_TREASURY, 50_000_000)` | fixed 0.05 SOL platform charge (100% platform) |
 | 2 | Pump `create_v2(name, symbol, uri, creator = launcher, is_mayhem_mode = false)`, holder-reward and cashback omitted | official token creation (Token-2022, 6 decimals) |
-| 3 | *(optional)* Pump `buy` initial purchase by the launcher | the launcher's own choice; unrelated to fees |
+| — | No initial purchase | trading/buy instructions are outside the implemented launch route |
 | 4 | Pump Fees `create_fee_sharing_config` (payer = launcher = creator) | creator → sharing-config PDA |
 | 5 | Pump Fees `update_fee_shares_v2([(AGENT_REWARDS_TREASURY, 6000), (PLATFORM_TREASURY, 4000)])` | locks 60/40; launcher 0%; admin revoked |
 
@@ -65,10 +65,7 @@ The backend never trusts the client's account of what happened. `POST /launches/
 - **recovery_needed:** the transaction succeeded (fee paid) but the `SharingConfig` is missing, not Active, has `admin_revoked = false`, or has shareholders other than exactly agent 6000 + platform 4000; or `bonding_curve.creator` ≠ the config PDA. The fee receipt is recorded, but **no community is registered**.
 - **confirmed:** the community is registered immutably, together with the platform launch-fee receipt, in one DB transaction.
 
-Fallback if the devnet tests show steps 4–5 cannot share a transaction with `create_v2` (size, compute, or the same-transaction account-initialisation rules):
-
-- **Option A (preferred):** two transactions, both prepared together. The launch stays `recovery_needed` until transaction 2 lands and `confirm` re-verifies. If the launcher never sends transaction 2, the coin is not a community. The 0.05 SOL was charged for a coin outside our route, so a **documented manual refund** from the platform multisig is owed (to be defined with legal before mainnet).
-- **Option B:** move the 0.05 SOL transfer into transaction 2, so the charge only happens when routing is locked. The trade-off is that a launcher could create a coin through us without paying, but such a coin never becomes a community, which matches the product rules.
+The atomic route fits with address-lookup compression and passed local program execution. If a configured lookup table cannot compress a particular preparation below 1,232 bytes, preparation fails before signing. The implementation does **not** silently split the platform charge and creation into separate transactions. Any future multi-transaction settlement design needs independent verification and approval.
 
 ## 5. Devnet test plan (gate for `FEE_ROUTING_VERIFIED=true`)
 
@@ -81,7 +78,7 @@ Run with funded devnet wallets and two Squads devnet vaults as treasuries. Recor
 5. Push the coin through graduation (synthetic migration on devnet if needed). Trade on PumpSwap, then sweep, `transfer_creator_fees_to_pump_v2` and distribute. Expect the same 60/40 and successful ingestion.
 6. Failure paths on devnet: expired blockhash → client re-prepares; wrong fee amount → `failed`; a tampered shareholder list → `recovery_needed`.
 7. Re-run `verifyLaunch` decoders against real account data (BondingCurve `creator` offset 49).
-8. Only then set `FEE_ROUTING_VERIFIED=true` on devnet. Mainnet additionally requires the reviews in spec §8.10 (audit as appropriate, legal review of fee-funded agent compensation, Pump.fun terms review).
+8. Only then set `FEE_ROUTING_VERIFIED=true` on devnet. Mainnet remains hard-disabled in this release; the reviews in spec §8.10 and separate explicit approval are still required before any future mainnet implementation.
 
 ## 6. What exists in code today
 
@@ -89,8 +86,8 @@ Run with funded devnet wallets and two Squads devnet vaults as treasuries. Recor
 |---|---|---|
 | Program IDs, Anchor discriminators, PDAs, `SharingConfig`/`BondingCurve` decoders | `src/chain/pump.ts` | done; unit-tested on encoded layouts |
 | Launch verification rules | `src/chain/verify.ts` | done; tested with mock chain (success, tx failed, wrong fee, missing config, launcher share, admin not revoked, wrong mint) |
-| RPC reads: transactions, accounts, Token-2022 balances, signature listing | `src/chain/solana.ts` | done; **not yet exercised against a live cluster** |
-| Launch transaction **builder** | `src/chain/solana.ts` | **not implemented**: returns `feature_disabled` |
+| RPC reads: transactions, accounts, Token-2022 balances, signature listing | `src/chain/solana.ts` | transaction/account verification exercised on the isolated local validator; public-chain release acceptance remains pending |
+| Launch transaction **builder** | `src/chain/solana.ts`, `src/chain/pump-builder.ts` | implemented using SDK 4.1.0; explicit safe-genesis/lookup/simulation gates; disabled by default |
 | Creator-fee indexer and finality/reversal reconciler | `src/services/indexer.ts`, `src/services/treasury.ts` | done; mock-chain tested; runs every 30 s outside demo |
 | Append-only ledger, platform-only launch fees | `src/store/*` | done; Postgres triggers + CHECK tested |
 

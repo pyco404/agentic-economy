@@ -50,7 +50,7 @@ test("procedural city, navigation, selection, growth and draft boundaries", asyn
   await expect(page.getByRole("table")).toBeVisible();
   await page.getByRole("link", { name: "Treasury", exact: true }).click();
   await expect(page.getByText("No confirmed receipts")).toBeVisible();
-  await page.getByRole("link", { name: "Launchpad", exact: true }).click();
+  await page.getByRole("link", { name: "Launch", exact: true }).click();
   await page.getByLabel("Token name").fill("Test Community");
   await page.getByLabel("Symbol", { exact: true }).fill("TEST");
   await page.getByRole("button", { name: "Review draft" }).click();

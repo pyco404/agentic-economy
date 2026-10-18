@@ -4,6 +4,7 @@ import { DraftReview, LaunchpadCapabilities, SavedLaunchDraft, launchpadPaths, t
 import { jsonRequest, launchpadApiOrigin, launchpadRequest, useWalletSession } from '../api/walletSession';
 import { useDraftField } from '../navigation/drafts';
 import { prepareLaunchDraft, type PreparationStage } from '../api/prepareLaunchDraft';
+import { LaunchExecution } from './LaunchExecution';
 import { LaunchLogoUpload } from './LaunchLogoUpload';
 import { LaunchQuotePicker } from './LaunchQuotePicker';
 import { PageHeading } from './Pages';
@@ -108,8 +109,8 @@ export function LaunchWorkspace() {
    {review&&<section className="launch-review" aria-label="Token review"><h3>Review your token</h3>
     {review.draft.image&&<img src={review.draft.image.gatewayUrl} alt="Token logo"/>}
     <h4>{review.draft.fields.name} ({review.draft.fields.symbol})</h4><p>{review.draft.fields.description}</p>
-    <dl className="fee-list"><div><dt>Trading pair</dt><dd>{review.draft.fields.symbol}/SOL</dd></div><div><dt>Creator wallet</dt><dd><code className="ui-select-text">{review.draft.wallet}</code></dd></div><div><dt>Planned launch charge</dt><dd>{review.launchChargeSol} SOL · not charged</dd></div></dl>
-    <p>Your token details and logo are ready. No token has been launched.</p><button className="secondary wide" disabled>Token launch unavailable</button>
+    <dl className="fee-list"><div><dt>Trading pair</dt><dd>{review.draft.fields.symbol}/SOL</dd></div><div><dt>Creator wallet</dt><dd><code className="ui-select-text">{review.draft.wallet}</code></dd></div><div><dt>{review.launchEnabled?"Platform launch charge":"Planned launch charge"}</dt><dd>{review.launchChargeSol} SOL{!review.launchEnabled&&" · not charged"}</dd></div></dl>
+    <p>{review.launchEnabled?"Token details and logo are prepared. Launch status is shown below.":"Your token details and logo are ready. No token has been launched."}</p><>{review.launchEnabled&&review.readyForNextMilestone?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft}/>:<button className="secondary wide" disabled>Token launch unavailable</button>}</>
    </section>}
    <details className="launch-advanced"><summary>Manage drafts &amp; technical details</summary>
     {owner&&<p className="small ui-select-text">Verified creator: {owner}</p>}

@@ -137,7 +137,7 @@ function LocalLaunchpad() {
               placeholder="What will your community build?"
             />
           </label>
-          <LaunchLogoUpload name={name} symbol={symbol} description={description} quoteAsset={quoteAsset}
+          <LaunchLogoUpload selectionOnly automaticMetadata={false} name={name} symbol={symbol} description={description} quoteAsset={quoteAsset}
             imageUrl={imageUrl} onImage={(uri) => { setImageUrl(uri); setReview(false); }} />
           <details className="launch-advanced">
             <summary>Advanced image and metadata settings</summary>

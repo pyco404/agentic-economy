@@ -1,5 +1,5 @@
 import { AGENT_TREASURY_CREATOR_FEE_BPS, PLATFORM_TREASURY_CREATOR_FEE_BPS } from "@agentic-economy/shared";
-import { sharingConfigPda } from "../chain/pump.js";
+import { PUMP_IX, sharingConfigPda } from "../chain/pump.js";
 import type { ChainGateway } from "../chain/types.js";
 import type { Coordinator, Lease } from "../coord/types.js";
 import { publishDurable } from "../roles/stream.js";
@@ -17,6 +17,7 @@ import type { TreasuryService } from "./treasury.js";
  */
 export class TreasuryIndexer {
   private cursors = new Map<string, string | null>();
+  private scans = new Map<string,{head:string|null;before?:string;until:string|null}>();
 
   constructor(
     private readonly chain: ChainGateway,
@@ -32,18 +33,27 @@ export class TreasuryIndexer {
     return Promise.all(entries.map((e) => publishDurable(this.coord, `treasury:${e.id}`, "treasury.updated", 0, { entry: e })));
   }
 
-  async runOnce(): Promise<number> {
+  async runOnce(heartbeat:()=>Promise<void>=async()=>{}): Promise<number> {
     let inserted = 0;
     const communities = await this.store.allCommunities();
     for (const address of this.addresses) {
-      const sigs = await this.chain.listSignaturesForAddress(address, this.cursors.get(address) ?? null, 100);
-      if (sigs.length) this.cursors.set(address, sigs[0]!);
-      for (const sig of sigs.reverse()) {
-        const tx = await this.chain.getTransaction(sig);
-        if (!tx) continue;
-        const res = await this.treasury.ingestCreatorFeeDistribution(tx, communities);
-        await this.publish(res.inserted);
-        inserted += res.inserted.length;
+      let scan=this.scans.get(address);
+      if(!scan){scan={head:null,until:this.cursors.get(address)??null};this.scans.set(address,scan);}
+      // Bound work per iteration without skipping a backlog larger than one RPC page.
+      // Advance a page only after every available receipt was processed successfully.
+      for(let page=0;page<10;page++){
+        const sigs=await this.chain.listSignaturesForAddress(address,scan.until,100,scan.before);
+        if(sigs.length&&!scan.head)scan.head=sigs[0]!;
+        for(const [index,sig] of [...sigs].reverse().entries()){
+          if(index%10===0)await heartbeat();
+          const tx=await this.chain.getTransaction(sig);
+          if(!tx)throw new Error(`Treasury transaction unavailable; cursor retained: ${sig}`);
+          const res=await this.treasury.ingestCreatorFeeDistribution(tx,communities);
+          if(!res.accepted&&tx.instructions.some(i=>i.discriminatorHex===PUMP_IX.distributeCreatorFeesV2))this.log.warn({signature:sig,reason:res.reason},'creator-fee evidence not credited');
+          await this.publish(res.inserted);inserted+=res.inserted.length;
+        }
+        if(sigs.length<100){if(scan.head)this.cursors.set(address,scan.head);this.scans.delete(address);break;}
+        scan.before=sigs.at(-1)!;
       }
     }
     const reconciled = await this.treasury.reconcilePending(this.chain);
@@ -113,7 +123,7 @@ export class IndexerWorker {
         this.log.info({ epoch: this.lease.epoch }, "acquired indexer lease");
       }
       await this.lease!.heartbeat();
-      this.metrics.inserted += await this.indexer.runOnce();
+      this.metrics.inserted += await this.indexer.runOnce(()=>this.lease!.heartbeat());
       if (this.runs++ % 10 === 0) {
         this.metrics.driftChecks += 1;
         await this.indexer.checkRoutingDrift();

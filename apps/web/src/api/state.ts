@@ -22,7 +22,7 @@ export function mergeDashboard(
     return existing &&
       (current.agentTicks?.[a.id] ?? 0) >
         (incoming.agentTicks?.[a.id] ?? incoming.stats.tick)
-      ? { ...a, pos: existing.pos, state: existing.state }
+      ? { ...a, ...existing }
       : a;
   });
   const byCoord = new Map(
@@ -40,7 +40,7 @@ export function mergeDashboard(
         ? incoming.stats
         : current.stats,
     agents,
-    agentTicks: { ...incoming.agentTicks, ...current.agentTicks },
+    agentTicks: Object.fromEntries(agents.map(a => [a.id, Math.max(incoming.agentTicks?.[a.id] ?? incoming.stats.tick, current.agentTicks?.[a.id] ?? 0)])),
     worldChunks: [...byCoord.values()],
     chunks: incoming.chunks
       ? [...byCoord.values()].map(worldChunkToVisual)
@@ -48,6 +48,7 @@ export function mergeDashboard(
     activities: uniqueById([...current.activities, ...incoming.activities])
       .sort((a, b) => b.seq - a.seq)
       .slice(0, 50),
+    receipts: incoming.receipts ?? current.receipts,
     actions: current.actions,
     cityActivity: current.cityActivity,
     streamTick: Math.max(current.streamTick ?? 0, incoming.stats.tick),
@@ -117,6 +118,7 @@ export function applyServerEvent(
           ticks[a.id] = event.tick;
           return {
             ...a,
+            ...(move.agent?.id === a.id ? move.agent : {}),
             pos: move.pos,
             state: move.state,
             status: move.state === "paused" ? "paused" : "active",

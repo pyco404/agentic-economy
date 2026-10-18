@@ -1,3 +1,4 @@
+import type { WorkPose } from "../api/agentWork";
 import * as THREE from "three";
 
 /** Three shared batches for the entire population; no per-citizen scene objects. */
@@ -38,6 +39,7 @@ export function createCitizens(capacity: number) {
       coat: string,
       carrying = false,
       interacting = false,
+      work?: WorkPose,
     ) {
       const bob = moving ? Math.abs(Math.sin(phase)) * 0.045 : interacting ? Math.sin(phase) * 0.01 : 0;
       const step = moving ? Math.sin(phase) * 0.48 : 0;
@@ -70,7 +72,7 @@ export function createCitizens(capacity: number) {
       // Sleeves share the torso batch; small faceted hands share the head batch.
       // Shoulder pivots keep wrists attached as arms swing or reach around a crate.
       for (let side = 0; side < 2; side++) {
-        const tilt = carrying ? -1.05 : interacting ? -0.4 + Math.sin(phase + side) * 0.12
+        const tilt = carrying ? -1.05 : interacting ? (work === "farm" ? -.95 : work === "bakery" ? -.8 : work === "maintenance" ? -.2 : -.5) + Math.sin(phase * (work === "mill" ? 1.4 : 1) + (work === "bakery" ? 0 : side)) * (work === "farm" ? .3 : .18)
           : (side === 0 ? -1 : 1) * step * 0.75;
         const shoulder = 0.88 + bob;
         const offset = side === 0 ? -0.23 : 0.23;

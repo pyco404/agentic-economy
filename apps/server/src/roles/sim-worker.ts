@@ -5,7 +5,7 @@ import type { AppConfig } from "../config.js";
 import type { Coordinator, LeaderSession, StreamDraft } from "../coord/types.js";
 import { SimEngine, createInitialState, hashState, AGENT_SPEED } from "../sim/engine.js";
 import type { LoggedCommand, TickOutput } from "../sim/types.js";
-import { cellCenter, marketQuotes } from "../sim/view.js";
+import { cellCenter, marketQuotes, toAgentSummary } from "../sim/view.js";
 import { decorateCommunity, communityBranding } from "../services/community.js";
 import type { Store } from "../store/types.js";
 import { upgradeState } from "../sim/identity.js";
@@ -193,10 +193,14 @@ export class SimWorker {
     const tick = out.tick;
     const state = this.engine!.state;
     const drafts: StreamDraft[] = [];
-    if (out.moves.length)
+    // Presence/progress must continue updating while an agent works in place.
+    // This publishes a read model only; the engine remains the sole economic writer.
+    const changed = new Set(out.moves.map((m) => m.id));
+    const visible = state.agentOrder.map((id) => state.agents[id]!).filter((a) => changed.has(a.id) || a.taskId !== null);
+    if (visible.length)
       drafts.push(
         streamDraft(`sim:${tick}:moved`, "agent.moved", tick, {
-          moves: out.moves.map((m) => ({ id: m.id, pos: cellCenter(m.cell), state: m.activity, target: m.target, speed: AGENT_SPEED })),
+          moves: visible.map((a) => ({ id: a.id, pos: cellCenter(a.cell), state: a.status === "paused" ? "paused" as const : a.activity, target: a.target, speed: AGENT_SPEED, agent: toAgentSummary(state, a) })),
         }),
       );
     for (const a of out.actions) drafts.push(streamDraft(`sim:action:${a.id}`, "agent.action", tick, { action: a }));

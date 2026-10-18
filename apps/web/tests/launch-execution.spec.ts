@@ -1,0 +1,47 @@
+import {test,expect} from '@playwright/test';
+import {AddressLookupTableAccount,Keypair,VersionedTransaction} from '@solana/web3.js';
+import bs58 from 'bs58';
+import nacl from 'tweetnacl';
+import {buildPumpLaunch,pumpLaunchInstructions,validateSignedPumpLaunch} from '../../server/src/chain/pump-builder';
+import {sharingConfigPda} from '../../server/src/chain/pump';
+const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
+test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
+test('safe-network signing UI handles rejection and verified confirmation (mock RPC, real transaction signatures)',async({page})=>{
+ test.setTimeout(180000);await page.setViewportSize({width:390,height:844});
+ const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let reject=true,signs=0,preparations=0,submissions=0;
+ let launch:Record<string,unknown>|undefined,prepared='';
+ await page.exposeFunction('__signMessage',(bytes:number[])=>Array.from(nacl.sign.detached(Uint8Array.from(bytes),creator.secretKey)));
+ await page.exposeFunction('__signTransaction',(bytes:number[])=>{signs++;if(reject)throw new Error('Launch signature rejected by user');const tx=VersionedTransaction.deserialize(Uint8Array.from(bytes));tx.sign([creator]);return Array.from(tx.serialize());});
+ await page.addInitScript(wallet=>{
+  const w=window as unknown as {__signMessage(bytes:number[]):Promise<number[]>;__signTransaction(bytes:number[]):Promise<number[]>;phantom:unknown};
+  w.phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async(bytes:Uint8Array)=>({signature:new Uint8Array(await w.__signMessage(Array.from(bytes)))}),signTransaction:async(tx:{serialize():Uint8Array})=>{const signed=new Uint8Array(await w.__signTransaction(Array.from(tx.serialize())));return{serialize:()=>signed};},disconnect:async()=>{}}};
+ },wallet);
+ await page.route('**/api/v1/launchpad/capabilities',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:true}});});
+ await page.route(/\/launchpad\/drafts\/[^/]+\/review$/,async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:true}});});
+ await page.route(/\/launchpad\/drafts\/[^/]+\/launch$/,async route=>{
+  preparations++;const id=new URL(route.request().url()).pathname.split('/').at(-2)!;
+  const d=await page.request.get(`${api}/api/v1/launchpad/drafts/${id}`).then(r=>r.json());
+  const mint=Keypair.generate(),platform=Keypair.generate().publicKey.toBase58(),agent=Keypair.generate().publicKey.toBase58();
+  const input={launcherWallet:wallet,mint:mint.publicKey.toBase58(),mintSecretKey:mint.secretKey,name:d.fields.name,symbol:d.fields.symbol,uri:d.metadata.ipfsUri,platformTreasury:platform,agentRewardsTreasury:agent};
+  const instructions=await pumpLaunchInstructions(input),table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses:[...new Map(instructions.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()]}});
+  prepared=(await buildPumpLaunch(input,Keypair.generate().publicKey.toBase58(),[table])).transaction;
+  const now=new Date().toISOString();launch={id:'lch_BrowserExecutionTest',mode:'devnet',status:'awaiting_signature',launcherWallet:wallet,draft:{...d.fields,metadataUri:d.metadata.ipfsUri,imageUri:d.image.gatewayUrl},mint:input.mint,feeSharingConfig:sharingConfigPda(input.mint),fees:{platformLaunchFeeLamports:'50000000',platformTreasury:platform,estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16500000',launcherCreatorFeeBps:0,creatorFeeSplit:{agentRewardsTreasury:agent,agentRewardsBps:6000,platformTreasury:platform,platformBps:4000},notes:[]},execution:{draftId:id,draftVersion:d.version,transaction:prepared,lastValidBlockHeight:100000,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',network:'devnet',quoteAsset:'SOL',platformOrigin:'PLATFORM',initiator:'HUMAN'},signature:null,slot:null,communityId:null,errors:[],history:[{status:'awaiting_signature',at:now}],createdAt:now,updatedAt:now};
+  await route.fulfill({json:{launch,transaction:prepared,demoTransaction:false,lastValidBlockHeight:100000}});
+ });
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/submit',async route=>{
+  submissions++;const checked=await validateSignedPumpLaunch(prepared,route.request().postDataJSON().transaction);launch={...launch,status:'submitted',signature:checked.signature};await route.fulfill({json:{launch}});
+ });
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest',route=>route.fulfill({json:{launch:{...launch,status:'confirmed',slot:1234,communityId:'com_BrowserExecutionTest'}}}));
+ await page.route('https://gateway.pinata.cloud/ipfs/**',route=>route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')}));
+ await page.goto(site!+'/launchpad?source=backend');await expect(page.getByLabel('Token name',{exact:true})).toBeVisible({timeout:30000});
+ await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Review token',exact:true})).toBeVisible();await page.getByLabel('Token name',{exact:true}).fill('Browser Signature Test');await page.getByLabel('Symbol',{exact:true}).fill('BST');
+ // Use the known validated image fixture (no genuine Pinata invocation).
+ await page.getByLabel('Token logo file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')});
+ await page.getByRole('button',{name:'Review token',exact:true}).click();await page.getByRole('button',{name:'Review launch fees',exact:true}).click();
+ const execution=page.getByRole('region',{name:'Launch execution'});await expect(execution).toContainText('0.05 SOL');expect(signs).toBe(0);expect(submissions).toBe(0);
+ await page.getByRole('button',{name:'Sign launch transaction',exact:true}).click();await expect(execution.getByRole('alert')).toContainText('rejected');expect(submissions).toBe(0);
+ reject=false;await page.getByRole('button',{name:'Sign launch transaction',exact:true}).click();await page.getByRole('button',{name:'Check launch status',exact:true}).click();await expect(execution).toContainText('Token creation verified');
+ expect(preparations).toBe(1);expect(submissions).toBe(1);expect(signs).toBe(2);expect(bs58.decode(String(launch!.signature))).toHaveLength(64);
+ await page.screenshot({path:'artifacts/launch-execution-mocked-mobile.png',fullPage:true});
+});

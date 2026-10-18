@@ -1,3 +1,4 @@
+import { bridgeSurface } from "./bridgeSurface";
 import * as THREE from "three";
 import { generateBuilding, type Part } from "./geometry";
 import type { ChunkVisual } from "./layout";
@@ -26,7 +27,7 @@ export function planStreets(chunks: ChunkVisual[], seed: number): StreetPlan {
     for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
       const key = cellKey(chunk.x * size + x, chunk.z * size + z);
       terrain.set(key, chunk.terrain?.[z * size + x] ?? "g");
-      levels.set(key, Number(chunk.elevation?.[z * size + x] ?? 0) * 0.08); owners.set(key, chunk.id);
+      levels.set(key, bridgeSurface(chunks).level(chunk.x * size + x, chunk.z * size + z)); owners.set(key, chunk.id);
     }
     for (const b of chunk.buildings) for (const part of generateBuilding(b)) {
       const bottom = part.position[1] - part.scale[1] / 2, top = bottom + part.scale[1];

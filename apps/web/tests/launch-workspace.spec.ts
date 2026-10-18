@@ -15,9 +15,15 @@ type TestWalletWindow=Window & {
 };
 const origin=process.env.LAUNCH_WORKSPACE_URL;
 test.skip(!origin,'Requires isolated authenticated API with test-only Pinata transport; never run a live upload implicitly.');
-for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`authenticated draft → logo → metadata → persisted review at ${viewport.width}px`,async({page})=>{
+for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:844,mode:'normal'},{width:820,height:1000,mode:'unavailable'},{width:1024,height:900,mode:'retry'}])test(`authenticated draft → logo → metadata → persisted review (${viewport.mode}) at ${viewport.width}px`,async({page})=>{
  test.setTimeout(180000);await page.setViewportSize(viewport);
  const site=viewport.width<700?origin!.replace('127.0.0.1','localhost'):origin!;
+ if(viewport.mode==='unavailable')await page.route('**/api/v1/launchpad/capabilities',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),uploads:false}});});
+ const uploadKeys:string[]=[],metadataKeys:string[]=[];
+ if(viewport.mode==='retry'){
+  await page.route(/\/launchpad\/drafts\/[^/]+\/logo\?/,async route=>{uploadKeys.push(route.request().headers()['idempotency-key']??'');if(uploadKeys.length===1)await route.fulfill({status:503,json:{error:{message:'Logo upload interrupted. Please try again.'}}});else await route.continue();});
+  await page.route(/\/launchpad\/drafts\/[^/]+\/metadata$/,async route=>{metadataKeys.push(route.request().headers()['idempotency-key']??'');if(metadataKeys.length===1)await route.fulfill({status:503,json:{error:{message:'Pinata metadata unavailable'}}});else await route.continue();});
+ }
  const key=nacl.sign.keyPair(),wallet=bs58.encode(key.publicKey);let signing=0;
  await page.route('https://gateway.pinata.cloud/ipfs/**',route=>route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')}));
  await page.exposeFunction('__aecoSign',async(bytes:number[])=>{
@@ -55,21 +61,40 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
  const writes:string[]=[];const watch=(r:import('@playwright/test').Request)=>{if(r.method()!=='GET'&&/launchpad\/drafts/.test(r.url()))writes.push(r.url());};page.on('request',watch);
  await page.getByLabel('Token name',{exact:true}).fill('Prepared before connection');
  await page.getByLabel('Token logo file').setInputFiles({name:'before-connect.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')});
- await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Upload to IPFS',exact:true})).toBeDisabled();
+ await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Upload to IPFS',exact:true})).toHaveCount(0);
  await page.screenshot({path:`artifacts/launch-disconnected-${viewport.width}.png`,fullPage:true});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
  await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Prepared before connection');await expect(page.getByAltText('Token logo preview')).toBeVisible();expect(writes).toEqual([]);page.off('request',watch);
- await expect(page.getByText(`Verified creator: ${wallet}`)).toBeVisible();expect(signing).toBe(1);
+ await expect(page.getByRole('button',{name:'Review token',exact:true})).toBeVisible();expect(signing).toBe(1);
  expect(await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoSigningKind)).toBe(viewport.width>700?'standard':'injected');
- await page.getByLabel('Token name',{exact:true}).fill('Moss Community');await page.getByLabel('Symbol',{exact:true}).fill('MOSS');await page.getByRole('textbox',{name:'Description',exact:true}).fill('A genuine backend-persisted draft.');await page.getByRole('button',{name:'Create draft',exact:true}).click();await expect(page.getByText('Draft saved to the backend.')).toBeVisible();await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Upload to IPFS',exact:true})).toBeEnabled();
- await page.getByLabel('Token logo file').setInputFiles({name:'logo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')});
- await expect(page.getByAltText('Token logo preview')).toBeVisible();await page.getByRole('button',{name:'Upload to IPFS',exact:true}).click();await expect(page.getByText('Logo uploaded and verified. No token launched.')).toBeVisible({timeout:30000});
- await page.getByRole('button',{name:'Generate metadata',exact:true}).click();await expect(page.getByText('Metadata pinned and saved by the backend.')).toBeVisible();await page.getByRole('button',{name:'Review saved draft',exact:true}).click();await expect(page.getByRole('heading',{name:'Backend draft review'})).toBeVisible();await expect(page.getByText('Draft assets are ready for the next milestone. Token launching remains disabled.')).toBeVisible();
+ const preparation:string[]=[];page.on('request',r=>{if(/launchpad\/drafts/.test(r.url()) && (r.method()!=='GET'||r.url().endsWith('/review')))preparation.push(`${r.method()} ${new URL(r.url()).pathname.split('/').slice(4).join('/')}`);});
+ await page.getByLabel('Token name',{exact:true}).fill('Moss Community');await page.getByLabel('Symbol',{exact:true}).fill('MOSS');await page.getByRole('textbox',{name:'Description',exact:true}).fill('A genuine backend-persisted draft.');
+ await page.getByRole('button',{name:'Review token',exact:true}).click();
+ if(viewport.mode==='unavailable'){
+  await expect(page.getByRole('status').filter({hasText:'Your draft is saved.'})).toContainText('Your draft is saved. Logo uploads are temporarily unavailable.');
+  expect(preparation.map(p=>p.split(' ')[0])).toEqual(['POST']);await expect(page.getByRole('region',{name:'Token review'})).toHaveCount(0);
+  await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Review token',exact:true})).toBeEnabled();
+  expect(await page.locator('main').innerText()).not.toMatch(/Pinata|IPFS|Generate metadata|Upload to IPFS/);
+  await page.screenshot({path:'artifacts/launch-preparation-unavailable.png',fullPage:true});expect(financial).toEqual([]);expect(errors).toEqual([]);return;
+ }
+ if(viewport.mode==='retry'){
+  await expect(page.getByRole('alert')).toContainText('Logo upload interrupted');await page.getByRole('button',{name:'Review token',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('Your token assets could not be prepared');await page.getByRole('button',{name:'Review token',exact:true}).click();
+ }
+ const review=page.getByRole('region',{name:'Token review'});
+ await expect(review).toContainText('Your token details and logo are ready.',{timeout:30000});await expect(review).toContainText(wallet);
+ await expect(page.getByRole('button',{name:'Generate metadata',exact:true})).toHaveCount(0);
+ expect(preparation.map(p=>p.split(' ')[0])).toEqual(viewport.mode==='retry'?['POST','POST','POST','POST','POST','GET']:['POST','POST','POST','GET']);
+ expect(preparation[1]).toMatch(/\/logo$/);
+ if(viewport.mode==='retry'){expect(uploadKeys).toHaveLength(2);expect(uploadKeys[0]).toBeTruthy();expect(uploadKeys[1]).toBe(uploadKeys[0]);expect(metadataKeys).toHaveLength(2);expect(metadataKeys[0]).toBeTruthy();expect(metadataKeys[1]).toBe(metadataKeys[0]);}else expect(preparation[2]).toMatch(/\/metadata$/);
  expect(await page.locator('main').evaluate(n=>n.scrollWidth<=n.clientWidth+1)).toBe(true);
  await page.screenshot({path:`artifacts/launch-workspace-review-${viewport.width}.png`,fullPage:true});
- await page.reload();await expect(page.getByText(`Verified creator: ${wallet}`)).toBeVisible();expect(signing).toBe(1);const select=page.getByLabel('Saved launch drafts');await expect(select).toContainText('Moss Community');await select.selectOption({label:'Moss Community'});await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
- await page.getByRole('button',{name:'Review saved draft',exact:true}).click();await expect(page.getByRole('heading',{name:'Backend draft review'})).toBeVisible();
- await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Save draft',exact:true}).click();await page.getByRole('button',{name:'Review saved draft',exact:true}).click();await expect(page.getByText('Generate metadata for the latest saved details')).toBeVisible();
+ await page.reload();await expect(page.getByRole('button',{name:'Review token',exact:true})).toBeVisible();expect(signing).toBe(1);
+ await page.getByText('Manage drafts & technical details',{exact:true}).click();await expect(page.getByText(`Verified creator: ${wallet}`)).toBeVisible();
+ const select=page.getByLabel('Saved launch drafts');await expect(select).toContainText('Moss Community');await select.selectOption({label:'Moss Community'});await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
+ await page.getByText('Manage drafts & technical details',{exact:true}).click();
+ const before=preparation.length;await page.getByRole('button',{name:'Review token',exact:true}).click();await expect(review).toBeVisible();expect(preparation.slice(before).map(p=>p.split(' ')[0])).toEqual(['GET']);
+ await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Review token',exact:true}).click();await expect(review).toContainText('Latest details');await expect(review).toContainText('Your token details and logo are ready.');
  // Wallet changes revoke the cookie session; drafts disappear immediately.
  await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoWalletChanged?.());
 

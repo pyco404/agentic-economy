@@ -127,6 +127,18 @@ export class LaunchService {
     return { launch, transaction: built.transaction, demoTransaction: built.demo, lastValidBlockHeight: built.lastValidBlockHeight };
   }
 
+  /** Bind recovery reads to the network persisted with the prepared message.
+   * A changed/misconfigured RPC must not expire or confirm another network's attempt.
+   */
+  private async assertPreparedNetwork(launch: TokenLaunch) {
+    if (!launch.execution) return;
+    let genesis: string | undefined;
+    try { genesis = await this.chain.getGenesisHash?.(); }
+    catch { throw new AppError("unavailable", "Launch network verification is unavailable. Your saved attempt is unchanged; retry checking it."); }
+    if (genesis !== launch.execution.genesisHash)
+      throw new AppError("unavailable", "Launch RPC network does not match the prepared attempt. Your saved attempt is unchanged.");
+  }
+
   /** Persist submission BEFORE broadcast: a lost RPC response remains recoverable. */
   async submit(wallet:string,id:string,signed:string):Promise<TokenLaunch>{
     this.assertEnabled();
@@ -138,6 +150,7 @@ export class LaunchService {
     let checked;try{checked=await validateSignedPumpLaunch(l.execution.transaction,signed);}catch{throw new AppError("bad_request","Wallet signatures or transaction message do not match the prepared launch");}
     if(l.signature&&l.signature!==checked.signature)throw new AppError("conflict","Another signature is bound to this launch");
     if(l.status==="confirmed"||l.status==="failed")return l;
+    await this.assertPreparedNetwork(l);
     if(await this.chain.getTransaction(checked.signature))return this.confirm(wallet,id,checked.signature);
     if(l.status==="expired")return l;
     if(this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
@@ -154,6 +167,7 @@ export class LaunchService {
   async refresh(wallet:string,id:string){
     const initial=await this.store.getLaunch(id);if(!initial)throw new AppError("not_found","Launch not found");const l=initial.launch;if(l.launcherWallet!==wallet)throw new AppError("forbidden","Only the creator can inspect this preparation");
     if(l.signature&&!['confirmed','failed','expired'].includes(l.status))return this.confirm(wallet,id,l.signature);
+    if(l.execution&&!l.signature)await this.assertPreparedNetwork(l);
     if(l.execution&&!l.signature&&this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
       const expired=this.transition(l,"expired");
       try{await this.store.updateLaunch(expired,initial.version);return expired;}catch(e){if(e instanceof ConflictError)return(await this.store.getLaunch(id))!.launch;throw e;}
@@ -193,7 +207,10 @@ export class LaunchService {
     const other = await this.store.findLaunchBySignature(signature);
     if (other && other.id !== launch.id) throw new AppError("conflict", "signature belongs to another launch");
 
+    await this.assertPreparedNetwork(launch);
     const [tx, routing] = await Promise.all([this.chain.getTransaction(signature), this.chain.getFeeRoutingState(launch.mint)]);
+    if (launch.execution && tx && tx.genesisHash !== launch.execution.genesisHash)
+      throw new AppError("unavailable", "Transaction evidence is from a different network. Confirmation remains pending.");
     const v = verifyLaunch(
       {
         launcherWallet: launch.launcherWallet,

@@ -1,3 +1,4 @@
+import {DraftFields as DraftFieldsSchema} from './shared';
 import type { z } from 'zod';
 import type { DraftFields, DraftReview, SavedLaunchDraft } from './shared';
 
@@ -19,6 +20,8 @@ export async function prepareLaunchDraft(input: {
 }, port: PreparationPort) {
  port.check();
  if (!input.fields.name.trim() || !input.fields.symbol.trim()) throw new Error('Enter a token name and symbol.');
+ const parsed=DraftFieldsSchema.safeParse(input.fields);if(!parsed.success)throw new Error(parsed.error.issues[0]?.message??'Check your token details.');
+ if(new TextEncoder().encode(input.fields.name.trim()).length>32||new TextEncoder().encode(input.fields.symbol.trim()).length>13)throw new Error('Token name or symbol exceeds the supported byte length.');
  let draft = input.draft;
  const keep = (value: SavedLaunchDraft) => { port.check(); draft = value; port.accept(value); return value; };
  if (!draft || JSON.stringify(draft.fields) !== JSON.stringify(input.fields)) {

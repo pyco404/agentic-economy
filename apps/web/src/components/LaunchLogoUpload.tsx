@@ -8,9 +8,9 @@ import { abortable, IpfsReference, LogoReference, LOGO_LIMITS, metadataKey, read
 // A file survives route changes in memory, never browser storage. Refresh needs reselection.
 let pending: { file: File; requestId: string; scope:string } | null = null;
 export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageUrl, onImage,
-  adapter = unavailableLaunchMedia, automaticMetadata=true, trustedImage=null, scope="local", maxBytes=LOGO_LIMITS.maxBytes }: {
+  adapter = unavailableLaunchMedia, automaticMetadata=true, trustedImage=null, scope="local", maxBytes=LOGO_LIMITS.maxBytes, selectionOnly=false, disabled=false, onFileChange }: {
   name: string; symbol: string; description: string; quoteAsset: string; imageUrl: string;
-  onImage: (uri: string) => void; adapter?: LaunchMediaAdapter; automaticMetadata?:boolean; trustedImage?:LogoReference|null; scope?:string; maxBytes?:number;
+  onImage: (uri: string) => void; adapter?: LaunchMediaAdapter; automaticMetadata?:boolean; trustedImage?:LogoReference|null; scope?:string; maxBytes?:number; selectionOnly?:boolean; disabled?:boolean; onFileChange?:(file:File|null)=>void;
 }) {
   const [stored, saveReference] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"logoReference", "");
   const [hint, saveHint] = useDraftField<string>((scope==="local"?"launchpad:":scope+":")+"pendingLogo", "");
@@ -49,14 +49,14 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
     // The stable serialized key includes every reviewed metadata input.
   }, [automaticMetadata, adapter, key, retry, saveMetadata, quoteAsset, metadataInput.imageUploadId, metadataInput.name, metadataInput.symbol]);
   const choose = async (candidate?: File) => {
-    if (!candidate) return;
+    if (!candidate || disabled) return;
     const version = ++operation.current; active.current?.abort(); busy.current = false;
     setState("validating"); setError("");
     try {
       await validateLogo(candidate,maxBytes);
       if (version !== operation.current) return;
       pending = { file: candidate, requestId: crypto.randomUUID(),scope }; setFile(candidate); saveHint(candidate.name);
-      saveReference(""); saveMetadata(""); onImage(""); setState("idle");
+      saveReference(""); saveMetadata(""); if (!selectionOnly) onImage(""); onFileChange?.(candidate); setState("idle");
     } catch (e) { if (version === operation.current) { setState("error"); setError(e instanceof Error ? e.message : "Unable to read this image."); } }
   };
   const upload = async () => {
@@ -76,33 +76,33 @@ export function LaunchLogoUpload({ name, symbol, description, quoteAsset, imageU
   };
   const remove = () => {
     operation.current++; active.current?.abort(); busy.current = false; pending = null; setFile(null);
-    saveHint(""); saveReference(""); saveMetadata(""); onImage(""); setState("idle"); setError("");
+    saveHint(""); saveReference(""); saveMetadata(""); onImage(""); onFileChange?.(null); setState("idle"); setError("");
     if (input.current) input.current.value = "";
   };
   return <section className="launch-logo" aria-labelledby="launch-logo-title">
     <h3 id="launch-logo-title">Token logo</h3>
     <div className="logo-dropzone" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void choose(event.dataTransfer.files[0]); }}>
       {preview || reference ? <img src={preview || reference!.gatewayUrl} alt="Token logo preview" /> : <ImagePlus size={30} aria-hidden="true" />}
-      <input ref={input} type="file" className="logo-file-input" aria-label="Token logo file" accept={LOGO_LIMITS.mimeTypes.join(",")}
+      <input ref={input} type="file" className="logo-file-input" aria-label="Token logo file" disabled={disabled} accept={LOGO_LIMITS.mimeTypes.join(",")}
         onChange={(event) => { void choose(event.target.files?.[0]); event.target.value = ""; }} />
-      <button type="button" className="secondary" onClick={() => input.current?.click()}>{file || reference ? "Replace image" : "Upload Token Logo"}</button>
+      <button type="button" className="secondary" disabled={disabled} onClick={() => input.current?.click()}>{file || reference ? "Replace image" : "Upload Token Logo"}</button>
       <p className="small muted">Drop an image here or browse. PNG, JPEG or WebP · up to {maxBytes / 1_000_000} MB.</p>
       {file && <span className="small">{file.name}</span>}
     </div>
     <div className="logo-actions">
-      {file && <button type="button" className="secondary" disabled={!adapter.available || state === "uploading" || state === "validating"} onClick={() => void upload()}><Upload size={14} /> {state === "error" ? "Retry upload" : "Upload to IPFS"}</button>}
-      {(file || reference || hint || imageUrl) && <button type="button" className="text-button" onClick={remove}><X size={14} /> Remove image</button>}
+      {file && !selectionOnly && <button type="button" className="secondary" disabled={!adapter.available || state === "uploading" || state === "validating"} onClick={() => void upload()}><Upload size={14} /> {state === "error" ? "Retry upload" : "Upload to IPFS"}</button>}
+      {(file || reference || hint || imageUrl) && <button type="button" className="text-button" disabled={disabled} onClick={remove}><X size={14} /> Remove image</button>}
       {state === "uploading" && <button type="button" className="text-button" onClick={() => active.current?.abort()}>Cancel upload</button>}
     </div>
     <div aria-live="polite" className="small logo-status">
       {state === "validating" && "Checking image content…"}
       {state === "uploading" && <><progress max={100} value={progress} aria-label="Logo upload progress" /> Uploading {Math.round(progress)}% · server verification follows</>}
-      {reference && <><span>{state === "success" ? "Logo uploaded and verified. No token launched." : "Saved IPFS logo reference. The backend must revalidate it before launch."}</span><code className="ui-select-text">{reference.ipfsUri}</code></>}
+      {reference && !selectionOnly && <><span>{state === "success" ? "Logo uploaded and verified. No token launched." : "Saved IPFS logo reference. The backend must revalidate it before launch."}</span><code className="ui-select-text">{reference.ipfsUri}</code></>}
       {!file && hint && !reference && <span>Select {hint} again to upload it. Image files are not stored in browser storage.</span>}
     </div>
     {error && <p role="alert" className="small">{error}</p>}
-    {!adapter.available && <p className="small muted">{adapter.unavailableReason}</p>}
-    {automaticMetadata && <div className="logo-metadata" aria-label="Metadata readiness">
+    {!selectionOnly && !adapter.available && <p className="small muted">{adapter.unavailableReason}</p>}
+    {!selectionOnly && automaticMetadata && <div className="logo-metadata" aria-label="Metadata readiness">
       <b>Metadata {prepared ? "prepared" : metadataState === "preparing" ? "preparing…" : "not ready"}</b>
       <p className="small muted">{prepared ? "Prepared for these token details. Backend review is required before any launch." : "The backend will prepare metadata automatically from your latest token details and verified logo. No manual JSON is needed."}</p>
       {prepared && <code className="ui-select-text">{prepared.ipfsUri}</code>}

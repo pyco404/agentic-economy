@@ -76,18 +76,23 @@ export function WalletSessionProvider({children}:{children:ReactNode}){
   document.addEventListener('keydown',trap);return()=>{document.removeEventListener('keydown',trap);previous?.focus();};
  },[dialog]);
  const login=async(wallet:WalletChoice)=>{
-  if(lock.current)return;lock.current=true;setBusy(true);setError('');const current=++epoch.current;
+  if(lock.current)return;lock.current=true;setBusy(true);setError('');const current=++epoch.current;let stopPending:(()=>void)|undefined;
   try{
    const address=await wallet.connect();
+   // Subscribe before signing: a pending approval must not authenticate an
+   // account that the user has already changed or disconnected.
+   if(current!==epoch.current)return;
+   stopPending=wallet.listen(()=>{invalidate();setError('Wallet changed during sign-in. Connect again.');});
    const challenge=await launchpadRequest('/api/v1/auth/challenge',ChallengeResponse,jsonRequest('POST',{wallet:address}));
+   if(current!==epoch.current)return;
    validateWalletChallenge(challenge,address,location.origin);
    const signature=await wallet.sign(new TextEncoder().encode(challenge.message));if(current!==epoch.current)return;
    const verified=await launchpadRequest(launchpadPaths.verify,WalletIdentity,jsonRequest('POST',{wallet:address,nonce:challenge.nonce,signature:bs58.encode(signature)}));
    if(current!==epoch.current){await launchpadRequest(launchpadPaths.logout,z.object({ok:z.literal(true)}),jsonRequest('POST',{}));return;}
    if(verified.wallet!==address)throw new Error('Authenticated wallet mismatch');
    try{sessionStorage.setItem("aeco:wallet-provider",wallet.name);}catch{/* Provider hint contains no secret. */}
-   active.current=wallet;unlisten.current?.();unlisten.current=wallet.listen(()=>{void logout();});setIdentity(verified);setDialog(false);
-  }catch(e){setError(e instanceof Error?e.message:'Connection or signature was rejected. Please retry.');}finally{lock.current=false;setBusy(false);}
+   stopPending?.();stopPending=undefined;active.current=wallet;unlisten.current?.();unlisten.current=wallet.listen(()=>{void logout();});setIdentity(verified);setDialog(false);
+  }catch(e){setError(e instanceof Error?e.message:'Connection or signature was rejected. Please retry.');}finally{stopPending?.();lock.current=false;setBusy(false);}
  };
  return <SessionContext.Provider value={{identity,busy,error,available,open:()=>{setWallets(installedWallets());setError('');setDialog(true);},logout}}>{children}{dialog&&<div className="wallet-dialog-backdrop" onClick={()=>{if(!busy)setDialog(false);}}><section role="dialog" aria-modal="true" aria-labelledby="wallet-title" className="surface wallet-dialog" onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(e.key==='Escape'&&!busy)setDialog(false);}}><button className="text-button" aria-label="Close wallet selection" onClick={()=>setDialog(false)} disabled={busy}>Close</button><h2 id="wallet-title">Connect your wallet</h2><p>Sign a message to authenticate. No transaction or fee.</p>{!available?<p>Wallet authentication is unavailable on this backend version. Please try later.</p>:wallets.length?wallets.map(w=><button key={w.name} className="secondary wide" disabled={busy} onClick={()=>void login(w)}>{busy?'Awaiting wallet approval…':w.name}</button>):<p>No supported wallet detected. Open this site in a Solana wallet’s in-app browser on mobile, or install a compatible browser wallet.</p>}{error&&<p role="alert">{error}</p>}</section></div>}</SessionContext.Provider>;
 }

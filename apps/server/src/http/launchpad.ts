@@ -1,6 +1,7 @@
+import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { DraftFields, SavedLaunchDraft, VerifyRequest, launchpadPaths } from '@agentic-economy/shared';
+import { DraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, launchpadPaths } from '@agentic-economy/shared';
 import type { AppContext } from '../context.js';
 import { hashToken } from '../services/auth.js';
 import { LaunchpadService } from '../services/launchpad.js';
@@ -24,7 +25,13 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  const hits=new Map<string,{n:number;until:number}>();
  const rate=(req:FastifyRequest,owner:string)=>{const k=`${owner}:${req.routeOptions.url}`,now=Date.now(),r=hits.get(k);if(!r||r.until<now){if(hits.size>10000)for(const [k,v]of hits)if(v.until<now)hits.delete(k);hits.set(k,{n:1,until:now+60000});}else if(++r.n>20)throw new AppError('forbidden','Too many requests. Retry in a minute.');};
  const mutation=async(req:FastifyRequest)=>{csrf(req);const owner=await wallet(req);rate(req,owner);return owner;};
- app.get(launchpadPaths.capabilities,async()=>({version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:false,quotes:{SOL:'draft',USDC:'planned',AECO:'future'}}));
+ // Match the published launch policy: no per-wallet launch count/cooldown.
+ // Bound concurrent execution work while retaining CSRF, wallet ownership,
+ // exact-message signatures, server-side idempotency and default-off gates.
+ let executionsInFlight=0;
+ const executionOwner=async(req:FastifyRequest)=>{csrf(req);return wallet(req);};
+ const execution=async<T>(work:()=>Promise<T>)=>{if(executionsInFlight>=4)throw new AppError('unavailable','Launch processing is busy. Retry the same attempt shortly.');executionsInFlight++;try{return await work();}finally{executionsInFlight--;}};
+ app.get(launchpadPaths.capabilities,async()=>({version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:ctx.config.pumpLaunch.enabled,quotes:{SOL:'draft',USDC:'planned',AECO:'future'}}));
  app.post(launchpadPaths.verify,async(req,reply)=>{csrf(req);rate(req,req.ip);const input=VerifyRequest.parse(req.body);const verified=await ctx.auth.verify(input.wallet,input.nonce,input.signature,req.headers.origin);reply.header('Cache-Control','no-store').header('Set-Cookie',cookie(verified.token,ctx.config.auth.sessionTtlSeconds));return verified.identity;});
  app.get(launchpadPaths.session,async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.auth.authenticate(`Bearer ${token(req)??''}`);});
  app.post(launchpadPaths.logout,async(req,reply)=>{csrf(req);if(token(req))await ctx.store.revokeSession(hashToken(token(req)!));reply.header('Set-Cookie',cookie('',0)).header('Cache-Control','no-store');return{ok:true};});
@@ -36,7 +43,23 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  app.delete(path,async(req)=>{const owner=await mutation(req),body=version.parse(req.body);await service.store.remove(owner,idOf(req),body.version);return{ok:true};});
  app.delete(path+'/logo',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);const draft=await service.store.get(owner,idOf(req));const next={...draft,image:null,metadata:null,version:draft.version+1,updatedAt:new Date().toISOString()};await service.store.save(next,body.version);return next;});
  app.post(path+'/metadata',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
- app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');return service.review(await wallet(req),idOf(req));});
+ app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const review=await service.review(await wallet(req),idOf(req));return {...review,launchEnabled:ctx.config.pumpLaunch.enabled&&review.readyForNextMilestone};});
+ // Execution consumes only a server-owned, latest-version draft and its pinned assets.
+ app.post(path+'/launch',async(req)=>{
+  const owner=await executionOwner(req),body=version.parse(req.body),id=idOf(req),requestKey=key(req);
+  if(!ctx.config.pumpLaunch.enabled)throw new AppError('feature_disabled','Safe-network launches are disabled');
+  return execution(()=>service.operation(owner,requestKey,'launch',{id,version:body.version},async()=>{
+   const review=await service.review(owner,id),d=review.draft;
+   if(d.version!==body.version)throw new AppError('conflict','Draft changed. Review it again before launching.');
+   if(!review.readyForNextMilestone||!d.image||!d.metadata)throw new AppError('bad_request','Save and prepare the token logo and metadata before launching');
+   const launchId='lch_'+createHash('sha256').update(`${owner}:${requestKey}`).digest('hex').slice(0,24);
+   return ctx.launches.prepare(owner,{name:d.fields.name,symbol:d.fields.symbol,description:d.fields.description,metadataUri:d.metadata.ipfsUri,imageUri:d.image.gatewayUrl,website:d.fields.website,twitter:d.fields.twitter,telegram:d.fields.telegram},{id,version:d.version,launchId});
+  }));
+ });
+ const launchPath='/api/v1/launchpad/launches/:launchId';
+ const launchId=(req:FastifyRequest)=>z.object({launchId:z.string().regex(/^lch_[A-Za-z0-9]+$/)}).parse(req.params).launchId;
+ app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');return{launch:TokenLaunch.parse(await ctx.launches.refresh(await wallet(req),launchId(req)))};});
+ app.post(launchPath+'/submit',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644)}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.submit(owner,launchId(req),body.transaction)))};});
  // The parser is scoped to image/octet-stream uploads. Authenticate before buffering any body.
  app.addContentTypeParser('application/octet-stream',{parseAs:'buffer',bodyLimit:ctx.config.pinata.maxBytes},(_req,body,done)=>done(null,body));
  app.route({method:'POST',url:path+'/logo',bodyLimit:ctx.config.pinata.maxBytes,

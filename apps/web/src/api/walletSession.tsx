@@ -3,7 +3,16 @@ import { getWallets } from '@wallet-standard/app';
 import bs58 from 'bs58';
 import { WalletIdentity, ChallengeResponse, LaunchpadCapabilities, launchpadPaths, type WalletIdentity as Identity } from './shared';
 import { z } from 'zod';
-export const launchpadApiOrigin=()=>String(import.meta.env.VITE_API_URL??'http://127.0.0.1:8787').replace(/\/$/,'');
+export function walletApiOrigin(configured:string,pageOrigin?:string){
+ const value=configured.replace(/\/$/,'');
+ if(!pageOrigin)return value;
+ const api=new URL(value),page=new URL(pageOrigin),local=['localhost','127.0.0.1'];
+ // Keep local authentication cookies same-site when a developer opens the
+ // equivalent loopback alias. Never rewrite a remote API or its protocol/port.
+ if(local.includes(api.hostname)&&local.includes(page.hostname)&&api.protocol===page.protocol){api.hostname=page.hostname;return api.toString().replace(/\/$/,'');}
+ return value;
+}
+export const launchpadApiOrigin=()=>walletApiOrigin(String(import.meta.env.VITE_API_URL??'http://127.0.0.1:8787'),typeof location==='undefined'?undefined:location.origin);
 export class SessionExpired extends Error{}
 export async function launchpadRequest<S extends z.ZodType>(path:string,schema:S,options:RequestInit={}):Promise<z.infer<S>>{
  const response=await fetch(launchpadApiOrigin()+path,{...options,credentials:'include',signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(60000)]):AbortSignal.timeout(60000)});
@@ -13,6 +22,12 @@ export async function launchpadRequest<S extends z.ZodType>(path:string,schema:S
  return schema.parse(body);
 }
 export const jsonRequest=(method:string,body:unknown,key?:string):RequestInit=>({method,headers:{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:JSON.stringify(body)});
+export function validateWalletChallenge(challenge:z.infer<typeof ChallengeResponse>,address:string,origin:string){
+ const lines=challenge.message.split('\n'),uri=lines.find(l=>l.startsWith('URI: '))?.slice(5);
+ const current=new URL(origin);
+ if(!uri||new URL(uri).origin!==current.origin||lines[0]!==`${current.host} wants you to sign in with your Solana account:`||lines[1]!==address||!lines.includes(`Nonce: ${challenge.nonce}`)||Date.parse(challenge.expiresAt)<=Date.now())
+  throw new Error(`Wallet sign-in must match this page (${current.origin}), including its port. Reload this page or use the configured website URL.`);
+}
 interface WalletChoice {name:string;connect():Promise<string>;sign(message:Uint8Array):Promise<Uint8Array>;disconnect():Promise<void>;listen(change:()=>void):()=>void;}
 interface Injected {publicKey?:{toBase58():string};connect():Promise<{publicKey:{toBase58():string}}>;signMessage(m:Uint8Array,encoding?:string):Promise<{signature:Uint8Array}>;disconnect():Promise<void>;on?(e:string,f:()=>void):void;removeListener?(e:string,f:()=>void):void;}
 export function installedWallets():WalletChoice[]{
@@ -65,8 +80,7 @@ export function WalletSessionProvider({children}:{children:ReactNode}){
   try{
    const address=await wallet.connect();
    const challenge=await launchpadRequest('/api/v1/auth/challenge',ChallengeResponse,jsonRequest('POST',{wallet:address}));
-   const lines=challenge.message.split('\n'),uri=lines.find(l=>l.startsWith('URI: '))?.slice(5);
-   if(!uri||new URL(uri).origin!==location.origin||![new URL(uri).host,new URL(uri).hostname].some(domain=>lines[0]===`${domain} wants you to sign in with your Solana account:`)||lines[1]!==address||!lines.includes(`Nonce: ${challenge.nonce}`)||Date.parse(challenge.expiresAt)<=Date.now())throw new Error('Authentication challenge origin, wallet or expiry is invalid');
+   validateWalletChallenge(challenge,address,location.origin);
    const signature=await wallet.sign(new TextEncoder().encode(challenge.message));if(current!==epoch.current)return;
    const verified=await launchpadRequest(launchpadPaths.verify,WalletIdentity,jsonRequest('POST',{wallet:address,nonce:challenge.nonce,signature:bs58.encode(signature)}));
    if(current!==epoch.current){await launchpadRequest(launchpadPaths.logout,z.object({ok:z.literal(true)}),jsonRequest('POST',{}));return;}

@@ -13,7 +13,7 @@ Agentic Economy is a procedural 3D city with a backend-authoritative simulated e
 | World | Procedural architecture, roads, animated water, railways, ambient transport, agent labels, inspection, camera controls, and a lake–river connector with bridges | Some newer terrain, boat, and navigation experiments remain outside the reviewed main release |
 | Agents and economy | Authoritative assignments, travel, workplace activity, production, deliveries, maintenance, receipts, and observable work progress | Agents currently use a deterministic utility planner, not a live LLM service |
 | Communities and Explore | Platform launch/community discovery, search, details, and available backend data | Demo records are labelled; unavailable market statistics and charts are not invented |
-| Launch workspace | Publicly visible form and logo picker; wallet message authentication; owned drafts; verified image upload and IPFS metadata when configured | Disconnected primary action is **Connect wallet**; saving/uploading needs authentication; transaction execution remains disabled |
+| Launch workspace | Publicly visible form and logo picker; wallet message authentication; owned drafts; verified image upload and IPFS metadata when configured | Disconnected primary action is **Connect wallet**; **Review token** saves details, uploads the logo, and prepares metadata automatically; transaction execution remains disabled |
 | Trading pairs | SOL draft selection | USDC execution is planned; optional AECO pairing is a future phase |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |
 
@@ -64,6 +64,8 @@ pnpm --filter @agentic-economy/web dev
 ```
 
 Open **http://localhost:5173/**. The World home is `/`; other pages open as overlays. A disconnected visitor can open Launch and prepare fields or preview a logo. **Connect wallet** opens wallet selection; authentication signs a message, not a payment or launch transaction.
+
+Once connected, **Review token** saves the latest details, uploads the selected logo, prepares metadata, and opens the review in one action. Draft management and technical references are available under **Manage drafts & technical details**. If uploads are unavailable, the draft is saved and a plain retry notice appears.
 
 The frontend defaults to the local API. If custom configuration is needed, create `apps/web/.env.local` using [apps/web/.env.example](apps/web/.env.example), without overwriting existing settings:
 

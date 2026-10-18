@@ -1,4 +1,5 @@
 import { WalletButton } from "./components/WalletButton";
+import { WorldLoading } from "./world/WorldLoading";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -58,12 +59,12 @@ import "./about.css";
 import { MobileNavigation } from "./components/MobileNavigation";
 import "./mobile-navigation.css";
 const pages = [
+  { id: "launchpad", label: "Launch", icon: Rocket },
   { id: "explore", label: "Explore", icon: Search },
   { id: "communities", label: "Communities", icon: Users },
   { id: "studio", label: "Agent Studio", icon: Blocks },
   { id: "economy", label: "Economy", icon: ChartNoAxesCombined },
   { id: "treasury", label: "Treasury", icon: ShieldCheck },
-  { id: "launchpad", label: "Launchpad", icon: Rocket },
 ] as const;
 export default function App() {
   useDraftUnloadGuard();
@@ -80,6 +81,7 @@ export default function App() {
     [explorer, setExplorer] = useState(false),
     [immersive, setImmersive] = useState(false),
     [ambientEnabled, setAmbientEnabled] = useState(true),
+    [worldReady, setWorldReady] = useState(false),
     [mobileWorld, setMobileWorld] = useState(() => window.matchMedia("(max-width: 700px)").matches),
     [activityCollapsed, setActivityCollapsed] = useState(() => window.matchMedia("(max-width: 700px)").matches),
     [regionMarkers, setRegionMarkers] = useState<
@@ -118,6 +120,7 @@ export default function App() {
   };
   const {
     data,
+    world,
     error,
     loading,
     status: streamStatus,
@@ -181,11 +184,12 @@ export default function App() {
     window.addEventListener("keydown", escape);
     return () => window.removeEventListener("keydown", escape);
   }, []);
-  const population = (data?.stats.activeAgents ?? 156) + growth,
-    seed = data ? numericSeed(data.bootstrap.seed) : WORLD_SEED;
+  const visualBootstrap=data?.bootstrap??world?.bootstrap;
+  const population = (data?.stats.activeAgents ?? (world?0:156)) + growth,
+    seed = visualBootstrap ? numericSeed(visualBootstrap.seed) : WORLD_SEED;
   const chunks = useMemo(
-    () => data?.chunks ?? generateWorld(seed, population),
-    [data?.chunks, seed, population],
+    () => data?.chunks ?? world?.chunks ?? generateWorld(seed, population),
+    [data?.chunks, world?.chunks, seed, population],
   );
   const buildings = useMemo(() => chunks.flatMap((c) => c.buildings), [chunks]);
   const focus = (b: BuildingVisual) => {
@@ -234,11 +238,12 @@ export default function App() {
     if (!go("world")) return;
     setAgentId(id); setSelected(null);
   };
-  const isDemo = data?.mode === "demo" || api.kind === "demo";
+  const isDemo = (data?.mode ?? world?.bootstrap.mode) === "demo" || api.kind === "demo";
   return (
     <div
       className="app"
       data-route={worldVisible ? "world" : page}
+      data-world-ready={(!data && !world) || worldReady}
       data-page={page}
       data-page-open={!worldVisible}
       data-source={api.kind === "demo" ? "fixtures" : "backend"}
@@ -312,15 +317,16 @@ export default function App() {
       </header>
       {menu && <MobileNavigation items={pages} active={worldVisible ? null : page} onNavigate={go} onClose={closeMenu}
         modeLabel={isDemo ? "Demo Mode" : `${data?.mode ?? "API"} · ${streamStatus}`} />}
-      {data && <div className="global-world-layer" data-testid="global-world" data-interactive={worldVisible}
+      {visualBootstrap && <div className="global-world-layer" data-testid="global-world" data-interactive={worldVisible}
         inert={!worldVisible} aria-hidden={!worldVisible}>
                   <City
                     ref={city}
+                    onReadyChange={setWorldReady}
                     touchPan={touchPan}
                     seed={seed}
                     population={population}
-                    chunks={data.chunks}
-                    agents={data.agents.map((a) => ({
+                    chunks={chunks}
+                    agents={(data?.agents ?? []).map((a) => ({
                       id: a.id,
                       name: a.name,
                       ownerWallet: a.ownerWallet ?? undefined,
@@ -338,7 +344,7 @@ export default function App() {
                     highlightBuildingIds={workplaceHighlights}
                     onFollowChange={setFollowingAgentId}
                     ambientEnabled={ambientEnabled}
-                    importantAgentIds={data.actions?.slice(0, 3).map((action) => action.agentId)}
+                    importantAgentIds={data?.actions?.slice(0, 3).map((action) => action.agentId)}
                     paused={paused || (!worldVisible && page === "treasury")}
                     interactive={worldVisible}
                     background={!worldVisible}
@@ -354,15 +360,15 @@ export default function App() {
                     }}
                     onMetrics={onMetrics}
                     onViewChange={subscribe}
-                    regions={data.bootstrap.regions}
+                    regions={visualBootstrap.regions}
                     onRegionMarkers={regionUpdate}
                     chunkCatalog={
-                      api.kind === "http" ? data.bootstrap.chunks : undefined
+                      api.kind === "http" ? visualBootstrap.chunks : undefined
                     }
                     onHover={hovered}
-                    tickMs={data.bootstrap.sim.tickMs}
-                    activity={data.cityActivity}
-                    agentTicks={data.agentTicks}
+                    tickMs={visualBootstrap.sim.tickMs}
+                    activity={data?.cityActivity}
+                    agentTicks={data?.agentTicks}
                     inspection={!worldVisible ? null : selectedNow ? { id: selectedNow.id, x: selectedNow.x, z: selectedNow.z }
                       : inspectedAgent ? { id: inspectedAgent.id, x: inspectedAgent.pos.x,
                           z: inspectedAgent.pos.y } : null}
@@ -383,8 +389,14 @@ export default function App() {
           <About onNavigate={go} roadmapRequest={roadmapRequest} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />
           <footer className="page-footer"><span>Agentic Economy</span><span>One living world. Every page built above it.</span></footer>
         </div>}
-        {(page !== "about" || worldVisible) && (loading ? (
-          <div className="loading" role="status">
+        {(page !== "about" || worldVisible) && (worldVisible && world && !data ? (
+          <div className="world-summary-pending" role="status">
+            <h1>A city in motion.</h1>
+            <p>{error ? "The city is ready. Dashboard information is temporarily unavailable." : "The city is ready. Loading dashboard information…"}</p>
+            {error && <button onClick={refresh}>Retry dashboard</button>}
+          </div>
+        ) : loading ? (
+          worldVisible ? <WorldLoading /> : <div className="loading" role="status">
             {!worldVisible && <OverlayClose className="page-loading-close" onClose={closePage} />}
             <span className="loading-dot" />
             <h2>Growing Genesis…</h2>

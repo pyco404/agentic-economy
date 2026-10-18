@@ -5,6 +5,9 @@ import launchFixture from "../../../../packages/shared/fixtures/launch.json";
 import communityFixture from "../../../../packages/shared/fixtures/communities.json";
 export interface VerifiedToken { community: Community; launch: TokenLaunch }
 export function isVerifiedPlatformToken(c: Community, launch: TokenLaunch, mode: Dashboard["mode"]) {
+  if(launch.execution){const p=c.provenance,e=launch.execution;
+    if(!p||p.platformOrigin!==e.platformOrigin||p.initiator!==e.initiator||p.network!==e.network||p.quoteAsset!==e.quoteAsset||c.creatorWallet!==launch.launcherWallet||c.metadataUri!==launch.draft.metadataUri)return false;
+  }
   return launch.status === "confirmed" && launch.mode === mode && launch.id === c.launchId &&
     launch.communityId === c.id && launch.mint === c.mint && launch.signature !== null &&
     launch.signature === c.launchSignature;

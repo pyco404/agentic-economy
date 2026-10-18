@@ -1,0 +1,48 @@
+{
+  "network": "public-devnet",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "database": "aeco_launch_execution_20261018_test",
+  "walletSigner": "automated Wallet Standard, not actual Phantom",
+  "pinata": "actual service",
+  "publicTestSetup": {
+    "lookupTable": "HndqH8MVHeUeEMM93MxFVEWB2Eprw7xkovd9S9iPNcLt",
+    "platformTreasury": "DSEjDVZZtYY1RupBWhu6gEjkcMmHMQBA2mDw8DfjHbDn",
+    "agentTreasury": "EY7ibAVdkXuKjJX9DF9kf1UEmLRiaNG3tHToQoTzNEED"
+  },
+  "checks": [
+    "Actual wallet-auth API, PostgreSQL draft and real Pinata image/metadata through existing UI",
+    "Real program simulation precedes signing; preparation remains private and unconfirmed",
+    "Wallet rejection creates no broadcast or platform charge",
+    "Submitted transaction and owned draft survived an actual backend/context restart and concurrent chain confirmation",
+    "Actual token confirmation, one atomic 0.05 test-network SOL charge, duplicate submission and concurrent confirmation are idempotent",
+    "Real IPFS metadata remains associated with the correct owned launch",
+    "Verified platform/human safe-network provenance is discoverable in existing Explore without invented market metrics"
+  ],
+  "launch": {
+    "id": "lch_0d15c25aa3fc57fec5b21512",
+    "mint": "81jmbNJyn4CTBPqnQ7UVgfpy4SoWfoSrEiM9WKgFjjJd",
+    "signature": "5TvrNRQazQQgGKs8VNWoDxVs1pcsqjJX2TSK2dojTdALr58etvZi9U3y5puetwndugWPxvUBpyRPjfE41bRETbJ7",
+    "network": "devnet",
+    "metadataUri": "ipfs://bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu"
+  },
+  "assets": {
+    "image": {
+      "cid": "bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi",
+      "mime": "image/png",
+      "width": 300,
+      "height": 300,
+      "status": "verified",
+      "ipfsUri": "ipfs://bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi",
+      "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi"
+    },
+    "metadata": {
+      "cid": "bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu",
+      "ipfsUri": "ipfs://bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu",
+      "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu"
+    }
+  },
+  "platformBalance": 50000000,
+  "broadcasts": 1,
+  "result": "passed",
+  "classification": "Verified on actual supported public network; automated signer, not Phantom"
+}

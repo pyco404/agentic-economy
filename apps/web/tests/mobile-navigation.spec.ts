@@ -21,6 +21,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
     const rect = node.getBoundingClientRect(); return { y: rect.y, x: rect.x, height: rect.height, width: rect.width };
   }));
   expect(boxes).toHaveLength(6);
+  await expect(links).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury"]);
   for (let i = 0; i < boxes.length; i++) {
     expect(boxes[i]!.height).toBeGreaterThanOrEqual(44);
     expect(boxes[i]!.width).toBeGreaterThan(220);
@@ -36,8 +37,8 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   await toggle.press("Enter");
   await page.mouse.click(5, width === 390 ? 800 : 900);
   await expect(dialog).toHaveCount(0); await expect(toggle).toBeFocused();
-  for (const [label, route] of [["Explore", "explore"], ["Communities", "communities"], ["Agent Studio", "studio"],
-    ["Economy", "economy"], ["Treasury", "treasury"], ["Launchpad", "launchpad"]]) {
+  for (const [label, route] of [["Launch", "launchpad"], ["Explore", "explore"], ["Communities", "communities"], ["Agent Studio", "studio"],
+    ["Economy", "economy"], ["Treasury", "treasury"]]) {
     await toggle.press("Enter");
     await dialog.getByRole("link", { name: label, exact: true }).press("Enter");
     await expect(dialog).toHaveCount(0); expect(new URL(page.url()).hash).toBe(`#${route}`);
@@ -59,6 +60,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   await toggle.press("Enter"); await page.setViewportSize({ width: 1200, height: 1000 });
   await expect(dialog).toHaveCount(0); await expect(page.locator(".app")).not.toHaveAttribute("inert", "");
   await expect(page.getByRole("link", { name: "Explore", exact: true })).toBeVisible();
+  await expect(page.locator("nav.nav a")).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury"]);
 });
 
 test("mobile menu scrolls in short viewports and respects reduced motion", async ({ page }) => {

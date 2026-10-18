@@ -1,8 +1,8 @@
 # Phase 2 — external Launchpad verification
 
-Checkpoint: 18 October 2026. **The real-service milestone is not complete.**
-Phantom desktop authentication is user-confirmed. Real Pinata uploads remain blocked
-by HTTP 401 from the provider upload endpoint; no image or metadata CID is claimed.
+Checkpoint: 18 October 2026. **Real staging Pinata image and metadata uploads are verified.**
+Phantom desktop authentication is user-confirmed. The real-service browser audit uses
+an automated Wallet Standard message signer; it is not a new actual Phantom test.
 No city appearance work is included.
 
 ## Existing systems retained and current release baseline
@@ -55,50 +55,70 @@ The configured AUTH_DOMAIN, AUTH_URI and CORS allowlist match staging.useaeco.xy
 Mobile external-wallet handoff is not implemented; the current mobile path requires
 a compatible injected/Wallet Standard provider in the wallet's in-app browser.
 
-## Pinata — credential present, upload authorization blocked
+## Pinata — real image and metadata uploads verified
 
-Read-only Railway configuration inspection confirmed a nonempty PINATA_JWT in the
-staging backend and no Pinata variable in the frontend. Secret values were neither
-printed nor written to evidence. Staging backend deployment
-`dd073642-bbec-479e-807c-19adef7cef96` succeeded at `bdeb505`; health reports demo,
-PostgreSQL and contract 0.3.1, with financial features and launch execution disabled.
+The user replaced the staging-specific backend JWT with V3 Resources → Files →
+Write enabled and Admin disabled. Read-only Railway inspection confirmed the JWT
+exists only in the backend; the frontend has no Pinata variable. No secret was
+printed, written to evidence or placed in the bundle.
 
-Actual external checks, not mocks:
+The credential-change API deployment `a80a8800-db74-433b-a682-7fad5679becb` succeeded
+at `397f144`. The frontend deployment `a5d29502-f078-4059-bfb7-e812725c0418` succeeded
+at `653fb01`. Both source main and have compatible contract 0.3.1. Staging API,
+PostgreSQL readiness and demo simulation are healthy. Financial features and launch
+execution remain disabled.
 
-- Pinata GET `https://api.pinata.cloud/data/testAuthentication`: HTTP 200.
-- POST `https://uploads.pinata.cloud/v3/files`, using the configured credential,
-  multipart public network and public AECO logo: HTTP 401. No CID was returned.
-- Existing staging UI authenticated an ephemeral automated Wallet Standard signer,
-  previewed that logo and created its owned PostgreSQL draft (HTTP 200).
-- The backend logo endpoint returned sanitized HTTP 503 for the provider failure;
-  Review Token did not report readiness or fabricate assets.
-- Only each audit-owned test draft was deleted and its session logged out. No
-  token-launch, payment, transaction-signing or submission request was made.
+Using the existing staging Launchpad and an ephemeral automated message signer:
 
-The successful authentication probe establishes connectivity and credential
-recognition for that endpoint; it does not establish upload authorization. HTTP 401
-from the v3 upload endpoint needs key-permission/account investigation. Pinata's
-current endpoint requires `org:files:write`. JWT payload scope guesses are not
-accepted as authoritative permission evidence.
+- Previewed the real public AECO logo, authenticated against the actual backend,
+  and created a wallet-owned PostgreSQL draft.
+- Logo and metadata preparation endpoints both returned HTTP 200, persisting actual
+  Pinata receipts. Review Token reported ready for the preparation milestone only.
+- Retrieved the image from the public gateway and compared decoded pixels with the
+  selected file. Retrieved metadata JSON and verified name, symbol, description,
+  image reference, showName and staging createdOn origin.
+- Replayed both exact original requests with their idempotency keys: HTTP 200,
+  unchanged draft version and identical saved CIDs.
+- Invalid SVG content was rejected with HTTP 400 before pinning; an unauthenticated
+  upload was rejected with HTTP 401.
+- Refresh restored the session without signing again. Reopened the persisted draft
+  and reviewed it without another logo or metadata POST.
+- Verified real-data review at desktop 1440px, tablet 820px and mobile 390px, with
+  screenshots and no horizontal page overflow.
+- Deleted only the audit-owned draft and logged out. Public test assets remain
+  pinned as evidence. No launch, payment or transaction submission request occurred.
 
-In Pinata API Keys, create a staging-specific key with Files upload/write permission
-for the v3 endpoint. Replace its JWT directly in Railway staging backend Variables
-and deploy the variable change. Do not paste the secret in chat or add frontend
-variables. If that exact permission already exists, investigate account access with
-Pinata rather than assuming a successful upload or silently changing providers.
+Public evidence:
+
+| Asset | Canonical IPFS URI |
+|---|---|
+| Image | `ipfs://bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi` |
+| Metadata | `ipfs://bafkreigck6kpvc45g7cso5kirqjd6ogpfrv5vjpdlsboc5dgs3gr4rgro4` |
+
+Metadata references the matching image at
+https://gateway.pinata.cloud/ipfs/bafkreibh5duu3ng6jzz7i34gs27lihh7jmiylklhqwdzjtad5v26nwmawi.
+Both artifacts were actually retrieved, not inferred from a successful receipt.
+
+### Endpoint and permission check
+
+Both image bytes and metadata JSON use the same `PinataPinning.pin` method:
+POST `https://uploads.pinata.cloud/v3/files`, multipart `network=public`.
+Metadata is an application/json file; this path does not call Legacy
+`pinJSONToIPFS` or `pinFileToIPFS`. V3 `org:files:write` is sufficient for both
+verified requests. No Admin or additional Legacy permission is required for this
+flow. Public gateway retrieval does not use the JWT.
+
+The previous key passed the Legacy authentication probe but V3 upload returned
+HTTP 401. The replacement key resolved that failure. Current actual uploads succeed;
+no account quota/plan restriction was observed for these controlled files. This is
+not a promise about future quotas or service availability.
 
 | Variable | Configuration |
 |---|---|
-| PINATA_JWT | Backend secret with upload/write permission. No frontend/VITE_* copy. |
+| PINATA_JWT | Backend secret with V3 upload/write permission; no frontend/VITE_* copy. |
 | IPFS_GATEWAY | Optional HTTPS public gateway origin; default https://gateway.pinata.cloud. |
 | LOGO_MAX_BYTES | Optional, defaults to 5000000; supported maximum 5 MB. |
 | LOGO_MAX_PIXELS | Optional, defaults to 16000000. |
-
-After replacement, retry the existing authenticated UI flow and verify both returned
-CIDs by retrieving the actual bytes/JSON, checking artwork identity and metadata
-references, then refresh/reopen/review the saved draft. Actual image upload, metadata
-pinning, gateway retrieval and review using real Pinata data are **not yet verified**.
-Provider-backed duplicate/retry checks also remain pending; mocked retry checks pass.
 
 Official references: [API keys](https://docs.pinata.cloud/account-management/api-keys)
 and [upload endpoint / scope](https://docs.pinata.cloud/api-reference/endpoint/upload-a-file).
@@ -113,9 +133,16 @@ checks that no draft/upload mutation starts early.
 
 One-file commits: `8b99eeb` (component), `653fb01` (browser regression). Staging web
 deployment `a5d29502-f078-4059-bfb7-e812725c0418` succeeded at `653fb01`. The backend
-remained at `bdeb505`; no backend/shared-contract/schema changes were required.
+initially remained at `bdeb505`; the later documentation-only release `397f144`
+introduced no backend/shared-contract/schema changes.
 
 ## Tests and limits
+
+- Real staging UI/API/PostgreSQL/Pinata/public-gateway browser audit: passed in
+  1.4 minutes, including exact-byte retry, refresh/reopen and responsive review.
+  An initial audit retry assertion failed because Chromium request-body capture
+  changed binary bytes; replaying the original selected file passed. No application
+  change or retry-policy relaxation was needed.
 
 - Backend auth/draft/Pinata transport: 32 tests passed. Pinata responses mocked.
 - Existing market, creator-fee and launch-execution guards: 29 tests passed; provider

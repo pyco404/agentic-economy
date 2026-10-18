@@ -166,3 +166,47 @@ describe("treasury indexer", () => {
     }
   });
 });
+
+describe('receipt lifecycle safety',()=>{
+ it('does not double count when indexing upgrades confirmed to finalized',async()=>{
+  const store=new MemoryStore(),chain=new MockChain(),t=new TreasuryService(store,config),mint=key(),c=community(mint);
+  const sig=chain.simulateCreatorFeeDistribution({mint,payouts:[{address:agentRewards,lamports:60n},{address:platform,lamports:40n}]}),tx=(await chain.getTransaction(sig))!;
+  await t.ingestCreatorFeeDistribution({...tx,commitment:'confirmed'},[c]);await t.ingestCreatorFeeDistribution(tx,[c]);
+  expect((await t.summary(0)).creatorFees.agentRewards[0]).toMatchObject({finalized:'60',pending:'0'});
+  expect(await t.reconcilePending(chain)).toEqual([]);
+ });
+ it('keeps unavailable history pending unless canonical orphan evidence exists',async()=>{
+  const store=new MemoryStore(),chain=new MockChain(),t=new TreasuryService(store,config),mint=key();const sig=chain.simulateCreatorFeeDistribution({mint,payouts:[{address:agentRewards,lamports:60n},{address:platform,lamports:40n}]});
+  await t.ingestCreatorFeeDistribution({...((await chain.getTransaction(sig))!),commitment:'confirmed'},[community(mint)]);
+  chain.getTransaction=async()=>null;chain.isTransactionOrphaned=async()=>false;
+  expect(await t.reconcilePending(chain)).toEqual([]);expect((await t.summary(0)).creatorFees.agentRewards[0]!.pending).toBe('60');
+ });
+});
+
+describe('atomic receipt finality ingestion',()=>{
+ it('concurrent observations finalize once and cannot change receipt amounts',async()=>{
+  const store=new MemoryStore(),chain=new MockChain(),t=new TreasuryService(store,config),mint=key(),c=community(mint),sig=chain.simulateCreatorFeeDistribution({mint,payouts:[{address:agentRewards,lamports:60n},{address:platform,lamports:40n}]}),tx=(await chain.getTransaction(sig))!;
+  await Promise.all([t.ingestCreatorFeeDistribution({...tx,commitment:'confirmed'},[c]),t.ingestCreatorFeeDistribution(tx,[c]),t.ingestCreatorFeeDistribution(tx,[c])]);
+  expect((await t.summary(0)).creatorFees.agentRewards[0]).toMatchObject({finalized:'60',pending:'0'});
+  const entry=(await store.allTreasuryEntries())[0]!;await expect(store.appendTreasuryEntries([{...entry,id:'tre_changed',amount:'999',finality:'reversed'}])).rejects.toThrow(/immutable/);
+ });
+});
+
+describe('indexer history paging',()=>{
+ it('drains more than one page and retries unavailable receipts without advancing',async()=>{
+  const {TreasuryIndexer}=await import('../src/services/indexer.js');const {makeEnv}=await import('./helpers.js');const env=await makeEnv();
+  try{const signatures=Array.from({length:250},(_,i)=>`receipt-${250-i}`),seen:string[]=[],pages:(string|undefined)[]=[];let missing=true;
+   env.chain.listSignaturesForAddress=async(_address,until,limit,before)=>{pages.push(before);const start=before?signatures.indexOf(before)+1:0,end=until?signatures.indexOf(until):signatures.length;return signatures.slice(start,end<0?undefined:end).slice(0,limit);};
+   env.chain.getTransaction=async signature=>{if(missing&&signature===signatures[20])return null;seen.push(signature);return {signature,slot:1,commitment:'finalized',err:null,feePayer:platform,signers:[],instructions:[],systemTransfers:[],lamportDeltas:{}};};
+   const indexer=new TreasuryIndexer(env.chain,env.ctx.store,env.ctx.treasury,env.ctx.coord,[platform],{info(){},warn(){},error(){}});
+   await expect(indexer.runOnce()).rejects.toThrow(/cursor retained/);missing=false;await indexer.runOnce();expect(new Set(seen).size).toBe(250);expect(pages).toContain(signatures[99]);expect(pages).toContain(signatures[199]);const before=seen.length;await indexer.runOnce();expect(seen.length).toBe(before);
+  }finally{await env.close();}
+ });
+});
+
+it('treats JSONB-reordered evidence as identical without losing receipt immutability',async()=>{
+ const {nextTreasuryEntry}=await import('../src/store/treasury-entry.js');const store=new MemoryStore(),chain=new MockChain(),t=new TreasuryService(store,config),mint=key(),sig=chain.simulateCreatorFeeDistribution({mint,payouts:[{address:agentRewards,lamports:60n},{address:platform,lamports:40n}]});
+ await t.ingestCreatorFeeDistribution((await chain.getTransaction(sig))!,[community(mint)]);const e=(await store.allTreasuryEntries())[0]!;
+ const reordered={...e,evidence:{network:'demo' as const,distributedDust:e.evidence!.distributedDust,distributed:e.evidence!.distributed,version:1 as const,source:'mock_chain' as const}};
+ expect(nextTreasuryEntry(e,[reordered])).toBe(null);
+});

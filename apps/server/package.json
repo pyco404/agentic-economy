@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx watch --conditions=@agentic-economy/source src/main.ts",
     "start": "node dist/main.js",
-    "build": "tsc -p tsconfig.build.json && cp -r src/store/migrations dist/store/",
+    "build": "tsc -p tsconfig.build.json && cp -r src/store/migrations dist/store/ && cp src/chain/pump-sdk.cjs dist/chain/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx --conditions=@agentic-economy/source src/store/migrate.ts",
@@ -27,7 +27,8 @@
     "pg": "^8.16.3",
     "tweetnacl": "^1.0.3",
     "zod": "^4.1.12",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "@pump-fun/pump-sdk": "4.1.0"
   },
   "devDependencies": {
     "@types/pg": "^8.15.5",

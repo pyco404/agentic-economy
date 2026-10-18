@@ -100,7 +100,7 @@ export function LaunchWorkspace() {
       imageUrl={removed?'':draft?.image?.ipfsUri??''} trustedImage={removed?null:draft?.image??null} scope={logoScope} maxBytes={maxBytes}
       onFileChange={file=>{selected.current=file?{file,key:crypto.randomUUID()}:null;setReview(null);setError('');setMessage('');}}
       onImage={()=>{setRemoved(true);setReview(null);}}/>
-     <button className="primary wide" type="submit">{!owner?'Connect wallet':phase??(busy?'Preparing…':'Review token')}</button>
+     <button className="primary wide" type="submit" disabled={!!owner&&uploads===null}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':phase??(busy?'Preparing…':'Review token')}</button>
     </fieldset>
    </form>
    {progress!==null&&<progress max={100} value={progress} aria-label="Logo upload progress"/>}

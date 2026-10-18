@@ -41,6 +41,7 @@ test('existing Launchpad → real Pinata → safe-network Pump execution → dat
  const lookup=(await conn.getAddressLookupTable(lookupAddress)).value!;
  await expect.poll(()=>conn.getSlot('confirmed'),{timeout:60000}).toBeGreaterThan(lookup.state.lastExtendedSlot);
  const config=loadConfig({MODE:'devnet',ROLE:'all',DATABASE_URL:db,SOLANA_RPC_URL:rpc,SOLANA_CLUSTER:network,PUMP_LOCAL_GENESIS_HASH:genesis,PUMP_LAUNCH_LOOKUP_TABLE:lookupAddress.toBase58(),PUMP_LAUNCH_ENABLED:'true',FEE_ROUTING_VERIFIED:'true',PLATFORM_TREASURY:platform.toBase58(),AGENT_REWARDS_TREASURY:agent.toBase58(),PINATA_JWT:process.env.PINATA_JWT,AUTH_URI:site,AUTH_DOMAIN:new URL(site).host,CORS_ORIGINS:site,PORT:'8796',HOST:'127.0.0.1',LOG_LEVEL:'silent',WORLD_SEED:'local-launch-protocol-verification',SIM_AUTOSTART:'true'});
+ const assetWrites:string[]=[];page.on('request',r=>{if(r.method()==='POST'&&/\/(logo\?|metadata$)/.test(r.url()))assetWrites.push(r.url());});
  let broadcasts=0,ctx:AppContext|undefined,app:Awaited<ReturnType<typeof buildApp>>|undefined;
  const start=async()=>{
   const chain=new SolanaRpcChain(rpc,{...config.pumpLaunch,cluster:network}),broadcast=chain.submitLaunchTransaction.bind(chain);
@@ -74,27 +75,28 @@ test('existing Launchpad → real Pinata → safe-network Pump execution → dat
   await page.getByLabel('Token name',{exact:true}).fill(devnet?'AECO Devnet Verification':'AECO Local UI Verification');await page.getByLabel('Symbol',{exact:true}).fill('AECOTEST');await page.getByLabel('Description',{exact:true}).fill('Controlled safe-network launch. No mainnet funds or production operations.');
   await page.getByLabel('Token logo file').setInputFiles(new URL('../public/aeco-website-logo.png',import.meta.url).pathname);
   await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Isolated local test signer',exact:true}).click();
-  await page.locator('form').getByRole('button',{name:'Review token',exact:true}).click();
-  await expect(page.getByRole('region',{name:'Token review'})).toContainText('Token details and logo are prepared.',{timeout:150000});passed('Actual wallet-auth API, PostgreSQL draft and real Pinata image/metadata through existing UI');
+  await expect(page.getByRole('region',{name:'Live token preview'}).getByRole('img')).toHaveAttribute('src',/^blob:/);expect(assetWrites).toEqual([]);
   const preparedResponse=page.waitForResponse(r=>/\/launchpad\/drafts\/[^/]+\/launch$/.test(new URL(r.url()).pathname)&&r.request().method()==='POST');
-  await page.getByRole('button',{name:'Review launch fees',exact:true}).click();
+  await page.locator('form').getByRole('button',{name:'Create Coin',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Token review'})).toContainText('Token details and logo are prepared.',{timeout:150000});expect(assetWrites).toHaveLength(2);passed('No asset writes before Create Coin; real Pinata image and metadata prepared after one commit action');
+
   const execution=page.getByRole('region',{name:'Launch execution'});await expect(execution).toContainText('awaiting signature',{timeout:60000});await expect(execution).toContainText(platform.toBase58());await expect(execution).toContainText('0.05 SOL');
   const preparation=((await(await preparedResponse).json()) as {launch:TokenLaunch}).launch;
   expect(preparation.execution?.network).toBe(network);expect(preparation.signature).toBeNull();expect((await page.request.get(api+'/api/v1/launches/'+preparation.id)).status()).toBe(404);passed('Real program simulation precedes signing; preparation remains private and unconfirmed');
-  await execution.getByRole('button',{name:'Sign launch transaction',exact:true}).click();await expect(execution.getByRole('alert')).toContainText('rejected');expect(broadcasts).toBe(0);expect(await conn.getBalance(platform)).toBe(0);passed('Wallet rejection creates no broadcast or platform charge');
-  rejectSignature=false;const submitted=page.waitForResponse(r=>r.url().endsWith('/submit')&&r.request().method()==='POST');await execution.getByRole('button',{name:'Sign launch transaction',exact:true}).click();expect((await submitted).status()).toBe(200);
+  await execution.getByRole('button',{name:'Approve in wallet',exact:true}).click();await expect(execution.getByRole('alert')).toContainText('rejected');expect(broadcasts).toBe(0);expect(await conn.getBalance(platform)).toBe(0);passed('Wallet rejection creates no broadcast or platform charge');
+  rejectSignature=false;const submitted=page.waitForResponse(r=>r.url().endsWith('/submit')&&r.request().method()==='POST');await execution.getByRole('button',{name:'Approve in wallet',exact:true}).click();expect((await submitted).status()).toBe(200);
   const pending=(await ctx!.store.getLaunch(preparation.id))!.launch;expect(pending.status).toBe('submitted');expect(pending.signature).toBeTruthy();expect(broadcasts).toBe(1);
   // Close all real API/database connections before any confirmation request is released.
   await app!.close();await ctx!.close();app=undefined;ctx=undefined;await start();
   await expect.poll(async()=>(await conn.getSignatureStatuses([pending.signature!],{searchTransactionHistory:true})).value[0]?.confirmationStatus).toMatch(/confirmed|finalized/);
   const concurrent=await Promise.all([ctx!.launches.refresh(creator.publicKey.toBase58(),preparation.id),ctx!.launches.refresh(creator.publicKey.toBase58(),preparation.id)]);for(const result of concurrent)expect(result.status).toBe('confirmed');
   allowStatus=true;releaseStatus();passed('Submitted transaction and owned draft survived an actual backend/context restart and concurrent chain confirmation');
-  await page.reload({waitUntil:'domcontentloaded'});await expect(page.locator('form').getByRole('button',{name:'Review token',exact:true})).toBeVisible({timeout:60000});
-  await page.getByText('Manage drafts & technical details',{exact:true}).click();await page.getByLabel('Saved launch drafts').selectOption(preparation.execution!.draftId);await expect(page.getByLabel('Token name',{exact:true})).toHaveValue(devnet?'AECO Devnet Verification':'AECO Local UI Verification');await page.getByText('Manage drafts & technical details',{exact:true}).click();await page.locator('form').getByRole('button',{name:'Review token',exact:true}).click();
+  await page.reload({waitUntil:'domcontentloaded'});await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeVisible({timeout:60000});
+  await page.getByText('Manage drafts & technical details',{exact:true}).click();await page.getByLabel('Saved launch drafts').selectOption(preparation.execution!.draftId);await expect(page.getByLabel('Token name',{exact:true})).toHaveValue(devnet?'AECO Devnet Verification':'AECO Local UI Verification');await page.getByText('Manage drafts & technical details',{exact:true}).click();await page.locator('form').getByRole('button',{name:'Create Coin',exact:true}).click();
   await expect(execution).toContainText('Token creation verified.',{timeout:120000});
   const headers={Origin:site},url=api+'/api/v1/launchpad/launches/'+preparation.id;
   const repeats=await Promise.all([page.request.get(url),page.request.get(url),page.request.post(url+'/submit',{headers,data:{transaction:signedBytes}})]);for(const r of repeats){expect(r.ok()).toBe(true);expect((await r.json()).launch.status).toBe('confirmed');}
-  const confirmed=(await ctx!.store.getLaunch(preparation.id))!.launch;expect(confirmed.signature).toBe(pending.signature);expect(broadcasts).toBe(1);expect(signatures).toBe(2);
+  const confirmed=(await ctx!.store.getLaunch(preparation.id))!.launch;expect(confirmed.signature).toBe(pending.signature);expect(broadcasts).toBe(1);expect(signatures).toBe(2);expect(assetWrites).toHaveLength(2);
   const entries=(await ctx!.store.allTreasuryEntries()).filter(e=>e.launchId===confirmed.id);expect(entries).toHaveLength(1);expect(entries[0]!.amount).toBe('50000000');expect(entries[0]!.stream).toBe('launch_fee');expect(await conn.getBalance(platform)).toBe(50_000_000);passed('Actual token confirmation, one atomic 0.05 test-network SOL charge, duplicate submission and concurrent confirmation are idempotent');
   const token=(await ctx!.store.allCommunities()).find(c=>c.launchId===confirmed.id)!;expect(token.provenance).toMatchObject({platformOrigin:'PLATFORM',initiator:'HUMAN',network,quoteAsset:'SOL'});expect(token.creatorWallet).toBe(creator.publicKey.toBase58());expect(token.launchSignature).toBe(confirmed.signature);
   const market=await ctx!.tokenMarket.snapshot(confirmed.mint);expect(market.status).toBe('unavailable');expect(market.priceUsd).toBeNull();

@@ -4,10 +4,13 @@ import {
   illustrativeActivity,
   type ApiAdapter,
   type Dashboard,
+  type WorldPresentation,
 } from "./adapter";
 import { applyServerEvent, mergeDashboard } from "./state";
 import { WorldStream, type StreamStatus } from "./realtime";
 export function useWorld(api: ApiAdapter, paused: boolean) {
+  const [world, setWorld] = useState<WorldPresentation | null>(null);
+  const worldRef=useRef(world);worldRef.current=world;
   const [data, setData] = useState<Dashboard | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
@@ -19,6 +22,9 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
   const stream = useRef<WorldStream | null>(null);
   const load = useCallback(
     async (signal?: AbortSignal) => {
+      if(api instanceof HttpAdapter)void api.loadWorld(signal).then(incoming=>{
+        if(!signal?.aborted)setWorld(incoming);
+      }).catch(()=>{/* The normal load path reports critical API failure. */});
       try {
         const incoming = await api.load(signal);
         if (signal?.aborted) return;
@@ -65,7 +71,7 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
           const mismatch = event.data.chunkVersions
             .filter(
               (v) =>
-                !state.current?.worldChunks?.some(
+                !(state.current?.worldChunks ?? worldRef.current?.worldChunks)?.some(
                   (c) =>
                     c.coord.cx === v.coord.cx &&
                     c.coord.cy === v.coord.cy &&
@@ -189,11 +195,13 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
   }, [api, paused]);
   const subscribe = useCallback(
     (coords: { cx: number; cy: number }[]) => {
-      stream.current?.subscribe(coords);
+      // Camera visibility must not unsubscribe authoritative movement elsewhere.
+      // null is the documented all-chunks subscription, including future expansion.
+      stream.current?.subscribe(null);
       if (!(api instanceof HttpAdapter)) return;
       const missing = coords.filter(
         (coord) =>
-          !state.current?.worldChunks?.some(
+          !(state.current?.worldChunks ?? worldRef.current?.worldChunks)?.some(
             (chunk) =>
               chunk.coord.cx === coord.cx && chunk.coord.cy === coord.cy,
           ),
@@ -226,6 +234,7 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
 
   return {
     data,
+    world,
     error,
     loading,
     status,

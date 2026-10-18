@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildPathNetwork, createDemoWalkers, pathBetween, samplePath, type PathNetwork } from "./agentMotion";
+import { buildPathNetwork, createDemoWalkers, observedJourney, pathBetween, samplePath, type PathNetwork } from "./agentMotion";
 import { generateWorld, WORLD_SEED, type ChunkVisual } from "./layout";
 
 describe("citizen visual motion", () => {
@@ -46,4 +46,11 @@ describe("citizen visual motion", () => {
     const frozen = first.position("Kestrel", 0, 0, 100, 0.05, true).clone();
     expect(first.position("Kestrel", 0, 0, 101, 0.05, true).equals(frozen)).toBe(true);
   });
+});
+
+it("recovers a long observed journey along roads at a bounded walking speed without teleporting through empty terrain",()=>{
+ const network:PathNetwork=new Map(Array.from({length:40},(_,i)=>[`${i}:0`,new THREE.Vector2(i+.5,.5)]));
+ const journey=observedJourney(network,new THREE.Vector2(.5,.5),new THREE.Vector2(39.5,.5),500)!;
+ expect(journey.duration).toBe(9750);expect(journey.path.length).toBe(40);
+ network.delete('20:0');expect(observedJourney(network,new THREE.Vector2(.5,.5),new THREE.Vector2(39.5,.5),500)).toBeNull();
 });

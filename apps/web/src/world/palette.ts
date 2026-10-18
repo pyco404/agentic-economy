@@ -2,7 +2,7 @@
 export const cityPalette = {
   parchment: "#f5ecd8",
   greenbelt: "#fff3d8",
-  terrain: "#edf0d8",
+  terrain: "#dce5c9",
   sand: "#f2e2c3",
   road: "#fff5dd",
   arterialRoad: "#eadbc2",

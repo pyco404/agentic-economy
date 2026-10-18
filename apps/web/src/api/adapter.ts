@@ -46,6 +46,11 @@ export interface Dashboard {
   cityActivity?: CityActivity[];
   streamTick?: number;
 }
+export interface WorldPresentation {
+  bootstrap: WorldBootstrap;
+  chunks: ChunkVisual[];
+  worldChunks: WorldChunk[];
+}
 export interface ApiAdapter {
   kind: "demo" | "http";
   load(signal?: AbortSignal): Promise<Dashboard>;
@@ -465,6 +470,7 @@ export function worldChunkToVisual(chunk: WorldChunk): ChunkVisual {
 }
 export class HttpAdapter implements ApiAdapter {
   readonly kind = "http" as const;
+  private presentationLoad?: {signal:AbortSignal|undefined;promise:Promise<WorldPresentation>};
   constructor(
     private base: string,
     private getToken: () => string | null = () => null,
@@ -490,7 +496,7 @@ export class HttpAdapter implements ApiAdapter {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
-      signal: options.signal ?? AbortSignal.timeout(15000),
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
@@ -522,44 +528,33 @@ export class HttpAdapter implements ApiAdapter {
     } while (cursor);
     return items;
   }
+  loadWorld(signal?:AbortSignal):Promise<WorldPresentation>{
+    if(this.presentationLoad?.signal===signal&&this.presentationLoad)return this.presentationLoad.promise;
+    const promise=(async()=>{
+      const bootstrap=await this.request(routes.worldBootstrap.path,routes.worldBootstrap.response,{signal});
+      const coords=bootstrap.chunks;
+      const x=coords.length?Math.floor(coords.reduce((n,c)=>n+c.cx,0)/coords.length):0;
+      const y=coords.length?Math.floor(coords.reduce((n,c)=>n+c.cy,0)/coords.length):0;
+      const response=await this.request(`${routes.worldChunks.path}?x=${x}&y=${y}&radius=4`,routes.worldChunks.response,{signal});
+      const worldChunks=[...response.chunks];
+      const missing=coords.filter(c=>!worldChunks.some(chunk=>chunk.coord.cx===c.cx&&chunk.coord.cy===c.cy));
+      if(missing.length)worldChunks.push(...await this.getChunks(missing,signal));
+      const absent=coords.filter(c=>!worldChunks.some(chunk=>chunk.coord.cx===c.cx&&chunk.coord.cy===c.cy));
+      if(absent.length)throw new Error(`World geometry unavailable for ${absent.map(c=>`${c.cx}:${c.cy}`).join(", ")}. Retry loading the city.`);
+      return{bootstrap,worldChunks,chunks:worldChunks.map(worldChunkToVisual)};
+    })();
+    this.presentationLoad={signal,promise};
+    const clear=()=>{if(this.presentationLoad?.promise===promise)this.presentationLoad=undefined;};
+    void promise.then(clear,clear);return promise;
+  }
   async load(signal?: AbortSignal): Promise<Dashboard> {
     const get = <S extends z.ZodType>(route: { path: string; response: S }) =>
-      this.request(route.path, route.response, { signal }) as Promise<
-        z.infer<S>
-      >;
-    const [
-      bootstrap,
-      stats,
-      communities,
-      agents,
-      markets,
-      tasks,
-      activities,
-      treasury,
-      receipts,
-    ] = await Promise.all([
-      get(routes.worldBootstrap),
-      get(routes.worldStats),
-      this.allCommunities(signal),
-      get(routes.worldAgents),
-      get(routes.markets),
-      get(routes.tasks),
-      get(routes.activities),
-      get(routes.treasury),
-      get(routes.receipts),
+      this.request(route.path, route.response, { signal }) as Promise<z.infer<S>>;
+    const [world,stats,communities,agents,markets,tasks,activities,treasury,receipts]=await Promise.all([
+      this.loadWorld(signal),get(routes.worldStats),this.allCommunities(signal),get(routes.worldAgents),
+      get(routes.markets),get(routes.tasks),get(routes.activities),get(routes.treasury),get(routes.receipts),
     ]);
-    const coords = bootstrap.chunks;
-    const centerX = coords.length
-        ? Math.floor(coords.reduce((n, c) => n + c.cx, 0) / coords.length)
-        : 0,
-      centerY = coords.length
-        ? Math.floor(coords.reduce((n, c) => n + c.cy, 0) / coords.length)
-        : 0;
-    const chunks = await this.request(
-      `${routes.worldChunks.path}?x=${centerX}&y=${centerY}&radius=4`,
-      routes.worldChunks.response,
-      { signal },
-    );
+    const {bootstrap}=world;
     return {
       identitySource: "backend",
       mode: bootstrap.mode,
@@ -572,8 +567,8 @@ export class HttpAdapter implements ApiAdapter {
       receipts: receipts.items,
       activities: activities.items,
       treasury,
-      chunks: chunks.chunks.map(worldChunkToVisual),
-      worldChunks: chunks.chunks,
+      chunks: world.chunks,
+      worldChunks: world.worldChunks,
       agentTicks: Object.fromEntries(
         agents.agents.map((a) => [a.id, agents.tick]),
       ),

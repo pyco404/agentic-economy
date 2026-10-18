@@ -1,4 +1,5 @@
 import bs58 from "bs58";
+import { isDeepStrictEqual } from "node:util";
 import { AddressLookupTableProgram, Connection, PublicKey, VersionedTransaction, type VersionedTransactionResponse } from "@solana/web3.js";
 import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
 import { anchorAccountDiscriminator, bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
@@ -36,9 +37,13 @@ export class SolanaRpcChain implements ChainGateway {
   }
   async getTransaction(signature: string): Promise<ObservedTransaction | null> {
     const tx = await this.conn.getTransaction(signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
-    if (!tx) return null;
+    // Missing execution metadata is not evidence of a successful transaction.
+    if (!tx?.meta) return null;
     const status = await this.conn.getSignatureStatuses([signature], { searchTransactionHistory: true });
-    const finalized = status.value[0]?.confirmationStatus === "finalized";
+    const observed = status.value[0];
+    if (!observed || !["confirmed", "finalized"].includes(observed.confirmationStatus ?? "")) return null;
+    if (!isDeepStrictEqual(observed.err, tx.meta.err)) throw new Error("RPC transaction status contradicts its execution metadata; retry confirmation");
+    const finalized = observed.confirmationStatus === "finalized";
     return {...normalizeTransaction(signature, tx, finalized ? "finalized" : "confirmed"),genesisHash:await this.conn.getGenesisHash()};
   }
 

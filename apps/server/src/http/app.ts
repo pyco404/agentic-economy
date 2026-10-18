@@ -137,7 +137,10 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       register(name, async () => {
         throw new AppError("gone", `${def.path} is retired`);
       });
-  if (servesApi) registerWebSocket(app, ctx);
+  if (servesApi) {
+    await registerLaunchpad(app, ctx);
+    registerWebSocket(app, ctx);
+  }
 
   app.get("/metrics", async (_req, reply) => reply.type("text/plain; version=0.0.4").send(metrics(ctx, counters)));
 

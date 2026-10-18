@@ -1,3 +1,5 @@
+import { workDescription, workPose } from "../api/agentWork";
+import type { AgentWork, AgentSummary } from "../api/shared";
 import { cityPalette } from "./palette";
 import { clearAccidentalWorldSelection } from "./selection";
 import {
@@ -14,7 +16,7 @@ import { createFrontierScene } from "./frontierScene";
 import { updateWaterFlow } from "./waterFlow";
 import { defaultWorldFrame, overviewFrame, inspectionTarget, worldCameraOffset } from "./framing";
 import { createAgentLabels, type LabelAgent } from "./agentLabels";
-import { AGENT_MOTION, agentSeed, buildPathNetwork, createDemoWalkers, pathBetween, samplePath } from "./agentMotion";
+import { agentSeed, buildPathNetwork, createDemoWalkers, observedJourney, samplePath } from "./agentMotion";
 import { createAmbientScene } from "./ambient";
 import { CityReveal } from "./reveal";
 import { prepareScenery, reviveScenery, type SceneryRequest, type SceneryMessage } from "./sceneryPlan";
@@ -52,7 +54,8 @@ export interface AgentVisual extends Pick<LabelAgent, "identity" | "displayName"
   x: number;
   z: number;
   paused: boolean;
-  state?: string;
+  state?: AgentSummary["state"];
+  work?: AgentWork;
 }
 export interface CityHandle {
   railway: () => void;
@@ -60,6 +63,7 @@ export interface CityHandle {
   reset: () => void;
   focus: (x: number, z: number, zoom?: number) => void;
   rotate: () => void;
+  follow: (id: string | null) => void;
 }
 interface CityProps {
   touchPan?: boolean;
@@ -68,6 +72,8 @@ interface CityProps {
   visualStill?: boolean;
   ambientEnabled?: boolean;
   selectedAgentId?: string | null;
+  highlightBuildingIds?: string[];
+  onFollowChange?: (id:string|null)=>void;
   importantAgentIds?: string[];
   inspection?: { id: string; x: number; z: number } | null;
   population: number;
@@ -110,6 +116,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         focus: THREE.Vector3 | null;
         home: THREE.Vector3;
         homeZoom: number;
+        following: string | null;
       } | null>(null);
     const current = useRef(props);
     current.current = props;
@@ -117,6 +124,11 @@ export const City = forwardRef<CityHandle, CityProps>(
     useImperativeHandle(
       ref,
       () => ({
+        follow(id) {
+          if (!runtime.current) return;
+          runtime.current.following=id; runtime.current.focus=null;
+          current.current.onFollowChange?.(id);
+        },
         railway() {
           const report = JSON.parse(host.current?.dataset.railway ?? "null");
           if (!report?.tunnel || !runtime.current || !host.current) return;
@@ -135,6 +147,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         reset() {
           const r = runtime.current;
           if (r) {
+            r.following = null; current.current.onFollowChange?.(null);
             finishCameraMotion(r.controls);
             r.focus = r.home.clone();
             r.camera.zoom = r.homeZoom;
@@ -154,6 +167,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         rotate() {
           const r = runtime.current;
           if (r) {
+            r.following=null;current.current.onFollowChange?.(null);
             const relative = r.camera.position
               .clone()
               .sub(r.controls.target)
@@ -227,7 +241,10 @@ export const City = forwardRef<CityHandle, CityProps>(
         TWO: THREE.TOUCH.DOLLY_ROTATE,
       };
       controls.update();
-      const stopAutomaticFocus = () => { if (runtime.current) runtime.current.focus = null; };
+      const stopAutomaticFocus = () => { if (runtime.current) {
+        runtime.current.focus = null;
+        if(runtime.current.following) {runtime.current.following=null;current.current.onFollowChange?.(null);}
+      } };
       controls.addEventListener("start", stopAutomaticFocus);
       runtime.current = {
         camera,
@@ -235,6 +252,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         focus: null,
         home: initialCenter,
         homeZoom: camera.zoom,
+        following: null,
       };
       // Reduce broad fill in favor of directional shading. Horizontal terrain keeps
       // the same illumination: 0.9 + 1.71 * sunDirection.y ≈ 1.2 + 1.35 * sunDirection.y.
@@ -277,6 +295,11 @@ export const City = forwardRef<CityHandle, CityProps>(
       selection.position.y = 0.15;
       selection.visible = false;
       scene.add(selection);
+      const workHighlightGeometry=new THREE.RingGeometry(.94,1,24).rotateX(-Math.PI/2);
+      const workHighlightMaterial=new THREE.MeshBasicMaterial({color:"#9aaf70",transparent:true,opacity:.8,side:THREE.DoubleSide});
+      const workHighlights=new THREE.InstancedMesh(workHighlightGeometry,workHighlightMaterial,256);
+      workHighlights.count=0;scene.add(workHighlights);
+      let highlightKey="";
       const chunks = new Map<
           string,
           { group: THREE.Group; data: ChunkVisual; signature: string }
@@ -318,7 +341,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
       let visibleKey = "",
         lastLOD = false;
-      let waterElapsed = 0;
+      let waterElapsed = 0, lastWorkReport = -1;
       const citizens = createCitizens(512);
       citizens.meshes.forEach((mesh) => scene.add(mesh));
       const gait = new Map<string, { heading: number; phase: number }>();
@@ -326,7 +349,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         agentPositions = new Map<string, THREE.Vector2>();
       const motion = new Map<
         string,
-        { from: THREE.Vector2; target: THREE.Vector2; path: THREE.Vector2[] | null; at: number; tick: number }
+        { from: THREE.Vector2; target: THREE.Vector2; path: THREE.Vector2[] | null; duration: number; network: typeof pathNetwork; at: number; tick: number }
       >();
       let pathNetwork = buildPathNetwork([], WORLD_SEED);
       let streets = planStreets([], WORLD_SEED);
@@ -458,6 +481,9 @@ export const City = forwardRef<CityHandle, CityProps>(
       renderer.domElement.addEventListener("pointermove", move);
       const key = (e: KeyboardEvent) => {
         if (current.current.interactive === false) return;
+        if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","+","=","-"].includes(e.key) && runtime.current?.following) {
+          runtime.current.following=null;runtime.current.focus=null;current.current.onFollowChange?.(null);
+        }
         const delta = new THREE.Vector3();
         const step = 12 / camera.zoom;
         if (e.key === "ArrowLeft") delta.x = -step;
@@ -665,6 +691,21 @@ export const City = forwardRef<CityHandle, CityProps>(
         }
         container.dataset.ambientTime = String(ambientTime);
         scenic?.update(elapsed, !p.paused && !motionPreference.matches);
+        const r=runtime.current!;
+        if(r.following) {
+          const followed=agentPositions.get(r.following);
+          if(p.selectedAgentId!==r.following || !p.agents?.some(a=>a.id===r.following)) {
+            r.following=null;r.focus=null;p.onFollowChange?.(null);
+          } else if(followed) r.focus=inspectionTarget(followed.x,followed.y,camera,container.clientWidth,container.clientHeight);
+        }
+        const nextHighlightKey=(p.highlightBuildingIds??[]).join(":")+":"+chunks.size;
+        if(highlightKey!==nextHighlightKey) {
+          highlightKey=nextHighlightKey;
+          const ids=new Set(p.highlightBuildingIds);
+          const places=p.chunks?.flatMap(c=>c.buildings).filter(b=>ids.has(b.id)).slice(0,256)??[];
+          places.forEach((b,i)=>{agentMatrix.makeScale(Math.max(b.width,b.depth)*.7,1,Math.max(b.width,b.depth)*.7);agentMatrix.setPosition(b.x,(b.elevation??0)+.18,b.z);workHighlights.setMatrixAt(i,agentMatrix);});
+          workHighlights.count=places.length;workHighlights.instanceMatrix.needsUpdate=true;workHighlights.computeBoundingSphere();
+        }
         if (runtime.current?.focus) {
           const delta = runtime.current.focus
             .clone()
@@ -672,7 +713,10 @@ export const City = forwardRef<CityHandle, CityProps>(
             .multiplyScalar(1 - Math.exp(-6 * Math.min(0.5, frameSeconds)));
           controls.target.add(delta);
           camera.position.add(delta);
-          if (delta.length() < 0.02) runtime.current.focus = null;
+          if (controls.target.distanceTo(runtime.current.focus) < 0.02) {
+            camera.position.add(runtime.current.focus.clone().sub(controls.target));
+            controls.target.copy(runtime.current.focus);runtime.current.focus=null;
+          }
         }
         if (interactive) controls.update();
         camera.updateMatrixWorld();
@@ -790,7 +834,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           } else {
             const tick = p.agentTicks?.[a.id] ?? 0,
               prior = motion.get(a.id);
-            if (!prior || !prior.target.equals(target)) {
+            if (!prior || !prior.target.equals(target) || prior.network !== pathNetwork) {
               const samples =
                 !prior ||
                 tick - prior.tick > 3 ||
@@ -799,20 +843,21 @@ export const City = forwardRef<CityHandle, CityProps>(
                   : (history.get(a.id) ?? []);
               samples.push(target.clone());
               history.set(a.id, samples.slice(-9));
+              const journey = observedJourney(pathNetwork, position, target, p.tickMs ?? 500);
               motion.set(a.id, {
                 from: position.clone(),
                 target,
-                path: position.distanceTo(target) <= AGENT_MOTION.liveMaxGap
-                  ? pathBetween(pathNetwork, position, target) : null,
+                path: journey?.path ?? null,
+                duration: journey?.duration ?? (p.tickMs ?? 500),
+                network: pathNetwork,
                 at: performance.now(),
                 tick,
               });
             }
             const sample = motion.get(a.id)!;
             if (!p.paused) {
-              if (a.paused || !sample.path) position.copy(sample.target);
-              else samplePath(sample.path, Math.min(1,
-                (performance.now() - sample.at) / (p.tickMs ?? 500)), position);
+              if (sample.path) samplePath(sample.path, Math.min(1,
+                (performance.now() - sample.at) / sample.duration), position);
             }
           }
           agentPositions.set(a.id, position);
@@ -827,7 +872,10 @@ export const City = forwardRef<CityHandle, CityProps>(
             pose.phase =
               (pose.phase + Math.min(distance, 0.2) * 12) % (Math.PI * 2);
           }
-          const interacting = !walking && !a.paused && ["working", "trading", "delivering"].includes(a.state ?? "") && !p.demo;
+          const workAgent = { id: a.id, state: a.paused ? "paused" as const : (a.state ?? "idle"), work: a.work };
+          const poseKind = !walking && !p.demo ? workPose(workAgent, position.x, position.y) : null;
+          const interacting = !!poseKind && !a.paused;
+          const carrying = !p.demo && Object.values(a.work?.cargo ?? {}).some(q => (q ?? 0) > 0);
           if (interacting && !p.paused) pose.phase += dt * 1.8;
           gait.set(a.id, pose);
           if (
@@ -850,17 +898,18 @@ export const City = forwardRef<CityHandle, CityProps>(
                 : a.state === "working"
                   ? "#a4a05e"
                   : "#789684",
-            a.state === "delivering",
+            carrying,
             interacting,
+            poseKind ?? undefined,
           );
           labelAgents.push({ id: a.id, name: a.name, ownerWallet: a.ownerWallet,
             identity: a.identity, displayName: a.displayName,
             demoName: a.demoName ?? p.demo, x: streetPoint.x, z: streetPoint.y,
             state: a.paused ? "paused" : walking ? "walking" : interacting ? "interacting" : "idle",
-            activity: a.state, visualOnly: p.demo,
+            activity: p.demo ? a.state : workDescription(workAgent), visualOnly: p.demo,
             selected: p.selectedAgentId === a.id, hovered: hoveredAgentId === a.id,
             important: importantAgents.has(a.id) });
-          if (a.state === "delivering") {
+          if (carrying) {
             agentMatrix.makeTranslation(
               streetPoint.x + Math.sin(pose.heading) * 0.29,
               0.72,
@@ -876,6 +925,11 @@ export const City = forwardRef<CityHandle, CityProps>(
         container.dataset.agentVisualStates = JSON.stringify(labelAgents.reduce<Record<string, number>>((states, agent) => {
           states[agent.state] = (states[agent.state] ?? 0) + 1; return states;
         }, {}));
+        if(t-lastWorkReport>.25) {lastWorkReport=t;container.dataset.agentWork = JSON.stringify(agentData.map(a => ({ id:a.id, taskId:a.work?.task?.id ?? null,
+          destination:a.work?.destination?.id ?? null, state:a.state, tick:a.work?.tick,
+          x:agentPositions.get(a.id)?.x, z:agentPositions.get(a.id)?.y,
+          working:!!workPose({id:a.id,state:(a.state??"idle"),work:a.work},agentPositions.get(a.id)?.x??Infinity,agentPositions.get(a.id)?.y??Infinity) })));
+        }
         demoWalkers.prune(activeAgentIds);
         for (const id of gait.keys())
           if (!activeAgentIds.has(id)) {
@@ -1050,6 +1104,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         pulseGeometry.dispose();
         pulseMaterial.dispose();
         pulses.dispose();
+        scene.remove(workHighlights);workHighlightGeometry.dispose();workHighlightMaterial.dispose();workHighlights.dispose();
         disposeGroup(scene, shared);
         Object.values(library).forEach((g) => g.dispose());
         renderer.dispose();

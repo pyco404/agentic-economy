@@ -1,3 +1,9 @@
+import { WorldReadiness, type WorldPhase } from "./worldReadiness";
+import { WorldLoading } from "./WorldLoading";
+import { bridgeSurface } from "./bridgeSurface";
+import { graphReport } from "./navigation";
+import { landmassParts, landmassGalleries, landmassCuts } from "./landmass";
+import { pedestrianNavigation } from "./agentMotion";
 import { workDescription, workPose } from "../api/agentWork";
 import type { AgentWork, AgentSummary } from "../api/shared";
 import { cityPalette } from "./palette";
@@ -19,7 +25,7 @@ import { createAgentLabels, type LabelAgent } from "./agentLabels";
 import { agentSeed, buildPathNetwork, createDemoWalkers, observedJourney, samplePath } from "./agentMotion";
 import { createAmbientScene } from "./ambient";
 import { CityReveal } from "./reveal";
-import { prepareScenery, reviveScenery, type SceneryRequest, type SceneryMessage } from "./sceneryPlan";
+import { createSceneryPreparer, reviveScenery, type SceneryRequest, type SceneryMessage } from "./sceneryPlan";
 import { excavateRailTerrain } from "./railExcavation";
 import { pedestrianStreetPoint, planStreets } from "./streets";
 import type { CityActivity } from "../api/state";
@@ -66,6 +72,7 @@ export interface CityHandle {
   follow: (id: string | null) => void;
 }
 interface CityProps {
+  onReadyChange?: (ready: boolean) => void;
   touchPan?: boolean;
   interactive?: boolean;
   background?: boolean;
@@ -116,11 +123,14 @@ export const City = forwardRef<CityHandle, CityProps>(
         focus: THREE.Vector3 | null;
         home: THREE.Vector3;
         homeZoom: number;
+        homeActive: boolean;
         following: string | null;
       } | null>(null);
     const current = useRef(props);
     current.current = props;
     const [error, setError] = useState("");
+    const [worldPhase, setWorldPhase] = useState<WorldPhase>("INITIALIZING");
+    const [preparationWarning, setPreparationWarning] = useState("");
     useImperativeHandle(
       ref,
       () => ({
@@ -133,6 +143,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           const report = JSON.parse(host.current?.dataset.railway ?? "null");
           if (!report?.tunnel || !runtime.current || !host.current) return;
           const r = runtime.current, { west, east } = report.tunnel;
+          r.homeActive = false;
           r.focus = new THREE.Vector3((west.x + east.x) / 2, 0, 38);
           r.camera.zoom = Math.min(1.1, 200 * host.current.clientWidth / host.current.clientHeight / 320);
           r.camera.updateProjectionMatrix();
@@ -140,6 +151,8 @@ export const City = forwardRef<CityHandle, CityProps>(
         zoom(delta) {
           const r = runtime.current;
           if (r) {
+            r.homeActive = false;
+            r.focus = null;
             r.camera.zoom = THREE.MathUtils.clamp(r.camera.zoom * delta, r.controls.minZoom, 22);
             r.camera.updateProjectionMatrix();
           }
@@ -149,6 +162,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           if (r) {
             r.following = null; current.current.onFollowChange?.(null);
             finishCameraMotion(r.controls);
+            r.homeActive = true;
             r.focus = r.home.clone();
             r.camera.zoom = r.homeZoom;
             r.camera.position
@@ -159,6 +173,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         },
         focus(x, z, zoom = 6) {
           if (runtime.current) {
+            runtime.current.homeActive = false;
             runtime.current.focus = new THREE.Vector3(x, 0, z);
             runtime.current.camera.zoom = zoom;
             runtime.current.camera.updateProjectionMatrix();
@@ -167,6 +182,8 @@ export const City = forwardRef<CityHandle, CityProps>(
         rotate() {
           const r = runtime.current;
           if (r) {
+            r.homeActive = false;
+            r.focus = null;
             r.following=null;current.current.onFollowChange?.(null);
             const relative = r.camera.position
               .clone()
@@ -180,6 +197,16 @@ export const City = forwardRef<CityHandle, CityProps>(
     );
     useEffect(() => {
       if (!host.current) return;
+      const readiness = new WorldReadiness();
+      let publishedPhase:WorldPhase="INITIALIZING";
+      const phaseHistory:WorldPhase[]=[publishedPhase];
+      current.current.onReadyChange?.(false);
+      const publishReadiness=()=>{
+        if(readiness.phase===publishedPhase)return;
+        publishedPhase=readiness.phase;phaseHistory.push(publishedPhase);container.dataset.worldPhaseHistory=JSON.stringify(phaseHistory);setWorldPhase(publishedPhase);
+        current.current.onReadyChange?.(readiness.presented||readiness.phase==="ERROR");
+      };
+      const failWorld=(message:string)=>{readiness.fail();publishReadiness();setError(message);};
       const container = host.current,
         scene = new THREE.Scene();
       scene.background = new THREE.Color(cityPalette.parchment);
@@ -191,7 +218,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           powerPreference: "high-performance",
         });
       } catch {
-        setError(
+        failWorld(
           "3D rendering is unavailable on this device. Use the building explorer below, or enable WebGL and reload.",
         );
         return;
@@ -241,10 +268,9 @@ export const City = forwardRef<CityHandle, CityProps>(
         TWO: THREE.TOUCH.DOLLY_ROTATE,
       };
       controls.update();
-      const stopAutomaticFocus = () => { if (runtime.current) {
-        runtime.current.focus = null;
-        if(runtime.current.following) {runtime.current.following=null;current.current.onFollowChange?.(null);}
-      } };
+      const stopAutomaticFocus = () => {
+        if (runtime.current) { runtime.current.focus = null; if(runtime.current.following){runtime.current.following=null;current.current.onFollowChange?.(null);} runtime.current.homeActive = false; }
+      };
       controls.addEventListener("start", stopAutomaticFocus);
       runtime.current = {
         camera,
@@ -252,6 +278,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         focus: null,
         home: initialCenter,
         homeZoom: camera.zoom,
+        homeActive: true,
         following: null,
       };
       // Reduce broad fill in favor of directional shading. Horizontal terrain keeps
@@ -354,7 +381,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       let pathNetwork = buildPathNetwork([], WORLD_SEED);
       let streets = planStreets([], WORLD_SEED);
       const streetPoint = new THREE.Vector2();
-      let demoWalkers = createDemoWalkers(pathNetwork, []);
+      const demoWalkers = createDemoWalkers(pathNetwork, []);
       let hoveredAgentId: string | null = null;
       const labels = createAgentLabels(container, (id) => current.current.onAgentSelect(id),
         (id) => { hoveredAgentId = id; });
@@ -481,8 +508,8 @@ export const City = forwardRef<CityHandle, CityProps>(
       renderer.domElement.addEventListener("pointermove", move);
       const key = (e: KeyboardEvent) => {
         if (current.current.interactive === false) return;
-        if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","+","=","-"].includes(e.key) && runtime.current?.following) {
-          runtime.current.following=null;runtime.current.focus=null;current.current.onFollowChange?.(null);
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-"].includes(e.key)) {
+          runtime.current!.following=null;current.current.onFollowChange?.(null); runtime.current!.homeActive = false; runtime.current!.focus = null;
         }
         const delta = new THREE.Vector3();
         const step = 12 / camera.zoom;
@@ -499,8 +526,10 @@ export const City = forwardRef<CityHandle, CityProps>(
           camera.zoom = Math.min(22, camera.zoom * 1.15);
         if (e.key === "-") camera.zoom = Math.max(controls.minZoom, camera.zoom / 1.15);
         if (e.key === "Home") {
+          runtime.current!.following=null;current.current.onFollowChange?.(null);
           e.preventDefault();
           finishCameraMotion(controls);
+          runtime.current!.homeActive = true;
           runtime.current!.focus = runtime.current!.home.clone();
           camera.position.copy(controls.target).add(worldCameraOffset().setLength(400 / controls.minZoom));
           camera.zoom = runtime.current!.homeZoom;
@@ -518,8 +547,9 @@ export const City = forwardRef<CityHandle, CityProps>(
           h = container.clientHeight;
         if (!w || !h) return;
         const r = runtime.current!;
-        const wasOverview = Math.abs(camera.zoom - r.homeZoom) < 0.02 &&
-          controls.target.distanceTo(r.home) < 1;
+        // User intent, rather than approximate target/zoom equality: a rotation
+        // alone must also protect a manually chosen view from responsive fitting.
+        const wasOverview = r.homeActive;
         const frameChunks = current.current.chunks ?? generateWorld(current.current.seed ?? WORLD_SEED, current.current.population);
         const frame = defaultWorldFrame(frameChunks, w, h);
         r.home.copy(frame.center);
@@ -529,6 +559,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         // plane behind foreground terrain, even at portrait overview zoom.
         camera.position.sub(controls.target).setLength(400 / controls.minZoom).add(controls.target);
         if (firstSize || wasOverview) {
+          r.focus = null;
           const delta = frame.center.clone().sub(controls.target);
           controls.target.add(delta); camera.position.add(delta);
           camera.zoom = frame.zoom;
@@ -551,7 +582,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       resize();
       const onLost = (e: Event) => {
         e.preventDefault();
-        setError(
+        failWorld(
           "The 3D graphics context was lost. Reload to restore the city, or use the building explorer.",
         );
       };
@@ -566,20 +597,23 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (Number.isFinite(time)) reviewTime = Math.max(0, time);
       };
       if (revealReview) container.addEventListener("city-reveal-review", previewReveal);
-      let scenicRevision = 0, preparing = false, sceneryReady = false;
+      let scenicRevision = 0, preparing = false, sceneryReady = false, requestedCatalog = "";
       let worker: Worker | null = null;
       let latestRequest: SceneryRequest | null = null;
+      const prepareScenery=createSceneryPreparer();
       const acceptScenery = (raw: SceneryMessage) => {
         if (!alive || raw.revision !== scenicRevision) return;
         const message = reviveScenery(raw);
         if (message.kind === "error") {
-          preparing = false; container.dataset.sceneryError = message.error; return;
+          preparing = false; container.dataset.sceneryError = message.error;
+          failWorld(`The world could not be prepared: ${message.error}. Reload to retry, or use the building explorer.`); return;
         }
         if (message.kind === "roads") {
           pathNetwork = message.pathNetwork; streets = message.streets;
           container.dataset.streetConstraints = JSON.stringify(streets.constraints);
+          demoWalkers.reconfigure(pathNetwork,current.current.chunks?.flatMap((c)=>c.buildings)??[]);
+          container.dataset.pedestrianNavigation=JSON.stringify(graphReport(pedestrianNavigation(pathNetwork)));
           container.dataset.lakeChannel = JSON.stringify(message.channel);
-          if (current.current.demo) demoWalkers = createDemoWalkers(pathNetwork, current.current.chunks?.flatMap((c) => c.buildings) ?? []);
         }
         if (message.kind === "chunk") {
           const chunk = message.chunk;
@@ -616,20 +650,35 @@ export const City = forwardRef<CityHandle, CityProps>(
           reveal.jobs.push(() => {
             if (!alive || message.revision !== scenicRevision) return;
             const { frontier, composition } = message;
+            const priorNavigation=ambient?.navigationState();
             if (ambient) { reveal.forget(ambient.group); scene.remove(ambient.group); disposeGroup(ambient.group, shared); }
-            ambient = createAmbientScene(message.ambient, library);
+            const plan=message.ambient;
+            setPreparationWarning(plan.navigationError ? "The city is ready. Some ambient transport is temporarily unavailable." : "");
+            container.dataset.optionalSceneryError=plan.navigationError??"";
+            const renderPlan={...plan,
+              railway:plan.railway?{...plan.railway,parts:landmassParts(message.landmass,plan.railway.parts),
+                underground:plan.railway.underground?{...plan.railway.underground,
+                  galleries:landmassGalleries(message.landmass,plan.railway.underground.galleries)}:undefined}:null,
+              mirroredRail:plan.mirroredRail?{...plan.mirroredRail,source:{...plan.mirroredRail.source,
+                parts:landmassParts(message.landmass,plan.mirroredRail.source.parts,plan.mirroredRail.reflectionZ),
+                underground:plan.mirroredRail.source.underground?{...plan.mirroredRail.source.underground,
+                  galleries:landmassGalleries(message.landmass,plan.mirroredRail.source.underground.galleries,plan.mirroredRail.reflectionZ)}:undefined}}:null};
+            ambient = createAmbientScene(renderPlan, library);
+            if(priorNavigation)ambient.preserveNavigation(priorNavigation);
             ambient.update(ambientTime, current.current.ambientEnabled !== false, railTime);
             reveal.register("infrastructure", ambient.group, 1, revealNow(), "environment"); scene.add(ambient.group);
             container.dataset.ambientActors = JSON.stringify(ambient.counts);
             container.dataset.railway = JSON.stringify(ambient.railway);
             container.dataset.mirroredRailway = JSON.stringify(ambient.mirroredRailway);
             container.dataset.railFrame = "-1";
-            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens, outskirts: composition.outskirts });
+            container.dataset.westernRiver = JSON.stringify(frontier.westernRiver ?? null);
+            container.dataset.composition = JSON.stringify({ edgeSegments: composition.edgeSegments, railGardens: composition.railGardens, outskirts: composition.outskirts, support: composition.support });
             if (scenic) { reveal.forget(scenic.group); scene.remove(scenic.group); disposeGroup(scenic.group, shared); }
-            scenic = createFrontierScene({ ...frontier, parts: [...frontier.parts.filter((_, i) => !ambient!.clearedFrontierParts.has(i)), ...composition.parts] }, library, ambient.cuts);
+            scenic = createFrontierScene(message.landmass.frontier, library, ambient.cuts);
+            container.dataset.landmass = JSON.stringify(message.landmass.report);
             reveal.register("frontier", scenic.group, 1, revealNow());
             const ground = excavateRailTerrain([-3000, -.5, -3000, -3000, -.5, 3000, 3000, -.5, 3000,
-              -3000, -.5, -3000, 3000, -.5, 3000, 3000, -.5, -3000], [], ambient.cuts);
+              -3000, -.5, -3000, 3000, -.5, 3000, 3000, -.5, -3000], [], landmassCuts(message.landmass, ambient.cuts));
             backdrop.geometry.dispose(); backdrop.geometry = new THREE.BufferGeometry();
             backdrop.geometry.setAttribute("position", new THREE.Float32BufferAttribute(ground.positions, 3));
             backdrop.geometry.computeVertexNormals(); backdrop.rotation.set(0, 0, 0); backdrop.position.y = 0;
@@ -641,19 +690,22 @@ export const City = forwardRef<CityHandle, CityProps>(
           });
         }
       };
+      const prepareLocally=(request:SceneryRequest)=>{
+        try{prepareScenery(request,acceptScenery);}catch(error){acceptScenery({kind:"error",revision:request.revision,error:error instanceof Error?error.message:"World preparation failed"});}
+      };
       try {
         worker = new Worker(new URL("./scenery.worker.ts", import.meta.url), { type: "module" });
         worker.onmessage = (event: MessageEvent<SceneryMessage>) => acceptScenery(event.data);
         worker.onerror = () => {
           worker?.terminate(); worker = null; container.dataset.sceneryWorker = "fallback";
-          if (latestRequest) { const request = latestRequest; setTimeout(() => { if (alive && request.revision === scenicRevision) prepareScenery(request, acceptScenery); }, 0); }
+          if (latestRequest) { const request = latestRequest; setTimeout(() => { if (alive && request.revision === scenicRevision) prepareLocally(request); }, 0); }
         };
       } catch { container.dataset.sceneryWorker = "unavailable"; }
       container.dataset.sceneryWorker = worker ? "active" : "fallback";
-      let inspectionKey = "", lastBackgroundFrame = 0, wasInteractive = true,
+      let inspectionKey = "", lastBackgroundFrame = 0, lastNavigationReport = 0, wasInteractive = true,
         wasStill = false, renderedSizeRevision = -1, initialSlowRender = false, lastInitialRenderEnd = 0;
       const render = () => {
-        if (!alive) return;
+        if (!alive || readiness.phase === "ERROR") return;
         animation = requestAnimationFrame(render);
         const presentation = current.current;
         const now = performance.now();
@@ -661,7 +713,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         lastBackgroundFrame = now;
         const interactive = presentation.interactive !== false;
         controls.touches.ONE = presentation.touchPan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
-        controls.enabled = interactive;
+        controls.enabled = interactive && readiness.presented;
         renderer.domElement.tabIndex = interactive ? 0 : -1;
         if (!interactive && wasInteractive) { runtime.current!.focus = null; hoveredAgentId = null; }
         wasInteractive = interactive;
@@ -673,12 +725,14 @@ export const City = forwardRef<CityHandle, CityProps>(
         const nextInspection = p.inspection?.id ?? "";
         if (nextInspection !== inspectionKey) {
           inspectionKey = nextInspection;
+          if (p.inspection) runtime.current!.homeActive = false;
           if (p.inspection) runtime.current!.focus = inspectionTarget(p.inspection.x, p.inspection.z,
             camera, container.clientWidth, container.clientHeight);
         }
-        if (!p.paused) elapsed += dt;
+        const motionDt=document.hidden?0:Math.min(3,Math.max(0,frameSeconds));
+        if (!p.paused) elapsed += motionDt;
         if (!p.paused && !motionPreference.matches && p.ambientEnabled !== false) {
-          ambientTime += dt;
+          ambientTime += motionDt;
         }
         // The rail service uses uncapped real elapsed seconds, independently of
         // cosmetic actors, simulation ticks, background throttling and navigation.
@@ -691,6 +745,10 @@ export const City = forwardRef<CityHandle, CityProps>(
           container.dataset.railClockRate = String(railClockRate);
         }
         container.dataset.ambientTime = String(ambientTime);
+        if(ambient&&now-lastNavigationReport>1000){
+          lastNavigationReport=now;container.dataset.navigation=JSON.stringify(ambient.navigationReport());
+          if(p.demo)container.dataset.pedestrianJourneys=JSON.stringify(demoWalkers.report());
+        }
         scenic?.update(elapsed, !p.paused && !motionPreference.matches);
         const r=runtime.current!;
         if(r.following) {
@@ -714,9 +772,12 @@ export const City = forwardRef<CityHandle, CityProps>(
             .multiplyScalar(1 - Math.exp(-6 * Math.min(0.5, frameSeconds)));
           controls.target.add(delta);
           camera.position.add(delta);
+          // Finish at the destination, rather than stopping when a small
+          // per-frame step still leaves a frame-rate-dependent target error.
           if (controls.target.distanceTo(runtime.current.focus) < 0.02) {
             camera.position.add(runtime.current.focus.clone().sub(controls.target));
-            controls.target.copy(runtime.current.focus);runtime.current.focus=null;
+            controls.target.copy(runtime.current.focus);
+            runtime.current.focus = null;
           }
         }
         if (interactive) controls.update();
@@ -748,17 +809,21 @@ export const City = forwardRef<CityHandle, CityProps>(
           const all = p.chunks ?? generateWorld(p.seed ?? WORLD_SEED, p.population);
           const nextScenicKey = (p.chunkCatalog ?? all.map((c) => ({ cx: c.x, cy: c.z }))).map((c) => `${c.cx}:${c.cy}`).join(",");
           const nextScenicDependencies = [...all].sort((a, b) => a.id.localeCompare(b.id)).flatMap((c) => [c.id, c.geometryKey]);
-          const wanted = all.filter((chunk) => frustum.intersectsSphere(new THREE.Sphere(new THREE.Vector3(chunk.x * 32 + 16, 2, chunk.z * 32 + 16), 26))).map((c) => c.id);
-          if (scenicKey !== nextScenicKey || scenicDependencies.length !== nextScenicDependencies.length ||
+          const missingCatalog=(p.chunkCatalog??[]).filter(c=>!all.some(chunk=>chunk.x===c.cx&&chunk.z===c.cy));
+          const catalogComplete=missingCatalog.length===0;
+          const catalogKey=missingCatalog.map(c=>`${c.cx}:${c.cy}`).join(",");
+          if(!readiness.presented&&!catalogComplete&&requestedCatalog!==catalogKey){requestedCatalog=catalogKey;p.onViewChange?.(missingCatalog);}
+          const wanted = !readiness.presented ? all.map(c=>c.id) : all.filter((chunk) => frustum.intersectsSphere(new THREE.Sphere(new THREE.Vector3(chunk.x * 32 + 16, 2, chunk.z * 32 + 16), 26))).map((c) => c.id);
+          if ((readiness.presented || catalogComplete) && (scenicKey !== nextScenicKey || scenicDependencies.length !== nextScenicDependencies.length ||
             scenicDependencies.some((key, i) => key !== nextScenicDependencies[i]) ||
-            (!preparing && wanted.some((id) => !chunks.has(id)))) {
+            (!preparing && wanted.some((id) => !chunks.has(id))))) {
             scenicKey = nextScenicKey; scenicDependencies = nextScenicDependencies;
             const request: SceneryRequest = { revision: ++scenicRevision, chunks: all, seed: p.seed ?? WORLD_SEED,
               catalog: p.chunkCatalog, style: frontierStyle, center: { x: runtime.current!.home.x, z: runtime.current!.home.z },
               wanted, known: Object.fromEntries([...chunks].map(([id, c]) => [id, c.signature])) };
-            latestRequest = request; preparing = true; sceneryReady = false;
+            latestRequest = request; preparing = true; sceneryReady = false;readiness.build();publishReadiness();
             if (worker) worker.postMessage(request);
-            else setTimeout(() => { if (alive && request.revision === scenicRevision) prepareScenery(request, acceptScenery); }, 0);
+            else setTimeout(() => { if (alive && request.revision === scenicRevision) prepareLocally(request); }, 0);
           }
           for (const chunk of all) {
             const cached = chunks.get(chunk.id);
@@ -775,16 +840,24 @@ export const City = forwardRef<CityHandle, CityProps>(
             }
           }
         }
-        reveal.work();
-        reveal.setReady(sceneryReady); reveal.setReduced(motionPreference.matches);
+        try{reveal.work();}catch(error){
+          reveal.jobs.length=0;
+          failWorld(`The world could not be assembled: ${error instanceof Error?error.message:"Graphics preparation failed"}. Reload to retry, or use the building explorer.`);return;
+        }
+        const expected=current.current.chunks??latestRequest?.chunks??[];
+        const catalogComplete=(p.chunkCatalog??[]).every(c=>expected.some(chunk=>chunk.x===c.cx&&chunk.z===c.cy));
+        readiness.commit({environment:sceneryReady,pendingJobs:reveal.jobs.length,expectedChunks:expected.length,
+          builtChunks:[...chunks.values()].filter(c=>c.signature!=="pending"&&expected.some(e=>e.id===c.data.id)).length,catalogComplete});
+        publishReadiness();
+        reveal.setReady(readiness.staticReady); reveal.setReduced(motionPreference.matches);
         reveal.update(reviewTime ?? t, revealReview ? 0 : frameSeconds * 1000, camera.zoom > 2.3);
         container.dataset.revealStage = reveal.stage;
         container.dataset.revealTime = String(reviewTime ?? t);
         container.dataset.revealVisible = JSON.stringify(reveal.counts);
         container.dataset.revealPending = String(reveal.jobs.length);
         container.dataset.revealSceneryReady = String(sceneryReady);
-        const actorsReady = reveal.actorsVisible;
-        ambient?.setActorsVisible(actorsReady);
+        const actorsReady = reveal.actorsVisible && readiness.presented;
+        ambient?.setActorsVisible(reveal.ambientVisible && readiness.presented);
         citizens.meshes.forEach((mesh) => { mesh.visible = actorsReady; });
         cargo.visible = actorsReady; pulses.visible = actorsReady;
         const visible = (
@@ -822,7 +895,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           let x = a.x,
             z = a.z;
           if (p.demo) {
-            const visual = demoWalkers.position(a.id, x, z, elapsed, dt, a.paused || p.paused);
+            const visual = demoWalkers.position(a.id, x, z, elapsed, motionDt, a.paused || p.paused);
             x = visual.x; z = visual.y;
           }
           if (!isFinite(x) || !isFinite(z)) continue;
@@ -863,13 +936,16 @@ export const City = forwardRef<CityHandle, CityProps>(
           }
           agentPositions.set(a.id, position);
           pedestrianStreetPoint(position, agentSeed(a.id), streets, streetPoint);
+          const surface = bridgeSurface(p.chunks ?? []);
+          const agentElevation = surface.raised ? surface.level(streetPoint.x, streetPoint.y) : 0;
           const dx = position.x - oldX,
             dz = position.y - oldZ;
           const distance = Math.hypot(dx, dz);
           const walking = !p.paused && !a.paused && distance > 0.0001;
           const pose = gait.get(a.id) ?? { heading: 0, phase: agentSeed(a.id) % 628 / 100 };
           if (walking) {
-            pose.heading = Math.atan2(dx, dz);
+            const desiredHeading=Math.atan2(dx,dz);
+            pose.heading+=Math.atan2(Math.sin(desiredHeading-pose.heading),Math.cos(desiredHeading-pose.heading))*Math.min(1,motionDt*10);
             pose.phase =
               (pose.phase + Math.min(distance, 0.2) * 12) % (Math.PI * 2);
           }
@@ -881,7 +957,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           gait.set(a.id, pose);
           if (
             !frustum.containsPoint(
-              new THREE.Vector3(position.x, 0.6, position.y),
+              new THREE.Vector3(position.x, 0.6 + agentElevation, position.y),
             )
           )
             continue;
@@ -902,10 +978,12 @@ export const City = forwardRef<CityHandle, CityProps>(
             carrying,
             interacting,
             poseKind ?? undefined,
+            agentElevation,
           );
           labelAgents.push({ id: a.id, name: a.name, ownerWallet: a.ownerWallet,
             identity: a.identity, displayName: a.displayName,
             demoName: a.demoName ?? p.demo, x: streetPoint.x, z: streetPoint.y,
+            elevation: agentElevation,
             state: a.paused ? "paused" : walking ? "walking" : interacting ? "interacting" : "idle",
             activity: p.demo ? a.state : workDescription(workAgent), visualOnly: p.demo,
             selected: p.selectedAgentId === a.id, hovered: hoveredAgentId === a.id,
@@ -913,7 +991,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           if (carrying) {
             agentMatrix.makeTranslation(
               streetPoint.x + Math.sin(pose.heading) * 0.29,
-              0.72,
+              0.72 + agentElevation,
               streetPoint.y + Math.cos(pose.heading) * 0.29,
             );
             cargo.setMatrixAt(cargoCount++, agentMatrix);
@@ -1015,9 +1093,13 @@ export const City = forwardRef<CityHandle, CityProps>(
           : "";
         // Treasury holds the last visual frame while authoritative data still updates.
         const yieldRevealFrame = !reveal.complete && initialSlowRender && reveal.jobs.length > 0 && performance.now() - lastInitialRenderEnd < 120;
-        if (!yieldRevealFrame && (!p.visualStill || !wasStill || renderedSizeRevision !== sizeRevision || !reveal.complete)) {
+        if (reveal.staticReady && !yieldRevealFrame && (!p.visualStill || !wasStill || renderedSizeRevision !== sizeRevision || !reveal.complete || readiness.phase === "INTERACTIVE")) {
           const renderStarted = performance.now();
-          renderer.render(scene, camera); renderedSizeRevision = sizeRevision;
+          const presentedBeforeRender=readiness.presented;
+          try{renderer.render(scene,camera);}catch(error){failWorld(`The world could not be displayed: ${error instanceof Error?error.message:"Graphics rendering failed"}. Use the building explorer or reload.`);return;}
+          renderedSizeRevision = sizeRevision;
+          readiness.present();publishReadiness();
+          if(reveal.complete&&presentedBeforeRender){readiness.activate();publishReadiness();}
           lastInitialRenderEnd = performance.now();
           if (!reveal.complete && lastInitialRenderEnd - renderStarted > 80) {
             initialSlowRender = true;
@@ -1029,13 +1111,13 @@ export const City = forwardRef<CityHandle, CityProps>(
         frames++;
         if (t - lastMetrics > 1) {
           const markers = (p.regions ?? [])
-            .filter((region) => ["civic", "industrial"].includes(region.theme))
+            .filter((region) => ["civic", "industrial"].includes(region.theme) || region.id.startsWith("region_neighborhood_"))
             .map((region) => {
-              const landmark = [...buildings.values()].find(
+              const landmark = ["civic", "industrial"].includes(region.theme) ? [...buildings.values()].find(
                 (b) =>
                   b.kind ===
                   (region.theme === "civic" ? "town-hall" : "factory"),
-              );
+              ) : undefined;
               const point = new THREE.Vector3(
                 landmark?.x ?? (region.bounds.minX + region.bounds.maxX) / 2,
                 0.2,
@@ -1115,7 +1197,9 @@ export const City = forwardRef<CityHandle, CityProps>(
     }, []);
     return (
       <>
-        <div ref={host} className="city-canvas" data-testid="city-canvas" />
+        <div ref={host} className="city-canvas" data-testid="city-canvas" data-world-state={worldPhase} aria-busy={!error && !["INTERACTIVE","FULLY_ACTIVE"].includes(worldPhase)} />
+        <WorldLoading active={!error && !["INTERACTIVE","FULLY_ACTIVE"].includes(worldPhase)} />
+        {preparationWarning && !error && <div className="world-preparation-warning" role="status">{preparationWarning}</div>}
         {error && (
           <div role="alert" className="graphics-error">
             {error}

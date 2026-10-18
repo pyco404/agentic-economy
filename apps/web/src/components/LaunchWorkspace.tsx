@@ -5,6 +5,7 @@ import { jsonRequest, launchpadApiOrigin, launchpadRequest, useWalletSession } f
 import { useDraftField } from '../navigation/drafts';
 import { prepareLaunchDraft, type PreparationStage } from '../api/prepareLaunchDraft';
 import { LaunchExecution } from './LaunchExecution';
+import { LaunchTokenPreview } from './LaunchTokenPreview';
 import { LaunchLogoUpload } from './LaunchLogoUpload';
 import { LaunchQuotePicker } from './LaunchQuotePicker';
 import { PageHeading } from './Pages';
@@ -21,6 +22,8 @@ export function LaunchWorkspace() {
  const [fields,setFields] = useState<Fields>(empty), [busy,setBusy] = useState(false), [error,setError] = useState(''), [message,setMessage] = useState('');
  const [review,setReview] = useState<z.infer<typeof DraftReview>|null>(null), [uploads,setUploads] = useState<boolean|null>(null);
  const [maxBytes,setMaxBytes] = useState(5_000_000), [memoryStorage,setMemoryStorage] = useState(false), [logoScope,setLogoScope] = useState(newScope);
+ const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false);
+ const flowActive=review?.launchEnabled===true;
  const [phase,setPhase] = useState<PreparationStage|null>(null), [progress,setProgress] = useState<number|null>(null), [removed,setRemoved] = useState(false);
  const [legacyName] = useDraftField('launchpad:name',''), [legacySymbol] = useDraftField('launchpad:symbol',''), [legacyDescription] = useDraftField('launchpad:description','');
  const current = useRef(draft), form = useRef(fields), activeOwner = useRef(owner), previousOwner = useRef(owner);
@@ -30,12 +33,12 @@ export function LaunchWorkspace() {
  const base = launchpadPaths.drafts;
  const keyFor = (scope:string) => {let key=keys.current.get(scope);if(!key){key=crypto.randomUUID();keys.current.set(scope,key);}return key;};
  const accept = (value:Draft) => {current.current=value;setDraft(value);setFields(value.fields);setItems(list=>[value,...list.filter(x=>x.id!==value.id)]);setReview(null);};
- const reset = () => {keys.current.clear();selected.current=null;current.current=null;setDraft(null);setFields(empty);setReview(null);setRemoved(false);setLogoScope(newScope());setError('');setMessage('');};
+ const reset = () => {setCreated(false);keys.current.clear();selected.current=null;setLocalFile(null);current.current=null;setDraft(null);setFields(empty);setReview(null);setRemoved(false);setLogoScope(newScope());setError('');setMessage('');};
  useEffect(() => {
   const version=++generation.current;
-  if(previousOwner.current && previousOwner.current!==owner){selected.current=null;setFields(empty);setRemoved(false);setLogoScope(newScope());}
-  previousOwner.current=owner;keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setError('');setMessage('');setUploads(null);setMemoryStorage(false);
-  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
+  if(previousOwner.current && previousOwner.current!==owner){selected.current=null;setLocalFile(null);setFields(empty);setRemoved(false);setLogoScope(newScope());}
+  previousOwner.current=owner;keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);
+  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
   if(owner)void launchpadRequest(base,z.object({items:z.array(SavedLaunchDraft)})).then(result=>{if(version===generation.current)setItems(result.items);}).catch(e=>{if(version===generation.current)setError(friendlyError(e));});
   return()=>{controller.current?.abort();};
  },[owner,base]);
@@ -71,38 +74,41 @@ export function LaunchWorkspace() {
   if(!owner){session.open();return;}
   void run(async(signal,check)=>{
    if(uploads===null)throw new Error('Token preparation is still loading. Please try again in a moment.');
+   if(!launchEnabled)throw new Error('Coin creation is unavailable in this demo. You can preview your coin and save a draft.');
    const result=await prepareLaunchDraft({fields:{...form.current},draft:current.current,file:selected.current?.file??null,removeImage:removed,uploads}, {
     check,stage:value=>{setPhase(value);setProgress(null);},save:(values,previous)=>save(values,previous,signal),
     removeImage:d=>launchpadRequest(`${base}/${d.id}/logo`,SavedLaunchDraft,{...jsonRequest('DELETE',{version:d.version}),signal}),
     upload:(d,file)=>upload(d,file,signal),
     metadata:d=>launchpadRequest(`${base}/${d.id}/metadata`,SavedLaunchDraft,{...jsonRequest('POST',{version:d.version},keyFor(`metadata:${owner}:${d.id}:${d.version}`)),signal}),
     review:d=>launchpadRequest(`${base}/${d.id}/review`,DraftReview,{signal}),
-    accept:d=>{accept(d);setRemoved(false);},uploaded:()=>{selected.current=null;setLogoScope(newScope());setProgress(null);},
+    accept:d=>{accept(d);setRemoved(false);},uploaded:()=>{selected.current=null;setLocalFile(null);setLogoScope(newScope());setProgress(null);},
    });
    check();setReview(result.review);setMessage(result.notice);
   });
  };
  const edit = (key:keyof Fields,value:string) => {setFields(f=>({...f,[key]:value||(['website','twitter','telegram'].includes(key)?null:'')}));setReview(null);setError('');setMessage('');};
- const load = (id:string) => void run(async(signal,check)=>{const d=await launchpadRequest(`${base}/${id}`,SavedLaunchDraft,{signal});check();if(d.wallet!==owner)throw new Error('This draft belongs to another wallet.');selected.current=null;keys.current.clear();setRemoved(false);setLogoScope(newScope());accept(d);setMessage('Draft loaded.');});
+ const load = (id:string) => void run(async(signal,check)=>{const d=await launchpadRequest(`${base}/${id}`,SavedLaunchDraft,{signal});check();if(d.wallet!==owner)throw new Error('This draft belongs to another wallet.');selected.current=null;setLocalFile(null);setCreated(false);keys.current.clear();setRemoved(false);setLogoScope(newScope());accept(d);setMessage('Draft loaded.');});
  return <>
-  <PageHeading eyebrow="BUILD A PRESENCE" title="Give your community a home." description="Tell us about your token and choose a logo. We’ll take care of preparing it for review."/>
+  <PageHeading eyebrow="BUILD A PRESENCE" title="Give your community a home." description="Preview your coin as you build it. Create Coin prepares everything, then you review the fees and approve in your wallet."/>
   <div className="two-column launch-workspace"><section className="surface">
    <h2>Token details</h2>
    {!owner&&<p className="small muted">Explore the form first. Connect your wallet when you’re ready to continue.</p>}
    <form noValidate={!owner} onSubmit={e=>{e.preventDefault();prepare();}} aria-busy={busy}>
-    <fieldset disabled={busy}>
+    <fieldset disabled={busy||executionBusy||flowActive}>
      <label>Token name<input required maxLength={32} value={fields.name} placeholder="Your token name" onChange={e=>edit('name',e.target.value)}/></label>
      <label>Symbol<input required maxLength={13} pattern="[A-Za-z0-9$_.\-]+" value={fields.symbol} placeholder="e.g. MOSS" onChange={e=>edit('symbol',e.target.value)}/></label>
      <label>Description<textarea maxLength={1000} rows={4} value={fields.description} placeholder="What are you building?" onChange={e=>edit('description',e.target.value)}/></label>
      <details><summary>Project links (optional)</summary>{(['website','twitter','telegram']as const).map(key=><label key={key}>{key==='twitter'?'X profile':key}<input type="url" value={fields[key]??''} placeholder="https://…" onChange={e=>edit(key,e.target.value)}/></label>)}</details>
      <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} onChange={()=>{}}/>
-     <LaunchLogoUpload key={logoScope} selectionOnly disabled={busy} automaticMetadata={false} name={fields.name} symbol={fields.symbol} description={fields.description} quoteAsset={fields.quoteAsset}
+     <LaunchLogoUpload key={logoScope} selectionOnly disabled={busy||executionBusy||flowActive} onValidationChange={setLogoValidating} automaticMetadata={false} name={fields.name} symbol={fields.symbol} description={fields.description} quoteAsset={fields.quoteAsset}
       imageUrl={removed?'':draft?.image?.ipfsUri??''} trustedImage={removed?null:draft?.image??null} scope={logoScope} maxBytes={maxBytes}
-      onFileChange={file=>{selected.current=file?{file,key:crypto.randomUUID()}:null;setReview(null);setError('');setMessage('');}}
+      onFileChange={file=>{setLocalFile(file);selected.current=file?{file,key:crypto.randomUUID()}:null;setReview(null);setError('');setMessage('');}}
       onImage={()=>{setRemoved(true);setReview(null);}}/>
-     <button className="primary wide" type="submit" disabled={!!owner&&uploads===null}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':phase??(busy?'Preparing…':'Review token')}</button>
+     <button className="primary wide" type="submit" disabled={!!owner&&(uploads===null||!launchEnabled||executionBusy||flowActive||logoValidating)}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':created?'Coin created':phase??(busy?'Preparing…':logoValidating?'Checking logo…':executionBusy?'Preparing transaction…':flowActive?'Continue below':'Create Coin')}</button>
     </fieldset>
    </form>
+   {owner&&uploads!==null&&!launchEnabled&&<p className="small muted" role="note">Coin creation is unavailable in this demo. Your preview and saved drafts remain available; no images are uploaded.</p>}
+   <ol className="launch-creation-steps" aria-label="Coin creation steps"><li>Prepare logo and token details</li><li>Review fees and approve in your wallet</li><li>Confirm creation and view in Explore</li></ol>
    {progress!==null&&<progress max={100} value={progress} aria-label="Logo upload progress"/>}
    {busy&&<><p className="small" role="status">{phase??'Preparing…'}</p><button className="text-button" onClick={()=>controller.current?.abort()}>Cancel preparation</button></>}
    {(error||session.error)&&<p role="alert">{error||session.error}</p>}{message&&<p role="status">{message}</p>}
@@ -115,21 +121,21 @@ export function LaunchWorkspace() {
      <div><dt>Metadata IPFS URI</dt><dd><code className="ui-select-text">{review.draft.metadata?.ipfsUri??'Not prepared'}</code></dd></div>
      <div><dt>Preparation checks</dt><dd>{review.readyForNextMilestone&&review.issues.length===0?'Backend checks passed':'Preparation incomplete'}</dd></div>
     </dl></details>
-    <p>{review.launchEnabled?"Token details and logo are prepared. Launch status is shown below.":"Your token details and logo are ready. No token has been launched."}</p><>{review.launchEnabled&&review.readyForNextMilestone?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft}/>:<button className="secondary wide" disabled>Token launch unavailable</button>}</>
+    <p>{review.launchEnabled?"Token details and logo are prepared. Launch status is shown below.":"Your token details and logo are ready. No token has been launched."}</p><>{review.launchEnabled&&review.readyForNextMilestone?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft} autoPrepare onConfirmed={setCreated} onNewCoin={reset} onBusyChange={setExecutionBusy} onLockChange={setExecutionLocked} onEdit={()=>{setReview(null);setError('');setMessage('Update your details, then choose Create Coin.');}}/>:<button className="secondary wide" disabled>Token launch unavailable</button>}</>
    </section>}
    <details className="launch-advanced"><summary>Manage drafts &amp; technical details</summary>
     {owner&&<p className="small ui-select-text">Verified creator: {owner}</p>}
     {memoryStorage&&<p className="small" role="note">Demo drafts are saved for this session, but may be lost when the demo server restarts.</p>}
-    <div className="launch-draft-toolbar"><select aria-label="Saved launch drafts" disabled={busy||!owner} value={draft?.id??''} onChange={e=>{if(e.target.value)load(e.target.value);}}><option value="">Choose a saved draft</option>{items.map(d=><option key={d.id} value={d.id}>{d.fields.name||'Untitled draft'}</option>)}</select><button className="secondary" disabled={busy} onClick={reset}>New draft</button></div>
-    <div className="launch-draft-toolbar"><button className="secondary" disabled={busy||!owner} onClick={()=>void run(async(signal,check)=>{const d=await save({...form.current},current.current,signal);check();accept(d);setMessage('Draft saved.');})}>Save draft</button>
-     {draft&&<button className="text-button" disabled={busy} onClick={()=>load(draft.id)}>Reload draft</button>}
-     <button className="text-button" disabled={busy||!draft} onClick={()=>void run(async(signal,check)=>{if(!window.confirm('Delete this draft? Uploaded images may remain public.'))return;const d=current.current!;await launchpadRequest(`${base}/${d.id}`,z.object({ok:z.literal(true)}),{...jsonRequest('DELETE',{version:d.version}),signal});check();setItems(list=>list.filter(x=>x.id!==d.id));reset();setMessage('Draft deleted.');})}>Delete draft</button>
+    <div className="launch-draft-toolbar"><select aria-label="Saved launch drafts" disabled={busy||executionBusy||executionLocked||!owner} value={draft?.id??''} onChange={e=>{if(e.target.value)load(e.target.value);}}><option value="">Choose a saved draft</option>{items.map(d=><option key={d.id} value={d.id}>{d.fields.name||'Untitled draft'}</option>)}</select><button className="secondary" disabled={busy||executionBusy||executionLocked} onClick={reset}>New draft</button></div>
+    <div className="launch-draft-toolbar"><button className="secondary" disabled={busy||executionBusy||executionLocked||!owner} onClick={()=>void run(async(signal,check)=>{const d=await save({...form.current},current.current,signal);check();accept(d);setMessage('Draft saved.');})}>Save draft</button>
+     {draft&&<button className="text-button" disabled={busy||executionBusy||executionLocked} onClick={()=>load(draft.id)}>Reload draft</button>}
+     <button className="text-button" disabled={busy||executionBusy||executionLocked||!draft} onClick={()=>void run(async(signal,check)=>{if(!window.confirm('Delete this draft? Uploaded images may remain public.'))return;const d=current.current!;await launchpadRequest(`${base}/${d.id}`,z.object({ok:z.literal(true)}),{...jsonRequest('DELETE',{version:d.version}),signal});check();setItems(list=>list.filter(x=>x.id!==d.id));reset();setMessage('Draft deleted.');})}>Delete draft</button>
     </div>
-    {(legacyName||legacySymbol||legacyDescription)&&<button className="text-button" disabled={busy} onClick={()=>{reset();setFields({...empty,name:legacyName,symbol:legacySymbol,description:legacyDescription});}}>Import previous text draft</button>}
+    {(legacyName||legacySymbol||legacyDescription)&&<button className="text-button" disabled={busy||executionBusy||executionLocked} onClick={()=>{reset();setFields({...empty,name:legacyName,symbol:legacySymbol,description:legacyDescription});}}>Import previous text draft</button>}
     {draft?.image&&<p className="small">Image reference: <code className="ui-select-text">{draft.image.ipfsUri}</code></p>}
     {draft?.metadata&&<p className="small">Metadata reference: <code className="ui-select-text">{draft.metadata.ipfsUri}</code></p>}
     {owner&&<button className="text-button" disabled={busy} onClick={()=>void session.logout()}>Sign out</button>}
    </details>
-  </section><aside><section className="surface"><h2>A clear fee structure</h2><p>The planned one-time launch charge is 0.05 SOL, allocated entirely to Platform Treasury.</p><div className="split-bar"><span>60% agent rewards</span><span>40% platform</span></div><p className="small muted">Eligible verified human-launch creator fees follow this allocation. Preparing your token does not charge a fee.</p><p className="small">Uploaded images may remain publicly accessible after deleting a draft.</p></section></aside></div>
+  </section><aside><LaunchTokenPreview fields={fields} file={localFile} imageUrl={removed?'':draft?.image?.gatewayUrl??''}/><section className="surface"><h2>A clear fee structure</h2><p>The planned one-time launch charge is 0.05 SOL, allocated entirely to Platform Treasury.</p><div className="split-bar"><span>60% agent rewards</span><span>40% platform</span></div><p className="small muted">Eligible verified human-launch creator fees follow this allocation. Preparing your token does not charge a fee.</p><p className="small">Images are uploaded only after Create Coin. Once uploaded, they may remain public even if you cancel wallet approval.</p></section></aside></div>
  </>;
 }

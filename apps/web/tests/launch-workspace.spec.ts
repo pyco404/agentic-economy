@@ -47,7 +47,7 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
   (window as unknown as TestWalletWindow).__aecoWalletChanged=()=>callbacks.accountChanged?.forEach(cb=>cb());
  },{wallet,publicKey:Array.from(key.publicKey),standard:viewport.width>700});
  const errors:string[]=[],financial:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/launches\/(prepare|confirm)|demo\/launches/.test(r.url()))financial.push(r.url());});
- await page.goto(site+'/launchpad?source=backend');await expect(page.locator('form').getByRole('button',{name:'Connect Wallet',exact:true})).toBeVisible();
+ await page.goto(site+'/launchpad?source=backend');await expect(page.locator('form').getByRole('button',{name:'Connect wallet',exact:true})).toBeVisible();
  await expect.poll(async()=>page.request.get(site+'/healthz').then(r=>r.status())).toBe(200);
  // Wait for additive capabilities, rather than relying on a timer.
  await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});
@@ -57,7 +57,7 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
  await page.getByLabel('Token logo file').setInputFiles({name:'before-connect.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')});
  await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Upload to IPFS',exact:true})).toBeDisabled();
  await page.screenshot({path:`artifacts/launch-disconnected-${viewport.width}.png`,fullPage:true});
- await page.locator('form').getByRole('button',{name:'Connect Wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
+ await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
  await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Prepared before connection');await expect(page.getByAltText('Token logo preview')).toBeVisible();expect(writes).toEqual([]);page.off('request',watch);
  await expect(page.getByText(`Verified creator: ${wallet}`)).toBeVisible();expect(signing).toBe(1);
  expect(await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoSigningKind)).toBe(viewport.width>700?'standard':'injected');
@@ -77,8 +77,8 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`au
 });
 
 test('missing wallet and rejected signatures leave drafts unauthenticated',async({page})=>{
- test.setTimeout(120000);await page.goto(origin!+'/launchpad?source=backend');await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});await page.locator('form').getByRole('button',{name:'Connect Wallet',exact:true}).click();await expect(page.getByText(/No supported wallet detected/)).toBeVisible();await page.getByRole('button',{name:'Close wallet selection'}).click();
+ test.setTimeout(120000);await page.goto(origin!+'/launchpad?source=backend');await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await expect(page.getByText(/No supported wallet detected/)).toBeVisible();await page.getByRole('button',{name:'Close wallet selection'}).click();
  const key=nacl.sign.keyPair(),wallet=bs58.encode(key.publicKey);
  await page.evaluate(wallet=>{(window as unknown as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async()=>{throw new Error('Signature rejected by user');},disconnect:async()=>{}}};},wallet);
- await page.locator('form').getByRole('button',{name:'Connect Wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Signature rejected by user');await page.getByRole('button',{name:'Close wallet selection'}).click();await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible();
+ await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Signature rejected by user');await page.getByRole('button',{name:'Close wallet selection'}).click();await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible();
 });

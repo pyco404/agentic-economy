@@ -7,7 +7,7 @@ import { PublicKey } from "@agentic-economy/shared";
  * Runtime configuration. Modes:
  * - demo:       mock chain, seeded demo communities/agents, fixtures. Everything labelled Demo Mode.
  * - devnet:     Solana devnet RPC for verification/eligibility. Requires Postgres.
- * - production: mainnet. Requires Postgres, real treasuries and FEE_ROUTING_VERIFIED=true before launches are enabled.
+ * - production: mainnet reads only. Requires Postgres; financial execution stays hard-disabled.
  */
 export const ROLES = ["all", "api", "sim", "indexer"] as const;
 export type Role = (typeof ROLES)[number];
@@ -52,6 +52,9 @@ const Env = z.object({
   CORS_ORIGINS: z.string().default("http://localhost:5173,http://127.0.0.1:5173"),
   /** Must be set to "true" explicitly, and only after the devnet test plan in docs passes. */
   FEE_ROUTING_VERIFIED: z.enum(["true", "false"]).default("false"),
+  PUMP_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
+  PUMP_LAUNCH_LOOKUP_TABLE: PublicKey.optional(),
+  PUMP_LOCAL_GENESIS_HASH: PublicKey.optional(),
   PINATA_JWT: z.string().optional(),
   IPFS_GATEWAY: z.string().url().default("https://gateway.pinata.cloud"),
   LOGO_MAX_BYTES: z.coerce.number().int().min(1024).max(5_000_000).default(5_000_000),
@@ -113,11 +116,13 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     },
     corsOrigins: e.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
     feeRoutingVerified,
+    pumpLaunch: {enabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null},
     /**
-     * Real launches (and anything else that moves money) are enabled only in devnet/production
-     * once fee routing has been verified. Demo mode uses the mock chain and never touches money.
+     * Real execution is restricted to verified devnet. Mainnet stays hard-disabled
+     * even if a deployment accidentally sets FEE_ROUTING_VERIFIED=true.
+     * Demo mode uses the mock chain and never touches money.
      */
-    financialFeaturesEnabled: !demo && feeRoutingVerified,
+    financialFeaturesEnabled: e.MODE === "devnet" && feeRoutingVerified,
     pinata: {jwt:e.PINATA_JWT??null,gateway:e.IPFS_GATEWAY,maxBytes:e.LOGO_MAX_BYTES,maxPixels:e.LOGO_MAX_PIXELS},
     logLevel: e.LOG_LEVEL,
   };

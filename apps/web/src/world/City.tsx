@@ -201,9 +201,15 @@ export const City = forwardRef<CityHandle, CityProps>(
       let publishedPhase:WorldPhase="INITIALIZING";
       const phaseHistory:WorldPhase[]=[publishedPhase];
       current.current.onReadyChange?.(false);
+      const worldTimings: Record<string, number> = {};
+      const markWorld = (section: string) => {
+        if (worldTimings[section] !== undefined) return;
+        worldTimings[section] = performance.now();
+        container.dataset.worldTimings = JSON.stringify(worldTimings);
+      };
       const publishReadiness=()=>{
         if(readiness.phase===publishedPhase)return;
-        publishedPhase=readiness.phase;phaseHistory.push(publishedPhase);container.dataset.worldPhaseHistory=JSON.stringify(phaseHistory);setWorldPhase(publishedPhase);
+        publishedPhase=readiness.phase;markWorld(publishedPhase);phaseHistory.push(publishedPhase);container.dataset.worldPhaseHistory=JSON.stringify(phaseHistory);setWorldPhase(publishedPhase);
         current.current.onReadyChange?.(readiness.presented||readiness.phase==="ERROR");
       };
       const failWorld=(message:string)=>{readiness.fail();publishReadiness();setError(message);};
@@ -667,6 +673,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             if(priorNavigation)ambient.preserveNavigation(priorNavigation);
             ambient.update(ambientTime, current.current.ambientEnabled !== false, railTime);
             reveal.register("infrastructure", ambient.group, 1, revealNow(), "environment"); scene.add(ambient.group);
+            markWorld("railwaysReady");
             container.dataset.ambientActors = JSON.stringify(ambient.counts);
             container.dataset.railway = JSON.stringify(ambient.railway);
             container.dataset.mirroredRailway = JSON.stringify(ambient.mirroredRailway);
@@ -683,6 +690,8 @@ export const City = forwardRef<CityHandle, CityProps>(
             backdrop.geometry.setAttribute("position", new THREE.Float32BufferAttribute(ground.positions, 3));
             backdrop.geometry.computeVertexNormals(); backdrop.rotation.set(0, 0, 0); backdrop.position.y = 0;
             scene.add(scenic.group);
+            markWorld("outerTerrainReady");
+            markWorld("waterwaysReady");
             container.dataset.frontierStyle = frontierStyle;
             container.dataset.frontierRevision = String(++frontierRevision);
             container.dataset.frontierShimmers = String(frontier.shimmer.length);
@@ -703,7 +712,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       } catch { container.dataset.sceneryWorker = "unavailable"; }
       container.dataset.sceneryWorker = worker ? "active" : "fallback";
       let inspectionKey = "", lastBackgroundFrame = 0, lastNavigationReport = 0, wasInteractive = true,
-        wasStill = false, renderedSizeRevision = -1, initialSlowRender = false, lastInitialRenderEnd = 0;
+        wasStill = false, renderedSizeRevision = -1;
       const render = () => {
         if (!alive || readiness.phase === "ERROR") return;
         animation = requestAnimationFrame(render);
@@ -846,11 +855,13 @@ export const City = forwardRef<CityHandle, CityProps>(
         }
         const expected=current.current.chunks??latestRequest?.chunks??[];
         const catalogComplete=(p.chunkCatalog??[]).every(c=>expected.some(chunk=>chunk.x===c.cx&&chunk.z===c.cy));
+        if (catalogComplete && expected.length > 0 && expected.every(e => chunks.get(e.id)?.signature && chunks.get(e.id)?.signature !== "pending")) markWorld("coreReady");
         readiness.commit({environment:sceneryReady,pendingJobs:reveal.jobs.length,expectedChunks:expected.length,
           builtChunks:[...chunks.values()].filter(c=>c.signature!=="pending"&&expected.some(e=>e.id===c.data.id)).length,catalogComplete});
         publishReadiness();
         reveal.setReady(readiness.staticReady); reveal.setReduced(motionPreference.matches);
         reveal.update(reviewTime ?? t, revealReview ? 0 : frameSeconds * 1000, camera.zoom > 2.3);
+        container.dataset.revealProgress = String(reveal.fraction);
         container.dataset.revealStage = reveal.stage;
         container.dataset.revealTime = String(reviewTime ?? t);
         container.dataset.revealVisible = JSON.stringify(reveal.counts);
@@ -1092,19 +1103,17 @@ export const City = forwardRef<CityHandle, CityProps>(
           ? `${displayAgentIds[0]}:${agentPositions.get(displayAgentIds[0])?.toArray().join(":")}`
           : "";
         // Treasury holds the last visual frame while authoritative data still updates.
-        const yieldRevealFrame = !reveal.complete && initialSlowRender && reveal.jobs.length > 0 && performance.now() - lastInitialRenderEnd < 120;
-        if (reveal.staticReady && !yieldRevealFrame && (!p.visualStill || !wasStill || renderedSizeRevision !== sizeRevision || !reveal.complete || readiness.phase === "INTERACTIVE")) {
-          const renderStarted = performance.now();
+        if (reveal.staticReady && (!p.visualStill || !wasStill || renderedSizeRevision !== sizeRevision || !reveal.complete || readiness.phase === "INTERACTIVE")) {
           const presentedBeforeRender=readiness.presented;
           try{renderer.render(scene,camera);}catch(error){failWorld(`The world could not be displayed: ${error instanceof Error?error.message:"Graphics rendering failed"}. Use the building explorer or reload.`);return;}
           renderedSizeRevision = sizeRevision;
+          if (!presentedBeforeRender) {
+            reveal.begin(reviewTime ?? clock.getElapsedTime());
+            markWorld("revealStarted");
+          }
           readiness.present();publishReadiness();
           if(reveal.complete&&presentedBeforeRender){readiness.activate();publishReadiness();}
-          lastInitialRenderEnd = performance.now();
-          if (!reveal.complete && lastInitialRenderEnd - renderStarted > 80) {
-            initialSlowRender = true;
-            if (!revealReview) reveal.accelerate();
-          }
+          if (reveal.complete) markWorld("revealFinished");
           container.dataset.revealRenderedTime = String(reviewTime ?? t);
         }
         wasStill = !!p.visualStill;

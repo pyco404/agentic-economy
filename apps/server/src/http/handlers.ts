@@ -101,8 +101,8 @@ export function registerHandlers(ctx: AppContext, register: Register) {
 
   /* ---------------- auth ---------------- */
 
-  register("authChallenge", async ({ body }) => ctx.auth.challenge(body.wallet));
-  register("authVerify", async ({ body }) => ctx.auth.verify(body.wallet, body.nonce, body.signature));
+  register("authChallenge", async ({ body, req }) => ctx.auth.challenge(body.wallet, req.headers.origin));
+  register("authVerify", async ({ body, req }) => ctx.auth.verify(body.wallet, body.nonce, body.signature, req.headers.origin));
   register("authSession", async ({ wallet, sessionExpiresAt }) => ({ wallet, sessionExpiresAt }));
 
   /* ---------------- launches ---------------- */

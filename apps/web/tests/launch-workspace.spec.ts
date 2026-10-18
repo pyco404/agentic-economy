@@ -19,6 +19,9 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  test.setTimeout(180000);await page.setViewportSize(viewport);
  const site=viewport.width<700?origin!.replace('127.0.0.1','localhost'):origin!;
  if(viewport.mode==='unavailable')await page.route('**/api/v1/launchpad/capabilities',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),uploads:false}});});
+ let holdCapabilities=false,capabilitiesHeld=false,releaseCapabilities=()=>{};
+ const capabilitiesGate=new Promise<void>(resolve=>{releaseCapabilities=resolve;});
+ if(viewport.width===1440)await page.route('**/api/v1/launchpad/capabilities',async route=>{if(holdCapabilities){capabilitiesHeld=true;await capabilitiesGate;}await route.continue();});
  const uploadKeys:string[]=[],metadataKeys:string[]=[];
  if(viewport.mode==='retry'){
   await page.route(/\/launchpad\/drafts\/[^/]+\/logo\?/,async route=>{uploadKeys.push(route.request().headers()['idempotency-key']??'');if(uploadKeys.length===1)await route.fulfill({status:503,json:{error:{message:'Logo upload interrupted. Please try again.'}}});else await route.continue();});
@@ -63,7 +66,15 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  await page.getByLabel('Token logo file').setInputFiles({name:'before-connect.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')});
  await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Upload to IPFS',exact:true})).toHaveCount(0);
  await page.screenshot({path:`artifacts/launch-disconnected-${viewport.width}.png`,fullPage:true});
+ if(viewport.width===1440)holdCapabilities=true;
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
+ if(viewport.width===1440){
+  await expect.poll(()=>capabilitiesHeld).toBe(true);
+  const loading=page.locator('form').getByRole('button',{name:'Loading token preparation…',exact:true});
+  await expect(loading).toBeVisible();await expect(loading).toBeDisabled();expect(writes).toEqual([]);
+  holdCapabilities=false;releaseCapabilities();
+ }
+
  await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Prepared before connection');await expect(page.getByAltText('Token logo preview')).toBeVisible();expect(writes).toEqual([]);page.off('request',watch);
  await expect(page.getByRole('button',{name:'Review token',exact:true})).toBeVisible();expect(signing).toBe(1);
  expect(await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoSigningKind)).toBe(viewport.width>700?'standard':'injected');
@@ -112,7 +123,8 @@ test('missing wallet and rejected signatures leave drafts unauthenticated',async
  test.setTimeout(120000);await page.goto(origin!+'/launchpad?source=backend');await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await expect(page.getByText(/No supported wallet detected/)).toBeVisible();await page.getByRole('button',{name:'Close wallet selection'}).click();
  const key=nacl.sign.keyPair(),wallet=bs58.encode(key.publicKey);
  await page.evaluate(wallet=>{(window as unknown as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async()=>{throw new Error('Signature rejected by user');},disconnect:async()=>{}}};},wallet);
- await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Signature rejected by user');await page.getByRole('button',{name:'Close wallet selection'}).click();await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible();
+ await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
+ await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Signature rejected by user');await page.getByRole('button',{name:'Close wallet selection'}).click();await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible();
 });
 
 test('wallet changes during pending approval cannot establish a stale session',async({page})=>{

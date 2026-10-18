@@ -1,0 +1,173 @@
+{
+  "network": "isolated-localnet",
+  "genesis": "3mvebRoZp3o6m9akLYK2vP8rcWZ7Nj5mzGNDkRdW4Rf5",
+  "officialDocsCommit": "639b87fb45c3adeffa6f7c4a1bf0cb85e392bf22",
+  "sdk": "4.1.0",
+  "creator": "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+  "mint": "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr",
+  "platformTreasury": "2t216TrAiXm33hSYcdRnZMq1B4EyTBxRapy5JopLdsGk",
+  "agentTreasury": "HD6jy8saerhGGnV5932vJe2SzaeG18CMXbysSwxuRo67",
+  "metadata": "test-only HTTPS placeholder; not a real Pinata receipt",
+  "simulation": {
+    "err": null,
+    "unitsConsumed": 249459
+  },
+  "signature": "3VuW1UMGMM3CExxAettG4fYFbgPkagn9udfnoJ6f1t31Wn1vxZZtiFSxdDCiKHaPgfxwJzjRupxyMRDu1pLvWrte",
+  "verification": {
+    "outcome": "confirmed",
+    "feeIxIndex": 1,
+    "slot": 2730,
+    "commitment": "confirmed"
+  },
+  "observed": {
+    "signature": "3VuW1UMGMM3CExxAettG4fYFbgPkagn9udfnoJ6f1t31Wn1vxZZtiFSxdDCiKHaPgfxwJzjRupxyMRDu1pLvWrte",
+    "messageBase64": "gAIABAZfVVsFnlsWpdd/f8tdZulVOTnldDqEdwwpiDfK7ub6u0xtrrD4McHhD5hj7/UXd3fbyK/GSxrtOrwIQVUPGFuLAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFW4PaTZlrPRNsVaL8XW6pRicuX9dL/O2VdK7b9bRiwDDX/qQVajlaNqPe8B1YVJ0zxySykH0AAnFFqpBTCfHBCDSVhO+PwRDv3fflD8j+IDdhMQvr/hP7Pr9b/TYN8yAUCAAUCwCcJAAMCAAYMAgAAAIDw+gIAAAAABBABEgcIEwADFBUJFgoLDBcEjQHWkEzsX4sxtBcAAABBRUNPIExvY2FsIFZlcmlmaWNhdGlvbggAAABBRUNPVEVTVC8AAABodHRwczovL2V4YW1wbGUuY29tL2lzb2xhdGVkLXByb3RvY29sLXRlc3QuanNvbl9VWwWeWxal139/y11m6VU5OeV0OoR3DCmIN8ru5vq7AAAAAAAAAAAAAAAFDRgFABMBDQMHBBcFGRoIw05WTG80+9UFFBgFABMBDQcODwMEFxkaGxwVEBEAUG/7MQZOTmoSAgAAAPDUc6LBbjL+Er6mfNYNZ/ChVXOOsbFqove3xDB+arAAcBcb7XDTnQnr3qUu9SHW8a97jvlfyPq5Vny6B2PII8R8yaAPAUiCYTuEIcp87w1/vfCqVPjeSGLs9p6rT5ioPzEkO7sqDAIFBgoMDQ4TFhcaGwsEBwgJCw8RFBUYGQ==",
+    "slot": 2730,
+    "commitment": "confirmed",
+    "err": null,
+    "feePayer": "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+    "signers": [
+      "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+      "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr"
+    ],
+    "systemTransfers": [
+      {
+        "ixIndex": 1,
+        "from": "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+        "to": "2t216TrAiXm33hSYcdRnZMq1B4EyTBxRapy5JopLdsGk",
+        "lamports": "50000000"
+      }
+    ],
+    "instructions": [
+      {
+        "ixIndex": 0,
+        "programId": "ComputeBudget111111111111111111111111111111",
+        "discriminatorHex": null,
+        "accounts": [],
+        "dataBase64": "AsAnCQA="
+      },
+      {
+        "ixIndex": 1,
+        "programId": "11111111111111111111111111111111",
+        "discriminatorHex": "0200000080f0fa02",
+        "accounts": [
+          "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+          "2t216TrAiXm33hSYcdRnZMq1B4EyTBxRapy5JopLdsGk"
+        ],
+        "dataBase64": "AgAAAIDw+gIAAAAA"
+      },
+      {
+        "ixIndex": 2,
+        "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+        "discriminatorHex": "d6904cec5f8b31b4",
+        "accounts": [
+          "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr",
+          "TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM",
+          "4DbpCQbQqyF6LLFoSg8upj6fUysoCCnFXpu4hnE7W6NF",
+          "5wkyemCTcUPcuRkH4L4X8qX9nXPwKEfrvyT7Yk7pzYJn",
+          "4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf",
+          "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+          "11111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+          "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+          "MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e",
+          "13ec7XdrjF3h3YcqBTFDSReRcUFwbCnJaAQspM4j6DDJ",
+          "BwWK17cbHxwWBKZkUYvzxLcNQ1YVyaFezduWbtm2de6s",
+          "7Fg6qcuV6DL7fjBbY9ykP6LSVVXoEvNHUs4Ttcz9zp2V",
+          "3TxeV4R7EiXnXvkopiMmcxgz4r9RFHndpph7drtEoTuN",
+          "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1",
+          "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+        ],
+        "dataBase64": "1pBM7F+LMbQXAAAAQUVDTyBMb2NhbCBWZXJpZmljYXRpb24IAAAAQUVDT1RFU1QvAAAAaHR0cHM6Ly9leGFtcGxlLmNvbS9pc29sYXRlZC1wcm90b2NvbC10ZXN0Lmpzb25fVVsFnlsWpdd/f8tdZulVOTnldDqEdwwpiDfK7ub6uwAAAAAAAAAAAAAA"
+      },
+      {
+        "ixIndex": 3,
+        "programId": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+        "discriminatorHex": "c34e564c6f34fbd5",
+        "accounts": [
+          "D6QxXDt6hhcCpto4HiZKkN2YQ2iZRF5R7S3caCHpUsML",
+          "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+          "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+          "4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf",
+          "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr",
+          "EfrChzVUixEhCJ4JNvWCTErLoTnRmdPPRenWbHA9STyf",
+          "11111111111111111111111111111111",
+          "4DbpCQbQqyF6LLFoSg8upj6fUysoCCnFXpu4hnE7W6NF",
+          "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+          "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1",
+          "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+          "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+          "GS4CU59F31iL7aR2Q8zVS8DRrcRnXX1yjQ66TqNVQnaR"
+        ],
+        "dataBase64": "w05WTG80+9U="
+      },
+      {
+        "ixIndex": 4,
+        "programId": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+        "discriminatorHex": "6ffb31064e4e6a12",
+        "accounts": [
+          "D6QxXDt6hhcCpto4HiZKkN2YQ2iZRF5R7S3caCHpUsML",
+          "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+          "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+          "4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf",
+          "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr",
+          "EfrChzVUixEhCJ4JNvWCTErLoTnRmdPPRenWbHA9STyf",
+          "4DbpCQbQqyF6LLFoSg8upj6fUysoCCnFXpu4hnE7W6NF",
+          "3P9adPL6755ETrVtGwuFD4y9u7qTCHGWWJBeJspiDvCz",
+          "4cgo12fSUMh5ejtwwAgqugfK6uk2LCG6YuuLmCaeC9TR",
+          "11111111111111111111111111111111",
+          "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+          "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1",
+          "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+          "GS4CU59F31iL7aR2Q8zVS8DRrcRnXX1yjQ66TqNVQnaR",
+          "So11111111111111111111111111111111111111112",
+          "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+          "8PPtPZZscNaGW79z73Azq4cWNt5a6bk2kwEYTR94uPxG",
+          "Az3KtG1u9TUdH6eg52Xm9uop6A1orpxhkjLPiie5q587",
+          "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY"
+        ],
+        "dataBase64": "b/sxBk5OahICAAAA8NRzosFuMv4SvqZ81g1n8KFVc46xsWqi97fEMH5qsABwFxvtcNOdCevepS71Idbxr3uO+V/I+rlWfLoHY8gjxHzJoA8="
+      }
+    ],
+    "lamportDeltas": {
+      "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY": "-65795280",
+      "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr": "3647040",
+      "2t216TrAiXm33hSYcdRnZMq1B4EyTBxRapy5JopLdsGk": "50000000",
+      "4DbpCQbQqyF6LLFoSg8upj6fUysoCCnFXpu4hnE7W6NF": "2046240",
+      "5wkyemCTcUPcuRkH4L4X8qX9nXPwKEfrvyT7Yk7pzYJn": "2074080",
+      "EfrChzVUixEhCJ4JNvWCTErLoTnRmdPPRenWbHA9STyf": "8017920"
+    }
+  },
+  "routing": {
+    "sharingConfig": {
+      "address": "EfrChzVUixEhCJ4JNvWCTErLoTnRmdPPRenWbHA9STyf",
+      "version": 2,
+      "status": "Active",
+      "mint": "69LzLxDqdvYZje52ScnXAKTNVvgMaGg8nHMM6ds521nr",
+      "admin": "7R9DmfH7huhcGEznW45T3ijhyfy54CCciKFusysMV7TY",
+      "adminRevoked": true,
+      "shareholders": [
+        {
+          "address": "HD6jy8saerhGGnV5932vJe2SzaeG18CMXbysSwxuRo67",
+          "shareBps": 6000
+        },
+        {
+          "address": "2t216TrAiXm33hSYcdRnZMq1B4EyTBxRapy5JopLdsGk",
+          "shareBps": 4000
+        }
+      ]
+    },
+    "bondingCurveCreator": "EfrChzVUixEhCJ4JNvWCTErLoTnRmdPPRenWbHA9STyf",
+    "bondingCurveComplete": false
+  },
+  "lookupSignatures": [
+    "3K2N5Bv3NuXTiDZuQChKydkGWozofM1esku3SYdmgT5nCNN61ZLLKBVWvsQy6jRPXEaD8MC73eMS3VrhcZjrPWpA",
+    "4t5x4SRFnxgWiFuoMgG7JZKX9ayvfVWLZP5RWc5so1rmuiXNksczGtnWJyJ2gQVDc5391qwJdNZHDHPTnDdrTKiS"
+  ],
+  "packetBytes": 730,
+  "mintOwner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "duplicate": "RPC rejected already-processed transaction",
+  "platformBalance": 50000000,
+  "result": "passed"
+}

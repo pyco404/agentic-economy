@@ -109,7 +109,12 @@ export function LaunchWorkspace() {
    {review&&<section className="launch-review" aria-label="Token review"><h3>Review your token</h3>
     {review.draft.image&&<img src={review.draft.image.gatewayUrl} alt="Token logo"/>}
     <h4>{review.draft.fields.name} ({review.draft.fields.symbol})</h4><p>{review.draft.fields.description}</p>
-    <dl className="fee-list"><div><dt>Trading pair</dt><dd>{review.draft.fields.symbol}/SOL</dd></div><div><dt>Creator wallet</dt><dd><code className="ui-select-text">{review.draft.wallet}</code></dd></div><div><dt>{review.launchEnabled?"Platform launch charge":"Planned launch charge"}</dt><dd>{review.launchChargeSol} SOL{!review.launchEnabled&&" · not charged"}</dd></div></dl>
+    <dl className="fee-list"><div><dt>Trading pair</dt><dd>{review.draft.fields.symbol}/{review.draft.fields.quoteAsset}</dd></div><div><dt>Creator wallet</dt><dd><code className="ui-select-text">{review.draft.wallet}</code></dd></div><div><dt>{review.launchEnabled?"Platform launch charge":"Planned launch charge"}</dt><dd>{review.launchChargeSol} SOL{!review.launchEnabled&&" · not charged"}</dd></div></dl>
+    <details><summary>Verified token assets</summary><dl className="fee-list">
+     <div><dt>Image IPFS URI</dt><dd><code className="ui-select-text">{review.draft.image?.ipfsUri??'Not uploaded'}</code></dd></div>
+     <div><dt>Metadata IPFS URI</dt><dd><code className="ui-select-text">{review.draft.metadata?.ipfsUri??'Not prepared'}</code></dd></div>
+     <div><dt>Preparation checks</dt><dd>{review.readyForNextMilestone&&review.issues.length===0?'Backend checks passed':'Preparation incomplete'}</dd></div>
+    </dl></details>
     <p>{review.launchEnabled?"Token details and logo are prepared. Launch status is shown below.":"Your token details and logo are ready. No token has been launched."}</p><>{review.launchEnabled&&review.readyForNextMilestone?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft}/>:<button className="secondary wide" disabled>Token launch unavailable</button>}</>
    </section>}
    <details className="launch-advanced"><summary>Manage drafts &amp; technical details</summary>

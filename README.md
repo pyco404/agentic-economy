@@ -223,3 +223,5 @@ After verifying production remains isolated and the complete series passes valid
 - **Upload unavailable:** check backend Pinata configuration; connecting a wallet alone cannot enable an unconfigured upload service.
 - **Changes missing online:** compare GitHub main with actual Railway deployment SHAs and the release gate. Local changes or a successful Git push do not mean staging is serving them.
 - **Port already in use:** identify the existing process before replacing it; if using different ports, update frontend API/WebSocket addresses and backend authentication/CORS origins together.
+
+Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Staging deployment remains gated; market availability and verified receipts are never simulated as live data.

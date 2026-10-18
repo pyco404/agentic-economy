@@ -12,7 +12,7 @@ test("functional route interfaces survive unavailable WebGL", async ({ page }) =
   await page.getByRole("link", { name: "Communities", exact: true }).click();
   await page.getByLabel("Search communities").fill("Moss");
   await expect(page.locator(".discovery-card")).toHaveCount(1);
-  await page.getByRole("link", { name: "Launchpad", exact: true }).click();
+  await page.getByRole("link", { name: "Launch", exact: true }).click();
   await page.getByLabel("Token name").fill("Accessible City");
   await page.getByLabel("Symbol", { exact: true }).fill("CITY");
   await page.getByRole("button", { name: "Review draft" }).click();

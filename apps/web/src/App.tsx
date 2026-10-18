@@ -94,6 +94,8 @@ export default function App() {
     [query, setQuery] = useState(""),
     [selected, setSelected] = useState<BuildingVisual | null>(null),
     [agentId, setAgentId] = useState<string | null>(null),
+    [followingAgentId, setFollowingAgentId] = useState<string | null>(null),
+    [workplaceHighlights, setWorkplaceHighlights] = useState<string[]>([]),
     [growth, setGrowth] = useState(0),
     [metrics, setMetrics] = useState({
       chunks: 0,
@@ -222,6 +224,16 @@ export default function App() {
     ? (buildings.find((b) => b.id === selected.id) ?? selected)
     : null;
   const inspectedAgent = agentId ? data?.agents.find((a) => a.id === agentId) : null;
+  const viewWorkplace = (id:string) => {
+    const building = buildings.find(b=>b.id===id);
+    if (!building || !go("world")) return;
+    setAgentId(null); setSelected(building); city.current?.follow(null);
+    city.current?.focus(building.x,building.z,6);
+  };
+  const watchAgent = (id:string) => {
+    if (!go("world")) return;
+    setAgentId(id); setSelected(null);
+  };
   const isDemo = data?.mode === "demo" || api.kind === "demo";
   return (
     <div
@@ -326,9 +338,12 @@ export default function App() {
                       z: a.pos.y,
                       paused: a.status === "paused",
                       state: a.state,
+                      work: a.work,
                     }))}
                     demo={api.kind === "demo"}
                     selectedAgentId={agentId}
+                    highlightBuildingIds={workplaceHighlights}
+                    onFollowChange={setFollowingAgentId}
                     ambientEnabled={ambientEnabled}
                     importantAgentIds={data.actions?.slice(0, 3).map((action) => action.agentId)}
                     paused={paused || (!worldVisible && page === "treasury")}
@@ -944,7 +959,7 @@ export default function App() {
                       onRefresh={refresh}
                     />
                   )}{" "}
-                  {page === "economy" && <Economy data={data} />}{" "}
+                  {page === "economy" && <Economy data={data} onViewBuilding={viewWorkplace} onViewAgent={watchAgent} onHighlight={setWorkplaceHighlights}/>}{" "}
                   {page === "treasury" && <Treasury data={data} />}{" "}
                   {page === "launchpad" && <Launchpad />}
                   <footer className="page-footer">
@@ -964,12 +979,16 @@ export default function App() {
                   api={api}
                   onClose={() => setAgentId(null)}
                   onRefresh={refresh}
+                  data={data}
+                  following={followingAgentId === agentId}
+                  onViewBuilding={viewWorkplace}
                   liveActions={data.actions}
                   onFollow={(x, z) => {
                     const id = agentId;
                     if (!go("world")) return;
                     setAgentId(id);
-                    setTimeout(() => city.current?.focus(x, z, 7), 100);
+                    if (followingAgentId === id) city.current?.follow(null);
+                    else { city.current?.focus(x, z, 7); city.current?.follow(id); }
                   }}
                 />
               )}

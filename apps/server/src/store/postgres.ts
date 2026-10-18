@@ -1,3 +1,4 @@
+import {nextTreasuryEntry} from './treasury-entry.js';
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -345,7 +346,11 @@ export class PostgresStore implements Store {
 
   private async insertTreasury(q: Queryable, entries: TreasuryEntry[]): Promise<TreasuryEntry[]> {
     const out: TreasuryEntry[] = [];
-    for (const e of entries) {
+    for (const input of [...entries].sort((a,b)=>`${a.signature}:${a.instructionIndex}:${a.account}:${a.stream}`.localeCompare(`${b.signature}:${b.instructionIndex}:${b.account}:${b.stream}`))) {
+      const key=`${input.signature}:${input.instructionIndex}:${input.account}:${input.stream}`;
+      await q.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[key]);
+      const existing=await q.query('SELECT doc FROM treasury_entries WHERE signature=$1 AND instruction_index=$2 AND account=$3 AND stream=$4 ORDER BY seq',[input.signature,input.instructionIndex,input.account,input.stream]);
+      const e=nextTreasuryEntry(input,existing.rows.map(r=>r.doc as TreasuryEntry));if(!e)continue;
       const r = await q.query(
         `INSERT INTO treasury_entries (id, stream, account, signature, instruction_index, finality, supersedes, doc)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)

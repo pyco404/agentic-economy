@@ -6,6 +6,7 @@ import { planAmbient } from "./ambient";
 import { composeCityEdges } from "./composition";
 import { generateBuilding, generateLandscape, type Part } from "./geometry";
 import type { ChunkVisual } from "./layout";
+import { channelChunks, channelDetails, planLakeChannel } from "./lakeChannel";
 
 export interface SceneryRequest { revision: number; chunks: ChunkVisual[]; seed: number;
   catalog?: { cx: number; cy: number }[]; style: FrontierStyle;
@@ -15,16 +16,19 @@ export const chunkSignature = (chunk: ChunkVisual, all: ChunkVisual[]) => JSON.s
     .sort((a, b) => a.id.localeCompare(b.id)).flatMap((c) => [c.id, c.geometryKey])]);
 export interface PreparedChunk { data: ChunkVisual; signature: string; rank: number; landscape: Part[]; architecture: Part[] }
 export function prepareScenery(request: SceneryRequest, send: (message: SceneryMessage) => void) {
-  const { chunks, seed, revision } = request;
+  const { seed, revision } = request;
+  const { channel } = planLakeChannel(request.chunks);
+  const chunks = channel ? channelChunks(request.chunks, channel) : request.chunks;
   const pathNetwork = buildPathNetwork(chunks, seed), streets = planStreets(chunks, seed);
-  send({ kind: "roads", revision, pathNetwork, streets });
-  const ordered = [...chunks].sort((a, b) => Math.hypot(a.x * 32 + 16 - request.center.x, a.z * 32 + 16 - request.center.z) -
+  send({ kind: "roads", revision, pathNetwork, streets, channel: channel ? { start:channel.start,end:channel.end,width:channel.width,crossings:channel.crossings } : null });
+  const ordered = [...request.chunks].sort((a, b) => Math.hypot(a.x * 32 + 16 - request.center.x, a.z * 32 + 16 - request.center.z) -
     Math.hypot(b.x * 32 + 16 - request.center.x, b.z * 32 + 16 - request.center.z) || a.id.localeCompare(b.id));
   ordered.forEach((data, index) => {
     if (request.wanted && !request.wanted.includes(data.id)) return;
-    const signature = chunkSignature(data, chunks);
+    const signature = JSON.stringify([chunkSignature(data, request.chunks),channel?.points]);
     if (request.known[data.id] === signature) return;
-    const landscape = generateLandscape(data, seed, chunks).filter((part) => part.role !== "field-row" ||
+    const renderData = chunks.find(c => c.id === data.id)!;
+    const landscape = [...generateLandscape(renderData, seed, chunks, channel ?? undefined), ...(channel ? channelDetails(channel, data) : [])].filter((part) => part.role !== "field-row" ||
       ![-1, 0, 1].some((side) => streets.tiles.has(`${Math.floor((part.position[0] + side * part.scale[0] / 2) / .25)}:${Math.floor((part.position[2] + side * part.scale[2] / 2) / .25)}`)));
     send({ kind: "chunk", revision, chunk: { data, signature, rank: index / Math.max(1, ordered.length - 1),
       landscape, architecture: data.buildings.flatMap(generateBuilding) } });
@@ -34,7 +38,7 @@ export function prepareScenery(request: SceneryRequest, send: (message: SceneryM
   const composition = composeCityEdges(chunks, frontier, seed, ambient.railway, request.catalog, ambient.mirroredRail);
   send({ kind: "scenery", revision, frontier, ambient, composition });
 }
-export type SceneryMessage = { kind: "roads"; revision: number; pathNetwork: ReturnType<typeof buildPathNetwork>; streets: ReturnType<typeof planStreets> } |
+export type SceneryMessage = { kind: "roads"; revision: number; pathNetwork: ReturnType<typeof buildPathNetwork>; streets: ReturnType<typeof planStreets>; channel: Pick<import("./lakeChannel").LakeChannel,"start"|"end"|"width"|"crossings"> | null } |
   { kind: "chunk"; revision: number; chunk: PreparedChunk } |
   { kind: "scenery"; revision: number; frontier: ReturnType<typeof generateFrontier>; ambient: ReturnType<typeof planAmbient>;
     composition: ReturnType<typeof composeCityEdges> } |

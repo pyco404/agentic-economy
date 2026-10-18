@@ -61,4 +61,20 @@ describe("procedural citizens", () => {
     }
     citizens.dispose();
   });
+  it("raises every body part by the shared bridge deck height without changing the legacy pose", () => {
+    const citizens = createCitizens(1), matrix = new THREE.Matrix4();
+    citizens.set(0, 4, 8, .5, 1, true, "#789684", true);
+    const before = citizens.meshes.map(mesh => Array.from({length: mesh === citizens.meshes[2] ? 2 : 3}, (_,slot) => {
+      mesh.getMatrixAt(slot,matrix); return matrix.clone();
+    }));
+    citizens.set(0, 4, 8, .5, 1, true, "#789684", true, false, undefined, 1.55);
+    citizens.meshes.forEach((mesh,i) => before[i]!.forEach((previous,slot) => {
+      mesh.getMatrixAt(slot,matrix);
+      expect(matrix.elements[13]! - previous.elements[13]!).toBeCloseTo(1.55);
+      expect(matrix.elements[12]).toBeCloseTo(previous.elements[12]!);
+      expect(matrix.elements[14]).toBeCloseTo(previous.elements[14]!);
+    }));
+    citizens.dispose();
+  });
+
 });

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { OUTSKIRTS } from "../src/world/outskirts";
 for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`seeded outskirts preserve the live world at ${viewport.width}px`,async({page})=>{
   test.setTimeout(240000);await page.setViewportSize(viewport);
   const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
@@ -7,9 +8,12 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`se
   await expect(page.getByTestId("connection-status")).toContainText("connected");
   const report=JSON.parse((await city.getAttribute("data-composition"))!);
   expect(report.outskirts.plannedSites).toBeGreaterThan(30);
-  expect(report.outskirts.plannedSites).toBeLessThanOrEqual(144);
+  expect(report.outskirts.plannedSites).toBeLessThanOrEqual(OUTSKIRTS.maxSites);
   expect(report.outskirts.groves).toBeGreaterThan(0);expect(report.outskirts.meadows).toBeGreaterThan(0);
-  expect(report.outskirts.parts).toBeLessThan(144*22);
+  expect(report.outskirts.trees).toBeGreaterThan(100);
+  expect(report.outskirts.footprintAware).toBe(true);
+  expect(report.outskirts.pathLinks).toBeGreaterThan(0);
+  expect(report.outskirts.parts).toBeLessThanOrEqual(OUTSKIRTS.maxParts);
   const actors=JSON.parse((await city.getAttribute("data-ambient-actors"))!);
   expect(actors.train).toBe(2);
   expect(JSON.parse((await city.getAttribute("data-mirrored-railway"))!).mode).toBe("mirrored");

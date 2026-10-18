@@ -109,7 +109,11 @@ export function registerHandlers(ctx: AppContext, register: Register) {
 
   register("prepareLaunch", async ({ body, wallet }) => ctx.launches.prepare(wallet, body.draft));
   register("confirmLaunch", async ({ body, wallet }) => ({ launch: await ctx.launches.confirm(wallet, body.launchId, body.signature) }));
-  register("launch", async ({ params }) => ({ launch: await ctx.launches.get(params.id) }));
+  register("launch", async ({ params }) => {
+    const launch=await ctx.launches.get(params.id);
+    if(launch.execution&&launch.status!=="confirmed")throw new AppError("not_found","Unconfirmed preparations are available only through the authenticated launch workspace");
+    return {launch};
+  });
 
   register("demoSignLaunch", async ({ params, body, wallet }) => {
     if (mode !== "demo") throw new AppError("not_found", "demo only");

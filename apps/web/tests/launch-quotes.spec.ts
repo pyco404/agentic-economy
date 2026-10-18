@@ -44,7 +44,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     // Leaving the route unmounts this form; the same draft must be restored.
     await page.getByRole("link", { name: "About Agentic Economy", exact: true }).click();
     if (viewport.width <= 850) await page.getByRole("button", { name: "Toggle navigation" }).click();
-    await page.getByRole("link", { name: "Launchpad", exact: true }).click();
+    await page.getByRole("link", { name: "Launch", exact: true }).click();
     await expect(sol).toBeChecked();
     await expect(page.getByLabel("Symbol", { exact: true })).toHaveValue("NEW");
     await page.reload();

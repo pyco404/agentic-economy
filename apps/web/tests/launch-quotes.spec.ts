@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const key = "agentic-economy:form-draft:v1:launchpad:quoteAsset";
 async function openLaunchpad(page: Page) {
+  // Exercise the legacy offline draft form independently of authenticated workspace capabilities.
+  await page.route("**/api/v1/launchpad/capabilities", route => route.fulfill({status:404,contentType:"application/json",body:"{}"}));
   await page.goto("/?source=backend#launchpad");
   // The connection HUD belongs to World and is not rendered on an open page.
   await expect(page.locator(".app")).toHaveAttribute("data-source", "backend");
@@ -26,12 +28,11 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await page.getByLabel("Token name", { exact: true }).fill("Example Coin");
     await page.getByLabel("Symbol", { exact: true }).fill("EXAMPLE");
     await expect(page.getByRole("status", { name: "Trading pair preview" })).toContainText("EXAMPLE/SOL");
-    await page.getByRole("button", { name: "Review draft", exact: true }).click();
+    await page.locator("form").getByRole("button", { name: "Connect wallet", exact: true }).click();
+    await expect(page.getByRole("dialog")).toContainText("Connect your wallet");
+    await page.getByRole("button", { name: "Close wallet selection" }).click();
     const review = page.getByRole("region", { name: "Launch draft review" });
-    await expect(review).toContainText("EXAMPLE/SOL");
-    await expect(review).toContainText("No transaction created");
-    await expect(review).toContainText("Initial token price (SOL)");
-    await expect(review).toContainText("Unavailable — backend quote required");
+    await expect(review).toHaveCount(0);
     await expect(page.getByText("0.05 SOL", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Wallet signing unavailable" })).toBeDisabled();
     await page.getByLabel("Symbol", { exact: true }).fill("NEW");
@@ -71,15 +72,17 @@ for (const saved of ["USDC", "AECO", "unverified-mint"]) {
       await expect(page.getByRole("status", { name: "Trading pair preview" })).toContainText(`TOKEN/${saved}`);
     } else await expect(page.getByRole("status", { name: "Trading pair preview" })).toContainText("Choose a quote asset");
     await expect(page.getByRole("radio", { name: "SOL", exact: true })).not.toBeChecked();
-    await expect(page.getByRole("button", { name: "Review draft", exact: true })).toBeDisabled();
+    await expect(page.locator("form").getByRole("button", { name: "Connect wallet", exact: true })).toBeEnabled();
     await expect(page.getByRole("alert")).toBeVisible();
-    // Bypassing a disabled submit button must not bypass the submit guard.
+    // Connection remains available, but submitting never reviews an unauthenticated draft.
     await page.getByLabel("Token name", { exact: true }).fill("Invalid quote");
     await page.getByLabel("Symbol", { exact: true }).fill("BAD");
     await page.locator("form").evaluate((form) => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
     await expect(page.getByRole("region", { name: "Launch draft review" })).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "Close wallet selection" }).click();
     await page.getByRole("radio", { name: "SOL", exact: true }).check();
-    await expect(page.getByRole("button", { name: "Review draft", exact: true })).toBeEnabled();
+    await expect(page.locator("form").getByRole("button", { name: "Connect wallet", exact: true })).toBeEnabled();
     await expect(page.getByRole("alert")).toHaveCount(0);
     expect(await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)!), key)).toBe("SOL");
     await expect(page.getByText("0.05 SOL", { exact: true })).toBeVisible();

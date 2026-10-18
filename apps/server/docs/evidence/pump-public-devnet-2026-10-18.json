@@ -1,0 +1,121 @@
+{
+  "network": "public-devnet",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "walletSigner": "Dedicated automated test wallet; not actual Phantom",
+  "transactions": [
+    {
+      "quoteAsset": "SOL",
+      "mint": "81jmbNJyn4CTBPqnQ7UVgfpy4SoWfoSrEiM9WKgFjjJd",
+      "signature": "5TvrNRQazQQgGKs8VNWoDxVs1pcsqjJX2TSK2dojTdALr58etvZi9U3y5puetwndugWPxvUBpyRPjfE41bRETbJ7",
+      "slot": 512580894,
+      "confirmationStatus": "finalized",
+      "platformTreasury": "DSEjDVZZtYY1RupBWhu6gEjkcMmHMQBA2mDw8DfjHbDn",
+      "platformLamports": "50000000",
+      "networkFeeLamports": 10000,
+      "metadata": {
+        "additionalMetadata": [],
+        "mint": "81jmbNJyn4CTBPqnQ7UVgfpy4SoWfoSrEiM9WKgFjjJd",
+        "name": "AECO Devnet Verification",
+        "symbol": "AECOTEST",
+        "updateAuthority": null,
+        "uri": "ipfs://bafkreid3pnqkevdah6inoproy2kxuyefqfurztyup5mxbkqu4rfyx5gzxu"
+      },
+      "curveQuoteMint": "11111111111111111111111111111111",
+      "creator": "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+      "lockedShares": [
+        {
+          "address": "EY7ibAVdkXuKjJX9DF9kf1UEmLRiaNG3tHToQoTzNEED",
+          "bps": 6000
+        },
+        {
+          "address": "DSEjDVZZtYY1RupBWhu6gEjkcMmHMQBA2mDw8DfjHbDn",
+          "bps": 4000
+        }
+      ],
+      "programIds": [
+        "ComputeBudget111111111111111111111111111111",
+        "11111111111111111111111111111111",
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+        "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"
+      ]
+    },
+    {
+      "quoteAsset": "USDC",
+      "mint": "EvqsbYiQFtB7iEEYyrYuMngvNP8DzqrqRumqKUUUBmZK",
+      "signature": "4JqCkWnfm5YCLPyBbaU6efzTZ2tzEFr3VKMR2PgeMJDkqMmzC8fFkCDYwp7azQFcCosvVDzKSReMDPyir6FY5cA2",
+      "slot": 512583040,
+      "confirmationStatus": "finalized",
+      "platformTreasury": "DQgSLs74oAsssLRUYNthi4UShgQ8wkmzyk37fQXuipJF",
+      "platformLamports": "50000000",
+      "networkFeeLamports": 10000,
+      "metadata": {
+        "additionalMetadata": [],
+        "mint": "EvqsbYiQFtB7iEEYyrYuMngvNP8DzqrqRumqKUUUBmZK",
+        "name": "AECO Staging Check",
+        "symbol": "AECOTEST",
+        "updateAuthority": null,
+        "uri": "ipfs://bafkreigck6kpvc45g7cso5kirqjd6ogpfrv5vjpdlsboc5dgs3gr4rgro4"
+      },
+      "curveQuoteMint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "creator": "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+      "lockedShares": [
+        {
+          "address": "NpvC9LaiXoGvnGscGpJgJvmcmSxrntiWkLY5icvvJbV",
+          "bps": 6000
+        },
+        {
+          "address": "DQgSLs74oAsssLRUYNthi4UShgQ8wkmzyk37fQXuipJF",
+          "bps": 4000
+        }
+      ],
+      "programIds": [
+        "ComputeBudget111111111111111111111111111111",
+        "11111111111111111111111111111111",
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+        "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+      ]
+    }
+  ],
+  "usdc": {
+    "quoteMint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    "quoteVault": "9vHjxoD8GrSzAUJdmhQzZzKwTZZRi6LRpAwsJFJ6buhH",
+    "quoteVaultBalance": {
+      "amount": "0",
+      "decimals": 6,
+      "uiAmount": 0,
+      "uiAmountString": "0"
+    },
+    "packetBytes": 803,
+    "routing": {
+      "sharingConfig": {
+        "address": "8FdzBoz5Cby5Kqsy2dum1sPuWuPyqXRRccFvW8tqrFMt",
+        "version": 2,
+        "status": "Active",
+        "mint": "EvqsbYiQFtB7iEEYyrYuMngvNP8DzqrqRumqKUUUBmZK",
+        "admin": "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+        "adminRevoked": true,
+        "shareholders": [
+          {
+            "address": "NpvC9LaiXoGvnGscGpJgJvmcmSxrntiWkLY5icvvJbV",
+            "shareBps": 6000
+          },
+          {
+            "address": "DQgSLs74oAsssLRUYNthi4UShgQ8wkmzyk37fQXuipJF",
+            "shareBps": 4000
+          }
+        ]
+      },
+      "bondingCurveCreator": "8FdzBoz5Cby5Kqsy2dum1sPuWuPyqXRRccFvW8tqrFMt",
+      "bondingCurveComplete": false
+    },
+    "notVerified": [
+      "USDC trading",
+      "graduation",
+      "earned creator-fee collection",
+      "application USDC acceptance",
+      "actual Phantom approval"
+    ]
+  },
+  "scope": "Creation and locked routing; no trading, earned-fee claims or payouts"
+}

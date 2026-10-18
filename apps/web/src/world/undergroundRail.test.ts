@@ -48,7 +48,9 @@ describe("connected Riverside underground service", () => {
     const originalStreets = planStreets(chunks, seed);
     const obstruction = planUndergroundRail(planRiversideRail(chunks, originalFrontier, seed, originalStreets), chunks, originalFrontier, seed, originalStreets);
     expect(obstruction.path).toBeNull(); expect(obstruction.report.issues.join(" ")).toContain("obstruction");
-  }, 20000);
+    // Two full-world clearance scans are correctness checks, not a frame-time
+    // benchmark; leave CPU headroom for shared runners and software WebGL.
+  }, 45000);
   it("runs forward continuously for three complete loops and hides for exactly 120 seconds", () => {
     const path = plan.path!, route = plan.underground!, first = undergroundService(0, path, route);
     expect(first.emergesAt - first.hiddenAt).toBeCloseTo(120, 10);

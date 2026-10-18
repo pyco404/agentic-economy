@@ -68,6 +68,7 @@ export function Launchpad() {
   return session.available ? <LaunchWorkspace /> : <LocalLaunchpad />;
 }
 function LocalLaunchpad() {
+  const session = useWalletSession();
   const [review, setReview] = useState(false),
     [name, setName, nameSaved] = useDraftField<string>("launchpad:name", ""),
     [symbol, setSymbol, symbolSaved] = useDraftField<string>("launchpad:symbol", ""),
@@ -87,8 +88,10 @@ function LocalLaunchpad() {
       <div className="two-column">
         <form
           className="surface"
+          noValidate={!session.identity}
           onSubmit={(e) => {
             e.preventDefault();
+            if (!session.identity) { session.open(); return; }
             if (!launchQuoteError(quoteAsset)) setReview(true);
           }}
         >
@@ -148,8 +151,8 @@ function LocalLaunchpad() {
             <p className="small muted">Manual metadata overrides are unavailable until the backend can validate them. Any previous draft value is retained.</p>
           </details>
           <LaunchQuotePicker value={quoteAsset} symbol={symbol} onChange={(quote) => { setQuoteAsset(quote); setReview(false); }} />
-          <button className="primary wide" type="submit" disabled={!!quoteError}>
-            Review draft <ArrowRight size={16} />
+          <button className="primary wide" type="submit" disabled={!!session.identity && !!quoteError}>
+            {session.identity ? <>Review draft <ArrowRight size={16} /></> : "Connect wallet"}
           </button>
           {review && !quoteError && selectedQuote && (
             <section className="launch-review" aria-label="Launch draft review">

@@ -1,3 +1,4 @@
+import {nextTreasuryEntry} from './treasury-entry.js';
 import type { AgentAction, Community, EconomicEvent, RewardRecord, TaskReceipt, TokenLaunch, TreasuryEntry } from "@agentic-economy/shared";
 import {
   ConflictError,
@@ -161,7 +162,8 @@ export class MemoryStore implements Store {
 
   async appendTreasuryEntries(entries: TreasuryEntry[]) {
     const inserted: TreasuryEntry[] = [];
-    for (const e of entries) {
+    for (const input of entries) {
+      const e=nextTreasuryEntry(input,this.treasury);if(!e)continue;
       if (e.stream === "launch_fee" && e.account !== "platform") throw new Error("launch fees may only be credited to the platform treasury");
       const k = treasuryKey(e);
       if (this.treasuryKeys.has(k)) continue;

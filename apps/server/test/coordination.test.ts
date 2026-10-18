@@ -1,3 +1,6 @@
+import {distribution} from './fixtures/creator-distribution.js';
+import {sharingConfigPda} from '../src/chain/pump.js';
+import type {Community,TokenLaunch} from '@agentic-economy/shared';
 import pg from "pg";
 import WebSocket from "ws";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -203,13 +206,18 @@ d("multi-process coordination (Postgres)", () => {
     const i2 = track(await pgEnv("indexer", devnet, chain));
     // Register a community directly (devnet launches are disabled; we only need registry + chain data here).
     const mint = (await import("@solana/web3.js")).Keypair.generate().publicKey.toBase58();
-    await q("INSERT INTO launches (id, status, launcher_wallet, mint, doc) VALUES ('lch_idx000001', 'confirmed', 'x', $1, '{}')", [mint]);
-    await q("INSERT INTO communities (id, mint, launch_id, doc, registered_at) VALUES ('com_idx000001', $1, 'lch_idx000001', $2, now())", [
-      mint,
-      JSON.stringify({ id: "com_idx000001", mint, launchId: "lch_idx000001", symbol: "IDX" }),
-    ]);
-    for (let n = 0; n < 3; n++)
-      chain.simulateCreatorFeeDistribution({ mint, payouts: [{ address: devnet.AGENT_REWARDS_TREASURY, lamports: 600n }, { address: devnet.PLATFORM_TREASURY, lamports: 400n }] });
+    // Complete canonical synthetic RPC evidence exercises the real devnet verifier.
+    const fixture=(await import('../../../packages/shared/fixtures/launch.json')).default.launch;
+    const registered={...structuredClone(fixture),id:'lch_idx000001',mode:'devnet',status:'confirmed',mint,communityId:'com_idx000001',signature:'2'.repeat(88),fees:{...fixture.fees,platformTreasury:devnet.PLATFORM_TREASURY,creatorFeeSplit:{...fixture.fees.creatorFeeSplit,agentRewardsTreasury:devnet.AGENT_REWARDS_TREASURY}}} as TokenLaunch;
+    await q("INSERT INTO launches (id,status,launcher_wallet,mint,doc) VALUES ($1,'confirmed',$2,$3,$4)",[registered.id,registered.launcherWallet,mint,JSON.stringify(registered)]);
+    const community={id:'com_idx000001',mint,launchId:registered.id,symbol:'IDX',launchSignature:registered.signature,feeSharingConfig:sharingConfigPda(mint)} as Community;
+    await q("INSERT INTO communities (id,mint,launch_id,doc,registered_at) VALUES ($1,$2,$3,$4,now())",[community.id,mint,registered.id,JSON.stringify(community)]);
+    const receipts=Array.from({length:3},(_,n)=>{const f=distribution(undefined,1000n,{mint,agent:devnet.AGENT_REWARDS_TREASURY,platform:devnet.PLATFORM_TREASURY});return {...f.tx,signature:MockChain.randomSignature(),slot:100+n};});
+    chain.getTransaction=async signature=>receipts.find(tx=>tx.signature===signature)??null;
+    chain.listSignaturesForAddress=async(_address,until,limit,before)=>{const all=[...receipts].reverse().map(tx=>tx.signature);const start=before?all.indexOf(before)+1:0;const stop=until?all.indexOf(until):-1;return all.slice(start,stop>=0?stop:undefined).slice(0,limit);};
+    chain.getFeeRoutingState=async()=>({sharingConfig:{version:1,mint,admin:'11111111111111111111111111111111',address:sharingConfigPda(mint),adminRevoked:true,status:'Active',shareholders:[{address:devnet.AGENT_REWARDS_TREASURY,shareBps:6000},{address:devnet.PLATFORM_TREASURY,shareBps:4000}]},bondingCurveCreator:sharingConfigPda(mint),bondingCurveComplete:false});
+    expect((await i1.ctx.treasury.ingestCreatorFeeDistribution({...receipts[0]!,source:'mock_chain'},[community])).accepted).toBe(false);
+    expect((await q("SELECT 1 FROM treasury_entries WHERE stream='creator_fee'")).length).toBe(0);
 
     const [r1, r2] = await Promise.all([i1.ctx.indexer!.runOnce(), i2.ctx.indexer!.runOnce()]);
     expect([r1, r2].filter(Boolean)).toHaveLength(1); // one active, one standby

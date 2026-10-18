@@ -3,6 +3,11 @@ import type { SharingConfigState } from "./pump.js";
 /** Chain-agnostic, normalized view of a landed transaction (top-level instructions only). */
 export interface ObservedTransaction {
   signature: string;
+  source?:'mock_chain'|'solana_rpc';
+  genesisHash?:string;
+  feeLamports?:bigint;
+  innerInstructions?:Array<{parentIndex:number;programId:string;accounts:string[];dataBase64:string;stackHeight:number|null}>;
+  tokenAccounts?:Record<string,{mint:string;owner:string;decimals:number;pre:bigint;post:bigint}>;
   /** Original compiled message, preserving quote accounts and lookup indexes. */
   messageBase64?:string;
   slot: number;
@@ -52,6 +57,9 @@ export interface BuiltLaunchTransaction {
 
 export interface ChainGateway {
   readonly source: "mock_chain" | "solana_rpc";
+  getGenesisHash?():Promise<string>;
+  verifyMarketPool?(pool:string,mint:string,quoteMint:string):Promise<boolean>;
+  isTransactionOrphaned?(signature:string,slot:number):Promise<boolean>;
   getTransaction(signature: string): Promise<ObservedTransaction | null>;
   getFeeRoutingState(mint: string): Promise<FeeRoutingState>;
   getTokenBalance(owner: string, mint: string): Promise<TokenBalance>;
@@ -59,7 +67,7 @@ export interface ChainGateway {
   submitLaunchTransaction?(transaction:string):Promise<string>;
   getFinalizedBlockHeight?():Promise<number>;
   /** Newest-first signatures touching `address`, stopping at `until` (exclusive). */
-  listSignaturesForAddress(address: string, until: string | null, limit: number): Promise<string[]>;
+  listSignaturesForAddress(address: string, until: string | null, limit: number, before?:string): Promise<string[]>;
 }
 
 export class ChainFeatureUnavailable extends Error {

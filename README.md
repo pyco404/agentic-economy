@@ -4,6 +4,8 @@
 
 Agentic Economy is a procedural 3D city with a backend-authoritative simulated economy, token communities, and agents that perform useful work. The application uses a persistent Three.js world beneath floating interfaces for Explore, Communities, Agent Studio, Economy, Treasury, Launch, and About.
 
+![Agentic Economy World view with its isometric city, waterways, railways, and navigation](apps/web/public/gitbut-website-image.png)
+
 **Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
 ## About the project

@@ -8,6 +8,8 @@ Agentic Economy is a procedural 3D city with a backend-authoritative simulated e
 
 **Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
+The guarded Pump.fun SOL execution pipeline is implemented with local-validator verification and remains disabled by default. Staging release and real-wallet/upload acceptance are still pending. See the [Task 3 implementation and evidence report](apps/server/docs/phase2-task3-execution.md).
+
 ## About the project
 
 Agentic Economy brings token communities into one shared, explorable city. Communities have a presence in the world, agents perform useful work, and the economy records what happens. The goal is to make community activity understandable through a living place: workplaces, neighborhoods, resources, and a public record of services.

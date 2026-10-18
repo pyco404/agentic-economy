@@ -1,4 +1,9 @@
 import * as THREE from "three";
+import { vehicleNavigation, TRAFFIC_NAV } from "./vehicleNavigation";
+import { waterNavigation } from "./waterNavigation";
+import { createBoatScene } from "./boats";
+import { createJourneyFleet } from "./journeys";
+import { graphReport } from "./navigation";
 import { type GeometryLibrary, type Part } from "./geometry";
 import type { FrontierData } from "./frontier";
 import { agentSeed, pathBetween, type PathNetwork } from "./agentMotion";
@@ -100,13 +105,20 @@ export function planAmbient(chunks: ChunkVisual[], frontier: FrontierData, netwo
       levels.get(`${Math.floor(point.x)}:${Math.floor(point.z)}`) ?? 0) + 0.04; });
     path.length = ambientPath(path.points).length;
   }
-  return { rail, railway, mirroredRail, cars, center: new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2),
+  const mirroredParts = mirroredRail?.report.mode === "mirrored" ? mirroredRail.source.parts.map(p=>({...p,
+    position:[p.position[0],p.position[1],mirroredRail.reflectionZ-p.position[2]] as Part["position"],
+    rotation:[p.rotation?.[0]??0,-(p.rotation?.[1]??0),p.rotation?.[2]??0] as Part["rotation"]})) : [];
+  let navigation: {traffic:ReturnType<typeof vehicleNavigation>;water:ReturnType<typeof waterNavigation>;streets:StreetPlan}|undefined;
+  let navigationError:string|undefined;
+  if(streets)try{navigation={traffic:vehicleNavigation(streets),water:waterNavigation(chunks,frontier,seed,[...(railway?.parts??[]),...mirroredParts]),streets};}
+  catch(error){navigationError=error instanceof Error?error.message:"Ambient navigation unavailable";cars=[];}
+  return { rail, railway, mirroredRail, cars, navigation, navigationError, center: new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2),
     width: maxX - minX, depth: maxZ - minZ,
     altitude: Math.max(12, ...chunks.flatMap((c) => c.buildings.map((b) => b.height))), seed };
 }
 
 type ActorKind = "train" | "car" | "plane" | "helicopter" | "balloon";
-export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "mirroredRail"> & { mirroredRail?: MirroredRail | null }, library: GeometryLibrary) {
+export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "mirroredRail" | "navigation" | "navigationError"> & { mirroredRail?: MirroredRail | null; navigation?: ReturnType<typeof planAmbient>["navigation"] }, library: GeometryLibrary) {
   const group = new THREE.Group();
   if (AMBIENT.train.enabled && plan.railway) group.add(createRiversideScene(plan.railway, library, {
     minX: plan.center.x - plan.width / 2, maxX: plan.center.x + plan.width / 2,
@@ -126,6 +138,29 @@ export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "m
     railway.scale.z = -1; railway.position.z = mirror.reflectionZ;
     group.add(railway);
   }
+  const nav=plan.navigation;
+  const candidates=nav ? (nav.traffic.preferred??[...nav.traffic.nodes.keys()]).filter(id=>(nav.traffic.components[nav.traffic.component.get(id)!]?.length??0)>=TRAFFIC_NAV.minComponent) : [];
+  candidates.sort((a,b)=>nav!.traffic.components[nav!.traffic.component.get(b)!]!.length-nav!.traffic.components[nav!.traffic.component.get(a)!]!.length||a.localeCompare(b));
+  const starts:string[]=[];
+  for(let i=0;i<AMBIENT.cars.count&&candidates.length;i++){
+    let selected:string|undefined,best=-Infinity;
+    for(const id of candidates){
+      if(starts.includes(id))continue;
+      const p=nav!.traffic.nodes.get(id)!;
+      const span=starts.length?Math.min(...starts.map(s=>{const q=nav!.traffic.nodes.get(s)!;return Math.hypot(p.x-q.x,p.z-q.z);})):0;
+      if(starts.length&&span<=3)continue;
+      if(span>best||(span===best&&(!selected||id.localeCompare(selected)<0))){selected=id;best=span;}
+    }
+    if(selected)starts.push(selected);
+  }
+  const aPose=new THREE.Vector3(),bPose=new THREE.Vector3();
+  const traffic=nav?createJourneyFleet(nav.traffic,starts,candidates.filter((_,i)=>i%11===0),{seed:plan.seed,minTrip:TRAFFIC_NAV.minTrip,
+    dwellMin:TRAFFIC_NAV.stopMin,dwellVariation:TRAFFIC_NAV.stopVariation,acceleration:TRAFFIC_NAV.acceleration,separation:1.4,
+    speed:i=>AMBIENT.cars.minSpeed+(i%3)*.24,
+    fits:(p,h)=>vehicleFitsStreet(aPose.set(p.x,p.y,p.z),h,nav.streets),
+    overlaps:(a,ah,b,bh)=>carsOverlap(aPose.set(a.x,a.y,a.z),ah,bPose.set(b.x,b.y,b.z),bh)}):null;
+  const networkReport=nav?{vehicles:graphReport(nav.traffic),water:graphReport(nav.water.graph),rail:{points:plan.rail?.points.length??0,length:plan.rail?.length??0,continuous:!!plan.railway?.underground}}:null;
+  const boats=nav?createBoatScene(nav.water,library,plan.seed):null;if(boats)group.add(boats.group);
   const moving = new THREE.Group(); group.add(moving);
   const actors: { kind: ActorKind; index: number; path?: AmbientPath; phase: number; speed: number; pose: THREE.Object3D;
     delay: number; initialized: boolean; hidden: boolean; mirrored: boolean }[] = [];
@@ -167,7 +202,10 @@ export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "m
   };
   if (AMBIENT.train.enabled && plan.rail) for (let i = 0; i <= AMBIENT.train.carriages; i++) add("train", i, plan.rail);
   if (AMBIENT.train.enabled && mirror && plan.rail) for (let i = 0; i <= AMBIENT.train.carriages; i++) add("train", i, plan.rail, true);
-  if (AMBIENT.cars.enabled && plan.cars.length) for (let i = 0; i < AMBIENT.cars.count; i++) add("car", i, plan.cars[i % plan.cars.length]);
+  if (AMBIENT.cars.enabled) {
+    if(traffic) for(let i=0;i<traffic.actors.length;i++)add("car",i);
+    else if(plan.cars.length)for(let i=0;i<AMBIENT.cars.count;i++)add("car",i,plan.cars[i%plan.cars.length]);
+  }
   for (const kind of ["plane", "helicopter", "balloon"] as const) if (AMBIENT[kind].enabled)
     for (let i = 0; i < AMBIENT[kind].count; i++) add(kind, i);
   const batches = new Map<string, typeof parts>();
@@ -190,15 +228,19 @@ export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "m
   const update = (time: number, enabled: boolean, railTime = time) => {
     // Track, bridges and portals are static infrastructure, independent of trains.
     moving.visible = enabled;
+    boats?.update(time,enabled);
     if (!enabled || (Math.abs(time - previousTime) < 1 / 30 && Math.abs(railTime - previousRailTime) < 1 / 30)) return;
     const delta = Number.isFinite(previousTime) ? Math.max(0, time - previousTime) : 0;
     previousTime = time;
     previousRailTime = railTime;
+    traffic?.update(time);
     service = serviceAt(railTime);
     mirrorService = serviceAt(railTime + MIRRORED_RAIL.phaseSeconds);
     for (const actor of actors) {
       const { kind, phase, pose, path, index } = actor;
-      if (path) {
+      if(kind === "car" && traffic) {
+        const traveler=traffic.actors[index]!;pose.position.set(traveler.position.x,traveler.position.y,traveler.position.z);pose.rotation.set(0,traveler.heading,0);
+      } else if (path) {
         let distance = kind === "train"
           ? ((actor.mirrored ? mirrorService : service)?.distance ?? 0) + (plan.railway?.underground ? -index : index - 1) * RIVERSIDE_RAIL.spacing
           : loopDistance(time - actor.delay, path.length, actor.speed, actor.phase, index % 2 ? AMBIENT.cars.stopSeconds : 0);
@@ -248,7 +290,7 @@ export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "m
     }
   };
   update(0, true);
-  return { group, update, setActorsVisible: (visible: boolean) => { moving.visible = visible && moving.visible; }, railway: plan.railway?.report ?? null,
+  return { group, update, setActorsVisible: (visible: boolean) => { moving.visible = visible && moving.visible; boats?.setActorsVisible(visible&&moving.visible); }, railway: plan.railway?.report ?? null,
     mirroredRailway: plan.mirroredRail?.report ?? null,
     clearedFrontierParts: new Set(mirror?.clearedFrontierParts ?? []),
     cuts: [...(plan.railway?.underground?.cuts ?? []), ...(mirror?.cuts ?? [])],
@@ -264,10 +306,15 @@ export function createAmbientScene(plan: Omit<ReturnType<typeof planAmbient>, "m
         trackVisible: group.visible && group.children.some((child) => child.name === "Opposite urban railway" && child.visible),
         cars: actors.filter((a) => a.kind === "train" && a.mirrored).map((a) => ({ position: a.pose.position.toArray(), heading: a.pose.rotation.y, visible: !a.hidden && enabledForDiagnostics() })) } : null,
       cars: actors.filter((a) => a.kind === "train" && !a.mirrored).map((a) => ({ position: a.pose.position.toArray(), heading: a.pose.rotation.y, visible: !a.hidden && enabledForDiagnostics() })) }),
+    navigationState:()=>({traffic,boats:boats?.fleet??null}),
+    preserveNavigation:(prior:{traffic:typeof traffic;boats:typeof traffic})=>{if(prior.traffic)traffic?.preserve(prior.traffic);if(prior.boats)boats?.fleet.preserve(prior.boats);},
+    navigationReport:()=>({decorative:true,traffic:traffic?.report()??null,boats:boats?.report()??null,
+      graphs:networkReport}),
     traffic: () => actors.filter((actor) => actor.kind === "car")
     .map((actor) => ({ position: actor.pose.position.clone(), heading: actor.pose.rotation.y })),
     counts: { train: plan.rail && AMBIENT.train.enabled ? 1 + Number(!!mirror) : 0,
-    cars: AMBIENT.cars.enabled && plan.cars.length ? AMBIENT.cars.count : 0,
+    cars: AMBIENT.cars.enabled ? traffic?traffic.actors.length:plan.cars.length?AMBIENT.cars.count:0 : 0,
+    boats:boats?.fleet.actors.length??0,
     plane: Number(AMBIENT.plane.enabled), helicopter: Number(AMBIENT.helicopter.enabled), balloon: Number(AMBIENT.balloon.enabled) } };
   function enabledForDiagnostics() { return moving.visible; }
 }

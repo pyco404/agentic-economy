@@ -1,0 +1,38 @@
+[
+  {
+    "quoteAsset": "SOL",
+    "mint": "4Pyp7AZD2P1fPJAHWmWvkuJMg6GY2BxcsmVTQWxv8qF1",
+    "signature": "4sFNrz5s4b3UAkyUfdqHWbs1oLEUSv5A5qAr5QjwN85GUyxKZ67Z98HCUrQ5hZw5CEgM1cQd5hr84ohxMn3fPL5i",
+    "slot": 512596611,
+    "confirmationStatus": "finalized",
+    "platformTreasury": "DSEjDVZZtYY1RupBWhu6gEjkcMmHMQBA2mDw8DfjHbDn",
+    "platformLamports": "50000000",
+    "networkFeeLamports": 10000,
+    "metadata": {
+      "additionalMetadata": [],
+      "mint": "4Pyp7AZD2P1fPJAHWmWvkuJMg6GY2BxcsmVTQWxv8qF1",
+      "name": "test 01 coin",
+      "symbol": "TEST01",
+      "updateAuthority": null,
+      "uri": "ipfs://bafkreiauuwzh4aec4qpbracvqdmnh3x3ud3bi2yhcuvsunjvueuth5bw7e"
+    },
+    "curveQuoteMint": "11111111111111111111111111111111",
+    "creator": "2735vQFWJ4DfRpEiexTBeTF3goNN1sF2PE2toj8eNz2f",
+    "lockedShares": [
+      {
+        "address": "EY7ibAVdkXuKjJX9DF9kf1UEmLRiaNG3tHToQoTzNEED",
+        "bps": 6000
+      },
+      {
+        "address": "DSEjDVZZtYY1RupBWhu6gEjkcMmHMQBA2mDw8DfjHbDn",
+        "bps": 4000
+      }
+    ],
+    "programIds": [
+      "ComputeBudget111111111111111111111111111111",
+      "11111111111111111111111111111111",
+      "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"
+    ]
+  }
+]

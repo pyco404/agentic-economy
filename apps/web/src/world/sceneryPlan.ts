@@ -6,7 +6,7 @@ import { planAmbient } from "./ambient";
 import { composeCityEdges } from "./composition";
 import { generateBuilding, generateLandscape, type Part } from "./geometry";
 import type { ChunkVisual } from "./layout";
-import { channelChunks, channelDetails, planLakeChannel } from "./lakeChannel";
+import { channelChunks, channelDetails, planLakeChannel, type LakeChannel } from "./lakeChannel";
 
 export interface SceneryRequest { revision: number; chunks: ChunkVisual[]; seed: number;
   catalog?: { cx: number; cy: number }[]; style: FrontierStyle;
@@ -38,7 +38,7 @@ export function prepareScenery(request: SceneryRequest, send: (message: SceneryM
   const composition = composeCityEdges(chunks, frontier, seed, ambient.railway, request.catalog, ambient.mirroredRail);
   send({ kind: "scenery", revision, frontier, ambient, composition });
 }
-export type SceneryMessage = { kind: "roads"; revision: number; pathNetwork: ReturnType<typeof buildPathNetwork>; streets: ReturnType<typeof planStreets>; channel: Pick<import("./lakeChannel").LakeChannel,"start"|"end"|"width"|"crossings"> | null } |
+export type SceneryMessage = { kind: "roads"; revision: number; pathNetwork: ReturnType<typeof buildPathNetwork>; streets: ReturnType<typeof planStreets>; channel: Pick<LakeChannel,"start"|"end"|"width"|"crossings"> | null } |
   { kind: "chunk"; revision: number; chunk: PreparedChunk } |
   { kind: "scenery"; revision: number; frontier: ReturnType<typeof generateFrontier>; ambient: ReturnType<typeof planAmbient>;
     composition: ReturnType<typeof composeCityEdges> } |

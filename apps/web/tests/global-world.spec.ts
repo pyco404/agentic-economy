@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-const routes = ["World", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Launchpad"];
+const routes = ["World", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Launch"];
 for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
   test(`one persistent live world beneath every route at ${viewport.width}px`, async ({ page }) => {
     test.setTimeout(300000);
@@ -44,7 +44,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
         const water = await city.getAttribute("data-water-flow-time");
         await page.waitForTimeout(400); expect(await city.getAttribute("data-water-flow-time")).toBe(water);
       }
-      if (route === "Launchpad") {
+      if (route === "Launch") {
         await page.getByLabel("Token name").fill("Persistent City");
         await page.getByLabel("Symbol", { exact: true }).fill("CITY");
         await page.getByRole("button", { name: "Review draft" }).click();

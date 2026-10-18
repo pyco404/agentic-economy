@@ -1,3 +1,4 @@
+import {TokenMarketService} from './services/token-market.js';
 import type { AppConfig } from "./config.js";
 import { MockChain } from "./chain/mock.js";
 import { SolanaRpcChain } from "./chain/solana.js";
@@ -23,6 +24,7 @@ export interface AppContext {
   runtime: CityRuntime;
   auth: AuthService;
   treasury: TreasuryService;
+  tokenMarket: TokenMarketService;
   launches: LaunchService;
   communities: CommunityService;
   eligibility: EligibilityService;
@@ -100,6 +102,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     runtime,
     auth,
     treasury,
+    tokenMarket:new TokenMarketService(store,chain,config.mode==='demo'?'demo':config.solana.cluster),
     launches,
     communities,
     eligibility,

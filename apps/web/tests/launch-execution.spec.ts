@@ -12,10 +12,14 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  let launch:Record<string,unknown>|undefined,prepared='';
  await page.exposeFunction('__signMessage',(bytes:number[])=>Array.from(nacl.sign.detached(Uint8Array.from(bytes),creator.secretKey)));
  await page.exposeFunction('__signTransaction',(bytes:number[])=>{signs++;if(reject)throw new Error('Launch signature rejected by user');const tx=VersionedTransaction.deserialize(Uint8Array.from(bytes));tx.sign([creator]);return Array.from(tx.serialize());});
- await page.addInitScript(wallet=>{
+ await page.addInitScript(({wallet,publicKey})=>{
   const w=window as unknown as {__signMessage(bytes:number[]):Promise<number[]>;__signTransaction(bytes:number[]):Promise<number[]>;phantom:unknown};
-  w.phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async(bytes:Uint8Array)=>({signature:new Uint8Array(await w.__signMessage(Array.from(bytes)))}),signTransaction:async(tx:{serialize():Uint8Array})=>{const signed=new Uint8Array(await w.__signTransaction(Array.from(tx.serialize())));return{serialize:()=>signed};},disconnect:async()=>{}}};
- },wallet);
+  w.phantom={solana:{publicKey:{toBase58:()=>wallet},connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async(bytes:Uint8Array)=>({signature:new Uint8Array(await w.__signMessage(Array.from(bytes)))}),signTransaction:async(tx:{serialize():Uint8Array})=>{const signed=new Uint8Array(await w.__signTransaction(Array.from(tx.serialize())));return{serialize:()=>signed};},disconnect:async()=>{}}};
+  // Hybrid Phantom registration: message auth is standard, sign-only is injected.
+  const account={address:wallet,publicKey:new Uint8Array(publicKey),chains:['solana:devnet'],features:['solana:signMessage']};
+  const provider={version:'1.0.0',name:'Phantom',icon:'data:image/png;base64,',accounts:[account],chains:['solana:devnet'],features:{'standard:connect':{version:'1.0.0',connect:async()=>({accounts:[account]})},'solana:signMessage':{version:'1.0.0',signMessage:async({message}:{message:Uint8Array})=>[{signedMessage:message,signature:new Uint8Array(await w.__signMessage(Array.from(message)))}]}}};
+  window.addEventListener('wallet-standard:app-ready',event=>(event as CustomEvent).detail.register(provider));
+ },{wallet,publicKey:Array.from(creator.publicKey.toBytes())});
  await page.route('**/api/v1/launchpad/capabilities',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:true}});});
  await page.route(/\/launchpad\/drafts\/[^/]+\/review$/,async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:true}});});
  await page.route(/\/launchpad\/drafts\/[^/]+\/launch$/,async route=>{

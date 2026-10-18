@@ -48,6 +48,7 @@ export const AgentMove = z
     target: GridPos.nullable(),
     /** Cells per tick, for client-side interpolation/extrapolation. */
     speed: z.number(),
+    agent: AgentSummary.optional().describe("Same-tick assignment and counters; absent in older stream records."),
   })
   .meta({ id: "AgentMove" });
 

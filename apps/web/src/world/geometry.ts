@@ -1,3 +1,5 @@
+import { waterfrontScenery } from "./waterfrontScenery";
+import { bridgeSurface } from "./bridgeSurface";
 import { architectureProfile } from "./architecture";
 import { cityPalette } from "./palette";
 import * as THREE from "three";
@@ -23,7 +25,7 @@ export interface Part {
   detail?: boolean;
   outline?: boolean;
   buildingId?: string;
-  role?: "roof" | "window" | "door" | "window-frame" | "window-reflection" | "tree-trunk" | "tree-crown"
+  role?: "city-edge" | "landmass-edge" | "roof" | "window" | "door" | "window-frame" | "window-reflection" | "tree-trunk" | "tree-crown"
     | "street-surface" | "street-sidewalk" | "street-marking" | "bridge-edge" | "field-row"
     | "rail-pier" | "rail-fill" | "rail-sleeper" | "rail-buffer"
     | "channel-bed" | "channel-water" | "channel-rock" | "channel-reed";
@@ -773,7 +775,9 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
             scale: [1, 0.03, 1] });
           continue;
         }
-        const elevation = Number(chunk.elevation?.[j * size + i] ?? "0") * 0.08;
+        const elevation = bridgeSurface(context).level(chunk.x * size + i, chunk.z * size + j);
+        if(code === "b" && bridgeSurface(context).navigableUnder(chunk.x*size+i,chunk.z*size+j))
+          parts.push({geometry:"box",color:cityPalette.water,position:[chunk.x*size+i+.5,-.265,chunk.z*size+j+.5],scale:[1,.03,1]});
         parts.push({
           geometry: "box",
           color: code === "g"
@@ -852,7 +856,7 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
         const code = at(x, z),
           wx = chunk.x * size + x + 0.5,
           wz = chunk.z * size + z + 0.5,
-          level = Number(chunk.elevation?.[z * size + x] ?? "0") * 0.08;
+          level = bridgeSurface(context).level(chunk.x * size + x, chunk.z * size + z);
         if (code === "p" && (x + z) % 11 === 0) {
           parts.push({
             geometry: "box",
@@ -970,6 +974,7 @@ export function generateLandscape(chunk: ChunkVisual, seed: number,
           });
       }
     }
+  parts.push(...(waterfrontScenery(context, seed).get(chunk.id) ?? []));
   return parts;
 }
 export function disposeGroup(

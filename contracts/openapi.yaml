@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.3.0
+  version: 0.3.1
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -694,6 +694,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AgentActionPage"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/token-markets/{mint}:
+    get:
+      operationId: getTokenMarket
+      summary: Attributed market data for verified platform tokens
+      tags:
+        - communities
+      parameters:
+        - name: mint
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicKey"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenMarket"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/token-markets/{mint}/history:
+    get:
+      operationId: getTokenHistory
+      summary: Hourly pool candles where available
+      tags:
+        - communities
+      parameters:
+        - name: mint
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicKey"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenHistory"
         default:
           description: Error
           content:
@@ -6139,6 +6189,150 @@ components:
         - cooperative
         - balanced
         - competitive
+    TokenHistory:
+      type: object
+      properties:
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        pairAddress:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+        source:
+          type: string
+          const: geckoterminal
+        fetchedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+        reason:
+          type:
+            - string
+            - "null"
+        candles:
+          maxItems: 48
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
+              open:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              high:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              low:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              close:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              volume:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+            required:
+              - time
+              - open
+              - high
+              - low
+              - close
+              - volume
+            additionalProperties: false
+      required:
+        - mint
+        - pairAddress
+        - source
+        - fetchedAt
+        - reason
+        - candles
+      additionalProperties: false
+    TokenHistoryInput:
+      type: object
+      properties:
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        pairAddress:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+        source:
+          type: string
+          const: geckoterminal
+        fetchedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+        reason:
+          type:
+            - string
+            - "null"
+        candles:
+          maxItems: 48
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
+              open:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              high:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              low:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              close:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+              volume:
+                anyOf:
+                  - type: number
+                    minimum: 0
+                  - type: "null"
+            required:
+              - time
+              - open
+              - high
+              - low
+              - close
+              - volume
+      required:
+        - mint
+        - pairAddress
+        - source
+        - fetchedAt
+        - reason
+        - candles
     TokenLaunch:
       type: object
       properties:
@@ -6427,6 +6621,269 @@ components:
         - activatingWallet
         - launchId
         - communityId
+    TokenMarket:
+      type: object
+      properties:
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        status:
+          type: string
+          enum:
+            - available
+            - unavailable
+            - stale
+        reason:
+          type:
+            - string
+            - "null"
+        network:
+          type: string
+          enum:
+            - mainnet-beta
+            - devnet
+            - localnet
+            - demo
+        fetchedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+        sourceAsOf:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+        source:
+          anyOf:
+            - type: string
+              const: dexscreener
+            - type: "null"
+        sourceUrl:
+          anyOf:
+            - type: string
+              format: uri
+            - type: "null"
+        pairAddress:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+        quoteAsset:
+          anyOf:
+            - type: string
+              enum:
+                - SOL
+                - USDC
+            - type: "null"
+        priceUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        volume24hUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        marketCapUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        liquidityUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        priceChange24h:
+          type:
+            - number
+            - "null"
+        holders:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        buys24h:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        sells24h:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        graduation:
+          type: string
+          enum:
+            - unknown
+            - bonding_curve
+            - curve_complete
+            - graduated
+        graduationProgress:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 100
+            - type: "null"
+      required:
+        - mint
+        - status
+        - reason
+        - network
+        - fetchedAt
+        - sourceAsOf
+        - source
+        - sourceUrl
+        - pairAddress
+        - quoteAsset
+        - priceUsd
+        - volume24hUsd
+        - marketCapUsd
+        - liquidityUsd
+        - priceChange24h
+        - holders
+        - buys24h
+        - sells24h
+        - graduation
+        - graduationProgress
+      additionalProperties: false
+    TokenMarketInput:
+      type: object
+      properties:
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        status:
+          type: string
+          enum:
+            - available
+            - unavailable
+            - stale
+        reason:
+          type:
+            - string
+            - "null"
+        network:
+          type: string
+          enum:
+            - mainnet-beta
+            - devnet
+            - localnet
+            - demo
+        fetchedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+        sourceAsOf:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+        source:
+          anyOf:
+            - type: string
+              const: dexscreener
+            - type: "null"
+        sourceUrl:
+          anyOf:
+            - type: string
+              format: uri
+            - type: "null"
+        pairAddress:
+          anyOf:
+            - $ref: "#/components/schemas/PublicKey"
+            - type: "null"
+        quoteAsset:
+          anyOf:
+            - type: string
+              enum:
+                - SOL
+                - USDC
+            - type: "null"
+        priceUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        volume24hUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        marketCapUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        liquidityUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        priceChange24h:
+          type:
+            - number
+            - "null"
+        holders:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        buys24h:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        sells24h:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        graduation:
+          type: string
+          enum:
+            - unknown
+            - bonding_curve
+            - curve_complete
+            - graduated
+        graduationProgress:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 100
+            - type: "null"
+      required:
+        - mint
+        - status
+        - reason
+        - network
+        - fetchedAt
+        - sourceAsOf
+        - source
+        - sourceUrl
+        - pairAddress
+        - quoteAsset
+        - priceUsd
+        - volume24hUsd
+        - marketCapUsd
+        - liquidityUsd
+        - priceChange24h
+        - holders
+        - buys24h
+        - sells24h
+        - graduation
+        - graduationProgress
     TreasuryAccount:
       type: string
       enum:
@@ -6487,6 +6944,35 @@ components:
           type:
             - string
             - "null"
+        evidence:
+          type: object
+          properties:
+            source:
+              type: string
+              enum:
+                - solana_rpc
+                - mock_chain
+            version:
+              type: number
+              const: 1
+            network:
+              type: string
+              enum:
+                - mainnet-beta
+                - devnet
+                - localnet
+                - demo
+            distributed:
+              $ref: "#/components/schemas/AmountString"
+            distributedDust:
+              $ref: "#/components/schemas/AmountString"
+          required:
+            - source
+            - version
+            - network
+            - distributed
+            - distributedDust
+          additionalProperties: false
         recordedAt:
           type: string
           format: date-time
@@ -6566,6 +7052,34 @@ components:
           type:
             - string
             - "null"
+        evidence:
+          type: object
+          properties:
+            source:
+              type: string
+              enum:
+                - solana_rpc
+                - mock_chain
+            version:
+              type: number
+              const: 1
+            network:
+              type: string
+              enum:
+                - mainnet-beta
+                - devnet
+                - localnet
+                - demo
+            distributed:
+              $ref: "#/components/schemas/AmountString"
+            distributedDust:
+              $ref: "#/components/schemas/AmountString"
+          required:
+            - source
+            - version
+            - network
+            - distributed
+            - distributedDust
         recordedAt:
           type: string
           format: date-time

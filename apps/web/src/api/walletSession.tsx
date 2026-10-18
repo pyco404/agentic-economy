@@ -32,21 +32,30 @@ interface WalletChoice {name:string;connect():Promise<string>;sign(message:Uint8
 interface Injected {publicKey?:{toBase58():string};connect():Promise<{publicKey:{toBase58():string}}>;signMessage(m:Uint8Array,encoding?:string):Promise<{signature:Uint8Array}>;signTransaction?(transaction:unknown):Promise<{serialize():Uint8Array}>;disconnect():Promise<void>;on?(e:string,f:()=>void):void;removeListener?(e:string,f:()=>void):void;}
 export function installedWallets():WalletChoice[]{
  const result:WalletChoice[]=[];
+ const browser=window as unknown as {phantom?:{solana?:Injected};solflare?:Injected;backpack?:Injected};
  for(const wallet of getWallets().get()){
   const features=wallet.features as Record<string,unknown>;
   const connect=features['standard:connect'] as {connect():Promise<{accounts:readonly {address:string}[]}>}|undefined;
   const signing=features['solana:signMessage'] as {signMessage(input:{account:unknown;message:Uint8Array}):Promise<readonly {signature:Uint8Array;signedMessage:Uint8Array}[]>}|undefined;
-  const signingTx=features['solana:signTransaction'] as {signTransaction(input:{account:unknown;transaction:Uint8Array;chain:string}):Promise<readonly {signedTransaction:Uint8Array}[]>}|undefined;
+  const signingTx=features['solana:signTransaction'] as {supportedTransactionVersions?:readonly (0|'legacy')[];signTransaction(input:{account:unknown;transaction:Uint8Array;chain:string}):Promise<readonly {signedTransaction:Uint8Array}[]>}|undefined;
   const disconnect=features['standard:disconnect'] as {disconnect():Promise<void>}|undefined;
   const events=features['standard:events'] as {on(e:string,f:()=>void):()=>void}|undefined;
   if(!connect||!signing)continue;
   let address=wallet.accounts[0]?.address??'';
+  const injected=wallet.name==='Phantom'?browser.phantom?.solana:wallet.name==='Solflare'?browser.solflare:wallet.name==='Backpack'?browser.backpack:undefined;
+  // Phantom can register message authentication via Wallet Standard while exposing
+  // sign-only transactions exclusively on its injected provider. Do not let the
+  // standard registration hide that capability, or fall back after a rejection.
+  const signTransaction=signingTx?.supportedTransactionVersions?.includes(0)
+   ? async(transaction:Uint8Array,network:"devnet"|"localnet")=>{const account=wallet.accounts.find(a=>a.address===address);const chain=`solana:${network}` as const;if(!account||!account.chains.includes(chain))throw new Error('This wallet account does not support the selected testing network');const result=(await signingTx.signTransaction({account,transaction,chain}))[0];if(!result)throw new Error('Wallet did not return a signed transaction');return result.signedTransaction;}
+   : injected?.signTransaction
+    ? async(transaction:Uint8Array)=>{if(injected.publicKey?.toBase58()!==address)throw new Error('Wallet account changed. Reconnect before signing.');const {VersionedTransaction}=await import('@solana/web3.js');const signed=await injected.signTransaction!(VersionedTransaction.deserialize(transaction));if(injected.publicKey?.toBase58()!==address)throw new Error('Wallet account changed during signing');return signed.serialize();}
+    : undefined;
   result.push({name:wallet.name,connect:async()=>{const r=await connect.connect();const account=r.accounts.find(a=>wallet.accounts.find(w=>w.address===a.address)?.chains.some(c=>c.startsWith('solana:')));if(!account)throw new Error('No Solana account is available');address=account.address;return address;},
    sign:async(message)=>{const account=wallet.accounts.find(a=>a.address===address);if(!account)throw new Error('Wallet account changed');const r=(await signing.signMessage({account,message}))[0];if(!r||r.signedMessage.length!==message.length||!r.signedMessage.every((v,i)=>v===message[i]))throw new Error('Wallet signed a different message');return r.signature;},
-   ...(signingTx?{signTransaction:async(transaction:Uint8Array,network:"devnet"|"localnet")=>{const account=wallet.accounts.find(a=>a.address===address);const chain=`solana:${network}` as const;if(!account||!account.chains.includes(chain))throw new Error('This wallet account does not support the selected testing network');const result=(await signingTx.signTransaction({account,transaction,chain}))[0];if(!result)throw new Error('Wallet did not return a signed transaction');return result.signedTransaction;}}:{}),
+   ...(signTransaction?{signTransaction}:{}),
    disconnect:async()=>{await disconnect?.disconnect();},listen:change=>events?.on('change',change)??(()=>{})});
  }
- const browser=window as unknown as {phantom?:{solana?:Injected};solflare?:Injected;backpack?:Injected};
  for(const [name,provider] of [['Phantom',browser.phantom?.solana],['Solflare',browser.solflare],['Backpack',browser.backpack]] as const){if(!provider||result.some(w=>w.name===name))continue;result.push({name,connect:async()=>(await provider.connect()).publicKey.toBase58(),sign:async m=>(await provider.signMessage(m,'utf8')).signature,...(provider.signTransaction?{signTransaction:async(bytes:Uint8Array)=>{const {VersionedTransaction}=await import('@solana/web3.js');return(await provider.signTransaction!(VersionedTransaction.deserialize(bytes))).serialize();}}:{}),disconnect:()=>provider.disconnect(),listen:f=>{provider.on?.('accountChanged',f);provider.on?.('disconnect',f);return()=>{provider.removeListener?.('accountChanged',f);provider.removeListener?.('disconnect',f);};}});}
  return result;
 }

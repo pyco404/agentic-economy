@@ -3,6 +3,8 @@ import type { SharingConfigState } from "./pump.js";
 /** Chain-agnostic, normalized view of a landed transaction (top-level instructions only). */
 export interface ObservedTransaction {
   signature: string;
+  /** Original compiled message, preserving quote accounts and lookup indexes. */
+  messageBase64?:string;
   slot: number;
   commitment: "confirmed" | "finalized";
   /** null on success; otherwise the runtime error (JSON). */
@@ -10,7 +12,7 @@ export interface ObservedTransaction {
   feePayer: string;
   signers: string[];
   systemTransfers: Array<{ ixIndex: number; from: string; to: string; lamports: bigint }>;
-  instructions: Array<{ ixIndex: number; programId: string; discriminatorHex: string | null; accounts: string[] }>;
+  instructions: Array<{ ixIndex: number; programId: string; discriminatorHex: string | null; accounts: string[]; dataBase64?: string }>;
   /** Lamport balance changes per account (post - pre), used for fee-distribution indexing. */
   lamportDeltas: Record<string, bigint>;
 }
@@ -44,6 +46,8 @@ export interface BuiltLaunchTransaction {
   transaction: string;
   lastValidBlockHeight: number | null;
   demo: boolean;
+  genesisHash?: string;
+  estimatedNetworkFeesLamports?:string;
 }
 
 export interface ChainGateway {
@@ -52,6 +56,8 @@ export interface ChainGateway {
   getFeeRoutingState(mint: string): Promise<FeeRoutingState>;
   getTokenBalance(owner: string, mint: string): Promise<TokenBalance>;
   buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction>;
+  submitLaunchTransaction?(transaction:string):Promise<string>;
+  getFinalizedBlockHeight?():Promise<number>;
   /** Newest-first signatures touching `address`, stopping at `until` (exclusive). */
   listSignaturesForAddress(address: string, until: string | null, limit: number): Promise<string[]>;
 }

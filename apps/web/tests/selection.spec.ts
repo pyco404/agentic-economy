@@ -68,7 +68,7 @@ test("copyable addresses, code, editable fields and reading content retain selec
     expect(await field.evaluate((element) => { const input = element as HTMLInputElement; return input.selectionEnd! - input.selectionStart!; })).toBeGreaterThan(0);
   }
   await page.locator("#selection-probe").evaluate((node) => node.remove());
-  await page.getByRole("link", { name: "Launchpad", exact: true }).click();
+  await page.getByRole("link", { name: "Launch", exact: true }).click();
   const name = page.getByPlaceholder("Your community name");
   await name.fill("Selectable community"); await name.press("ControlOrMeta+a");
   expect(await name.evaluate((node) => (node as HTMLInputElement).selectionEnd)).toBe(20);
@@ -115,7 +115,7 @@ test("mobile pan, pinch and menu work without selecting world text", async ({ br
     await page.getByRole("button", { name: "Toggle navigation" }).tap();
     const menu = page.getByRole("dialog", { name: "Navigation", exact: true });
     expect(await menu.evaluate((node) => getComputedStyle(node).userSelect)).toBe("none");
-    await menu.getByRole("link", { name: "Launchpad", exact: true }).tap();
+    await menu.getByRole("link", { name: "Launch", exact: true }).tap();
     const name = page.getByPlaceholder("Your community name");
     await name.fill("Mobile community"); await expect(name).toHaveValue("Mobile community");
     expect(await name.evaluate((node) => getComputedStyle(node).userSelect)).toBe("text");

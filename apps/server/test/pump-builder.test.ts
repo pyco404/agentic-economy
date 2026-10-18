@@ -48,3 +48,26 @@ describe('official Pump SDK atomic construction (offline, no on-chain claim)',()
  });
 
 });
+
+it('rejects recipient, fee amount, mint and lookup-table substitutions in wallet-returned messages',async()=>{
+ const p=await prepared();
+ const attacks=[
+  (tx:VersionedTransaction)=>{tx.message.compiledInstructions[1]!.accountKeyIndexes[1]=0;},
+  (tx:VersionedTransaction)=>{const data=tx.message.compiledInstructions[1]!.data;data[4]=data[4]!^1;},
+  (tx:VersionedTransaction)=>{tx.message.staticAccountKeys[1]=Keypair.generate().publicKey;},
+  (tx:VersionedTransaction)=>{tx.message.addressTableLookups[0]!.accountKey=Keypair.generate().publicKey;},
+ ];
+ for(const alter of attacks){const tx=VersionedTransaction.deserialize(Buffer.from(p.transaction,'base64'));alter(tx);await expect(validateSignedPumpLaunch(p.transaction,Buffer.from(tx.serialize()).toString('base64'))).rejects.toThrow('differs');}
+});
+
+it('constructs explicit USDC quote accounts while retaining the separate SOL platform charge',async()=>{
+ const f=fixture();
+ for(const quoteMint of ['4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU','EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v']){
+  const input={...f.input,quoteAsset:'USDC' as const,quoteMint},ix=await pumpLaunchInstructions(input),create=ix[2]!;
+  expect(create.keys).toHaveLength(20);expect(create.keys[16]!.pubkey.toBase58()).toBe(quoteMint);expect(create.keys[18]!.pubkey.toBase58()).toBe('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+  expect(ix.at(-1)!.keys.some(k=>k.pubkey.toBase58()===quoteMint)).toBe(true);expect(ix).toHaveLength(7);
+  const charge=SystemInstruction.decodeTransfer(ix[1]!);expect(charge.lamports).toBe(50000000n);expect(charge.toPubkey.toBase58()).toBe(f.input.platformTreasury);
+  expect((await buildPumpLaunch(input,Keypair.generate().publicKey.toBase58(),[table(ix)])).bytes).toBeLessThanOrEqual(1232);
+ }
+ await expect(pumpLaunchInstructions({...f.input,quoteAsset:'USDC',quoteMint:Keypair.generate().publicKey.toBase58()})).rejects.toThrow('Unrecognized');
+});

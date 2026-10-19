@@ -16,8 +16,9 @@ for(const viewport of viewports)test(`current product content and persistent wor
  const canvas=page.locator('canvas');await canvas.evaluate(n=>{(window as any).__productCanvas=n;});
  const builds=await city.getAttribute('data-geometry-builds'),camera=await city.getAttribute('data-camera');
  await expect(page.locator('.world-header')).toContainText('A World That Works');
- await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();
- await expect(page.locator('.world-header').getByRole('link',{name:'Follow @useaeco on X'})).toHaveAttribute('href','https://x.com/useaeco');
+ await expect(page.locator('.world-header').getByRole('button')).toHaveCount(0);
+ await expect(page.locator('.world-header').getByRole('link')).toHaveCount(0);
+ await expect(page.locator('.world-header')).not.toContainText('Watch rule-based');
  await expect(page).toHaveTitle('Agentic Economy — A World That Works');
  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href','https://useaeco.xyz/');
  await page.screenshot({path:`artifacts/product-home-${viewport.width}.png`});

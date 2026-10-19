@@ -89,5 +89,21 @@
   .app:has(> .page-reopen) .world-main .activity-panel { max-height: calc(100% - 254px - env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 700px) {
+  /* A compact stats row at the bottom, with Show page in its own row above. */
+  .app .world-main .world-bottom,
+  .app:has(> .page-reopen) .world-main:not(.is-immersive) .world-bottom {
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    height: 48px; min-height: 48px; padding: 4px 8px; border-radius: 8px;
+  }
+  .app .world-main .world-stat { padding-left: 6px; gap: 4px; }
+  .app .world-main .world-stat:first-child { padding-left: 0; }
+  .app .world-main .world-stat b { font-size: 14px; }
+  .app .world-main .pause-button { padding: 6px; min-height: 36px; min-width: 36px; }
+  .page-reopen { right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    min-height: 44px; padding: 6px 10px; gap: 6px; font-size: 12px; line-height: 1.3;
+  }
+  .page-reopen svg { width: 14px; height: 14px; }
+  .page-reopen small { font-size: 9px; margin-top: 1px; }
   .app:has(> .page-reopen) .world-main .activity-panel { max-height: calc(100% - 340px - env(safe-area-inset-bottom, 0px)); }
 }

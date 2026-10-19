@@ -1,5 +1,4 @@
 import { WorldReadiness, type WorldPhase } from "./worldReadiness";
-import { WorldLoading } from "./WorldLoading";
 import { bridgeSurface } from "./bridgeSurface";
 import { graphReport } from "./navigation";
 import { landmassParts, landmassGalleries, landmassCuts } from "./landmass";
@@ -73,6 +72,8 @@ export interface CityHandle {
 }
 interface CityProps {
   onReadyChange?: (ready: boolean) => void;
+  onPhaseChange?: (phase: WorldPhase) => void;
+  presentationReady?: boolean;
   touchPan?: boolean;
   interactive?: boolean;
   background?: boolean;
@@ -201,6 +202,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       let publishedPhase:WorldPhase="INITIALIZING";
       const phaseHistory:WorldPhase[]=[publishedPhase];
       current.current.onReadyChange?.(false);
+      current.current.onPhaseChange?.("INITIALIZING");
       const worldTimings: Record<string, number> = {};
       const markWorld = (section: string) => {
         if (worldTimings[section] !== undefined) return;
@@ -211,6 +213,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         if(readiness.phase===publishedPhase)return;
         publishedPhase=readiness.phase;markWorld(publishedPhase);phaseHistory.push(publishedPhase);container.dataset.worldPhaseHistory=JSON.stringify(phaseHistory);setWorldPhase(publishedPhase);
         current.current.onReadyChange?.(readiness.presented||readiness.phase==="ERROR");
+        current.current.onPhaseChange?.(publishedPhase);
       };
       const failWorld=(message:string)=>{readiness.fail();publishReadiness();setError(message);};
       const container = host.current,
@@ -1108,6 +1111,8 @@ export const City = forwardRef<CityHandle, CityProps>(
           try{renderer.render(scene,camera);}catch(error){failWorld(`The world could not be displayed: ${error instanceof Error?error.message:"Graphics rendering failed"}. Use the building explorer or reload.`);return;}
           renderedSizeRevision = sizeRevision;
           if (!presentedBeforeRender) {
+            markWorld("gpuReady");
+            if (p.presentationReady === false) return;
             reveal.begin(reviewTime ?? clock.getElapsedTime());
             markWorld("revealStarted");
           }
@@ -1207,7 +1212,6 @@ export const City = forwardRef<CityHandle, CityProps>(
     return (
       <>
         <div ref={host} className="city-canvas" data-testid="city-canvas" data-world-state={worldPhase} aria-busy={!error && !["INTERACTIVE","FULLY_ACTIVE"].includes(worldPhase)} />
-        <WorldLoading active={!error && !["INTERACTIVE","FULLY_ACTIVE"].includes(worldPhase)} />
         {preparationWarning && !error && <div className="world-preparation-warning" role="status">{preparationWarning}</div>}
         {error && (
           <div role="alert" className="graphics-error">

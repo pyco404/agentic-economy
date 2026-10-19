@@ -1,5 +1,6 @@
 import {z} from 'zod';
-import {TokenMarket,TokenHistory,WRAPPED_SOL_MINT,type TokenMarket as Snapshot,type TokenHistory as History} from '@agentic-economy/shared';
+import {TokenMarket,TokenHistory,TokenTrades,WRAPPED_SOL_MINT,type TokenMarket as Snapshot,type TokenHistory as History,type TokenTrades as Trades} from '@agentic-economy/shared';
+import {USDC_QUOTE_MINTS} from '../config.js';
 import type {Store} from '../store/types.js';
 import type {ChainGateway} from '../chain/types.js';
 import {verifyLaunch} from '../chain/verify.js';
@@ -9,10 +10,11 @@ const USDC='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const MAINNET='5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
 const n=z.number().finite().nonnegative().nullish();
 const pair=z.object({chainId:z.string(),dexId:z.string(),pairAddress:z.string(),baseToken:z.object({address:z.string()}),quoteToken:z.object({address:z.string()}),priceUsd:z.string().nullish(),volume:z.object({h24:n}).nullish(),marketCap:n,liquidity:z.object({usd:n}).nullish(),priceChange:z.object({h24:z.number().finite().nullish()}).nullish(),txns:z.object({h24:z.object({buys:z.number().int().nonnegative(),sells:z.number().int().nonnegative()})}).nullish()});
-export function unavailableMarket(mint:string,network:Snapshot['network'],reason:string):Snapshot{return {mint,network,status:'unavailable',reason,fetchedAt:null,sourceAsOf:null,source:null,sourceUrl:null,pairAddress:null,quoteAsset:null,priceUsd:null,volume24hUsd:null,marketCapUsd:null,liquidityUsd:null,priceChange24h:null,holders:null,buys24h:null,sells24h:null,graduation:'unknown',graduationProgress:null};}
+export function unavailableMarket(mint:string,network:Snapshot['network'],reason:string):Snapshot{return {mint,network,status:'unavailable',reason,fetchedAt:null,sourceAsOf:null,source:null,sourceUrl:null,pairAddress:null,quoteAsset:null,priceUsd:null,volume24hUsd:null,marketCapUsd:null,liquidityUsd:null,priceChange24h:null,holders:null,buys24h:null,sells24h:null,graduation:'unknown',graduationProgress:null,holdersLowerBound:false,chain:null};}
+const USDC_MINTS:readonly string[]=Object.values(USDC_QUOTE_MINTS);
 /** Read-only fixed provider hosts. No API keys, execution, arbitrary URLs or mock-market fallback. */
 export class TokenMarketService{
- private cache=new Map<string,{at:number;value:Snapshot}>();private histories=new Map<string,{at:number;value:History}>();private jobs=new Map<string,Promise<Snapshot>>();private historyJobs=new Map<string,Promise<History>>();
+ private cache=new Map<string,{at:number;value:Snapshot}>();private tradeCache=new Map<string,{at:number;value:Trades}>();private tradeJobs=new Map<string,Promise<Trades>>();private histories=new Map<string,{at:number;value:History}>();private jobs=new Map<string,Promise<Snapshot>>();private historyJobs=new Map<string,Promise<History>>();
  private budget={dex:[] as number[],gecko:[] as number[]};private active=0;
  constructor(private store:Store,private chain:ChainGateway,private network:Snapshot['network'],private fetcher:typeof fetch=fetch,private now=()=>Date.now()){}
  private async json(url:string,kind:'dex'|'gecko'){
@@ -29,11 +31,18 @@ export class TokenMarketService{
   const c=(await this.store.allCommunities()).find(c=>c.mint===mint),l=c?await this.store.getLaunch(c.launchId):null;
   if(!c||!l||l.launch.status!=='confirmed'||l.launch.mint!==mint||l.launch.communityId!==c.id||l.launch.signature!==c.launchSignature)throw new AppError('not_found','Verified platform token not found');
   const blank=unavailableMarket(mint,this.network,'No supported indexed market is available.');
-  if(this.chain.source!=='solana_rpc'||this.network!=='mainnet-beta'||l.launch.mode==='demo'||l.launch.execution)return {...blank,reason:'Public market providers do not cover this demo or testing-network launch.'};
+  if(this.chain.source!=='solana_rpc'||l.launch.mode==='demo')return {...blank,reason:'Public market providers do not cover this demo or testing-network launch.'};
+  if(l.launch.execution){
+   // Verified testing-network launch: no public price market, but its on-chain state is authoritative.
+   if(await this.chain.getGenesisHash?.()!==l.launch.execution.genesisHash)return {...blank,reason:'On-chain read source does not match the launch network.'};
+   return TokenMarket.parse({...blank,...await this.chainMetrics(mint),reason:'Public market providers do not cover testing-network launches. On-chain holders and graduation progress are shown.'});
+  }
+  if(this.network!=='mainnet-beta')return {...blank,reason:'Public market providers do not cover this demo or testing-network launch.'};
   if(await this.chain.getGenesisHash?.()!==MAINNET)return {...blank,reason:'Mainnet read-source identity could not be verified.'};
   const routing=await this.chain.getFeeRoutingState(mint),tx=await this.chain.getTransaction(c.launchSignature);
   if(verifyLaunch({launcherWallet:l.launch.launcherWallet,mint,platformTreasury:l.launch.fees.platformTreasury,agentRewardsTreasury:l.launch.fees.creatorFeeSplit.agentRewardsTreasury,sharingConfig:sharingConfigPda(mint),draft:l.launch.draft},tx,routing).outcome!=='confirmed')return {...blank,reason:'Platform launch evidence could not be reverified.'};
   blank.graduation=routing.bondingCurveComplete===true?'curve_complete':routing.bondingCurveComplete===false?'bonding_curve':'unknown';
+  Object.assign(blank,await this.chainMetrics(mint).catch(()=>({})));
   const raw=z.array(z.unknown()).max(1000).parse(await this.json(`https://api.dexscreener.com/token-pairs/v1/solana/${mint}`,'dex'));
   const candidates=raw.flatMap(x=>{const p=pair.safeParse(x);return p.success?[p.data]:[];}).filter(p=>p.chainId==='solana'&&['pumpswap','pumpfun'].includes(p.dexId)&&p.baseToken.address===mint&&[WRAPPED_SOL_MINT,USDC].includes(p.quoteToken.address)).sort((a,b)=>(b.liquidity?.usd??-1)-(a.liquidity?.usd??-1)||a.pairAddress.localeCompare(b.pairAddress));
   for(const p of candidates.slice(0,5)){
@@ -41,6 +50,42 @@ export class TokenMarketService{
    const price=p.priceUsd&&/^\d+(\.\d+)?$/.test(p.priceUsd)?Number(p.priceUsd):null;
    return TokenMarket.parse({...blank,status:'available',reason:null,source:'dexscreener',sourceUrl:`https://dexscreener.com/solana/${p.pairAddress}`,pairAddress:p.pairAddress,quoteAsset:p.quoteToken.address===USDC?'USDC':'SOL',fetchedAt:new Date(this.now()).toISOString(),priceUsd:price!==null&&Number.isFinite(price)?price:null,volume24hUsd:p.volume?.h24??null,marketCapUsd:p.marketCap??null,liquidityUsd:p.liquidity?.usd??null,priceChange24h:p.priceChange?.h24??null,buys24h:p.txns?.h24.buys??null,sells24h:p.txns?.h24.sells??null,graduation:p.dexId==='pumpswap'?'graduated':blank.graduation});
   }return blank;
+ }
+/** Holders, graduation progress and their freshness, read directly from Solana. Throws on RPC failure. */
+ private async chainMetrics(mint:string):Promise<Partial<Snapshot>>{
+  const network=this.network==='demo'?null:this.network;
+  if(!network||!this.chain.getCurveProgress||!this.chain.getHolderCount)return {};
+  // Each metric fails independently: public RPCs often rate-limit holder enumeration but still serve the curve.
+  const [curveRead,holdersRead]=await Promise.allSettled([this.chain.getCurveProgress(mint),this.chain.getHolderCount(mint)]);
+  if(curveRead.status==='rejected'&&holdersRead.status==='rejected')throw curveRead.reason;
+  const curve=curveRead.status==='fulfilled'?curveRead.value:null,holders=holdersRead.status==='fulfilled'?holdersRead.value:null;
+  const slot=Math.max(curve?.slot??0,holders?.slot??0),blockTime=await this.chain.getBlockTime?.(slot).catch(()=>null)??null;
+  return {holders:holders?.holders??null,holdersLowerBound:!!holders&&holders.holders!==null&&!holders.exact,
+   ...(curve?{graduation:curve.complete?'curve_complete' as const:'bonding_curve' as const,graduationProgress:curve.progressPct}:{}),
+   chain:{source:'solana_rpc',network,slot,asOf:blockTime===null?null:new Date(blockTime*1000).toISOString(),fetchedAt:new Date(this.now()).toISOString()}};
+ }
+ /** Recent bonding-curve trades for a verified platform token, from Pump's own events. Never synthesized. */
+ async trades(mint:string):Promise<Trades>{
+  const cached=this.tradeCache.get(mint);if(cached&&this.now()-cached.at<30000)return cached.value;
+  const running=this.tradeJobs.get(mint);if(running)return running;
+  const job=this.loadTrades(mint).then(value=>{if(this.tradeCache.size>=200)this.tradeCache.delete(this.tradeCache.keys().next().value!);this.tradeCache.set(mint,{at:this.now(),value});return value;})
+   .catch(e=>{if(e instanceof AppError)throw e;return cached&&this.now()-cached.at<300000?{...cached.value,status:'stale' as const,reason:'Solana read temporarily unavailable; showing the last verified trades.'}:this.noTrades(mint,'Solana read temporarily unavailable. Retry shortly.');})
+   .finally(()=>this.tradeJobs.delete(mint));this.tradeJobs.set(mint,job);return job;
+ }
+ private noTrades(mint:string,reason:string):Trades{return {mint,network:this.network,status:'unavailable',reason,source:null,slot:null,complete:false,fetchedAt:null,trades:[]};}
+ private async loadTrades(mint:string):Promise<Trades>{
+  const c=(await this.store.allCommunities()).find(c=>c.mint===mint),l=c?await this.store.getLaunch(c.launchId):null;
+  if(!c||!l||l.launch.status!=='confirmed'||l.launch.mint!==mint||l.launch.communityId!==c.id||l.launch.signature!==c.launchSignature)throw new AppError('not_found','Verified platform token not found');
+  if(this.chain.source!=='solana_rpc'||l.launch.mode==='demo'||!this.chain.getRecentTrades)return this.noTrades(mint,'Trades are not available for demo launches.');
+  const expected=l.launch.execution?.genesisHash??MAINNET;
+  if(await this.chain.getGenesisHash?.()!==expected)return this.noTrades(mint,'On-chain read source does not match the launch network.');
+  const read=await this.chain.getRecentTrades(mint,20);
+  const trades=read.trades.flatMap(t=>{
+   const quote=t.quoteMint===WRAPPED_SOL_MINT?{quoteAsset:'SOL' as const,quoteDecimals:9 as const}:USDC_MINTS.includes(t.quoteMint)?{quoteAsset:'USDC' as const,quoteDecimals:6 as const}:null;
+   if(!quote)return [];
+   return [{signature:t.signature,slot:t.slot,blockTime:t.blockTime===null?null:new Date(t.blockTime*1000).toISOString(),side:t.side,user:t.user,tokenAmount:t.tokenAmount,tokenDecimals:6 as const,quoteAmount:t.quoteAmount,...quote,creatorFee:t.creatorFee}];
+  });
+  return TokenTrades.parse({mint,network:this.network,status:'available',reason:trades.length?null:'No bonding-curve trades yet.',source:'solana_rpc',slot:read.slot,complete:read.complete,fetchedAt:new Date(this.now()).toISOString(),trades});
  }
  async history(mint:string):Promise<History>{
   const old=this.histories.get(mint);if(old&&this.now()-old.at<60000)return old.value;

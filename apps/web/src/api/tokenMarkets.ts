@@ -4,7 +4,8 @@ import {HttpAdapter,type ApiAdapter} from './adapter';
 import type {VerifiedToken} from './tokens';
 export function useTokenMarkets(api:ApiAdapter,tokens:VerifiedToken[]){
  const [markets,setMarkets]=useState<Record<string,Snapshot>>({});
- const key=tokens.filter(t=>t.launch.mode!=='demo'&&!t.launch.execution).map(t=>t.community.mint).sort().join(',');
+ // Verified testing-network launches have no price market, but their on-chain holders and graduation are real.
+ const key=tokens.filter(t=>t.launch.mode!=='demo').map(t=>t.community.mint).sort().join(',');
  useEffect(()=>{
   setMarkets({});if(!(api instanceof HttpAdapter)||!key)return;
   const abort=new AbortController();let running=false;
@@ -13,3 +14,6 @@ export function useTokenMarkets(api:ApiAdapter,tokens:VerifiedToken[]){
  },[api,key]);return markets;
 }
 export const marketNumber=(n:number|null|undefined)=>n==null?'Unavailable':new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumSignificantDigits:6}).format(n);
+/** Raw base units to a decimal string without floating-point rounding. */
+export function baseUnits(amount:string,decimals:number){const v=amount.padStart(decimals+1,'0'),whole=v.slice(0,-decimals)||'0',frac=v.slice(-decimals).replace(/0+$/,'');return frac?`${BigInt(whole).toLocaleString()}.${frac}`:BigInt(whole).toLocaleString();}
+export const explorerTx=(signature:string,network:string)=>`https://explorer.solana.com/tx/${signature}${network==='mainnet-beta'?'':`?cluster=${network==='localnet'?'custom':network}`}`;

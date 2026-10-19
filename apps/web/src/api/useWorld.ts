@@ -11,6 +11,8 @@ import { WorldStream, type StreamStatus } from "./realtime";
 export function useWorld(api: ApiAdapter, paused: boolean) {
   const [world, setWorld] = useState<WorldPresentation | null>(null);
   const worldRef=useRef(world);worldRef.current=world;
+  const [worldLoading, setWorldLoading] = useState(api instanceof HttpAdapter);
+  const [worldError, setWorldError] = useState("");
   const [data, setData] = useState<Dashboard | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
@@ -22,9 +24,14 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
   const stream = useRef<WorldStream | null>(null);
   const load = useCallback(
     async (signal?: AbortSignal) => {
-      if(api instanceof HttpAdapter)void api.loadWorld(signal).then(incoming=>{
-        if(!signal?.aborted)setWorld(incoming);
-      }).catch(()=>{/* The normal load path reports critical API failure. */});
+      if (api instanceof HttpAdapter) {
+        setWorldLoading(true);
+        void api.loadWorld(signal).then(incoming => {
+          if (!signal?.aborted) { setWorld(incoming); setWorldError(""); }
+        }).catch(e => {
+          if (!signal?.aborted) setWorldError(e instanceof Error ? e.message : "World data unavailable");
+        }).finally(() => { if (!signal?.aborted) setWorldLoading(false); });
+      }
       try {
         const incoming = await api.load(signal);
         if (signal?.aborted) return;
@@ -235,6 +242,8 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
   return {
     data,
     world,
+    worldLoading,
+    worldError,
     error,
     loading,
     status,

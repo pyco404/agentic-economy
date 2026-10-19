@@ -1,3 +1,4 @@
+import {routeUrl} from "../navigation/routes";
 import { ArrowRight, ChartNoAxesCombined, Flag, Sparkles, TrendingUp, Users, Wallet, type LucideIcon } from 'lucide-react';
 import type { VerifiedToken } from '../api/tokens';
 import { orderTokens, type DiscoveryOrder } from '../api/tokenDiscovery';
@@ -25,7 +26,7 @@ export function ExploreSpotlights({tokens,loading,error,onToken,onAll}:{tokens:V
    {missing?<div className="spotlight-unavailable"><span className="spotlight-state">Data unavailable</span><p>{unavailable}</p></div>:
     loading?<p className="spotlight-message" role="status">Verifying launches…</p>:
     !items.length?<p className="spotlight-message">{error?'Launch records could not be verified. Retry below.':'No confirmed launches yet.'}</p>:
-    <ol>{items.map(({community:c,launch,market},i)=><li key={c.mint}><a href={`#explore/${c.mint}`} onClick={e=>{e.preventDefault();onToken(c.mint);}}>
+    <ol>{items.map(({community:c,launch,market},i)=><li key={c.mint}><a href={routeUrl("explore", c.mint)} onClick={e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();onToken(c.mint);}}>
      <span className="spotlight-rank" aria-hidden="true">{i+1}</span><span className="spotlight-monogram" aria-hidden="true">{c.symbol.slice(0,2)}</span>
      <span className="spotlight-identity"><strong>{c.name}</strong><span>${c.symbol}{launch.mode==='demo'&&<small>Demo</small>}</span></span>
      <span className="spotlight-value">{field?<><b>{field==='holders'?market?.holders?.toLocaleString():field==='graduationProgress'?`${market?.graduationProgress}%`:marketNumber(market?.[field])}</b><small>{field==='volume24hUsd'?'24h USD volume':field==='marketCapUsd'?'USD market cap':'verified data'}</small>{market?.fetchedAt&&<small>DEX Screener · {new Date(market.fetchedAt).toLocaleTimeString()}</small>}</>:order==='agents'?<><b>{c.stats.activeAgents.toLocaleString()}</b><small>active agents</small></>:<><time dateTime={launch.createdAt}>{new Date(launch.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</time><small>recorded launch</small></>}</span>

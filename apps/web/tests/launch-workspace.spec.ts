@@ -1,3 +1,4 @@
+import { waitForApplicationReady } from "./startup";
 import { test,expect } from '@playwright/test';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
@@ -57,7 +58,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
   (window as unknown as TestWalletWindow).__aecoWalletChanged=()=>callbacks.accountChanged?.forEach(cb=>cb());
  },{wallet,publicKey:Array.from(key.publicKey),standard:viewport.width>700});
  const errors:string[]=[],financial:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/launches\/(prepare|confirm)|demo\/launches/.test(r.url()))financial.push(r.url());});
- await page.goto(site+'/launchpad?source=backend');await expect(page.locator('form').getByRole('button',{name:'Connect wallet',exact:true})).toBeVisible();
+ await page.goto(site+'/launchpad?source=backend');await waitForApplicationReady(page);await expect(page.locator('form').getByRole('button',{name:'Connect wallet',exact:true})).toBeVisible();
  await expect.poll(async()=>page.request.get(site+'/healthz').then(r=>r.status())).toBe(200);
  // Wait for additive capabilities, rather than relying on a timer.
  await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});
@@ -108,7 +109,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  if(viewport.mode==='retry'){expect(uploadKeys).toHaveLength(2);expect(uploadKeys[0]).toBeTruthy();expect(uploadKeys[1]).toBe(uploadKeys[0]);expect(metadataKeys).toHaveLength(2);expect(metadataKeys[0]).toBeTruthy();expect(metadataKeys[1]).toBe(metadataKeys[0]);}else expect(preparation[2]).toMatch(/\/metadata$/);
  expect(await page.locator('main').evaluate(n=>n.scrollWidth<=n.clientWidth+1)).toBe(true);
  await page.screenshot({path:`artifacts/launch-workspace-review-${viewport.width}.png`,fullPage:true});
- await page.reload();await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();expect(signing).toBe(1);
+ await page.reload();await waitForApplicationReady(page);await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();expect(signing).toBe(1);
  await page.getByText('Manage drafts & technical details',{exact:true}).click();await expect(page.getByText(`Verified creator: ${wallet}`)).toBeVisible();
  const select=page.getByLabel('Saved launch drafts');await expect(select).toContainText('Moss Community');await select.selectOption({label:'Moss Community'});await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
  await page.getByText('Manage drafts & technical details',{exact:true}).click();
@@ -121,7 +122,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
 });
 
 test('missing wallet and rejected signatures leave drafts unauthenticated',async({page})=>{
- test.setTimeout(120000);await page.goto(origin!+'/launchpad?source=backend');await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await expect(page.getByText(/No supported wallet detected/)).toBeVisible();await page.getByRole('button',{name:'Close wallet selection'}).click();
+ test.setTimeout(120000);await page.goto(origin!+'/launchpad?source=backend');await waitForApplicationReady(page);await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await expect(page.getByText(/No supported wallet detected/)).toBeVisible();await page.getByRole('button',{name:'Close wallet selection'}).click();
  const key=nacl.sign.keyPair(),wallet=bs58.encode(key.publicKey);
  await page.evaluate(wallet=>{(window as unknown as TestWalletWindow).phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async()=>{throw new Error('Signature rejected by user');},disconnect:async()=>{}}};},wallet);
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
@@ -143,7 +144,7 @@ test('wallet changes during pending approval cannot establish a stale session',a
  },wallet);
  const verifications:string[]=[];
  page.on('request',r=>{if(r.url().endsWith('/auth/browser/verify'))verifications.push(r.url());});
- await page.goto(origin!+'/launchpad?source=backend');
+ await page.goto(origin!+'/launchpad?source=backend');await waitForApplicationReady(page);
  await expect(page.getByRole('heading',{name:'Token details',exact:true})).toBeVisible({timeout:30000});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();
  await page.getByRole('button',{name:'Phantom',exact:true}).click();
@@ -163,7 +164,7 @@ test('live preview stays local and a disabled demo cannot pin artwork',async({pa
  const pair=nacl.sign.keyPair(),wallet=bs58.encode(pair.publicKey);
  await page.exposeFunction('__aecoSign',(bytes:number[])=>Array.from(nacl.sign.detached(Uint8Array.from(bytes),pair.secretKey)));
  await page.addInitScript(wallet=>{const w=window as unknown as TestWalletWindow;w.phantom={solana:{connect:async()=>({publicKey:{toBase58:()=>wallet}}),signMessage:async message=>({signature:new Uint8Array(await w.__aecoSign(Array.from(message)))}),disconnect:async()=>{}}};},wallet);
- await page.goto(origin!+'/launchpad?source=backend');
+ await page.goto(origin!+'/launchpad?source=backend');await waitForApplicationReady(page);
  await page.getByLabel('Token name',{exact:true}).fill('Local Preview Coin');await page.getByLabel('Symbol',{exact:true}).fill('LOCAL');await page.getByLabel('Description',{exact:true}).fill('Artwork stays on my device.');
  const preview=page.getByRole('region',{name:'Live token preview'});
  await expect(preview).toContainText('Local Preview Coin');await expect(preview).toContainText('LOCAL/SOL');await expect(preview).toContainText('Artwork stays on my device.');

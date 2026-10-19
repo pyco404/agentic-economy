@@ -1,3 +1,4 @@
+import { waitForApplicationReady } from "./startup";
 import { expect, test, type Page } from "@playwright/test";
 const pages = [
   ["Launch", "/launchpad"], ["Explore", "/explore"], ["Communities", "/communities"],
@@ -48,9 +49,11 @@ for (const width of [1440, 390]) test(`clean navigation keeps one world and supp
   await page.goBack(); await expect(page.locator('.discovery-grid')).toBeVisible();
   await page.goForward(); await expect(page.locator('.token-header')).toBeVisible();
   await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForApplicationReady(page);
   await expect(page.locator('.token-header')).toBeVisible(); expect(page.url()).toBe(detail);
   await page.goto('/communities?source=fixtures', { waitUntil: 'domcontentloaded' });
   await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForApplicationReady(page);
   await expect(page.getByRole('heading', { name: 'Different communities. One world.' })).toBeVisible();
   await page.screenshot({ path: `artifacts/clean-routing-${width}.png` });
 });
@@ -63,6 +66,7 @@ test('legacy links normalize while queries and section anchors survive', async (
     expect(new URL(page.url()).search).toBe('?source=fixtures&from=shared'); expect(new URL(page.url()).hash).toBe('');
   }
   await page.goto('/about?source=fixtures#about-faq', { waitUntil: 'domcontentloaded' });
+  await waitForApplicationReady(page);
   await expect(page.locator('#about-faq')).toBeInViewport(); expect(new URL(page.url()).hash).toBe('#about-faq');
   await page.goto('/studio?source=fixtures', { waitUntil: 'domcontentloaded' });
   await expect.poll(() => new URL(page.url()).pathname).toBe('/agent-studio');

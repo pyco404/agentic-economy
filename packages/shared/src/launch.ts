@@ -72,7 +72,9 @@ export const TokenLaunch = z
     execution: z.object({
       draftId:z.string().uuid(),draftVersion:z.number().int().nonnegative(),
       transaction:z.string().max(1644),lastValidBlockHeight:z.number().int().nonnegative(),genesisHash:PublicKey,
-      network:z.enum(["devnet","localnet"]),quoteAsset:z.literal("SOL"),
+      network:z.enum(["devnet","localnet"]),quoteAsset:z.enum(["SOL","USDC"]),
+      /** USDC only: the quote mint the server verified against the live Pump Global allowlist. Never client-supplied. */
+      quoteMint:PublicKey.optional(),
       platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
     }).optional(),
     signature: TxSignature.nullable(),

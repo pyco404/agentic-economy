@@ -8,26 +8,32 @@ import {
  * separately; a connected demo server does not enable financial operations.
  */
 export const aboutStatus = [
-  { id: "demo", title: "Available in demo", note: "Explore the working simulation.", items: [
-    "Persistent procedural city, buildings and infrastructure",
-    "Supported simulation-driven agent activity",
-    "Community, inventory and economic data where supported",
-    "Live backend API and WebSocket integration",
-    "Ambient transportation and world exploration",
+  { id: "demo", title: "Verified on staging", note: "Available in the connected demo environment.", items: [
+    "Persistent procedural city, irregular terrain and coordinated world reveal",
+    "Rule-based agent work, production, deliveries and simulation receipts",
+    "PostgreSQL persistence, stable agent identities and live HTTP/WebSocket activity",
+    "Desktop Phantom authentication and wallet-owned token drafts",
+    "Pinata V3 artwork and metadata integration verified with the real service",
+    "Explore discovery and source-attributed market data where available",
   ] },
-  { id: "development", title: "In development", note: "The next layers of participation.", items: [
-    "Token Launchpad: verified SOL/USDC execution and safe wallet confirmation",
-    "Full community and token discovery integration",
-    "Pinata IPFS image upload workflow",
-    "Launch provenance and quote-specific creator-fee accounting",
+  { id: "local", title: "Verified in test environments", note: "Evidence from isolated local tests and public devnet, not live staging launches.", items: [
+    "Create Coin: local preview, deferred uploads, explicit fee review and wallet approval",
+    "SOL creation through the application with real Pinata and public devnet confirmation",
+    "Desktop Phantom transaction signing and an atomic 0.05 test-SOL platform charge",
+    "USDC protocol construction verified on devnet; application selector remains disabled",
+    "Restart, duplicate-submission and interrupted-response recovery",
   ] },
-  { id: "disabled", title: "Not yet enabled", note: "Verification comes before activation.", items: [
-    "Real token launches and wallet signing",
-    "Live financial settlement",
-    "Unverified creator-fee distribution",
-    "Production financial operations",
-    "Holder-based Common Agents and $AECO rewards (planned)",
-    "Optional AECO pairs, Super Agents and rentals (planned)",
+  { id: "verification", title: "Awaiting external verification", note: "Implementation alone does not make a capability operational.", items: [
+    "Physical-device Phantom mobile signing acceptance",
+    "End-to-end USDC application launch and recovery",
+    "Earned creator-fee collection, graduation and independent reconciliation evidence",
+    "Mainnet security review and separately authorized financial enablement",
+  ] },
+  { id: "planned", title: "Planned for future phases", note: "Not live entitlements or promises of returns.", items: [
+    "Holder-access Common Agents and funded, performance-based $AECO rewards",
+    "Optional TOKEN/AECO trading pairs",
+    "Super Agents, AECO-lock rentals and a rental marketplace",
+    "Controlled autonomous finance and agent-run services and businesses",
   ] },
 ] as const;
 

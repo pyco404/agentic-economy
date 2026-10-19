@@ -2,7 +2,7 @@ import {DraftFields as DraftFieldsSchema} from './shared';
 import type { z } from 'zod';
 import type { DraftFields, DraftReview, SavedLaunchDraft } from './shared';
 
-export type PreparationStage = 'Saving token details…' | 'Uploading logo…' | 'Preparing token…' | 'Opening review…';
+export type PreparationStage = 'Saving token details…' | 'Uploading logo…' | 'Preparing metadata…' | 'Opening review…';
 export interface PreparationPort {
  check(): void;
  stage(value: PreparationStage): void;
@@ -35,7 +35,7 @@ export async function prepareLaunchDraft(input: {
  }
  if (!draft.image) throw new Error('Choose a logo to review your token.');
  if (!draft.metadata) {
-  port.check(); port.stage('Preparing token…'); draft = keep(await port.metadata(draft));
+  port.check(); port.stage('Preparing metadata…'); draft = keep(await port.metadata(draft));
  }
  port.check(); port.stage('Opening review…'); const review = await port.review(draft); port.check();
  if (review.draft.id !== draft.id || review.draft.wallet !== draft.wallet || review.draft.version !== draft.version)

@@ -1,3 +1,4 @@
+import { waitForApplicationReady } from "./startup";
 import { expect, test } from "@playwright/test";
 
 for (const width of [390, 820]) test(`floating navigation keeps the live world intact at ${width}px`, async ({ page }) => {
@@ -7,6 +8,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   page.on("websocket", (socket) => { if (socket.url().includes("/api/v1/ws")) sockets.push(socket.url()); });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/?source=backend");
+  await waitForApplicationReady(page);
   const canvas = page.locator("canvas"), city = page.getByTestId("city-canvas");
   await expect.poll(async () => Number(await city.getAttribute("data-rendered-buildings")), { timeout: 60000 }).toBeGreaterThan(100);
   await canvas.evaluate((node) => { (window as any).__menuCanvas = node; });
@@ -66,6 +68,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
 test("mobile menu scrolls in short viewports and respects reduced motion", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 450 }); await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/?source=fixtures");
+  await waitForApplicationReady(page);
   await page.getByRole("button", { name: "Toggle navigation" }).press("Enter");
   const dialog = page.getByRole("dialog", { name: "Navigation", exact: true });
   const box = (await dialog.boundingBox())!;

@@ -67,6 +67,9 @@ export interface Store {
   createSession(s: SessionRecord): Promise<void>;
   getSession(tokenHash: string, now: Date): Promise<SessionRecord | null>;
   revokeSession(tokenHash: string): Promise<void>;
+  /** Delete at most `limit` challenges and `limit` sessions that expired (or, for sessions, were revoked) before
+   * `cutoff`. One bounded, lock-skipping batch per table; never touches any other table. */
+  pruneExpiredAuth(cutoff: Date, limit: number): Promise<{ challenges: number; sessions: number }>;
 
   getIdempotent(key: string, wallet: string, route: string): Promise<IdempotencyRecord | null>;
   saveIdempotent(key: string, wallet: string, route: string, rec: IdempotencyRecord): Promise<void>;

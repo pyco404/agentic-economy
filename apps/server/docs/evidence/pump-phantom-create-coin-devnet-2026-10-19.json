@@ -1,0 +1,50 @@
+{
+ "network": "public-devnet",
+ "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+ "walletSigner": "actual Phantom desktop extension, approved manually by the user",
+ "ui": "latest Create Coin flow at main 8394d2f, served at http://localhost:5187/launchpad",
+ "database": "aeco_launch_execution_20261018_test (isolated, previously approved)",
+ "pinata": "actual service (server-only JWT entered by the user locally)",
+ "launch": {
+  "id": "lch_55582e469b3e374b4b23f7b3",
+  "status": "confirmed",
+  "history": ["draft", "awaiting_signature", "submitted", "confirmed"],
+  "name": "Daniels Coin", "symbol": "DCOIN", "quoteAsset": "SOL",
+  "launcher": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+  "mint": "3AtgXqpZmAYztM4g2YC9YbxwANsvjxChonKBb85XzoNj",
+  "signature": "CNKRM9hEHYGEjpTKYBX7HDsyCdwWSXjgyYKzVkdBk45FUReAtXDtxKffaEmNJbEAQsLSetZgtJFoDvDyew1Cfkw",
+  "slot": 512881872,
+  "confirmationStatus": "finalized",
+  "signers": ["3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR", "3AtgXqpZmAYztM4g2YC9YbxwANsvjxChonKBb85XzoNj"],
+  "programs": ["ComputeBudget111111111111111111111111111111", "11111111111111111111111111111111", "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P", "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"]
+ },
+ "balances": {
+  "launcher": {"pre": 5000000000, "post": 4938443160, "debit": 61556840},
+  "debitBreakdown": {"platformCharge": 50000000, "networkFee": 10000, "accountRent": 11546840},
+  "previewed": {"platformCharge": "50000000", "networkFee": "10000", "accountRent": "11546840"},
+  "rentPreviewExact": true,
+  "platformTreasury": {"address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp", "pre": 50000000, "post": 100000000, "delta": 50000000}
+ },
+ "chargeOnce": {
+  "systemTransfersToTreasuryInLaunchTx": 1,
+  "treasuryTransactionsTotal": 2,
+  "otherTreasuryTransaction": "bvdwXvdvirEWdAH2UXkF... (earlier Codex devnet launch, slot 512600800)",
+  "mintTransactions": 1,
+  "launchFeeLedgerEntries": 1,
+  "ledgerEntry": {"stream": "launch_fee", "account": "platform", "amount": "50000000", "finality": "finalized", "instructionIndex": 1}
+ },
+ "mint": {"program": "Token-2022", "supply": "1000000000000000", "decimals": 6, "mintAuthority": null, "freezeAuthority": null, "metadataUpdateAuthority": null},
+ "metadata": {
+  "onChain": {"name": "Daniels Coin", "symbol": "DCOIN", "uri": "ipfs://bafkreigpeaa537z3gtjtbnsxwhiernkjufgh54twdu3pl32zt6yw6jp4c4"},
+  "ipfsJson": {"name": "Daniels Coin", "symbol": "DCOIN", "description": "Hello world2", "image": "https://gateway.pinata.cloud/ipfs/bafkreibichhpvlxqf2gtjduof43fanichsehwupxkvzpaojkjojvafdnam", "twitter": "https://x.com/tm401"},
+  "image": {"http": 200, "contentType": "image/png", "bytes": 55008}
+ },
+ "feeRouting": {"sharingConfig": "6fnqnbeEpBAE34j9XJWJD56yDHXtezPnVo57kaqKMD3J", "adminRevoked": true,
+  "shareholders": [{"address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs", "bps": 6000}, {"address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp", "bps": 4000}],
+  "launcherShareBps": 0, "curveQuote": "SOL", "curveComplete": false},
+ "explore": {"community": "com_PdkXHkJMD8JEHv", "listed": true, "provenance": {"platformOrigin": "PLATFORM", "initiator": "HUMAN", "network": "devnet", "quoteAsset": "SOL"},
+  "market": {"status": "unavailable", "priceUsd": null, "holders": null, "graduationProgress": 0, "chainSource": "solana_rpc"}, "trades": {"status": "available", "count": 0}},
+ "userReported": "Launchpad showed 'Token creation verified. View in Explore' and 'Confirmed transaction'; token reopened after refresh",
+ "result": "passed",
+ "classification": "VERIFIED — PHYSICAL WALLET/DEVICE (Phantom desktop) and PUBLIC DEVNET"
+}

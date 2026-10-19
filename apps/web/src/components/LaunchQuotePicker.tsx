@@ -1,15 +1,18 @@
-import { LAUNCH_QUOTE_OPTIONS, launchQuote, launchQuoteError, tradingPair, type LaunchQuoteAsset } from "../api/launchQuotes";
+import { launchQuote, launchQuoteError, launchQuoteOptions, tradingPair, type LaunchQuoteAsset } from "../api/launchQuotes";
 import "../launch-quotes.css";
 
-export function LaunchQuotePicker({ value, symbol, onChange }: {
+export function LaunchQuotePicker({ value, symbol, onChange, usdcEnabled = false }: {
   value: string; symbol: string; onChange: (quote: LaunchQuoteAsset) => void;
+  /** From the backend's capabilities (`quotes.USDC === "draft"`), never assumed. */
+  usdcEnabled?: boolean;
 }) {
-  const selected = launchQuote(value), error = launchQuoteError(value);
+  const options = launchQuoteOptions(usdcEnabled);
+  const selected = launchQuote(value, usdcEnabled), error = launchQuoteError(value, usdcEnabled);
   return <fieldset className="launch-quotes" aria-describedby="launch-quote-help">
     <legend>Choose Trading Pair</legend>
     <p id="launch-quote-help" className="small muted">Your quote asset determines what the token trades against. $AECO pairing is optional.</p>
     <div className="launch-quote-options">
-      {LAUNCH_QUOTE_OPTIONS.map((option) => <label key={option.asset} className="launch-quote-card"
+      {options.map((option) => <label key={option.asset} className="launch-quote-card"
         data-selected={value === option.asset} data-available={option.draftAvailable}>
         <span className="launch-quote-heading"><input type="radio" name="launch-quote" value={option.asset}
           checked={value === option.asset} disabled={!option.draftAvailable}

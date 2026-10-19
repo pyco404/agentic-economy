@@ -26,6 +26,12 @@ import type { TreasuryService } from "./treasury.js";
 
 /** Rent estimates (lamports) for accounts created by the launch transaction; shown as estimates only. */
 const RENT_ESTIMATE_LAMPORTS = 16_500_000n;
+/** Rent-exempt minimum for a 165-byte SPL token account: (165 + 128) bytes x 3480 lamports/byte-year x 2 years. */
+export const TOKEN_ACCOUNT_RENT_LAMPORTS = 2_039_280n;
+/** A USDC launch also creates the two canonical quote vault token accounts, paid by the launcher. */
+const USDC_VAULT_RENT_LAMPORTS = 2n * TOKEN_ACCOUNT_RENT_LAMPORTS;
+const NATIVE_MINT = "So11111111111111111111111111111111111111112";
+export type LaunchQuote = { asset: "SOL" } | { asset: "USDC"; mint: string };
 const NETWORK_FEE_ESTIMATE_LAMPORTS = 50_000n;
 
 /**
@@ -44,12 +50,12 @@ export class LaunchService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  feeBreakdown(): FeeBreakdown {
+  feeBreakdown(quote: LaunchQuote = { asset: "SOL" }): FeeBreakdown {
     return {
       platformLaunchFeeLamports: LAUNCH_FEE_LAMPORTS.toString(),
       platformTreasury: this.config.treasuries.platform,
       estimatedNetworkFeesLamports: NETWORK_FEE_ESTIMATE_LAMPORTS.toString(),
-      estimatedAccountRentLamports: RENT_ESTIMATE_LAMPORTS.toString(),
+      estimatedAccountRentLamports: (RENT_ESTIMATE_LAMPORTS + (quote.asset === "USDC" ? USDC_VAULT_RENT_LAMPORTS : 0n)).toString(),
       launcherCreatorFeeBps: 0,
       creatorFeeSplit: {
         agentRewardsTreasury: this.config.treasuries.agentRewards,
@@ -74,9 +80,10 @@ export class LaunchService {
       throw new AppError("feature_disabled", "Launches are disabled until Pump.fun fee routing has been verified for this deployment (FEE_ROUTING_VERIFIED).");
   }
 
-  async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string}): Promise<PrepareLaunchResponse> {
+  async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
     this.assertEnabled();
     if(this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
+    if(quote.asset==="USDC"&&(!owned||!this.config.pumpLaunch.usdcEnabled))throw new AppError("feature_disabled","USDC launches are not enabled on this network");
     if(owned){const existing=await this.store.getLaunch(owned.launchId);if(existing){
       const l=existing.launch;if(l.launcherWallet!==wallet||l.execution?.draftId!==owned.id||l.execution.draftVersion!==owned.version)throw new AppError("conflict","Launch attempt does not match this draft");
       return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
@@ -95,6 +102,7 @@ export class LaunchService {
         uri: draft.metadataUri,
         platformTreasury: this.config.treasuries.platform,
         agentRewardsTreasury: this.config.treasuries.agentRewards,
+        ...(quote.asset === "USDC" ? { quoteAsset: "USDC" as const, quoteMint: quote.mint } : {}),
       });
     } catch (e) {
       if (e instanceof ChainFeatureUnavailable) throw new AppError("feature_disabled", e.message, { code: e.code });
@@ -109,8 +117,8 @@ export class LaunchService {
       draft,
       mint,
       feeSharingConfig: sharingConfigPda(mint),
-      fees: {...this.feeBreakdown(),...(built.estimatedNetworkFeesLamports?{estimatedNetworkFeesLamports:built.estimatedNetworkFeesLamports}:{})},
-      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster as "devnet"|"localnet",quoteAsset:"SOL" as const,platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const}}:{}),
+      fees: {...this.feeBreakdown(quote),...(built.estimatedNetworkFeesLamports?{estimatedNetworkFeesLamports:built.estimatedNetworkFeesLamports}:{})},
+      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster as "devnet"|"localnet",quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const}}:{}),
       signature: null,
       slot: null,
       communityId: null,
@@ -218,6 +226,7 @@ export class LaunchService {
         platformTreasury: launch.fees.platformTreasury,
         agentRewardsTreasury: launch.fees.creatorFeeSplit.agentRewardsTreasury,
         sharingConfig: launch.feeSharingConfig,
+        ...(launch.execution ? { quoteMint: launch.execution.quoteAsset === "USDC" ? launch.execution.quoteMint : NATIVE_MINT, quoteRequired: launch.execution.quoteAsset === "USDC" } : {}),
         ...(this.chain.source === "solana_rpc" ? {draft:launch.draft,...(launch.execution?{preparedMessageBase64:Buffer.from(VersionedTransaction.deserialize(Buffer.from(launch.execution.transaction,"base64")).message.serialize()).toString("base64")}:{} )} : {}),
       },
       tx,

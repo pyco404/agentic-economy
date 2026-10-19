@@ -1,3 +1,4 @@
+import { ProjectLinks } from "./components/ProjectLinks";
 import { WalletButton } from "./components/WalletButton";
 import { WorldLoading } from "./world/WorldLoading";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -294,6 +295,7 @@ export default function App() {
           ))}
         </nav>
         <div className="header-actions">
+          <ProjectLinks compact />
           <a href={routeUrl("about")} className={`about-nav-link${!worldVisible && page === "about" ? " is-current" : ""}`}
             aria-label="About Agentic Economy" title="About Agentic Economy" aria-current={!worldVisible && page === "about" ? "page" : undefined}
             onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("about"); }}>
@@ -387,7 +389,7 @@ export default function App() {
         {page === "about" && <div hidden={worldVisible} className="page-content about-shell">
           <div className="page-overlay-controls"><OverlayClose onClose={closePage} /></div>
           <About onNavigate={go} roadmapRequest={roadmapRequest} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />
-          <footer className="page-footer"><span>Agentic Economy</span><span>One living world. Every page built above it.</span></footer>
+          <footer className="page-footer"><span>Agentic Economy · A World That Works</span><ProjectLinks /><span>Demo preview · Financial execution disabled</span></footer>
         </div>}
         {(page !== "about" || worldVisible) && (worldVisible && world && !data ? (
           <div className="world-summary-pending" role="status">
@@ -464,16 +466,17 @@ export default function App() {
                       </div>
                       <h1>A city in motion.</h1>
                       <p>
-                        A World That Works. A persistent AI-powered economy on Solana.
+                        A World That Works. Token creation and discovery meet a persistent living economy on Solana.
                       </p>
                       <button
                         className="world-cta"
-                        onClick={() => go("studio")}
+                        onClick={() => go("launchpad")}
                       >
-                        Find your place in the city <ArrowRight size={16} />
+                        Create Coin <ArrowRight size={16} />
                       </button>
-                      <p className="world-vision-note">Token communities and useful work today in demo. Holder-access Common Agents, rentable Super Agents, and funded $AECO rewards are planned.</p>
-                      <div className="world-vision-actions"><button onClick={() => go("economy")}>Explore Economy</button><button onClick={() => go("launchpad")}>Launchpad</button><button onClick={() => { if (go("about")) setRoadmapRequest((n) => n + 1); }}>View Roadmap</button></div>
+                      <p className="world-vision-note">Watch rule-based agents work, produce and deliver. Common Agents, Super Agents and funded $AECO rewards are planned.</p>
+                      <div className="world-vision-actions"><button onClick={() => go("explore")}>Explore Tokens</button><button onClick={() => setImmersive(true)}>Explore the World</button><button onClick={() => { if (go("about")) setRoadmapRequest((n) => n + 1); }}>View Roadmap</button></div>
+                    <ProjectLinks />
                     </div>
                     <div className="district-badge">
                       <Leaf size={17} />
@@ -968,7 +971,7 @@ export default function App() {
                   {page === "treasury" && <Treasury data={data} />}{" "}
                   {page === "launchpad" && <Launchpad />}
                   <footer className="page-footer">
-                    <span>Agentic Economy</span><a href={routeUrl("about")} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("about"); }}>About the world <ArrowRight size={13} aria-hidden="true" /></a>
+                    <span>Agentic Economy · A World That Works</span><ProjectLinks /><a href={routeUrl("about")} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("about"); }}>About the world <ArrowRight size={13} aria-hidden="true" /></a>
                     <span>
                       {isDemo
                         ? "Demo preview · No real financial actions"

@@ -38,8 +38,10 @@ for(const viewport of viewports)test(`current product content and persistent wor
  await open(page,'About');await expect(page.locator('#about-status')).toContainText('Verified on staging');await expect(page.locator('#about-status')).toContainText('Awaiting external verification');
  await expect(page.locator('.about-hero').getByRole('link',{name:'View Agentic Economy on GitHub'})).toHaveAttribute('href','https://github.com/pyco404/agentic-economy');
  await page.locator('#about-title').scrollIntoViewIfNeeded();await page.screenshot({path:`artifacts/product-about-${viewport.width}.png`});
- await page.locator('#about-roadmap').scrollIntoViewIfNeeded();await expect(page.locator('#about-roadmap summary')).toHaveCount(8);
- await expect(page.locator('#about-roadmap details').nth(1)).toHaveAttribute('open','');await expect(page.locator('#about-roadmap')).toContainText('current development phase');
+ await expect(page.locator('.about-page .roadmap-phases')).toHaveCount(0);
+ await page.getByRole('link',{name:'Explore Our Roadmap'}).press('Enter');
+ await expect(page.locator('#roadmap-title')).toBeVisible();await expect(page.locator('.roadmap-phases summary')).toHaveCount(8);
+ await expect(page.locator('.roadmap-phases details').nth(1)).toHaveAttribute('open','');await expect(page.locator('.roadmap-phases')).toContainText('current development phase');
  await page.screenshot({path:`artifacts/product-roadmap-${viewport.width}.png`});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  expect(await canvas.evaluate(n=>n===(window as any).__productCanvas)).toBe(true);expect(await city.getAttribute('data-geometry-builds')).toBe(builds);expect(await city.getAttribute('data-camera')).toBe(camera);

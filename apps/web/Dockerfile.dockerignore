@@ -27,6 +27,7 @@
 **/id.json
 **/package-lock.json
 
-# Required tracked brand assets; screenshots and other PNGs remain excluded.
+# Required tracked brand and approved social-card artwork; other screenshots remain excluded.
 !apps/web/public/aeco-tab-logo.png
 !apps/web/public/aeco-website-logo.png
+!apps/web/public/gitbut-website-image.png

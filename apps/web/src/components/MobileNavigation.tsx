@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUpRight, ChevronRight, Info, X, type LucideIcon } from "lucide-react";
+import { ProjectLinks } from "./ProjectLinks";
 import { routeUrl, type Page } from "../navigation/routes";
 
 interface Props {
@@ -62,7 +63,7 @@ export function MobileNavigation({ items, active, modeLabel, onNavigate, onClose
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
           event.preventDefault(); onNavigate("about");
         }}><Info size={16} aria-hidden="true" />About the world<ArrowUpRight size={15} aria-hidden="true" /></a>
-        <p>One living world. Every page belongs to it.</p></footer>
+        <ProjectLinks /><p>A World That Works. One living world.</p></footer>
     </section>
   </div>, document.body);
 }

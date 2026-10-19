@@ -8,13 +8,13 @@ export const PUMP_SDK_VERSION='4.1.0';
 export const PUMP_DOCS_COMMIT='639b87fb45c3adeffa6f7c4a1bf0cb85e392bf22';
 const nativeMint=new PublicKey('So11111111111111111111111111111111111111112');
 const tokenProgram=new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-type QuoteSelection={quoteAsset?:'SOL'}|{quoteAsset:'USDC';quoteMint:string};
 /** Construction only: never enables API quotes. USDC requires an explicit network mint;
  * callers must verify its live Global allowlist and token-program ownership before execution.
  */
-export async function pumpLaunchInstructions(input:BuildLaunchInput & QuoteSelection){
+export async function pumpLaunchInstructions(input:BuildLaunchInput){
  if(input.quoteAsset!==undefined&&!['SOL','USDC'].includes(input.quoteAsset))throw new Error('Unsupported quote asset');
- const quoteMint=input.quoteAsset==='USDC'?new PublicKey(input.quoteMint):nativeMint;
+ if(input.quoteAsset==='USDC'&&!input.quoteMint)throw new Error('USDC launches require the configured quote mint');
+ const quoteMint=input.quoteAsset==='USDC'?new PublicKey(input.quoteMint!):nativeMint;
  if(input.quoteAsset==='USDC'&&!['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v','4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'].includes(quoteMint.toBase58()))throw new Error('Unrecognized USDC network mint');
  LaunchDraft.parse({name:input.name,symbol:input.symbol,metadataUri:input.uri});
  // The protocol limits UTF-8 bytes, not JavaScript UTF-16 code units.
@@ -36,7 +36,7 @@ export async function pumpLaunchInstructions(input:BuildLaunchInput & QuoteSelec
  const instructions=[ComputeBudgetProgram.setComputeUnitLimit({units:600_000}),SystemProgram.transfer({fromPubkey:user,toPubkey:platform,lamports:LAUNCH_FEE_LAMPORTS}),create,sharing,...vaults,shares];
  return instructions;
 }
-export async function buildPumpLaunch(input:BuildLaunchInput & QuoteSelection,blockhash:string,lookupTables:AddressLookupTableAccount[]=[]){
+export async function buildPumpLaunch(input:BuildLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[]){
  const instructions=await pumpLaunchInstructions(input),mint=Keypair.fromSecretKey(input.mintSecretKey),user=new PublicKey(input.launcherWallet);
  const transaction=new VersionedTransaction(new TransactionMessage({payerKey:user,recentBlockhash:blockhash,instructions}).compileToV0Message(lookupTables));
  let bytes:Uint8Array;

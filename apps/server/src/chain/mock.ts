@@ -160,6 +160,12 @@ export class MockChain implements ChainGateway {
 
   async isTransactionOrphaned(signature:string){return !this.txs.has(signature);}
 
+  /** Promote a landed transaction to finalized commitment. */
+  finalize(signature: string) {
+    const tx = this.txs.get(signature);
+    if (tx) this.txs.set(signature, { ...tx, commitment: "finalized" });
+  }
+
   /** Drop a transaction (simulates a fork/reorg at `confirmed` commitment). */
   dropTransaction(signature: string) {
     this.txs.delete(signature);

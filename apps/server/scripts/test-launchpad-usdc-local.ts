@@ -100,16 +100,19 @@ try {
     const receipts = (await call('GET', '/api/v1/treasury/entries?limit=50')).json().items.filter((e: { launchId?: string }) => e.launchId === launch.id);
     const market = (await call('GET', `/api/v1/token-markets/${launch.mint}`)).json(), trades = (await call('GET', `/api/v1/token-markets/${launch.mint}/trades`)).json();
     const platformLamports = await conn.getBalance(platform);
+    // The previewed rent must equal what the launcher actually paid: debit minus network fee and platform charge.
+    const landed = (await conn.getTransaction(current.signature, { maxSupportedTransactionVersion: 0, commitment: 'confirmed' }))!.meta!;
+    const landedRent = landed.preBalances[0]! - landed.postBalances[0]! - landed.fee - 50_000_000;
     const checks = {
       confirmed: current.status === 'confirmed', duplicateSubmitSameLaunch: again.id === launch.id && again.status === 'confirmed',
       curveQuoteMatches: routing.bondingCurveQuoteMint === (QUOTE === 'USDC' ? USDC_QUOTE_MINTS.localnet : NATIVE), routing6040: routing.sharingConfig?.adminRevoked === true && routing.sharingConfig.shareholders.length === 2,
       provenanceQuote: community.provenance?.quoteAsset === QUOTE, platformCharge: platformLamports === 50_000_000, oneLaunchFeeReceipt: receipts.length === 1,
-      rentMatchesQuote: current.fees.estimatedAccountRentLamports === String(16_500_000 + (QUOTE === 'USDC' ? 2 * 2_039_280 : 0)),
+      rentMatchesNetwork: current.fees.estimatedAccountRentLamports === String(landedRent),
       chainMetrics: market.chain?.source === 'solana_rpc' && market.graduationProgress === 0 && market.priceUsd === null,
     };
     step('verified', { signature: current.signature, slot: current.slot, communityId: current.communityId, curveQuote: routing.bondingCurveQuoteMint, platformLamports,
       receipts: receipts.map((r: { amount: string; account: string; finality: string }) => ({ amount: r.amount, account: r.account, finality: r.finality })),
-      market: { holders: market.holders, holdersLowerBound: market.holdersLowerBound, graduation: market.graduation, progress: market.graduationProgress, chain: market.chain }, trades: { status: trades.status, n: trades.trades.length, reason: trades.reason }, checks });
+      market: { holders: market.holders, holdersLowerBound: market.holdersLowerBound, graduation: market.graduation, progress: market.graduationProgress, chain: market.chain }, trades: { status: trades.status, n: trades.trades.length, reason: trades.reason }, rent: { previewed: current.fees.estimatedAccountRentLamports, paid: landedRent }, checks });
     if (!Object.values(checks).every(Boolean)) throw Error('One or more acceptance checks failed');
     if (process.env.AECO_LOCAL_TEST_FEES === 'true' && QUOTE === 'SOL') {
       // One isolated test buy (local lamports, separate fresh buyer), then the SDK's standard distribution.
@@ -152,12 +155,23 @@ try {
       for (let i = 0; i < 3; i++) await ctx.indexer?.runOnce();
       const feeEntries = (await call('GET', '/api/v1/treasury/entries?limit=100')).json().items.filter((e: { stream: string }) => e.stream === 'creator_fee');
       const total = delta.agent + delta.platform;
+      // Reconcile against the chain: the creator vault is the account the distribution debited by exactly the paid
+      // total. Whatever it still holds above its rent-exempt minimum is undistributed (per-share floor rounding).
+      const keys = [...distTx!.transaction.message.staticAccountKeys, ...(distTx!.meta!.loadedAddresses?.writable ?? []), ...(distTx!.meta!.loadedAddresses?.readonly ?? [])];
+      const vaultIndex = distTx!.meta!.preBalances.findIndex((pre, i) => pre - distTx!.meta!.postBalances[i]! === total);
+      const vault = keys[vaultIndex]!, vaultInfo = (await conn.getAccountInfo(vault, 'confirmed'))!;
+      const residue = vaultInfo.lamports - (await conn.getMinimumBalanceForRentExemption(vaultInfo.data.length));
+      const earned = bought ? Number(bought.creatorFee) : NaN;
+      const ledger = Object.fromEntries(feeEntries.map((e: { account: string; amount: string }) => [e.account, Number(e.amount)]));
       step('creator_fees', { minimumDistributable: JSON.parse(JSON.stringify(minimum, (_k, v) => (typeof v === 'object' && v && 'toString' in v && v.constructor?.name === 'BN' ? v.toString() : v))), buySignature: buySig, tradeOnExplore: bought ? { side: bought.side, quoteAmount: bought.quoteAmount, creatorFee: bought.creatorFee } : null,
         distributionSignature: distSig, distributionInstruction: dist.instructions.map((i: { programId: PublicKey; data: Buffer }) => `${i.programId.toBase58()}:${Buffer.from(i.data).subarray(0, 8).toString('hex')}`),
         recipientDeltas: delta, split: total > 0 ? { agentBps: Math.round(delta.agent * 10000 / total), platformBps: Math.round(delta.platform * 10000 / total) } : null,
         distributionTx: { accounts: distTx?.transaction.message.staticAccountKeys.map((k) => k.toBase58()), innerInstructions: distTx?.meta?.innerInstructions?.length, logTail: distTx?.meta?.logMessages?.slice(-4) },
+        reconciliation: { creatorVault: vault.toBase58(), earned, distributed: total, residueInVault: residue, floorShares: { agent: Math.floor(earned * 6000 / 10000), platform: Math.floor(earned * 4000 / 10000) } },
         ledgerCreatorFeeEntries: feeEntries.map((e: { account: string; amount: string; finality: string }) => ({ account: e.account, amount: e.amount, finality: e.finality })) });
-      report.creatorFees = { tradeDecoded: !!bought && BigInt(bought.creatorFee) > 0n, distributed: total > 0, split6040: total > 0 && (delta.agent * 10 === total * 6 || delta.agent === Math.floor(total * 0.6) || delta.agent === Math.ceil(total * 0.6)) && delta.agent + delta.platform === total, ledgerRecorded: feeEntries.length === 2 };
+      report.creatorFees = { tradeDecoded: !!bought && BigInt(bought.creatorFee) > 0n, distributed: total > 0, split6040: total > 0 && (delta.agent * 10 === total * 6 || delta.agent === Math.floor(total * 0.6) || delta.agent === Math.ceil(total * 0.6)) && delta.agent + delta.platform === total, ledgerRecorded: feeEntries.length === 2,
+        earnedEqualsDistributedPlusResidue: earned === total + residue, payoutsAreFlooredShares: delta.agent === Math.floor(earned * 0.6) && delta.platform === Math.floor(earned * 0.4),
+        ledgerMatchesChain: Object.values(ledger).sort().join() === [delta.agent, delta.platform].sort().join() };
     }
     report.result = 'passed';
   } finally { globalThis.fetch = realFetch; await app.close(); await ctx.close(); }

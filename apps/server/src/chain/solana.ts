@@ -4,7 +4,8 @@ import { AddressLookupTableProgram, Connection, PublicKey, VersionedTransaction,
 import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
 import { anchorAccountDiscriminator, bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
 import sdk from "./pump-sdk.cjs";
-import { ChainFeatureUnavailable, type BuildLaunchInput, type BuiltLaunchTransaction, type ChainGateway, type FeeRoutingState, type ObservedTransaction, type TokenBalance } from "./types.js";
+import { pumpTradesFromLogs } from "./pump-events.js";
+import { ChainFeatureUnavailable, type ChainTrade, type CurveProgress, type BuildLaunchInput, type BuiltLaunchTransaction, type ChainGateway, type FeeRoutingState, type ObservedTransaction, type TokenBalance } from "./types.js";
 
 /**
  * Solana JSON-RPC adapter (devnet / mainnet). Read paths are implemented; launch transaction
@@ -56,7 +57,8 @@ export class SolanaRpcChain implements ChainGateway {
     const curve = bc ? decodeBondingCurveCreator(bc.data) : null;
     let quoteMint: string | null = null;
     // The official decoder knows the current curve layout, including its quote mint.
-    if (bc) try { quoteMint = sdk.PUMP_SDK.decodeBondingCurve(bc).quoteMint.toBase58(); } catch { quoteMint = null; }
+    // normalizeQuoteMint maps a legacy/unset (all-zero) quote to the native mint, i.e. a SOL curve.
+    if (bc) try { quoteMint = sdk.normalizeQuoteMint(sdk.PUMP_SDK.decodeBondingCurve(bc).quoteMint).toBase58(); } catch { quoteMint = null; }
     return {
       sharingConfig: sc ? decodeSharingConfig(scAddr, sc.data) : null,
       bondingCurveCreator: curve?.creator ?? null,
@@ -92,6 +94,66 @@ export class SolanaRpcChain implements ChainGateway {
     if(!expected||genesis!==expected||genesis==="5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d")throw new ChainFeatureUnavailable("unsafe_launch_network","RPC genesis does not match the configured safe testing network");
     return genesis;
   }
+  async getCurveProgress(mint: string): Promise<CurveProgress | null> {
+    const { context, value: [curve, global] } = await this.conn.getMultipleAccountsInfoAndContext([new PublicKey(bondingCurvePda(mint)), sdk.GLOBAL_PDA], "confirmed");
+    if (!curve) return null;
+    if (curve.owner.toBase58() !== PUMP_PROGRAM_ID || !global || global.owner.toBase58() !== PUMP_PROGRAM_ID) throw new Error("Bonding curve or Global has an unexpected program owner");
+    const c = sdk.PUMP_SDK.decodeBondingCurve(curve), initial = BigInt(sdk.PUMP_SDK.decodeGlobal(global).initialRealTokenReserves.toString());
+    const remaining = BigInt(c.realTokenReserves.toString());
+    // Basis points of the initial real token reserves already sold; exact integer arithmetic, clamped.
+    const bps = c.complete ? 10_000n : initial > 0n ? ((initial - (remaining > initial ? initial : remaining)) * 10_000n) / initial : 0n;
+    return { slot: context.slot, complete: c.complete, progressPct: Number(bps) / 100, quoteMint: sdk.normalizeQuoteMint(c.quoteMint).toBase58() };
+  }
+
+  async getHolderCount(mint: string): Promise<{ slot: number; holders: number | null; exact: boolean }> {
+    const curve = bondingCurvePda(mint);
+    try {
+      // Exact scan where the RPC indexes Token-2022 (public endpoints exclude it).
+      // Token account layout: mint (0..32), owner (32..64), amount u64 LE (64..72).
+      const res = await this.conn.getProgramAccounts(new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"), {
+        commitment: "confirmed", withContext: true, dataSlice: { offset: 32, length: 40 },
+        filters: [{ memcmp: { offset: 0, bytes: mint } }],
+      });
+      if (res.value.length > 20_000) return { slot: res.context.slot, holders: null, exact: false };
+      const owners = new Set<string>();
+      for (const { account } of res.value) {
+        const data = Buffer.from(account.data), owner = bs58.encode(data.subarray(0, 32));
+        if (owner !== curve && data.length >= 40 && data.readBigUInt64LE(32) > 0n) owners.add(owner);
+      }
+      return { slot: res.context.slot, holders: owners.size, exact: true };
+    } catch (e) {
+      if ((e as { code?: number }).code !== -32010) throw e;
+    }
+    // Fallback available on every RPC: the 20 largest token accounts. Fewer than 20 non-zero accounts means the
+    // list is complete (exact); otherwise it is only a lower bound.
+    const largest = await this.conn.getTokenLargestAccounts(new PublicKey(mint), "confirmed");
+    const nonZero = largest.value.filter((a) => a.amount !== "0");
+    const infos = nonZero.length ? (await this.conn.getMultipleParsedAccounts(nonZero.map((a) => a.address), { commitment: "confirmed" })).value : [];
+    const owners = new Set<string>();
+    for (const info of infos) {
+      const owner = info && "parsed" in info.data ? (info.data.parsed as { info?: { owner?: string } }).info?.owner : undefined;
+      if (owner && owner !== curve) owners.add(owner);
+    }
+    return { slot: largest.context.slot, holders: owners.size, exact: nonZero.length < 20 };
+  }
+
+  async getRecentTrades(mint: string, limit: number): Promise<{ slot: number; complete: boolean; trades: ChainTrade[] }> {
+    const sigs = (await this.conn.getSignaturesForAddress(new PublicKey(bondingCurvePda(mint)), { limit: Math.min(50, Math.max(1, limit)) }, "confirmed")).filter((s) => !s.err);
+    const txs = sigs.length ? await this.conn.getTransactions(sigs.map((s) => s.signature), { maxSupportedTransactionVersion: 0, commitment: "confirmed" }) : [];
+    const trades: ChainTrade[] = [];
+    let complete = txs.length === sigs.length, slot = 0;
+    txs.forEach((tx, i) => {
+      if (!tx?.meta?.logMessages || tx.meta.err) { if (!tx) complete = false; return; }
+      slot = Math.max(slot, tx.slot);
+      const parsed = pumpTradesFromLogs(tx.meta.logMessages, mint);
+      if (!parsed.complete) complete = false;
+      for (const t of parsed.trades) trades.push({ ...t, signature: sigs[i]!.signature, slot: tx.slot, blockTime: tx.blockTime ?? null });
+    });
+    return { slot: slot || (await this.conn.getSlot("confirmed")), complete, trades: trades.slice(0, limit) };
+  }
+
+  getBlockTime(slot: number) { return this.conn.getBlockTime(slot); }
+
   async verifyQuoteMint(mint: string): Promise<void> {
     const quote = new PublicKey(mint);
     const global = await this.conn.getAccountInfo(sdk.GLOBAL_PDA, "confirmed");

@@ -1,6 +1,6 @@
 import { ProjectLinks } from "./components/ProjectLinks";
 import { WalletButton } from "./components/WalletButton";
-import { WorldLoading } from "./world/WorldLoading";
+import { useApplicationStartup } from "./startup/ApplicationStartup";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -72,6 +72,7 @@ const pages = [
 ] as const;
 export default function App() {
   useDraftUnloadGuard();
+  const { assetsReady, skipWorld, worldPhase, worldUnavailable } = useApplicationStartup();
   const api = useMemo(createAdapter, []),
     [page, setPage] = useState<Page>(() => readRoute(window.location).page),
     [tokenMint, setTokenMint] = useState<string | null>(() => readRoute(window.location).mint),
@@ -124,6 +125,8 @@ export default function App() {
   const {
     data,
     world,
+    worldLoading,
+    worldError,
     error,
     loading,
     status: streamStatus,
@@ -198,6 +201,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", escape);
   }, []);
   const visualBootstrap=data?.bootstrap??world?.bootstrap;
+  useEffect(() => worldUnavailable(!visualBootstrap && (api.kind === "http" ? !worldLoading && !!worldError : !loading && !!error)), [api.kind, loading, worldLoading, visualBootstrap, error, worldError, worldUnavailable]);
   const population = (data?.stats.activeAgents ?? (world?0:156)) + growth,
     seed = visualBootstrap ? numericSeed(visualBootstrap.seed) : WORLD_SEED;
   const chunks = useMemo(
@@ -343,11 +347,13 @@ export default function App() {
       </header>
       {menu && <MobileNavigation items={pages} active={worldVisible ? null : page} onNavigate={go} onClose={closeMenu}
         modeLabel={isDemo ? "Demo Mode" : `${data?.mode ?? "API"} · ${streamStatus}`} />}
-      {visualBootstrap && <div className="global-world-layer" data-testid="global-world" data-interactive={worldVisible}
+      {visualBootstrap && !skipWorld && <div className="global-world-layer" data-testid="global-world" data-interactive={worldVisible}
         inert={!worldVisible} aria-hidden={!worldVisible}>
                   <City
                     ref={city}
                     onReadyChange={setWorldReady}
+                    onPhaseChange={worldPhase}
+                    presentationReady={assetsReady}
                     touchPan={touchPan}
                     seed={seed}
                     population={population}
@@ -401,6 +407,7 @@ export default function App() {
                   />
       </div>}
       <div className="world-atmosphere" aria-hidden="true" />
+      {skipWorld && worldVisible && <div className="world-preparation-warning" role="status">The 3D world was skipped. You can still use the pages. Reload to retry the world.</div>}
       {worldVisible && page !== "world" && <button className="page-reopen" type="button" aria-label="Show page"
         onClick={() => { setPageOpen(true); setAgentId(null); setSelected(null); setImmersive(false); }}>
         <Layers size={16} /><span>Show page<small>{page === "about" ? "About" : pages.find((p) => p.id === page)?.label}</small></span>
@@ -422,7 +429,7 @@ export default function App() {
             {error && <button onClick={refresh}>Retry dashboard</button>}
           </div>
         ) : loading ? (
-          worldVisible ? <WorldLoading /> : <div className="loading" role="status">
+          <div className="loading" role="status">
             {!worldVisible && <OverlayClose className="page-loading-close" onClose={closePage} />}
             <span className="loading-dot" />
             <h2>Growing Genesis…</h2>

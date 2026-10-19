@@ -1,4 +1,4 @@
-import { agentClasses, ecosystemFaq, futureFeePolicies, roadmap } from "../content/ecosystem";
+import { agentClasses, ecosystemFaq, futureFeePolicies } from "../content/ecosystem";
 import "../ecosystem.css";
 
 export function AgentClasses() {
@@ -20,18 +20,6 @@ export function FutureFees() {
       <p>The Super Agent can enter auction. Its next renter receives 10% of future eligible creator fees from all tokens previously launched by that agent and newly launched tokens. Historical fee entitlement does not transfer.</p>
     </details>
     <p className="small muted">Human 60/40 routing is verified on test networks. Earned-fee collection and settlement require further verification. Super-Agent rentals and claims remain planned; this table enables no signing, custody or payouts.</p>
-  </section>;
-}
-export function Roadmap() {
-  return <section id="about-roadmap" className="about-paper ecosystem-roadmap" aria-labelledby="roadmap-title">
-    <p className="about-kicker">08 / Development roadmap</p><h2 id="roadmap-title">A world built in phases.</h2>
-    <p>Phase 1 core milestones are verified on staging. Phase 2 is the current development phase: test-network launches do not mean mainnet readiness. Later phases remain planned, with no promised launch dates or returns.</p>
-    <div className="roadmap-phases">{roadmap.map((phase) => <details key={phase.phase} open={phase.phase === 2}>
-      <summary><span className="roadmap-number">0{phase.phase}</span><span><strong>Phase {phase.phase} — {phase.title}</strong><small>{phase.status}</small></span></summary>
-      <div className="roadmap-detail"><p>{phase.summary}</p>
-        {phase.built.length > 0 && <div><h3>Verified milestones · scope noted</h3><ul>{phase.built.map((item) => <li key={item}>{item}</li>)}</ul></div>}
-        <div><h3>{phase.phase < 3 ? "Outstanding / in development" : "Planned scope"}</h3><ul>{phase.pending.map((item) => <li key={item}>{item}</li>)}</ul></div>
-      </div></details>)}</div>
   </section>;
 }
 export function EcosystemFaq() {

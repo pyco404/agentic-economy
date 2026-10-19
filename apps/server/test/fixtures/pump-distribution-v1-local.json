@@ -1,0 +1,87 @@
+{
+  "capturedFrom": "isolated local validator (devnet programs cloned)",
+  "genesis": "GcGBEC6B5LHCJ3jrQqYLBMgtnZoUHAgpAPFPWjtrHU2",
+  "note": "SDK-standard distribute_creator_fees for a SOL coin launched through the app",
+  "tx": {
+    "signature": "uJ5CmKGFRzSFR7xRzJ6fFr9K8WCqCHM6zne6ZisZ4rtcgamSm6r2pyinCoZAYvMZw9N5Rwuykefx4duqjsQBYgW",
+    "source": "solana_rpc",
+    "feeLamports": {
+      "$bigint": "5000"
+    },
+    "innerInstructions": [
+      {
+        "parentIndex": 0,
+        "programId": "11111111111111111111111111111111",
+        "accounts": [
+          "DLfBi38fawF22HjL6ZfJvDVXvApLh9bbuzReUqs4yM3y",
+          "C2DTiS8qWqsehvQc8oqsa82rHwnjSCbmKuZ7smajQWd"
+        ],
+        "dataBase64": "AgAAAPBYFwAAAAAA",
+        "stackHeight": 2
+      },
+      {
+        "parentIndex": 0,
+        "programId": "11111111111111111111111111111111",
+        "accounts": [
+          "DLfBi38fawF22HjL6ZfJvDVXvApLh9bbuzReUqs4yM3y",
+          "4zgPy6LyASjdGCSXhqKKbsS176jQHEshDKrZKN6dhrDb"
+        ],
+        "dataBase64": "AgAAAKCQDwAAAAAA",
+        "stackHeight": 2
+      },
+      {
+        "parentIndex": 0,
+        "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+        "accounts": [
+          "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1"
+        ],
+        "dataBase64": "5EWlLlHLmh2lN4FwBLPKKMUB1moAAAAAYGPmabvI2EAFQBv1nNJbWk5TP0p+4NAZj/qAwHVZNvmiAnVO2rCD8hxIxc29VGjq7GCWcrXjVIRvmgUjdO0/kxNSiY/4TU0rO3z9adMchh4Q+ejuuIgBJxIbrA9Ae5Wj/IgBiDVECycvYLs6VGrH8h3jOhyPDE+cilasMyGWaMICAAAAAtLDNJixDj6mV1LRYFpQlobe7oHyvgK5AuBUUNyGzZJwFztZtkrAX2l+ih6Ed7lz+AHrgUCESbIvFMVTHfFzrgGeoA+Q6SYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "stackHeight": 2
+      }
+    ],
+    "tokenAccounts": {},
+    "messageBase64": "AQAGCnv+ij7t6xf+Mt9a0kJ1CblEB7PLTYHp2jFZcJtLW3U0O1m2SsBfaX6KHoR3uXP4AeuBQIRJsi8UxVMd8XOuAZ4C0sM0mLEOPqZXUtFgWlCWht7ugfK+ArkC4FRQ3IbNkrdVdDc7I6u0LGE+jmcM7W3yd0aNVwOgj0YQu0/vKiEsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATUomP+E1NKzt8/WnTHIYeEPno7riIAScSG6wPQHuVowFW4PaTZlrPRNsVaL8XW6pRicuX9dL/O2VdK7b9bRiwYGPmabvI2EAFQBv1nNJbWk5TP0p+4NAZj/qAwHVZNvmiAnVO2rCD8hxIxc29VGjq7GCWcrXjVIRvmgUjdO0/k6zxNusB/BxOiD0jyLWESrWaN/Zq3VfF6aw7U+BZ01xk3KIknPFOUoq968LmcSnBMS8QKcHsxsQypEcYdK9a9wsBBgkHCAUDBAkGAgEIpXJnAHnO91E=",
+    "slot": 142,
+    "commitment": "finalized",
+    "err": null,
+    "feePayer": "9M2GGn9vcY3ceXbcELxjgsuNKSDdyMQqnGLiXA3ykL91",
+    "signers": [
+      "9M2GGn9vcY3ceXbcELxjgsuNKSDdyMQqnGLiXA3ykL91"
+    ],
+    "systemTransfers": [],
+    "instructions": [
+      {
+        "ixIndex": 0,
+        "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+        "discriminatorHex": "a572670079cef751",
+        "accounts": [
+          "7VGVV3pYP8a3UdiSBNrw1KiotZdpNmmMULfdQpfndyxt",
+          "BuRDppg2A29WuEu2cHB9yK7pgs62fjjAzUU8ABefCwHc",
+          "2JRk5UpAEHgniGjor3d34ejTGbUZFzvmTrneCceGUpxA",
+          "DLfBi38fawF22HjL6ZfJvDVXvApLh9bbuzReUqs4yM3y",
+          "11111111111111111111111111111111",
+          "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1",
+          "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+          "C2DTiS8qWqsehvQc8oqsa82rHwnjSCbmKuZ7smajQWd",
+          "4zgPy6LyASjdGCSXhqKKbsS176jQHEshDKrZKN6dhrDb"
+        ],
+        "dataBase64": "pXJnAHnO91E="
+      }
+    ],
+    "lamportDeltas": {
+      "9M2GGn9vcY3ceXbcELxjgsuNKSDdyMQqnGLiXA3ykL91": {
+        "$bigint": "-5000"
+      },
+      "4zgPy6LyASjdGCSXhqKKbsS176jQHEshDKrZKN6dhrDb": {
+        "$bigint": "1020064"
+      },
+      "C2DTiS8qWqsehvQc8oqsa82rHwnjSCbmKuZ7smajQWd": {
+        "$bigint": "1530096"
+      },
+      "DLfBi38fawF22HjL6ZfJvDVXvApLh9bbuzReUqs4yM3y": {
+        "$bigint": "-2550160"
+      }
+    },
+    "genesisHash": "GcGBEC6B5LHCJ3jrQqYLBMgtnZoUHAgpAPFPWjtrHU2"
+  }
+}

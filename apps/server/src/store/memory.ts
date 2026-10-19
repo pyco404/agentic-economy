@@ -106,6 +106,14 @@ export class MemoryStore implements Store {
     this.sessions.set(s.tokenHash, s);
   }
   async revokeSession(tokenHash:string) { this.sessions.delete(tokenHash); }
+  async pruneExpiredAuth(cutoff: Date, limit: number) {
+    const sweep = <T extends { expiresAt: string }>(m: Map<string, T>) => {
+      let n = 0;
+      for (const [k, v] of m) if (n < limit && new Date(v.expiresAt) < cutoff) { m.delete(k); n++; }
+      return n;
+    };
+    return { challenges: sweep(this.challenges), sessions: sweep(this.sessions) };
+  }
   async getSession(tokenHash: string, now: Date) {
     const s = this.sessions.get(tokenHash);
     return s && new Date(s.expiresAt) > now ? s : null;

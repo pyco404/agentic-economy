@@ -15,7 +15,8 @@ for(const viewport of[{width:1440,height:1000},{width:390,height:844}])test(`com
  await expect.poll(async()=>page.evaluate(()=>(window as any).__heldWorld()),{timeout:180000}).toBeGreaterThan(0);
  await expect.poll(async()=>Number(await city.getAttribute('data-rendered-buildings')),{timeout:45000}).toBeGreaterThan(300);
  await expect(city).toHaveAttribute('data-world-state','BUILDING_WORLD');await expect(city).toHaveAttribute('aria-busy','true');await expect(loader).toBeVisible();expect(await canvas.evaluate(n=>getComputedStyle(n).opacity)).toBe('0');
- await expect(page.getByRole('link',{name:'Agentic Economy home',exact:true})).toBeVisible();
+ await expect(page.locator('.application-shell')).toHaveAttribute('inert','');
+ await expect(page.locator('.topbar')).not.toBeVisible();
  await page.screenshot({path:`artifacts/world-readiness-loading-${viewport.width}.png`});
  await canvas.evaluate(n=>{(window as any).__readyCanvas=n;});
  await page.evaluate(()=>(window as any).__releaseWorld());

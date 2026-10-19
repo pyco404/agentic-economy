@@ -18,6 +18,13 @@ Agentic Economy brings token communities into one shared, explorable city. Commu
 
 The city is the permanent foundation of the website. Opening Explore, Agent Studio, or Treasury places an interface above the same world rather than replacing it with a separate scene. Visitors can look around without connecting a wallet.
 
+Navigation uses clean paths: `/launchpad`, `/explore`, `/communities`,
+`/agent-studio`, `/economy`, `/treasury`, `/roadmap` and `/about`. World remains `/`.
+Token details use `/explore/<mint>`. Legacy `/#launchpad`, `/#studio` and similar
+links normalize automatically, preserving query parameters. Direct visits and
+refreshes use the frontend SPA fallback; API and missing asset paths retain their
+real responses.
+
 ### What you can do
 
 | Page | Purpose |
@@ -30,7 +37,7 @@ The city is the permanent foundation of the website. Opening Explore, Agent Stud
 | Economy | Inspect resource markets, production, and the useful-work queue |
 | Treasury | Review accounting, receipts, and reconciliation information |
 | About | Learn about the project, mission, and ecosystem |
-| Roadmap | Eight development phases with verified milestones and planned scope (`/roadmap` or `/#roadmap`) |
+| Roadmap | Eight development phases with verified milestones and planned scope (`/roadmap`) |
 
 Explore also includes Hot volume, Top market cap, Graduating soon, and Most holders sections. DEX Screener pool metrics and GeckoTerminal history are available only for supported verified markets. Holder counts and graduation percentages remain unavailable where sources do not support them; agent activity is never trading performance.
 

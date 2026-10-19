@@ -16,9 +16,8 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await expect(page.locator(".world-header")).toContainText("planned");
     await page.screenshot({ path: `artifacts/ecosystem-world-${viewport.width}.png` });
     await page.getByRole("button", { name: "View Roadmap", exact: true }).press("Enter");
-    const roadmap = page.getByRole("region", { name: "A world built in phases." });
+    const roadmap = page.getByRole("region", { name: "Eight development phases" });
     await expect(roadmap).toBeVisible();
-    expect(await roadmap.evaluate((node) => node.getBoundingClientRect().top)).toBeLessThan(200);
     await expect(roadmap.locator("summary")).toHaveCount(8);
     await expect(roadmap.locator("details").nth(1)).toHaveAttribute("open", "");
     await expect(roadmap.locator("details").nth(1)).toContainText("Outstanding / in development");
@@ -28,6 +27,8 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     // Phase 2 is already expanded as the current development phase.
     await expect(roadmap.locator("details").nth(1)).toHaveAttribute("open", "");
     await expect(roadmap.locator("details").nth(1)).toContainText("Real-device mobile wallet acceptance");
+    await page.getByRole("link", { name: "About Agentic Economy", exact: true }).press("Enter");
+    await expect(page.locator(".about-page .roadmap-phases")).toHaveCount(0);
     await page.locator("#about-agents").scrollIntoViewIfNeeded();
     await expect(page.getByRole("heading", { name: "Common Agents", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Super Agents", exact: true })).toBeVisible();
@@ -44,7 +45,8 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await page.locator("#about-faq").scrollIntoViewIfNeeded();
     await page.getByText("Are Credits redeemable for $AECO today?", { exact: true }).click();
     await expect(page.locator("#about-faq")).toContainText("No. Current Credits are simulated");
-    await page.locator("#about-roadmap").scrollIntoViewIfNeeded();
+    await page.locator("#about-direction-title").scrollIntoViewIfNeeded();
+    await expect(page.getByRole("link", { name: "Explore Our Roadmap" })).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const broken = await page.locator(".about-page [aria-labelledby]").evaluateAll((nodes) => nodes.flatMap((node) =>

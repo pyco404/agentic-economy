@@ -75,7 +75,7 @@ Codex's three unpushed frontend commits were already integrated into `main` by C
 
 | # | Item | Classification | Evidence / blocker |
 |---|---|---|---|
-| 1 | Phantom desktop Create Coin | **VERIFIED — PHYSICAL WALLET/DEVICE** (desktop) + **PUBLIC DEVNET**, for the flow as of this morning | User-signed launch `4Pyp7A…`, finalized ([evidence](evidence/pump-phantom-devnet-2026-10-19.json)). A re-check on the latest UI **needs the user** |
+| 1 | Phantom desktop Create Coin | **VERIFIED — PHYSICAL WALLET/DEVICE** (desktop) + **PUBLIC DEVNET**, on the latest UI (`8394d2f`) | DCOIN `3AtgXq…`, finalized: exactly 0.05 SOL charged once, rent preview exact to the lamport (11,546,840), locked 60/40, metadata on IPFS, listed in Explore after refresh ([evidence](evidence/pump-phantom-create-coin-devnet-2026-10-19.json)) |
 | 2 | Phantom mobile | **BLOCKED** | Needs the user's physical device |
 | 3 | Real Pinata uploads and metadata | **VERIFIED — REAL EXTERNAL SERVICE** | Real CIDs, retrieved through the gateway ([evidence](evidence/create-coin-devnet-2026-10-19.json)). Not configured on staging (demo) |
 | 4 | SOL launch | **VERIFIED — PUBLIC DEVNET** and **LOCAL VALIDATOR** | Finalized devnet launches; local run with exact rent |

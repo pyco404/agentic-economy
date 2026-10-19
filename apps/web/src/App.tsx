@@ -492,15 +492,6 @@ export default function App() {
                       <p>
                         A World That Works. Token creation and discovery meet a persistent living economy on Solana.
                       </p>
-                      <button
-                        className="world-cta"
-                        onClick={() => go("launchpad")}
-                      >
-                        Create Coin <ArrowRight size={16} />
-                      </button>
-                      <p className="world-vision-note">Watch rule-based agents work, produce and deliver. Common Agents, Super Agents and funded $AECO rewards are planned.</p>
-                      <div className="world-vision-actions"><button onClick={() => go("explore")}>Explore Tokens</button><button onClick={() => setImmersive(true)}>Explore the World</button><button onClick={() => go("roadmap")}>View Roadmap</button></div>
-                    <ProjectLinks />
                     </div>
                     <div className="district-badge">
                       <Leaf size={17} />

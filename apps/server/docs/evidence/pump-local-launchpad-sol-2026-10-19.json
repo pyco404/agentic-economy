@@ -1,0 +1,170 @@
+{
+  "network": "isolated-localnet (devnet programs/config cloned)",
+  "genesis": "9VfWX28ph5mg3qGTWrfCkptddNf7LnBwsZNHKUNVcqH",
+  "quoteAsset": "SOL",
+  "stubbed": [
+    "Pinata uploads (fixed CIDs)"
+  ],
+  "financialScope": "local validator lamports only",
+  "steps": [
+    {
+      "name": "lookup_table",
+      "table": "9PYjv849d7Hr6estkpq2KbWJ1jjJUEdqHzBNP2F2F9rB",
+      "staticEntries": 20
+    },
+    {
+      "name": "capabilities",
+      "launchEnabled": true,
+      "usdc": "draft"
+    },
+    {
+      "name": "review",
+      "quoteAsset": "SOL",
+      "launchEnabled": true,
+      "ready": true
+    },
+    {
+      "name": "prepared",
+      "launchId": "lch_9a1e3e7b3ac22fdf2a132907",
+      "mint": "64H3SgGmziATJZB9Y4fTbysGpNPzDyeFsQkXwt8j3Gsq",
+      "packetBytes": 1016,
+      "instructions": 5,
+      "execution": {
+        "quoteAsset": "SOL"
+      },
+      "fees": {
+        "platformLaunchFeeLamports": "50000000",
+        "platformTreasury": "2BRJ8hrarYvE4RFruNmHy1YkzG5rdabUj4545bgrSttD",
+        "estimatedNetworkFeesLamports": "10000",
+        "estimatedAccountRentLamports": "16500000",
+        "launcherCreatorFeeBps": 0,
+        "creatorFeeSplit": {
+          "agentRewardsTreasury": "DjTasebQGydQrY93uiQni4ChtdsXc7R4XUkVMzGPkWou",
+          "agentRewardsBps": 6000,
+          "platformTreasury": "2BRJ8hrarYvE4RFruNmHy1YkzG5rdabUj4545bgrSttD",
+          "platformBps": 4000
+        },
+        "notes": [
+          "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+          "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+          "Solana network fees and account rent are paid by your wallet and are estimates.",
+          "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+          "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split."
+        ]
+      }
+    },
+    {
+      "name": "verified",
+      "signature": "4qfixByCVo6956FzuMsBjqKcxP2FCWp5qcMHSgAeodE2GCKaoerE4dC7YZ1AXSBDYE6TycYujM5ioAmCMFsGAoBp",
+      "slot": 522,
+      "communityId": "com_rG64A0gUS1ChWs",
+      "curveQuote": "So11111111111111111111111111111111111111112",
+      "platformLamports": 50000000,
+      "receipts": [
+        {
+          "amount": "50000000",
+          "account": "platform",
+          "finality": "pending"
+        }
+      ],
+      "market": {
+        "holders": 0,
+        "holdersLowerBound": false,
+        "graduation": "bonding_curve",
+        "progress": 0,
+        "chain": {
+          "source": "solana_rpc",
+          "network": "localnet",
+          "slot": 523,
+          "asOf": "2026-10-19T15:43:28.000Z",
+          "fetchedAt": "2026-10-19T15:43:29.540Z"
+        }
+      },
+      "trades": {
+        "status": "available",
+        "n": 0,
+        "reason": "No bonding-curve trades yet."
+      },
+      "checks": {
+        "confirmed": true,
+        "duplicateSubmitSameLaunch": true,
+        "curveQuoteMatches": true,
+        "routing6040": true,
+        "provenanceQuote": true,
+        "platformCharge": true,
+        "oneLaunchFeeReceipt": true,
+        "rentMatchesQuote": true,
+        "chainMetrics": true
+      }
+    },
+    {
+      "name": "creator_fees",
+      "minimumDistributable": {
+        "minimumRequired": "244000",
+        "distributableFees": "26e991",
+        "canDistribute": true,
+        "isGraduated": false,
+        "feesQuoteMint": "So11111111111111111111111111111111111111112"
+      },
+      "buySignature": "56DnmeEg3HExqRUFcMYYhACb3AmY5tUj1CyounerrozVC4q4XYNeVh8yAtGe2zxpuHRNS12mNxKKSYwmABbXk2Y7",
+      "tradeOnExplore": {
+        "side": "buy",
+        "quoteAmount": "850053591",
+        "creatorFee": "2550161"
+      },
+      "distributionSignature": "5gzcutoyZyaQDk5bs5LAzdwuoZxN1L4a17ry5mBtse65WQ8wNwmn7s1YfW9vGwJZQgB2PPVbDfJ5rUtGvQmfiyWB",
+      "distributionInstruction": [
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P:a572670079cef751"
+      ],
+      "recipientDeltas": {
+        "agent": 1530096,
+        "platform": 1020064
+      },
+      "split": {
+        "agentBps": 6000,
+        "platformBps": 4000
+      },
+      "distributionTx": {
+        "accounts": [
+          "6XKnZCuvCDCSuy6FsHysPW8ZGU6gMyg4bAfBMzDepEKz",
+          "2BRJ8hrarYvE4RFruNmHy1YkzG5rdabUj4545bgrSttD",
+          "7zZWgK58WEcyBhBUcqoGqWye5FZ9KhCAn1GetDiYgZzZ",
+          "DjTasebQGydQrY93uiQni4ChtdsXc7R4XUkVMzGPkWou",
+          "11111111111111111111111111111111",
+          "5U61S96odMahL9CJTn5wEgrjgioxk1BceugDWBkPJWpP",
+          "64H3SgGmziATJZB9Y4fTbysGpNPzDyeFsQkXwt8j3Gsq",
+          "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+          "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1",
+          "GD5PVJf9S47Yqm8PquGzHY7P2ythauA4e8JWSt5mFnu7"
+        ],
+        "innerInstructions": 1,
+        "logTail": [
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P consumed 30423 of 200000 compute units",
+          "Program return: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P wzrWagAAAABLIVDhP0dMpfCeykuVAOsMvzpnxYPy5ZpCtpm0OfgesOH3PB0nFNdgtCUUmja4g0NIVcvmLNHH1pxTiDM6IM7SQl8Xbb92ycdhQAuGi/g8MF6hyBDCIymy8BaV56D7/rhs16oRLa+3qTgzfFS/lT8APZPO3ZgCTP5hfuJx3xa89gIAAAC9LLIcbVIt/LyM+XtyoGOD4DUBhJtxiOEGIOTVfVasbHAXEYb3RaMzOZKPN4oe8CKVnZs5FmgDK1R9AyLXoo0fmJ6gD5DpJgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success"
+        ]
+      },
+      "ledgerCreatorFeeEntries": [
+        {
+          "account": "platform",
+          "amount": "1020064",
+          "finality": "pending"
+        },
+        {
+          "account": "agent_rewards",
+          "amount": "1530096",
+          "finality": "pending"
+        }
+      ]
+    }
+  ],
+  "mirroredDevnetSystemAccounts": [],
+  "creatorFees": {
+    "tradeDecoded": true,
+    "distributed": true,
+    "split6040": true,
+    "ledgerRecorded": true
+  },
+  "result": "passed"
+}

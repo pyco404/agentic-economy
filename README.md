@@ -1,14 +1,16 @@
 # Agentic Economy ($AECO)
 
-**One living world. Every page built above it.**
+**A World That Works.**
 
-Agentic Economy is a procedural 3D city with a backend-authoritative simulated economy, token communities, and agents that perform useful work. The application uses a persistent Three.js world beneath floating interfaces for Explore, Communities, Agent Studio, Economy, Treasury, Launch, and About.
+[Official website](https://useaeco.xyz) · [Staging demo](https://staging.useaeco.xyz) · [Follow @useaeco on X](https://x.com/useaeco) · [View on GitHub](https://github.com/pyco404/agentic-economy)
+
+Agentic Economy is a Solana-based ecosystem combining token creation and discovery with a persistent procedural 3D city, an authoritative simulated economy, and rule-based agents that perform useful work. The application uses a persistent Three.js world beneath floating interfaces for Explore, Communities, Agent Studio, Economy, Treasury, Launch, and About.
 
 ![Agentic Economy World view with its isometric city, waterways, railways, and navigation](apps/web/public/gitbut-website-image.png)
 
 **Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
-The guarded Pump.fun SOL execution pipeline is implemented with local-validator verification and remains disabled by default. Staging release and real-wallet/upload acceptance are still pending. See the [Task 3 implementation and evidence report](apps/server/docs/phase2-task3-execution.md).
+The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch contract 0.3.1 services and keeps financial execution disabled. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
 
 ## About the project
 
@@ -29,7 +31,7 @@ The city is the permanent foundation of the website. Opening Explore, Agent Stud
 | Treasury | Review accounting, receipts, and reconciliation information |
 | About | Learn about the project, ecosystem, and roadmap |
 
-Explore also includes Hot volume, Top market cap, Graduating soon, and Most holders sections. These currently show unavailable states because verified token-market data is not connected; agent activity is never presented as trading performance.
+Explore also includes Hot volume, Top market cap, Graduating soon, and Most holders sections. DEX Screener pool metrics and GeckoTerminal history are available only for supported verified markets. Holder counts and graduation percentages remain unavailable where sources do not support them; agent activity is never trading performance.
 
 ### How the living economy works
 
@@ -38,7 +40,7 @@ Explore also includes Hot volume, Top market cap, Graduating soon, and Most hold
 3. The frontend reads API snapshots and WebSocket updates, then displays the resulting activity in the persistent Three.js city.
 4. Environmental motion such as ambient transport adds life to the scene. Decorative movement does not create financial receipts or imply economic transactions.
 
-Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Future holder-access agents, rentable Super-Agents, funded $AECO rewards, and real token execution are roadmap items rather than enabled capabilities.
+Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Future holder-access agents, rentable Super-Agents, and funded $AECO rewards are roadmap items. Guarded token execution is verified in test environments and remains disabled on demo staging.
 
 ### Technology
 
@@ -52,11 +54,11 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 
 | Area | Implemented | Limits |
 | --- | --- | --- |
-| World | Procedural architecture, roads, animated water, railways, ambient transport, agent labels, inspection, camera controls, and a lake–river connector with bridges | Some newer terrain, boat, and navigation experiments remain outside the reviewed main release |
+| World | Procedural architecture, roads, animated water, railways, ambient transport, agent labels, inspection, camera controls, and a lake–river connector with bridges | Complete static-world readiness precedes the 2.6-second presentation reveal; ambient vehicles do not generate economic events |
 | Agents and economy | Authoritative assignments, travel, workplace activity, production, deliveries, maintenance, receipts, and observable work progress | Agents currently use a deterministic utility planner, not a live LLM service |
 | Communities and Explore | Grouped discovery sections, confirmed launch/community listings, search, agent rankings, and token details | Demo records are labelled; unavailable market statistics and charts are not invented |
-| Launch workspace | Publicly visible form and logo picker; wallet message authentication; owned drafts; verified image upload and IPFS metadata when configured | Disconnected primary action is **Connect wallet**; **Review token** saves details, uploads the logo, and prepares metadata automatically; transaction execution remains disabled |
-| Trading pairs | SOL draft selection | USDC execution is planned; optional AECO pairing is a future phase |
+| Launch workspace | Publicly visible form and logo picker; wallet message authentication; owned drafts; verified image upload and IPFS metadata when configured | Disconnected primary action is **Connect wallet**; **Create Coin** starts validation, deferred uploads, metadata and fee review on enabled test networks; wallet signing remains explicit; demo staging does not execute launches |
+| Trading pairs | SOL application flow; USDC protocol harness verified on devnet | USDC application selection remains disabled; optional AECO pairing is Phase 4 |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |
 
 Implemented code on main is **not necessarily deployed to staging**. See the release status below.
@@ -141,7 +143,7 @@ These two public addresses may also go in the main checkout's ignored
 building a local production preview. Local env files are not a Railway deployment
 configuration; staging retains its existing API and WebSocket addresses.
 
-Once connected, **Review token** saves the latest details, uploads the selected logo, prepares metadata, and opens the review in one action. Draft management and technical references are available under **Manage drafts & technical details**. If uploads are unavailable, the draft is saved and a plain retry notice appears.
+After authentication, **Create Coin** validates and saves details, uploads the selected logo, pins metadata, and prepares a transaction only on enabled test networks. The user reviews fees and explicitly approves wallet signing. Images stay local until that action. Demo staging keeps creation disabled while preview and text drafts remain available. Draft management and technical references are under **Manage drafts & technical details**; retries reuse saved receipts and the existing launch attempt.
 
 The frontend defaults to the local API. If custom configuration is needed, create `apps/web/.env.local` using [apps/web/.env.example](apps/web/.env.example), without overwriting existing settings:
 
@@ -227,9 +229,9 @@ It requires Chromium/Chrome (default `/usr/bin/google-chrome`, configurable with
 | `api.useaeco.xyz` | Production API, subject to separate production approval |
 | `api-staging.useaeco.xyz` | Staging API; WebSocket path `/api/v1/ws` |
 
-**Last verified 18 October 2026:** main uses contract 0.3.0; the running staging API still uses 0.2.0. Staging frontend/backend sources remain on the historical branches pending a coordinated transition. Production has no deployment triggers. These are dated observations, not permission to change production.
+**Last verified 19 October 2026:** both staging services deploy compatible contract 0.3.1 releases from `main`. Wallet-owned drafts, real Pinata integration and desktop Phantom authentication are verified. The Create Coin workflow is verified with real services on public devnet; demo staging keeps launches and financial operations disabled. Production has no deployment triggers. Verify actual deployed SHAs for each release; this is not production approval.
 
-Staging has migrations 001, 002, and 004; identity migration 003 is missing. The owner conditionally approved **003 on staging only**, after a current restorable backup, duplicate/conflict audit, and successful migration rehearsal on an isolated staging copy. Railway's backup inventory was empty, so the gate failed and no migration or coordinated deployment was performed. Do not deploy only the main frontend against the older staging contract.
+Migration 003 was applied to staging only after the approved backup/restore rehearsal and identity audit; migrations 001–004 are now represented in the compatible release. The 18 October release at `dd17c4f` retained existing agents and draft records. Older transition notes describe earlier blockers as historical checkpoints. No new migration is needed for the website content and preview update.
 
 **Starting a PostgreSQL-backed backend can run migrations automatically.** The Railway backend also has a pre-deploy migration command. Neither is exempt from approval. Do not apply 004 again, apply additional migrations, reset PostgreSQL, or change production as part of routine staging work.
 
@@ -248,7 +250,7 @@ git commit -m "fix(scope): describe the actual change"
 git diff-tree --no-commit-id --name-only -r HEAD
 ```
 
-After verifying production remains isolated and the complete series passes validation, use a normal `git push origin main`. Staging is intended to follow main only after the release gate passes; a successful push is not proof of deployment. Confirm actual deployed SHAs and live website/API/WebSocket behavior. See [AGENTS.md](AGENTS.md) for the permanent rules.
+After verifying production remains isolated and the complete series passes validation, use a normal `git push origin main`. Staging follows main after the release gate passes; a successful push is not proof of deployment. Confirm actual deployed SHAs and live website/API/WebSocket behavior. See [AGENTS.md](AGENTS.md) for the permanent rules.
 
 ## Troubleshooting
 
@@ -258,4 +260,4 @@ After verifying production remains isolated and the complete series passes valid
 - **Changes missing online:** compare GitHub main with actual Railway deployment SHAs and the release gate. Local changes or a successful Git push do not mean staging is serving them.
 - **Port already in use:** identify the existing process before replacing it; if using different ports, update frontend API/WebSocket addresses and backend authentication/CORS origins together.
 
-Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Staging deployment remains gated; market availability and verified receipts are never simulated as live data.
+Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Market availability and verified receipts are never simulated as live data; earned creator-fee settlement and production financial enablement remain gated.

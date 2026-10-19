@@ -1,4 +1,4 @@
-import {verifiedCreatorDistribution} from '../chain/creator-fees.js';
+import {distributionMint,verifiedCreatorDistribution} from '../chain/creator-fees.js';
 import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
   BPS_DENOMINATOR,
@@ -113,8 +113,9 @@ export class TreasuryService {
       try{
         const expected=this.config.mode==='production'?'5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d':this.config.solana.cluster==='localnet'?this.config.pumpLaunch.localGenesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
         if(!expected||tx.genesisHash!==expected)throw new Error('Receipt RPC genesis does not match this accounting network');
-        const ix=tx.instructions.find(i=>i.programId===PUMP_PROGRAM_ID&&i.discriminatorHex===PUMP_IX.distributeCreatorFeesV2);
-        const c=communities.find(c=>c.mint===ix?.accounts[1]&&c.feeSharingConfig===sharingConfigPda(c.mint));
+        // Either distribution ABI; the verifier below re-derives every account and reconciles every lamport.
+        const mint=distributionMint(tx);
+        const c=communities.find(c=>c.mint===mint&&c.feeSharingConfig===sharingConfigPda(c.mint));
         const launch=c?await this.store.getLaunch(c.launchId):null;
         if(!c||!launch||launch.launch.mode==='demo'||launch.launch.status!=='confirmed'||launch.launch.mint!==c.mint||launch.launch.signature!==c.launchSignature||launch.launch.communityId!==c.id)throw new Error('Distribution has no matching verified platform launch');
         const d=verifiedCreatorDistribution(tx,launch.launch.fees.platformTreasury,launch.launch.fees.creatorFeeSplit.agentRewardsTreasury);

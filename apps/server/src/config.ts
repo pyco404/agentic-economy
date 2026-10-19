@@ -47,6 +47,12 @@ const Env = z.object({
   HOUSE_AGENTS_MAX: z.coerce.number().int().min(0).default(60),
   SESSION_TTL_SECONDS: z.coerce.number().int().min(60).default(12 * 3600),
   CHALLENGE_TTL_SECONDS: z.coerce.number().int().min(30).default(300),
+  /** Off by default: enabling it deletes expired sign-in rows from the configured database. */
+  AUTH_PRUNE_ENABLED: z.enum(["true", "false"]).default("false"),
+  AUTH_PRUNE_GRACE_SECONDS: z.coerce.number().int().min(3600).default(86_400),
+  AUTH_PRUNE_BATCH: z.coerce.number().int().min(1).max(5000).default(500),
+  AUTH_PRUNE_MAX_BATCHES: z.coerce.number().int().min(1).max(100).default(20),
+  AUTH_PRUNE_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(900),
   AUTH_DOMAIN: z.string().default("localhost"),
   AUTH_URI: z.string().default("http://localhost:5173"),
   CORS_ORIGINS: z.string().default("http://localhost:5173,http://127.0.0.1:5173"),
@@ -56,6 +62,8 @@ const Env = z.object({
   PUMP_LAUNCH_LOOKUP_TABLE: PublicKey.optional(),
   /** TOKEN/USDC launches. Default off; effective only where PUMP_LAUNCH_ENABLED already applies. */
   USDC_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
+  /** Commitment a launch needs before its community is registered (immutable). Production always requires finalized. */
+  LAUNCH_REGISTRATION_COMMITMENT: z.enum(["confirmed", "finalized"]).optional(),
   PUMP_LOCAL_GENESIS_HASH: PublicKey.optional(),
   PINATA_JWT: z.string().optional(),
   IPFS_GATEWAY: z.string().url().default("https://gateway.pinata.cloud"),
@@ -95,10 +103,13 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (e.PLATFORM_TREASURY && e.PLATFORM_TREASURY === e.AGENT_REWARDS_TREASURY)
     throw new Error("PLATFORM_TREASURY and AGENT_REWARDS_TREASURY must be distinct accounts");
 
+  if (e.MODE === "production" && e.LAUNCH_REGISTRATION_COMMITMENT === "confirmed")
+    throw new Error("MODE=production registers launches only at finalized commitment");
   const feeRoutingVerified = e.FEE_ROUTING_VERIFIED === "true";
   return {
     mode: e.MODE,
     role: e.ROLE as Role,
+    launchRegistrationCommitment: e.LAUNCH_REGISTRATION_COMMITMENT ?? (e.MODE === "production" ? "finalized" : "confirmed"),
     host: e.HOST,
     port: e.PORT,
     databaseUrl: e.DATABASE_URL ?? null,
@@ -125,6 +136,13 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       challengeTtlSeconds: e.CHALLENGE_TTL_SECONDS,
       domain: e.AUTH_DOMAIN,
       uri: e.AUTH_URI,
+      prune: {
+        enabled: e.AUTH_PRUNE_ENABLED === "true",
+        graceSeconds: e.AUTH_PRUNE_GRACE_SECONDS,
+        batch: e.AUTH_PRUNE_BATCH,
+        maxBatches: e.AUTH_PRUNE_MAX_BATCHES,
+        intervalSeconds: e.AUTH_PRUNE_INTERVAL_SECONDS,
+      },
     },
     corsOrigins: e.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
     feeRoutingVerified,

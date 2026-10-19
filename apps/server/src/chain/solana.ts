@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { AddressLookupTableProgram, Connection, PublicKey, VersionedTransaction, type VersionedTransactionResponse } from "@solana/web3.js";
 import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
 import { anchorAccountDiscriminator, bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
+import sdk from "./pump-sdk.cjs";
 import { ChainFeatureUnavailable, type BuildLaunchInput, type BuiltLaunchTransaction, type ChainGateway, type FeeRoutingState, type ObservedTransaction, type TokenBalance } from "./types.js";
 
 /**
@@ -53,10 +54,14 @@ export class SolanaRpcChain implements ChainGateway {
     if(sc && sc.owner.toBase58()!==PUMP_FEES_PROGRAM_ID)throw new Error('Sharing config account has an unexpected program owner');
     if(bc && bc.owner.toBase58()!==PUMP_PROGRAM_ID)throw new Error('Bonding curve account has an unexpected program owner');
     const curve = bc ? decodeBondingCurveCreator(bc.data) : null;
+    let quoteMint: string | null = null;
+    // The official decoder knows the current curve layout, including its quote mint.
+    if (bc) try { quoteMint = sdk.PUMP_SDK.decodeBondingCurve(bc).quoteMint.toBase58(); } catch { quoteMint = null; }
     return {
       sharingConfig: sc ? decodeSharingConfig(scAddr, sc.data) : null,
       bondingCurveCreator: curve?.creator ?? null,
       bondingCurveComplete: curve?.complete ?? null,
+      bondingCurveQuoteMint: quoteMint,
     };
   }
 
@@ -87,8 +92,21 @@ export class SolanaRpcChain implements ChainGateway {
     if(!expected||genesis!==expected||genesis==="5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d")throw new ChainFeatureUnavailable("unsafe_launch_network","RPC genesis does not match the configured safe testing network");
     return genesis;
   }
+  async verifyQuoteMint(mint: string): Promise<void> {
+    const quote = new PublicKey(mint);
+    const global = await this.conn.getAccountInfo(sdk.GLOBAL_PDA, "confirmed");
+    if (!global || global.owner.toBase58() !== PUMP_PROGRAM_ID) throw new ChainFeatureUnavailable("quote_unverified", "Pump Global account is missing on this network");
+    if (!sdk.PUMP_SDK.decodeGlobal(global).whitelistedQuoteMints.some((m: PublicKey) => m.equals(quote)))
+      throw new ChainFeatureUnavailable("quote_unverified", "This network's Pump Global allowlist does not include the configured USDC mint");
+    const info = (await this.conn.getParsedAccountInfo(quote, "confirmed")).value;
+    const parsed = info && "parsed" in info.data ? (info.data.parsed as { type?: string; info?: { decimals?: number; isInitialized?: boolean } }) : null;
+    if (!info || info.owner.toBase58() !== "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" || parsed?.type !== "mint" || parsed.info?.decimals !== 6 || !parsed.info.isInitialized)
+      throw new ChainFeatureUnavailable("quote_unverified", "The configured USDC quote is not an initialized six-decimal SPL Token mint");
+  }
+
   async buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction> {
     const genesisHash=await this.launchGenesis(),address=new PublicKey(this.launchOptions!.lookupTable!);
+    if(input.quoteAsset==="USDC")await this.verifyQuoteMint(input.quoteMint??"");
     const info=await this.conn.getAccountInfo(address,"confirmed");
     if(!info||!info.owner.equals(AddressLookupTableProgram.programId))throw new ChainFeatureUnavailable("invalid_lookup_table","Launch lookup table has an invalid owner or is missing");
     const table=(await this.conn.getAddressLookupTable(address)).value;

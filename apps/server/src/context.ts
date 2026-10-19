@@ -10,6 +10,7 @@ import { CityRuntime, type Logger } from "./runtime.js";
 import { AuthService } from "./services/auth.js";
 import { AgentService, CommunityService, EligibilityService } from "./services/community.js";
 import { IndexerWorker, TreasuryIndexer } from "./services/indexer.js";
+import { AuthPruner } from "./services/auth-pruner.js";
 import { LaunchService } from "./services/launch.js";
 import { TreasuryService } from "./services/treasury.js";
 import { MemoryStore } from "./store/memory.js";
@@ -31,6 +32,8 @@ export interface AppContext {
   agents: AgentService;
   /** Present when this process runs the treasury indexer (ROLE=indexer, or ROLE=all outside demo). */
   indexer: IndexerWorker | null;
+  /** Present when AUTH_PRUNE_ENABLED=true on a process that serves the API. */
+  authPruner: AuthPruner | null;
   /** Mutated by the WebSocket gateway. */
   wsStats: { connections: number };
   close(): Promise<void>;
@@ -94,6 +97,8 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
       )
     : null;
 
+  const authPruner = config.auth.prune.enabled && (config.role === "api" || config.role === "all") ? new AuthPruner(store, config.auth.prune, logger) : null;
+
   return {
     config,
     store,
@@ -108,9 +113,11 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     eligibility,
     agents,
     indexer,
+    authPruner,
     wsStats: { connections: 0 },
     async close() {
       await indexer?.stop();
+      await authPruner?.stop();
       await runtime.stop();
       await coord.close();
       await store.close();

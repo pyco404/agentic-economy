@@ -1,3 +1,4 @@
+import {routeUrl} from "../navigation/routes";
 import {useEffect,useRef,useState} from 'react';
 import {LaunchResponse,PrepareLaunchResponse,type SavedLaunchDraft,type TokenLaunch} from '../api/shared';
 import {jsonRequest,launchpadRequest,useWalletSession} from '../api/walletSession';
@@ -64,7 +65,7 @@ export function LaunchExecution({draft,autoPrepare=false,onBusyChange,onLockChan
    {onEdit&&!busy&&!submissionUncertain&&((!launch.signature&&['awaiting_signature','expired'].includes(launch.status))||launch.status==='failed')&&<button className="text-button" onClick={onEdit}>Edit token details</button>}
    <button className="secondary" disabled={busy} onClick={check}>Check launch status</button>
    {['expired','failed'].includes(launch.status)&&<button className="secondary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare a new attempt</button>}
-   {launch.status==='confirmed'&&<><p>Token creation verified. <a href={`#explore/${encodeURIComponent(launch.mint)}`}>View in Explore</a></p><p className="small ui-select-text">Mint: {launch.mint}</p>{launch.execution?.network==='devnet'&&<a href={`https://explorer.solana.com/tx/${launch.signature}?cluster=devnet`} target="_blank" rel="noreferrer">Confirmed transaction</a>}{onNewCoin&&<button className="secondary" onClick={onNewCoin}>Create another coin</button>}</>}
+   {launch.status==='confirmed'&&<><p>Token creation verified. <a href={routeUrl("explore", launch.mint)}>View in Explore</a></p><p className="small ui-select-text">Mint: {launch.mint}</p>{launch.execution?.network==='devnet'&&<a href={`https://explorer.solana.com/tx/${launch.signature}?cluster=devnet`} target="_blank" rel="noreferrer">Confirmed transaction</a>}{onNewCoin&&<button className="secondary" onClick={onNewCoin}>Create another coin</button>}</>}
    {launch.status==='recovery_needed'&&<p role="alert">The transaction landed, but platform verification needs recovery. Do not launch or pay again.</p>}
   </>}
   {error&&<><p role="alert">{error}</p><button className="secondary" disabled={busy} onClick={launch||savedId.current?check:prepare}>{launch||savedId.current?'Retry status check':'Retry preparation'}</button></>}

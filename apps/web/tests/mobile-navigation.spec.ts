@@ -17,18 +17,18 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   await expect(dialog).toBeVisible(); await expect(dialog).toHaveAttribute("aria-modal", "true");
   await expect(page.locator(".app")).toHaveAttribute("inert", "");
   await expect(dialog.getByRole("button", { name: "Close navigation" })).toBeFocused();
-  const links = dialog.locator("nav a"), boxes = await links.evaluateAll((nodes) => nodes.map((node) => {
+  const links = dialog.locator(".mobile-navigation-pages a"), boxes = await links.evaluateAll((nodes) => nodes.map((node) => {
     const rect = node.getBoundingClientRect(); return { y: rect.y, x: rect.x, height: rect.height, width: rect.width };
   }));
-  expect(boxes).toHaveLength(6);
-  await expect(links).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury"]);
+  expect(boxes).toHaveLength(7);
+  await expect(links).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Roadmap"]);
   for (let i = 0; i < boxes.length; i++) {
     expect(boxes[i]!.height).toBeGreaterThanOrEqual(44);
     expect(boxes[i]!.width).toBeGreaterThan(220);
     if (i) expect(boxes[i]!.y).toBeGreaterThanOrEqual(boxes[i - 1]!.y + boxes[i - 1]!.height);
   }
   await page.keyboard.press("Shift+Tab");
-  await expect(dialog.getByRole("link", { name: "About the world" })).toBeFocused();
+  await expect(dialog.getByRole("link", { name: "View Agentic Economy on GitHub" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(dialog.getByRole("button", { name: "Close navigation" })).toBeFocused();
   await page.keyboard.press("Escape");
@@ -38,7 +38,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   await page.mouse.click(5, width === 390 ? 800 : 900);
   await expect(dialog).toHaveCount(0); await expect(toggle).toBeFocused();
   for (const [label, route] of [["Launch", "launchpad"], ["Explore", "explore"], ["Communities", "communities"], ["Agent Studio", "studio"],
-    ["Economy", "economy"], ["Treasury", "treasury"]]) {
+    ["Economy", "economy"], ["Treasury", "treasury"], ["Roadmap", "roadmap"]]) {
     await toggle.press("Enter");
     await dialog.getByRole("link", { name: label, exact: true }).press("Enter");
     await expect(dialog).toHaveCount(0); expect(new URL(page.url()).hash).toBe(`#${route}`);
@@ -60,7 +60,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   await toggle.press("Enter"); await page.setViewportSize({ width: 1200, height: 1000 });
   await expect(dialog).toHaveCount(0); await expect(page.locator(".app")).not.toHaveAttribute("inert", "");
   await expect(page.getByRole("link", { name: "Explore", exact: true })).toBeVisible();
-  await expect(page.locator("nav.nav a")).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury"]);
+  await expect(page.locator("nav.nav a")).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Roadmap"]);
 });
 
 test("mobile menu scrolls in short viewports and respects reduced motion", async ({ page }) => {

@@ -21,12 +21,17 @@ for (const width of [1440, 820, 390]) test(`one activity scroller and bottom Sho
   else if (await expand.isVisible()) await expand.press("Enter");
   await expect.poll(() => panel.locator(".feed-item").count(), { timeout: 30000 }).toBeGreaterThan(5);
   const initial = (await reopen.boundingBox())!;
-  expect((width === 390 ? 844 : 1000) - initial.y - initial.height).toBeCloseTo(width === 390 ? 84 : 20, 0);
+  expect((width === 390 ? 844 : 1000) - initial.y - initial.height).toBeCloseTo(width === 390 ? 84 : width === 820 ? 104 : 20, 0);
   if (width === 390) {
     const stats = (await page.locator(".world-bottom").boundingBox())!;
     expect(stats.height).toBe(48);
     expect(initial.height).toBe(44);
     expect(initial.y + initial.height).toBeLessThanOrEqual(stats.y - 8);
+  }
+  if (width === 820) {
+    const stats = (await page.locator(".world-bottom").boundingBox())!;
+    expect(initial.y + initial.height).toBeLessThanOrEqual(stats.y - 8);
+    expect(initial.x + initial.width).toBeCloseTo(stats.x + stats.width, 0);
   }
   const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
     a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;

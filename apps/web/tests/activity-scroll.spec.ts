@@ -13,13 +13,21 @@ for (const width of [1440, 820, 390]) test(`one activity scroller and bottom Sho
   await expect(page.getByTestId("connection-status")).toHaveCount(0);
   await expect.poll(async () => Number(await page.getByTestId("city-canvas").getAttribute("data-rendered-buildings")), { timeout: 60000 }).toBeGreaterThan(100);
   await page.getByRole("button", { name: "Close page and view city" }).press("Enter");
+  await expect(page.getByTestId("connection-status")).toContainText("connected", { timeout: 60000 });
   const reopen = page.getByRole("button", { name: "Show page", exact: true });
   const panel = page.getByRole("complementary", { name: "City activity panel", exact: true });
   const expand = page.getByRole("button", { name: "Expand city activity" });
-  if (await expand.isVisible()) await expand.press("Enter");
+  if (width === 390) await expand.click({ timeout: 120000 });
+  else if (await expand.isVisible()) await expand.press("Enter");
   await expect.poll(() => panel.locator(".feed-item").count(), { timeout: 30000 }).toBeGreaterThan(5);
   const initial = (await reopen.boundingBox())!;
-  expect((width === 390 ? 844 : 1000) - initial.y - initial.height).toBeCloseTo(20, 0);
+  expect((width === 390 ? 844 : 1000) - initial.y - initial.height).toBeCloseTo(width === 390 ? 84 : 20, 0);
+  if (width === 390) {
+    const stats = (await page.locator(".world-bottom").boundingBox())!;
+    expect(stats.height).toBe(48);
+    expect(initial.height).toBe(44);
+    expect(initial.y + initial.height).toBeLessThanOrEqual(stats.y - 8);
+  }
   const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
     a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
   for (const selector of [".world-bottom", ".camera-tools", ".world-view-toggle", ".world-footer"]) {

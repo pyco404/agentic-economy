@@ -37,7 +37,7 @@ after a browser refresh; uploaded receipts and owned drafts persist.
 No backend behavior, shared contracts, migrations, financial constants, world
 geometry, camera logic or reveal code changes. No production hosting or DNS change.
 Canonical production metadata is identity information, not a redirect from staging.
-Public social-card image availability still depends on approved production hosting.
+The approved social-card screenshot is explicitly included in the frontend Docker context; other screenshots remain excluded. Public canonical social-card availability still depends on approved production hosting.
 
 ## Verification
 
@@ -58,8 +58,13 @@ Public social-card image availability still depends on approved production hosti
   eight-phase roadmap across desktop, laptop, tablet and phone orientations.
 - An initial browser run timed out waiting for the full page load event, despite
   an already running city. The updated roadmap test waits for DOM content and the
-  actual FULLY_ACTIVE scene state. The local deterministic harness isolates optional
-  third-party font DNS; production font and world-loading code are unchanged.
+  actual FULLY_ACTIVE scene state. An initial harness isolated third-party font DNS.
+  Live verification then found intermittent desktop startup while external fonts
+  were loading. The approved DM Sans and Libre Caslon Display files are now served
+  locally, unchanged, with their OFL licenses. The DNS override was removed: six
+  follow-up cases passed across all five viewports and guarded wallet signing,
+  verifying actual local font loading without Google requests. World-loading code
+  remains unchanged.
 
 Screenshots are generated under `apps/web/artifacts/product-*` for Home, Launch,
 Explore, About and Roadmap. Fixture, mocked-provider and live-staging evidence are
@@ -81,3 +86,5 @@ Prior real external-service evidence remains in the
 [blockchain audit](../../server/docs/phase2-final-blockchain-audit.md) and
 [Create Coin verification](create-coin-workflow.md). This content update creates no
 additional real launch, charge, claim or payout.
+
+Font sources and redistribution licenses: [DM Sans](https://github.com/google/fonts/blob/main/ofl/dmsans/OFL.txt) and [Libre Caslon Display](https://github.com/google/fonts/blob/main/ofl/librecaslondisplay/OFL.txt). Original Google Fonts CSS subsets are retained without conversion or modification.

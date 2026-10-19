@@ -22,7 +22,7 @@ export function LaunchWorkspace() {
  const [fields,setFields] = useState<Fields>(empty), [busy,setBusy] = useState(false), [error,setError] = useState(''), [message,setMessage] = useState('');
  const [review,setReview] = useState<z.infer<typeof DraftReview>|null>(null), [uploads,setUploads] = useState<boolean|null>(null);
  const [maxBytes,setMaxBytes] = useState(5_000_000), [memoryStorage,setMemoryStorage] = useState(false), [logoScope,setLogoScope] = useState(newScope);
- const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false);
+ const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false),[usdcEnabled,setUsdcEnabled]=useState(false);
  const flowActive=review?.launchEnabled===true;
  const [phase,setPhase] = useState<PreparationStage|null>(null), [progress,setProgress] = useState<number|null>(null), [removed,setRemoved] = useState(false);
  const [legacyName] = useDraftField('launchpad:name',''), [legacySymbol] = useDraftField('launchpad:symbol',''), [legacyDescription] = useDraftField('launchpad:description','');
@@ -37,8 +37,8 @@ export function LaunchWorkspace() {
  useEffect(() => {
   const version=++generation.current;
   if(previousOwner.current && previousOwner.current!==owner){selected.current=null;setLocalFile(null);setFields(empty);setRemoved(false);setLogoScope(newScope());}
-  previousOwner.current=owner;keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);
-  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
+  previousOwner.current=owner;keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setUsdcEnabled(false);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);
+  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setUsdcEnabled(c.quotes.USDC==='draft');setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
   if(owner)void launchpadRequest(base,z.object({items:z.array(SavedLaunchDraft)})).then(result=>{if(version===generation.current)setItems(result.items);}).catch(e=>{if(version===generation.current)setError(friendlyError(e));});
   return()=>{controller.current?.abort();};
  },[owner,base]);
@@ -99,7 +99,7 @@ export function LaunchWorkspace() {
      <label>Symbol<input required maxLength={13} pattern="[A-Za-z0-9$_.\-]+" value={fields.symbol} placeholder="e.g. MOSS" onChange={e=>edit('symbol',e.target.value)}/></label>
      <label>Description<textarea maxLength={1000} rows={4} value={fields.description} placeholder="What are you building?" onChange={e=>edit('description',e.target.value)}/></label>
      <details><summary>Project links (optional)</summary>{(['website','twitter','telegram']as const).map(key=><label key={key}>{key==='twitter'?'X profile':key}<input type="url" value={fields[key]??''} placeholder="https://…" onChange={e=>edit(key,e.target.value)}/></label>)}</details>
-     <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} onChange={()=>{}}/>
+     <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} usdcEnabled={usdcEnabled} onChange={quote=>{if(quote==='SOL'||quote==='USDC')edit('quoteAsset',quote);}}/>
      <LaunchLogoUpload key={logoScope} selectionOnly disabled={busy||executionBusy||flowActive} onValidationChange={setLogoValidating} automaticMetadata={false} name={fields.name} symbol={fields.symbol} description={fields.description} quoteAsset={fields.quoteAsset}
       imageUrl={removed?'':draft?.image?.ipfsUri??''} trustedImage={removed?null:draft?.image??null} scope={logoScope} maxBytes={maxBytes}
       onFileChange={file=>{setLocalFile(file);selected.current=file?{file,key:crypto.randomUUID()}:null;setReview(null);setError('');setMessage('');}}

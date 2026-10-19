@@ -17,6 +17,13 @@ describe("launch quote boundary", () => {
       expect(launchQuoteError(asset)).toContain("explicitly");
     }
   });
+  it("offers USDC only when the backend reports it enabled, and AECO never", () => {
+    expect(launchQuote("USDC", true)?.draftAvailable).toBe(true);
+    expect(launchQuoteError("USDC", true)).toBeNull();
+    expect(launchQuote("USDC", true)?.requirement).toContain("0.05 SOL launch charge is still paid in SOL");
+    expect(launchQuote("AECO", true)?.draftAvailable).toBe(false);
+    expect(launchQuoteError("AECO", true)).toContain("explicitly");
+  });
   it("rejects arbitrary mints, malformed preferences and unknown discriminants", () => {
     for (const invalid of ["", "sol", "BTC", "__proto__", null, 1, { asset: "SOL" },
       "So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"]) {

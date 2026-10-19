@@ -37,7 +37,7 @@ import {
 import { createAdapter, numericSeed } from "./api/adapter";
 import { displayActivity, type IdentityAgent } from "./api/agentIdentity";
 import { useWorld } from "./api/useWorld";
-import { readRoute, routeUrl, type Page } from "./navigation/routes";
+import { canonicalRouteUrl, readRoute, routePath, routeUrl, type Page } from "./navigation/routes";
 import { hasMemoryOnlyDrafts, useDraftUnloadGuard } from "./navigation/drafts";
 import { City, type CityHandle } from "./world/City";
 import { generateWorld, WORLD_SEED, type BuildingVisual } from "./world/layout";
@@ -155,23 +155,33 @@ export default function App() {
   useEffect(() => {
     const sync = () => {
       const route = readRoute(window.location);
-      if (route.page === "world" || window.location.pathname === "/world")
-        window.history.replaceState(null, "", routeUrl(route.page, route.mint));
+      const canonical = canonicalRouteUrl(window.location);
+      if (canonical !== window.location.pathname + window.location.search + window.location.hash)
+        window.history.replaceState(null, "", canonical);
       setPage(route.page); setPageOpen(true); setTokenMint(route.mint);
       setSelected(null); setHover(null); setAgentId(null); setMenu(false); setImmersive(false);
     };
-    if (readRoute(window.location).page === "world" || window.location.pathname === "/world")
-      window.history.replaceState(null, "", routeUrl(readRoute(window.location).page, readRoute(window.location).mint));
+    sync();
     window.addEventListener("hashchange", sync);
     window.addEventListener("popstate", sync);
     return () => { window.removeEventListener("hashchange", sync); window.removeEventListener("popstate", sync); };
   }, []);
   useEffect(() => {
+    const canonical = new URL(routePath(page, tokenMint), "https://useaeco.xyz").href;
+    document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute("href", canonical);
+    document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute("content", canonical);
+  }, [page, tokenMint]);
+  useEffect(() => {
     document.getElementById("main")?.scrollTo(0, 0);
     // The destination receives focus without moving the camera or scrolling the page.
     const frame = requestAnimationFrame(() => {
       if (worldVisible) document.querySelector<HTMLCanvasElement>(".global-world-layer canvas")?.focus({ preventScroll: true });
-      else (document.querySelector<HTMLButtonElement>(".community-dialog .page-close") ?? document.querySelector<HTMLButtonElement>(".page-close"))?.focus({ preventScroll: true });
+      else {
+        (document.querySelector<HTMLButtonElement>(".community-dialog .page-close") ?? document.querySelector<HTMLButtonElement>(".page-close"))?.focus({ preventScroll: true });
+        if (window.location.hash) {
+          try { document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView({ block: "start" }); } catch { /* Ignore malformed section anchors. */ }
+        }
+      }
     });
     return () => cancelAnimationFrame(frame);
   }, [page, tokenMint, loading, worldVisible]);
@@ -245,6 +255,18 @@ export default function App() {
   return (
     <div
       className="app"
+      onClick={(event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const anchor = (event.target as Element).closest<HTMLAnchorElement>("a[href]");
+        if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
+        const url = new URL(anchor.href);
+        if (url.origin !== window.location.origin || url.hash) return;
+        const route = readRoute(url);
+        if (routePath(route.page, route.mint) !== url.pathname || url.search !== window.location.search) return;
+        event.preventDefault();
+        if (route.page === "explore" && route.mint) openToken(route.mint);
+        else go(route.page);
+      }}
       data-route={worldVisible ? "world" : page}
       data-world-ready={(!data && !world) || worldReady}
       data-page={page}

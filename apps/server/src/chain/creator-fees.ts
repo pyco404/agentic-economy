@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {PublicKey} from '@solana/web3.js';
-import {PUMP_PROGRAM_ID,SYSTEM_PROGRAM_ID,WRAPPED_SOL_MINT} from '@agentic-economy/shared';
+import {PUMP_AMM_PROGRAM_ID,PUMP_PROGRAM_ID,SYSTEM_PROGRAM_ID,WRAPPED_SOL_MINT} from '@agentic-economy/shared';
 import {bondingCurvePda,creatorVaultPda,PUMP_IX,sharingConfigPda} from './pump.js';
 import type {ObservedTransaction} from './types.js';
 import {USDC_QUOTE_MINTS} from '../config.js';
@@ -9,6 +9,9 @@ export const USDC_MINT='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 /** USDC quote mints per network (mainnet, and devnet/localnet's allowlisted mint). */
 const USDC_MINTS:readonly string[]=Object.values(USDC_QUOTE_MINTS);
 const DIST_V1=PUMP_IX.distributeCreatorFees,DIST_V2=PUMP_IX.distributeCreatorFeesV2;
+/** pump-amm transfer_creator_fees_to_pump: after graduation the SDK moves the pool's SOL creator fees (wrapped SOL
+ * held for the sharing config) into Pump's creator vault, in the same transaction, before distributing. */
+const CONSOLIDATE='8b348655e4e56cf1';
 /** Mint of a transaction's single Pump creator-fee distribution (either ABI), or null. */
 export function distributionMint(tx:Pick<ObservedTransaction,'instructions'>):string|null{
  const ix=tx.instructions.find(i=>i.programId===PUMP_PROGRAM_ID&&(i.discriminatorHex===DIST_V1||i.discriminatorHex===DIST_V2));
@@ -17,14 +20,15 @@ export function distributionMint(tx:Pick<ObservedTransaction,'instructions'>):st
 const eventPrefix=Buffer.concat([Buffer.from('e445a52e51cb9a1d','hex'),createHash('sha256').update('event:DistributeCreatorFeesEvent').digest().subarray(0,8)]);
 export function associatedAccount(owner:string,mint:string){return PublicKey.findProgramAddressSync([new PublicKey(owner).toBuffer(),new PublicKey(TOKEN).toBuffer(),new PublicKey(mint).toBuffer()],new PublicKey(ATA))[0].toBase58();}
 /** Official distribute_creator_fees (SOL-only; the SDK's standard path for SOL coins) and distribute_creator_fees_v2.
- * Conservative one-distribution envelope; complex batches
- * and unknown ABI/quote assets remain unaccounted, never inferred from balances.
+ * Conservative one-distribution envelope, optionally preceded by one canonical post-graduation SOL consolidation;
+ * other batches (e.g. sweeps) and unknown ABI/quote assets remain unaccounted, never inferred from balances.
  * The CPI event is authenticated by Pump's event-authority PDA, not text log content.
  */
 export function verifiedCreatorDistribution(tx:ObservedTransaction,platform:string,agent:string){
  if(tx.source!=='solana_rpc'||tx.err!==null||platform===agent)throw new Error('Not successful RPC evidence');
  const distributions=tx.instructions.filter(i=>i.programId===PUMP_PROGRAM_ID&&(i.discriminatorHex===DIST_V1||i.discriminatorHex===DIST_V2));
- if(distributions.length!==1||tx.instructions.some(i=>i!==distributions[0]&&i.programId!=='ComputeBudget111111111111111111111111111111'))throw new Error('Unsupported distribution transaction envelope');
+ const consolidations=tx.instructions.filter(i=>i.programId===PUMP_AMM_PROGRAM_ID&&i.discriminatorHex===CONSOLIDATE);
+ if(distributions.length!==1||consolidations.length>1||tx.instructions.some(i=>i!==distributions[0]&&i!==consolidations[0]&&i.programId!=='ComputeBudget111111111111111111111111111111'))throw new Error('Unsupported distribution transaction envelope');
  const ix=distributions[0]!,a=ix.accounts,v1=ix.discriminatorHex===DIST_V1,mint=(v1?a[0]:a[1])!,sc=sharingConfigPda(mint),vault=creatorVaultPda(sc);
  const programPda=(seed:string)=>PublicKey.findProgramAddressSync([Buffer.from(seed)],new PublicKey(PUMP_PROGRAM_ID))[0].toBase58();
  const data=Buffer.from(ix.dataBase64??'','base64');
@@ -53,14 +57,28 @@ export function verifiedCreatorDistribution(tx:ObservedTransaction,platform:stri
  const normalizedQuote=eventQuote===SYSTEM_PROGRAM_ID?WRAPPED_SOL_MINT:eventQuote;
  if(offset!==b.length||normalizedQuote!==quote||shares[0]!.address!==holders[0]||shares[1]!.address!==holders[1]||!shares.some(s=>s.address===agent&&s.bps===6000)||!shares.some(s=>s.address===platform&&s.bps===4000))throw new Error('Event shares/quote mismatch');
  const payouts=shares.map(s=>({...s,amount:total*BigInt(s.bps)/10000n})),paid=payouts.reduce((n,p)=>n+p.amount,0n);
+ // Consolidation accounts: wsol mint, token, system, ATA, coin creator (= sharing config), its pump-amm vault
+ // authority, that authority's wrapped-SOL account, Pump creator vault, pump-amm event authority, pump-amm.
+ let consolidated=0n;
+ const c=consolidations[0];
+ if(c){
+  const amm=(seeds:Buffer[])=>PublicKey.findProgramAddressSync(seeds,new PublicKey(PUMP_AMM_PROGRAM_ID))[0].toBase58();
+  const authority=amm([Buffer.from('creator_vault'),new PublicKey(sc).toBuffer()]),source=associatedAccount(authority,WRAPPED_SOL_MINT),ca=c.accounts;
+  if(quote!==WRAPPED_SOL_MINT||c.ixIndex>ix.ixIndex||Buffer.from(c.dataBase64??'','base64').length!==8)throw new Error('Unsupported creator-fee consolidation');
+  if(ca.length!==10||ca[0]!==WRAPPED_SOL_MINT||ca[1]!==TOKEN||ca[2]!==SYSTEM_PROGRAM_ID||ca[3]!==ATA||ca[4]!==sc||ca[5]!==authority||ca[6]!==source||ca[7]!==vault||ca[8]!==amm([Buffer.from('__event_authority')])||ca[9]!==PUMP_AMM_PROGRAM_ID)throw new Error('Noncanonical consolidation accounts');
+  const t=tx.tokenAccounts?.[source];
+  if(!t||t.owner!==authority||t.mint!==WRAPPED_SOL_MINT||t.pre<t.post)throw new Error('Consolidation source mismatch');
+  consolidated=t.pre-t.post;
+ }
  if(quote===WRAPPED_SOL_MINT){
-  if((tx.lamportDeltas[vault]??0n)!==-paid)throw new Error('Creator vault debit mismatch');
+  // The vault receives the consolidated pool fees (if any) and pays out exactly the distributed shares.
+  if((tx.lamportDeltas[vault]??0n)!==consolidated-paid)throw new Error('Creator vault debit mismatch');
   for(const p of payouts){const delta=(tx.lamportDeltas[p.address]??0n)+(tx.feePayer===p.address?(tx.feeLamports??0n):0n);if(delta!==p.amount)throw new Error('Recipient lamports do not reconcile');}
  }else{
   const source=tx.tokenAccounts?.[a[8]!];if(!source||source.owner!==vault||source.mint!==quote||source.decimals!==6||source.pre-source.post!==paid)throw new Error('Quote vault debit mismatch');
   for(let i=0;i<2;i++){const p=payouts[i]!,dest=associatedAccount(p.address,quote),t=tx.tokenAccounts?.[dest];if(a[14+i]!==dest||!t||t.owner!==p.address||t.mint!==quote||t.decimals!==6||t.post-t.pre!==p.amount)throw new Error('Quote recipient balance mismatch');}
  }
- return {mint,quote,decimals:quote===WRAPPED_SOL_MINT?9:6,symbol:quote===WRAPPED_SOL_MINT?'SOL':'USDC',ixIndex:ix.ixIndex,total,dust:total-paid,payouts};
+ return {mint,quote,decimals:quote===WRAPPED_SOL_MINT?9:6,symbol:quote===WRAPPED_SOL_MINT?'SOL':'USDC',ixIndex:ix.ixIndex,total,dust:total-paid,consolidated,payouts};
 }
 // Explicit discriminator helper for test fixtures; not accepted as RPC evidence by itself.
 export const distributionEventPrefix=()=>Buffer.from(eventPrefix);

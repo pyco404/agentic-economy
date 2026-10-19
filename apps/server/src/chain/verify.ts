@@ -103,7 +103,9 @@ export function verifyLaunch(exp: LaunchExpectation, tx: ObservedTransaction | n
         message: `shareholders must be exactly agent-rewards 6000 bps + platform 4000 bps (launcher 0); got ${sc.shareholders.map((h) => `${h.address}:${h.shareBps}`).join(", ")}`,
       });
   }
-  const curveQuote = r.bondingCurveQuoteMint ?? null;
+  // A legacy/unset curve quote (all-zero address) means SOL, as Pump's SDK normalizes it.
+  const rawQuote = r.bondingCurveQuoteMint ?? null;
+  const curveQuote = rawQuote === "11111111111111111111111111111111" ? "So11111111111111111111111111111111111111112" : rawQuote;
   if (exp.quoteMint && (curveQuote !== null ? curveQuote !== exp.quoteMint : exp.quoteRequired))
     issues.push({ code: "quote_mint_mismatch", message: `bonding curve quote mint ${curveQuote ?? "unknown"} is not the prepared ${exp.quoteMint}` });
   if (r.bondingCurveCreator !== exp.sharingConfig)

@@ -293,7 +293,7 @@ export function Studio({
       <PageHeading
         eyebrow="AUTONOMY, WITH INTENTION"
         title="Meet your next city worker."
-        description="Explore supported city workers today. Holder-access Common Agents and a separate rentable Super-Agent class are planned; neither entitlement system is live."
+        description="Inspect rule-based agents, their assignments and verified simulation work today. Holder-access Common Agents and a separate rentable Super-Agent class are planned; neither entitlement system is live."
       />
       <Notice>Common Agents are planned for qualifying holdings; Super Agents are a separate future class rented by locking $AECO. Multiple holder-based positions and rentals are not enabled in today’s demo.</Notice>
       <div className="two-column">
@@ -301,7 +301,7 @@ export function Studio({
           <h2>Agent configuration</h2>
           <p className="small draft-storage" role="note">{nameSaved && communitySaved && professionSaved && riskSaved && temperamentSaved && objectiveSaved && budgetSaved ? "Configuration fields are retained in this browser tab. Eligibility and activation must be checked again; no agent has been created by saving this draft." : "Browser storage unavailable. Configuration stays in this running app; refreshing may lose changes."}</p>
           <p className="small">One token mint · one token-linked agent · one verified activating wallet. Token holdings alone do not establish ownership.</p>
-          {!demo && <p role="status" className="small">Token-linked activation unavailable: the backend activation identity contract is not yet published. Existing city agents remain available to inspect.</p>}
+          {!demo && <p role="status" className="small">Holder-based Common-Agent activation is not enabled here. Existing simulation agents and their authoritative work remain available to inspect.</p>}
           {demo && <p className="small">Offline demo creates house agents only. No wallet or token ownership is assigned.</p>}
           <label>
             Agent name
@@ -427,7 +427,7 @@ export function Studio({
             <span className="tag">{data.agents.length}</span>
           </div>
           <div className="agent-list">
-            {data.agents.slice(0, 14).map((a) => (
+            {data.agents.map((a) => (
               <button
                 key={a.id}
                 className="agent-row"
@@ -436,7 +436,7 @@ export function Studio({
                 <span className="avatar">{a.name.slice(0, 1)}</span>
                 <span>
                   <b>{displayAgentName(a)}</b>
-                  <small>{data.identitySource === "backend" ? `${a.name} · ` : ""}{readable(a.profession)}</small>
+                  <small>{data.identitySource === "backend" ? `${a.name} · ` : ""}{readable(a.profession)} · {a.identity.kind === "token_linked" ? "Token-linked agent" : a.identity.kind === "house" ? "Simulation citizen" : "Legacy simulation agent"}</small><small>{workDescription(a)}</small>
                 </span>
                 <span
                   className={`status ${a.status === "paused" ? "paused" : ""}`}
@@ -467,7 +467,7 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
       <PageHeading
         eyebrow="A SHARED WORKING ECONOMY"
         title="From fields to front doors."
-        description="Finite resources. Useful services. A city that works together."
+        description="Wheat → Flour → Bread → Residents. Follow production, assigned work and deliveries through the city."
       />
       <Notice>Credits are simulation units, not withdrawable tokens. Funded, performance-based $AECO conversion and advanced agent businesses are planned; no conversion rate or payout is guaranteed.</Notice>
       <div className="production-flow">
@@ -581,7 +581,7 @@ export function Treasury({ data }: { data: Dashboard }) {
       <PageHeading
         eyebrow="TRANSPARENCY BY DESIGN"
         title="Every stream, accounted for."
-        description="Launch charges and eligible creator fees are separate. Current demo receipts and proposed future policies remain distinct; real settlements and rewards are disabled."
+        description="Launch charges and eligible creator fees are separate. Simulation receipts, verified collection evidence and future allocations stay separate. Pending allocations are not collected balances or payouts; real settlements and rewards are disabled."
       />
       {data.mode === "demo" && (
         <Notice>
@@ -644,7 +644,7 @@ export function Treasury({ data }: { data: Dashboard }) {
           </p>
         </section>
       </div>
-      <section className="surface"><h2>Future creator-fee policy</h2><FutureFees /></section>
+      <section className="surface"><h2>Creator-fee policy and future rentals</h2><FutureFees /></section>
       <section className="surface scroll-panel receipt-ledger" aria-labelledby="receipt-ledger-title">
         <div className="surface-title">
           <h2 id="receipt-ledger-title">Public receipt ledger</h2>

@@ -27,7 +27,7 @@ test("About uses the live world without rebuilding its canvas, camera or socket"
   for (const [name, route] of [["Discover Communities", "communities"], ["Meet the communities", "communities"],
     ["Explore platform tokens", "explore"], ["Visit the Launchpad", "launchpad"], ["Understand the Treasury", "treasury"]]) {
     await page.getByRole("link", { name, exact: true }).press("Enter");
-    expect(new URL(page.url()).hash).toBe(`#${route}`);
+    expect(new URL(page.url()).pathname).toBe(route === "studio" ? "/agent-studio" : `/${route}`); expect(new URL(page.url()).hash).toBe("");
     await page.goBack(); await expect(page.locator("#about-title")).toBeVisible();
   }
   await page.getByRole("button", { name: "Close page and view city", exact: true }).press("Enter");

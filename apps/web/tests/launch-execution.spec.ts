@@ -50,4 +50,11 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  reject=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();await page.getByRole('button',{name:'Check launch status',exact:true}).click();await expect(execution).toContainText('Token creation verified');
  expect(preparations).toBe(1);expect(submissions).toBe(1);expect(signs).toBe(2);expect(bs58.decode(String(launch!.signature))).toHaveLength(64);
  await page.screenshot({path:'artifacts/launch-execution-mocked-mobile.png',fullPage:true});
+ const canvas=page.locator('canvas');await canvas.evaluate(node=>{(window as any).__launchRouteCanvas=node;});
+ const exploreLink=page.getByRole('link',{name:'View in Explore',exact:true});
+ const confirmedMint=launch?.mint;if(!confirmedMint)throw new Error('Confirmed mock launch is missing its mint');
+ expect(new URL((await exploreLink.getAttribute('href'))!,page.url()).pathname).toBe('/explore/'+confirmedMint);
+ await exploreLink.click();await expect.poll(()=>new URL(page.url()).pathname).toBe('/explore/'+confirmedMint);
+ expect(new URL(page.url()).hash).toBe('');
+ expect(await canvas.evaluate(node=>node===(window as any).__launchRouteCanvas)).toBe(true);
 });

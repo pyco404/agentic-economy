@@ -1,3 +1,4 @@
+import type { PumpTrade } from "./pump-events.js";
 import type { SharingConfigState } from "./pump.js";
 
 /** Chain-agnostic, normalized view of a landed transaction (top-level instructions only). */
@@ -71,10 +72,31 @@ export interface ChainGateway {
   buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction>;
   /** Throws ChainFeatureUnavailable unless `mint` is an initialized six-decimal SPL mint in Pump's live Global quote allowlist. */
   verifyQuoteMint?(mint: string): Promise<void>;
+  /** Authoritative bonding-curve state read at `slot`; null when the curve account does not exist. */
+  getCurveProgress?(mint: string): Promise<CurveProgress | null>;
+  /** Distinct owners holding a positive balance of `mint` (excluding the curve's own vault); null holders when too many to count safely. */
+  getHolderCount?(mint: string): Promise<{ slot: number; holders: number | null; exact: boolean }>;
+  /** Most recent bonding-curve trades, newest first, from Pump's own events. */
+  getRecentTrades?(mint: string, limit: number): Promise<{ slot: number; complete: boolean; trades: ChainTrade[] }>;
+  getBlockTime?(slot: number): Promise<number | null>;
   submitLaunchTransaction?(transaction:string):Promise<string>;
   getFinalizedBlockHeight?():Promise<number>;
   /** Newest-first signatures touching `address`, stopping at `until` (exclusive). */
   listSignaturesForAddress(address: string, until: string | null, limit: number, before?:string): Promise<string[]>;
+}
+
+export interface CurveProgress {
+  slot: number;
+  complete: boolean;
+  /** Share of the curve's initial real token reserves already sold, 0–100 (100 once complete). */
+  progressPct: number;
+  quoteMint: string | null;
+}
+
+export interface ChainTrade extends PumpTrade {
+  signature: string;
+  slot: number;
+  blockTime: number | null;
 }
 
 export class ChainFeatureUnavailable extends Error {

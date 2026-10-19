@@ -95,3 +95,30 @@ Roof regression tests check outward-wound closed solids, wall/roof clearance and
 The current backend fixes development to Genesis and 12 HQ plots. It does not yet persist new districts/infrastructure beyond Genesis, expose general construction commands/progress, or support agent-owned/operated businesses. The renderer can consume added chunks, changed terrain and construction statuses when published; it does not fabricate these transitions. Full cycle-progress telemetry is absent.
 
 Metadata upload and the real Pump.fun transaction builder/fee-routing verification remain missing; real payouts are outside MVP. Existing auth and eligibility endpoints are available, but connecting the wallet UI is frontend work. Keep City Credits non-withdrawable, verified contributions as points only, fee streams separate, 0.05 SOL launch charge entirely platform-directed, launcher creator-fee share 0%, and conditional 60/40 of actual creator fees received. `$AECO` remains a future token.
+
+## Application startup and world reveal
+
+Every entry route uses `ApplicationStartup` in `src/main.tsx`. The HTML entry displays the same branded welcome before React loads. The shell stays mounted, visually hidden and `inert` while essential assets and static world geometry prepare; direct routes and query/anchor state are preserved.
+
+Readiness is based on completed work:
+
+1. Static imports mount the shell, styles and requested route. Essential local fonts and the brand image settle (failed assets use browser fallbacks, with an eight-second asset deadline).
+2. The existing scenery worker prepares every catalog chunk, joined terrain, roads, waterways, both railways, support districts and major landscaping. `WorldReadiness` retains its full catalog/environment/job barrier.
+3. A hidden complete render prepares the GPU programs. `City` waits for shell assets before starting the unchanged 2.6-second `CityReveal` presentation.
+4. The full-screen welcome fades as the prepared world reveals. Page UI becomes visible and interactive at `FULLY_ACTIVE`. Ordinary navigation never restarts startup or replaces the canvas.
+
+Dashboard requests, wallet session restoration, WebSockets and market data do not gate the static world. Critical world-data failure or WebGL failure releases the application with its explicit unavailable state. A stalled preparation offers “Continue without 3D” after 30 seconds; choosing it unmounts the partial scene rather than exposing incomplete terrain. Reduced motion retains preparation but skips the cinematic reveal.
+
+Diagnostics: `[data-testid="application-startup"]` exposes startup state, asset readiness and measured timing marks. The existing city element retains its section/reveal timings and adds `gpuReady`. These are measured completion events, not percentage estimates.
+
+`tests/application-startup.spec.ts` records desktop/tablet/mobile startup and tests held outer scenery, route persistence, refresh, reduced motion, unavailable assets/backend/WebGL, stalled preparation, WebSocket and session failures. `tests/world-reveal.spec.ts` verifies the structural barrier and unchanged reveal timing. Run against an isolated backend; do not start the old database integration helper against a personal world merely to test startup.
+
+Reproducible isolated startup checks (from this directory, with the existing server build available):
+
+```bash
+pnpm exec playwright test --config playwright.startup.config.ts
+VITE_API_URL=http://127.0.0.1:8796 VITE_WS_URL=ws://127.0.0.1:8796/api/v1/ws pnpm build
+STARTUP_PREVIEW=1 pnpm exec playwright test --config playwright.startup.config.ts
+```
+
+The preview command exercises the built bundle rather than Vite's development module graph. Playwright places startup recordings in its ignored test-results directory. The provider, City bridge and application entry are a coordinated change; validate the final commit series together rather than treating intermediate one-file commits as independent releases.

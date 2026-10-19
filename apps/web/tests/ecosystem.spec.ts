@@ -5,10 +5,11 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     const writes: string[] = [], errors: string[] = [];
     page.on("request", (r) => { if (r.url().includes("/api/v1/") && r.method() !== "GET") writes.push(r.url()); });
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto("/?source=backend");
+    await page.goto("/?source=backend",{waitUntil:"domcontentloaded"});
     await expect(page.getByTestId("connection-status")).toContainText("connected", { timeout: 60000 });
     const city = page.getByTestId("city-canvas"), canvas = page.locator("canvas");
     await expect.poll(async () => Number(await city.getAttribute("data-rendered-buildings")), { timeout: 60000 }).toBeGreaterThan(100);
+    await expect(city).toHaveAttribute("data-world-state","FULLY_ACTIVE",{timeout:120000});
     const camera = JSON.parse((await city.getAttribute("data-camera"))!);
     await canvas.evaluate((node) => { (window as any).__ecosystemCanvas = node; });
     await expect(page.locator(".world-header")).toContainText("A World That Works");
@@ -19,14 +20,14 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await expect(roadmap).toBeVisible();
     expect(await roadmap.evaluate((node) => node.getBoundingClientRect().top)).toBeLessThan(200);
     await expect(roadmap.locator("summary")).toHaveCount(8);
-    await expect(roadmap.locator("details").first()).toHaveAttribute("open", "");
-    await expect(roadmap.locator("details").first()).toContainText("Outstanding / in development");
+    await expect(roadmap.locator("details").nth(1)).toHaveAttribute("open", "");
+    await expect(roadmap.locator("details").nth(1)).toContainText("Outstanding / in development");
     await roadmap.locator("summary").first().click();
     await page.locator("#roadmap-title").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `artifacts/ecosystem-roadmap-${viewport.width}.png` });
-    await roadmap.getByText("Phase 2 — Token Launchpad", { exact: true }).click();
+    // Phase 2 is already expanded as the current development phase.
     await expect(roadmap.locator("details").nth(1)).toHaveAttribute("open", "");
-    await expect(roadmap.locator("details").nth(1)).toContainText("Safe wallet confirmation");
+    await expect(roadmap.locator("details").nth(1)).toContainText("Real-device mobile wallet acceptance");
     await page.locator("#about-agents").scrollIntoViewIfNeeded();
     await expect(page.getByRole("heading", { name: "Common Agents", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Super Agents", exact: true })).toBeVisible();
@@ -35,7 +36,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await page.locator("#about-agents").screenshot({ path: `artifacts/ecosystem-agents-${viewport.width}.png` });
     await page.locator("#about-economic-model").scrollIntoViewIfNeeded();
     const fees = page.getByRole("region", { name: "Proposed creator-fee policies", exact: true });
-    await expect(fees).toContainText("Proposed future policy");
+    await expect(fees).toContainText("Super-Agent allocations planned");
     const active = fees.getByRole("row", { name: /Super-Agent token · active rental/ });
     await expect(active).toContainText("50%"); await expect(active).toContainText("40%"); await expect(active).toContainText("10%");
     await fees.getByText("Rental fee claims and expiry — proposed", { exact: true }).click();

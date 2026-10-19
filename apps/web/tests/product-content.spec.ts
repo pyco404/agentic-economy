@@ -8,10 +8,11 @@ async function open(page:Page,name:string){
 }
 for(const viewport of viewports)test(`current product content and persistent world at ${viewport.width}x${viewport.height}`,async({page})=>{
  test.setTimeout(240000);await page.setViewportSize(viewport);
- const errors:string[]=[],writes:string[]=[];
+ const errors:string[]=[],writes:string[]=[],fontRequests:string[]=[];page.on('request',r=>{if(/fonts\.googleapis|fonts\.gstatic|\.woff2(?:$|\?)/.test(r.url()))fontRequests.push(r.url());});
  page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/api/v1/'))writes.push(r.url());});
  await page.goto('/?source=fixtures',{waitUntil:'domcontentloaded'});const city=page.getByTestId('city-canvas');
  await expect(city).toHaveAttribute('data-world-state','FULLY_ACTIVE',{timeout:150000});
+ const loadedFonts=await page.evaluate(async()=>{const faces=await Promise.all([document.fonts.load('400 16px \"DM Sans\"'),document.fonts.load('400 16px \"Libre Caslon Display\"')]);return faces.map(f=>f.length);});expect(loadedFonts.every(n=>n>0)).toBe(true);expect(fontRequests.length).toBeGreaterThan(0);expect(fontRequests.every(u=>new URL(u).origin===new URL(page.url()).origin)).toBe(true);
  const canvas=page.locator('canvas');await canvas.evaluate(n=>{(window as any).__productCanvas=n;});
  const builds=await city.getAttribute('data-geometry-builds'),camera=await city.getAttribute('data-camera');
  await expect(page.locator('.world-header')).toContainText('A World That Works');

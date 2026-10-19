@@ -1,0 +1,142 @@
+{
+ "network": "isolated-localnet (devnet programs/config cloned)",
+ "genesis": "CD2Pa5CCheRMfnHxLpngdAYq65YM2pMKVNXLhN53s5mU",
+ "financialScope": "local validator lamports only",
+ "steps": [
+  {
+   "name": "launched",
+   "mint": "FHA1yTtjn2TQtcaD1dpY5WCNb8XcaK43pP4YhhmZWVh9",
+   "sharingConfig": {
+    "address": "2jFzyuosWntkXjUkUy7Rghin7C5j5L69XoyfkzW8RmVJ",
+    "version": 2,
+    "status": "Active",
+    "mint": "FHA1yTtjn2TQtcaD1dpY5WCNb8XcaK43pP4YhhmZWVh9",
+    "admin": "H1yHnn1ABXdTGsYxDoGqUPhMgiseo9WHKg4yji8vQEdV",
+    "adminRevoked": true,
+    "shareholders": [
+     {
+      "address": "AiV4YXSrMP33EXL9rx4qUMGEC14rqxkLNNGmwFD1zobq",
+      "shareBps": 6000
+     },
+     {
+      "address": "FPnHvKQexRViYc3fo8gkKKsADTxptr9sjjVFnqKBnPZA",
+      "shareBps": 4000
+     }
+    ]
+   }
+  },
+  {
+   "name": "buy",
+   "signature": "4jsRovAercj77Ei7KRr7L8PHzzUBzzftR2eCYTS3RVMDU6f7S8qYfhGqouHwPVwviVDYcZ8Mw6eeuvrKxkEW1Qet",
+   "tokens": "793100000000000",
+   "solAmount": "860679262"
+  },
+  {
+   "name": "curve_complete",
+   "curve": {
+    "slot": 350,
+    "complete": true,
+    "progressPct": 100,
+    "quoteMint": "So11111111111111111111111111111111111111112"
+   }
+  },
+  {
+   "name": "distribution_complete-unmigrated",
+   "isGraduated": false,
+   "sweepCount": 0,
+   "instructions": [
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P:a572670079cef751"
+   ],
+   "minimum": {
+    "minimumRequired": "0d9800",
+    "distributableFees": "26e991",
+    "canDistribute": true,
+    "isGraduated": false,
+    "feesQuoteMint": "So11111111111111111111111111111111111111112"
+   },
+   "signature": "45nZQxM2axeA29Mx961c9929QFnfkTB6njuGpyXtWdu9YAJtHEiijPtCywiRCgfeSWmY7EQeauQp3oVXkUKU4cBr",
+   "error": null,
+   "recipientDeltas": {
+    "agent": 1530096,
+    "platform": 1020064
+   },
+   "verifier": {
+    "accepted": true,
+    "total": "2550160",
+    "dust": "0",
+    "payouts": [
+     {
+      "address": "AiV4YXSrMP33EXL9rx4qUMGEC14rqxkLNNGmwFD1zobq",
+      "bps": 6000,
+      "amount": "1530096"
+     },
+     {
+      "address": "FPnHvKQexRViYc3fo8gkKKsADTxptr9sjjVFnqKBnPZA",
+      "bps": 4000,
+      "amount": "1020064"
+     }
+    ]
+   }
+  },
+  {
+   "name": "migrate",
+   "signature": "4PwNp6ndsRDWqKMYjZpE3jmcr2CjguY9k9z8vWauXPsW1uEkYkFvESiBhMbTqiH1oRzoXBSvdtWs2uavZ6K8cg6A",
+   "error": null
+  },
+  {
+   "name": "pool_buy",
+   "signature": "5yLCipDNqUujXvuFJnSQ4N3CnKSwmStDzRF3PAREYTkwNYqLTU6b95AoHtTsaGup1WHAGpz5A1oHs7h54vcPbu7H",
+   "error": null,
+   "notCloned": [],
+   "pool": "6yqePuv8ZVPjYgiCxAWtM1k5V48faUL6dPvhsJXZTSDe",
+   "poolCreatorFees": null
+  },
+  {
+   "name": "distribution_graduated",
+   "isGraduated": true,
+   "sweepCount": 0,
+   "instructions": [
+    "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA:8b348655e4e56cf1",
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P:a572670079cef751"
+   ],
+   "minimum": {
+    "minimumRequired": "0d9800",
+    "distributableFees": "e20e60",
+    "canDistribute": true,
+    "isGraduated": true,
+    "feesQuoteMint": "So11111111111111111111111111111111111111112"
+   },
+   "signature": "4EsQEu4zrxoBJzLASAYhqWsAfG49JBZoN6N6Eq2LcSPVo4tuuzkwxtWrU4r2g2gzBhbSFX3unUMDzu1VhKE25Fty",
+   "error": null,
+   "recipientDeltas": {
+    "agent": 8888889,
+    "platform": 5925926
+   },
+   "verifier": {
+    "accepted": true,
+    "total": "14814815",
+    "dust": "0",
+    "payouts": [
+     {
+      "address": "AiV4YXSrMP33EXL9rx4qUMGEC14rqxkLNNGmwFD1zobq",
+      "bps": 6000,
+      "amount": "8888889"
+     },
+     {
+      "address": "FPnHvKQexRViYc3fo8gkKKsADTxptr9sjjVFnqKBnPZA",
+      "bps": 4000,
+      "amount": "5925926"
+     }
+    ]
+   }
+  }
+ ],
+ "summary": {
+  "preGraduationDistributed": true,
+  "preGraduationAccepted": true,
+  "migrated": true,
+  "postGraduationDistributed": true,
+  "postGraduationAccepted": true
+ },
+ "result": "completed"
+}

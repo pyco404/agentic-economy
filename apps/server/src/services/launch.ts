@@ -27,9 +27,12 @@ import type { TreasuryService } from "./treasury.js";
 /** Rent estimates (lamports) for accounts created by the launch transaction; shown as estimates only. */
 const RENT_ESTIMATE_LAMPORTS = 16_500_000n;
 /** Rent-exempt minimum for a 165-byte SPL token account: (165 + 128) bytes x 3480 lamports/byte-year x 2 years. */
+/** Mainnet rent for a 165-byte SPL token account (devnet's is lower). Upper-bound preview only: a prepared
+ * transaction replaces it with the rent measured from its own simulation on the target network. */
 export const TOKEN_ACCOUNT_RENT_LAMPORTS = 2_039_280n;
-/** A USDC launch also creates the two canonical quote vault token accounts, paid by the launcher. */
-const USDC_VAULT_RENT_LAMPORTS = 2n * TOKEN_ACCOUNT_RENT_LAMPORTS;
+/** A USDC launch also creates up to four SPL token accounts, all paid by the launcher: the bonding curve's quote
+ * vault, the two fee-sharing quote vaults and, unless it already exists, the creator's own USDC account. */
+const USDC_VAULT_RENT_LAMPORTS = 4n * TOKEN_ACCOUNT_RENT_LAMPORTS;
 const NATIVE_MINT = "So11111111111111111111111111111111111111112";
 export type LaunchQuote = { asset: "SOL" } | { asset: "USDC"; mint: string };
 const NETWORK_FEE_ESTIMATE_LAMPORTS = 50_000n;
@@ -117,7 +120,7 @@ export class LaunchService {
       draft,
       mint,
       feeSharingConfig: sharingConfigPda(mint),
-      fees: {...this.feeBreakdown(quote),...(built.estimatedNetworkFeesLamports?{estimatedNetworkFeesLamports:built.estimatedNetworkFeesLamports}:{})},
+      fees: {...this.feeBreakdown(quote),...(built.estimatedNetworkFeesLamports?{estimatedNetworkFeesLamports:built.estimatedNetworkFeesLamports}:{}),...(built.estimatedAccountRentLamports?{estimatedAccountRentLamports:built.estimatedAccountRentLamports}:{})},
       ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster as "devnet"|"localnet",quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const}}:{}),
       signature: null,
       slot: null,
@@ -254,6 +257,12 @@ export class LaunchService {
         return next;
       }
 
+      if (this.config.launchRegistrationCommitment === "finalized" && v.commitment !== "finalized") {
+        // Valid but not yet final: bind the signature and slot, register nothing; a later confirm completes it.
+        const next = { ...this.transition(launch, "submitted"), signature, slot: v.slot };
+        await this.store.updateLaunch(next, rec.version);
+        return next;
+      }
       const communityId = newId("com");
       const community = this.buildCommunity(launch, communityId, signature, at);
       const next: TokenLaunch = { ...this.transition(launch, "confirmed"), signature, slot: v.slot, communityId };

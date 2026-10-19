@@ -38,6 +38,7 @@ export function registerHandlers(ctx: AppContext, register: Register) {
 
   register("tokenMarket",async({params})=>ctx.tokenMarket.snapshot(params.mint));
   register("tokenHistory",async({params})=>ctx.tokenMarket.history(params.mint));
+  register("tokenTrades",async({params})=>ctx.tokenMarket.trades(params.mint));
 
   /* ---------------- economy ---------------- */
 

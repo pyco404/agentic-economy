@@ -17,6 +17,10 @@ export interface LaunchExpectation {
   /** Required by real RPC confirmation; fixtures without raw instruction data omit it. */
   draft?: {name:string;symbol:string;metadataUri:string};
   preparedMessageBase64?:string;
+  /** Curve quote mint the launch must have: the native mint for SOL, the configured USDC mint for USDC. */
+  quoteMint?: string;
+  /** True when the quote is not SOL: its curve quote must be read and match, never assumed. */
+  quoteRequired?: boolean;
 }
 
 export interface VerificationIssue {
@@ -99,6 +103,9 @@ export function verifyLaunch(exp: LaunchExpectation, tx: ObservedTransaction | n
         message: `shareholders must be exactly agent-rewards 6000 bps + platform 4000 bps (launcher 0); got ${sc.shareholders.map((h) => `${h.address}:${h.shareBps}`).join(", ")}`,
       });
   }
+  const curveQuote = r.bondingCurveQuoteMint ?? null;
+  if (exp.quoteMint && (curveQuote !== null ? curveQuote !== exp.quoteMint : exp.quoteRequired))
+    issues.push({ code: "quote_mint_mismatch", message: `bonding curve quote mint ${curveQuote ?? "unknown"} is not the prepared ${exp.quoteMint}` });
   if (r.bondingCurveCreator !== exp.sharingConfig)
     issues.push({ code: "creator_not_sharing_config", message: `bonding curve creator ${r.bondingCurveCreator ?? "unknown"} is not the sharing config PDA` });
 

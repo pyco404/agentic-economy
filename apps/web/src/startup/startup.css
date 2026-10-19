@@ -1,0 +1,7 @@
+.application-startup { min-height: 100dvh; background: #f5ecd8; }
+.application-startup > .world-loading { position: fixed; inset: 0; z-index: 1000; padding: 24px; text-align: center; }
+.application-startup:not([data-startup-state="ready"]):not([data-startup-state="degraded"]) .app > :not(.global-world-layer) { visibility: hidden; }
+.startup-announcement { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.world-loading .startup-status { font: 13px var(--font-sans, "DM Sans", Arial, sans-serif); color: #6e8065; }
+.world-loading .startup-continue { margin-top: 8px; max-width: 320px; font-size: 13px; }
+.world-loading .startup-brand { width: 48px; height: 48px; object-fit: contain; }

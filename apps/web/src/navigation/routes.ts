@@ -1,4 +1,4 @@
-export const pageIds = ["explore", "communities", "studio", "economy", "treasury", "launchpad", "about"] as const;
+export const pageIds = ["explore", "communities", "studio", "economy", "treasury", "launchpad", "about", "roadmap"] as const;
 export type Page = "world" | typeof pageIds[number];
 export function readRoute(location: Pick<Location, "pathname" | "hash">): { page: Page; mint: string | null } {
   const raw = location.hash && location.hash !== "#" ? location.hash.slice(1) : location.pathname;

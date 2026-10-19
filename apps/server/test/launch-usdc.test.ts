@@ -62,9 +62,10 @@ describe('TOKEN/USDC launches through the Launchpad',()=>{
   // The mint comes from server configuration, never from the client or the draft.
   expect(input()).toMatchObject({quoteAsset:'USDC',quoteMint:USDC,launcherWallet:creator.publicKey.toBase58()});
   expect(launch.execution).toMatchObject({quoteAsset:'USDC',quoteMint:USDC,network:'devnet',platformOrigin:'PLATFORM',initiator:'HUMAN'});
-  // Fee preview: the SOL charge is unchanged; rent adds exactly the two quote vault token accounts.
+  // Fee preview: the SOL charge is unchanged; without a network measurement the upper-bound rent adds the
+  // curve's quote vault, the two fee-sharing quote vaults and the creator's USDC account.
   expect(launch.fees.platformLaunchFeeLamports).toBe(LAUNCH_FEE_LAMPORTS.toString());
-  expect(BigInt(launch.fees.estimatedAccountRentLamports)).toBe(16_500_000n+2n*TOKEN_ACCOUNT_RENT_LAMPORTS);
+  expect(BigInt(launch.fees.estimatedAccountRentLamports)).toBe(16_500_000n+4n*TOKEN_ACCOUNT_RENT_LAMPORTS);
   const tx=VersionedTransaction.deserialize(Buffer.from(transaction,'base64'));
   expect(Buffer.from(transaction,'base64').length).toBeLessThanOrEqual(1232);
   expect(tx.message.compiledInstructions).toHaveLength(7); // compute budget, SOL charge, create, sharing, two vaults, shares
@@ -87,6 +88,14 @@ describe('TOKEN/USDC launches through the Launchpad',()=>{
   expect(r.json().launch.execution).toMatchObject({quoteAsset:'SOL'});
   expect(r.json().launch.execution.quoteMint).toBeUndefined();
   expect(r.json().launch.fees.estimatedAccountRentLamports).toBe('16500000');
+ });
+
+ it('previews the rent and network fee measured from the prepared transaction when the network reports them',async()=>{
+  const {prepare}=await setup(true),chain=env!.ctx.chain as MockChain&ChainGateway,build=chain.buildLaunchTransaction.bind(chain);
+  // Public devnet measurement of a USDC launch (scripts/devnet-readonly-audit.ts).
+  vi.spyOn(chain,'buildLaunchTransaction').mockImplementation(async p=>({...await build(p),estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16057880'}));
+  const {launch}=(await prepare()).json();
+  expect(launch.fees).toMatchObject({estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16057880',platformLaunchFeeLamports:LAUNCH_FEE_LAMPORTS.toString()});
  });
 });
 

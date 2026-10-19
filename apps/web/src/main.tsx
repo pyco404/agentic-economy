@@ -1,10 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { ApplicationStartup } from "./startup/ApplicationStartup";
 import { WalletSessionProvider } from "./api/walletSession";
 import "./wallet-session.css";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <WalletSessionProvider><App /></WalletSessionProvider>
+    <ApplicationStartup><WalletSessionProvider><App /></WalletSessionProvider></ApplicationStartup>
   </StrictMode>,
 );

@@ -59,6 +59,8 @@ export interface BuiltLaunchTransaction {
   demo: boolean;
   genesisHash?: string;
   estimatedNetworkFeesLamports?:string;
+  /** Rent the launcher's wallet pays, measured from this exact transaction's simulation on the target network. */
+  estimatedAccountRentLamports?:string;
 }
 
 export interface ChainGateway {

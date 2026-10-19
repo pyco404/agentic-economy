@@ -29,6 +29,13 @@ ACCOUNTS=(
   GXPFM2caqTtQYC2cJ5yJRi9VDkpsYZXzYdwYpGnLmtDL 3BpXnfJaUTiwXnJNe7Ej1rcbzqTTQUvLShZaWazebsVR 5cjcW9wExnJJiqgLjq7DEG75Pm6JBgE1hNv4B2vHXUW6
   EHAAiTxcdDwQ3U4bU6YcMsQGaekdzLS3B5SmYo46kJtL 5eHhjP8JaYkz83CWwvGU2uMUXefd3AazWGx4gpcuEEYD A7hAgCzFw14fejgCp387JUJRMNyz4j89JKnhtKU8piqW
   8LWu7QM2dGR1G8nKDHthckea57bkCzXyBTAKPJUBDHo8
+  # PumpSwap (graduation): global config, fee config, volume accumulator, protocol fee recipients and boost authority that exist on
+  # devnet, and their wrapped-SOL token accounts.
+  ADyA8hdefvWN2dbGGWFotbzWxrAvLW83WG6QCVXvJKqw 5PHirr8joyTMp9JMm6nW7hNDVyEYdkzDqazxPD7RaTjx 12e2F4DKkD3Lff6WPYsU7Xd76SHPEyN9T8XSsTJNF8oT
+  33MxwC33Eqgmon152hBcpEYuXUmf2kaK1P74wVz3ry8k GjJkcak9e4L2HsxSZqVsc81L7coChdR7F3ciJYnQcSnU 2daQRytJgLzLLziPNQBNJ7w1Ltz3XqZG4dZxBamLAf7v
+  BWS634asUFdrpYpfofFA1CrGB9wEbh9gt8XswZ4AWz9J 4JaPhJE7WgQZ3xFbxn2spU97reA13SiM99wD3RF4Lqro AHEgRGXFn8JbhXccWM4i1meRGPFbx8kzb9BGN6ocqRFL
+  2pLUmsYktT7gR6P5hXs9Ldo6Vg1oQB2Q4NPbJqHUjZhq 4uzPz9TPskXiiEZ6X78rqud8LvfdxkJBr5EKHgbx4azP Frkwunr9dQM9d4TthfQ2unxC994XpkLMpkRP2e7yfirk
+  C93K8DX4YsABYJtHX9awzgZW3LWzBqBVezEbbLJH4yet C2aFPdENg4A2HQsmrd5rTw5TaYBX5Ku887cWjbFKtZpw GYH1Gae1wJytMSvMvw8JVcv7nuAbxi8i9erNVbERnzXd
 )
 args=(--ledger "$LEDGER" --reset --quiet --rpc-port 18999 --faucet-port 19900 --bind-address 127.0.0.1 --dynamic-port-range 19001-19040 --url https://api.devnet.solana.com)
 for p in "${PROGRAMS[@]}"; do args+=(--clone-upgradeable-program "$p"); done

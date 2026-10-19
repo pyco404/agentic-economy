@@ -1,0 +1,235 @@
+{
+ "network": "public-devnet",
+ "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+ "readOnly": true,
+ "observedAt": "2026-10-19T16:46:19.944Z",
+ "slot": 512862969,
+ "sdk": "@pump-fun/pump-sdk 4.1.0",
+ "programs": [
+  {
+   "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+   "programData": "B5MvUwXdiW1NMM6QFFD3ssPKBujD4zMohncbM73Z2BQu",
+   "deploymentSlot": 510657843,
+   "upgradeAuthority": "GUYCUEpxSkm1ccDo3LSKMR4Xpe5bgMnEZaFygWUSEVH3",
+   "sha256": "bcee35d3eeb158090dd08764a8c5c03a2852c3cee553a0ce61dd5482469a5ec7",
+   "matchesAudit20261018": true
+  },
+  {
+   "program": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+   "programData": "75Uu23mqWBb8LM8vDppqC1mQAnCcBuLXhVaDezVMQLRw",
+   "deploymentSlot": 508659783,
+   "upgradeAuthority": "GUYCUEpxSkm1ccDo3LSKMR4Xpe5bgMnEZaFygWUSEVH3",
+   "sha256": "446db24678fa22700d8eda86c48ba361b325a084e319c0c66f780c953520b317",
+   "matchesAudit20261018": true
+  },
+  {
+   "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+   "programData": "6naEzKeUuFh1Jeeu51NXQgr5qkXgXtc9WKNct4xynVJc",
+   "deploymentSlot": 508659436,
+   "upgradeAuthority": "GUYCUEpxSkm1ccDo3LSKMR4Xpe5bgMnEZaFygWUSEVH3",
+   "sha256": "494d2257ed4a9a2bc3eb210b22cdb5058d77e17f1ba5095b636e96c86b1fd4ef",
+   "matchesAudit20261018": true
+  },
+  {
+   "program": "MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e",
+   "programData": "4TXghKDfUy26yBMjicyfSfAp995GbLtNvW1d1uPSknub",
+   "deploymentSlot": 483199576,
+   "upgradeAuthority": "GUYCUEpxSkm1ccDo3LSKMR4Xpe5bgMnEZaFygWUSEVH3",
+   "sha256": "25ac2612be74e8437f79dbb4c62d7e3701c21b8f4c9ed0acaf832df4fe1a821d",
+   "matchesAudit20261018": true
+  }
+ ],
+ "usdc": {
+  "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+  "inGlobalAllowlist": true,
+  "whitelistedQuoteMints": [
+   "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+  ],
+  "tokenAccountRentLamports": 1488440,
+  "twoVaultRentLamports": 2976880
+ },
+ "lookupTable": {
+  "address": "GZcFdZXK1fxuKc9cLvMYu8uGTXz3TDTdk7FutDfdQmXu",
+  "active": true,
+  "entries": 29,
+  "authority": "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+  "containsDevnetUsdc": false,
+  "missingForUsdc": []
+ },
+ "simulations": [
+  {
+   "quoteAsset": "SOL",
+   "longestNameAndSymbol": false,
+   "built": true,
+   "packetBytes": 1023,
+   "instructions": 5,
+   "staticKeys": 15,
+   "lookupKeys": 14,
+   "signers": [
+    "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+    "GjMvMKJQqd2hHJqHPrs6CJGZVKktWB6tDsMRT8M4NJBQ"
+   ],
+   "signersAreCreatorAndMint": true,
+   "simulationError": null,
+   "unitsConsumed": 262849,
+   "networkFeeLamports": 10000,
+   "payerDebitLamports": 61602560,
+   "accountRentLamports": 11592560
+  },
+  {
+   "quoteAsset": "USDC",
+   "longestNameAndSymbol": false,
+   "built": true,
+   "packetBytes": 1206,
+   "instructions": 7,
+   "staticKeys": 20,
+   "lookupKeys": 12,
+   "signers": [
+    "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+    "6e6zM9uW2CNa2EpycD9q2z1QBhyM8j7dWAumAmyZ4idY"
+   ],
+   "signersAreCreatorAndMint": true,
+   "simulationError": null,
+   "unitsConsumed": 316141,
+   "networkFeeLamports": 10000,
+   "payerDebitLamports": 66067880,
+   "accountRentLamports": 16057880
+  },
+  {
+   "quoteAsset": "SOL",
+   "longestNameAndSymbol": true,
+   "built": true,
+   "packetBytes": 1042,
+   "instructions": 5,
+   "staticKeys": 15,
+   "lookupKeys": 14,
+   "signers": [
+    "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+    "J7WHyPEaLfni69p7yv9bPQvX2y7yXfin5xz3unBrBGE8"
+   ],
+   "signersAreCreatorAndMint": true,
+   "simulationError": null,
+   "unitsConsumed": 263174,
+   "networkFeeLamports": 10000,
+   "payerDebitLamports": 61699080,
+   "accountRentLamports": 11689080
+  },
+  {
+   "quoteAsset": "USDC",
+   "longestNameAndSymbol": true,
+   "built": true,
+   "packetBytes": 1225,
+   "instructions": 7,
+   "staticKeys": 20,
+   "lookupKeys": 12,
+   "signers": [
+    "Ned2Mqm7TWFgQj97uyFSMSuWtC2QgWG5LN61f54YEGr",
+    "9ZkQ6sj766sd67ynq1xVLup5bYg5kSesF1LQY6XGfp8a"
+   ],
+   "signersAreCreatorAndMint": true,
+   "simulationError": null,
+   "unitsConsumed": 317966,
+   "networkFeeLamports": 10000,
+   "payerDebitLamports": 66164400,
+   "accountRentLamports": 16154400
+  }
+ ],
+ "markets": [
+  {
+   "mint": "4Pyp7AZD2P1fPJAHWmWvkuJMg6GY2BxcsmVTQWxv8qF1",
+   "progress": {
+    "ok": true,
+    "value": {
+     "slot": 512862195,
+     "complete": false,
+     "progressPct": 0,
+     "quoteMint": "So11111111111111111111111111111111111111112"
+    }
+   },
+   "holders": {
+    "ok": false,
+    "error": "fetch failed"
+   },
+   "trades": {
+    "ok": true,
+    "slot": 512596611,
+    "complete": true,
+    "count": 0,
+    "sides": [],
+    "creatorFeeTotal": "0"
+   }
+  },
+  {
+   "mint": "Gxd1MeMoFwm1wDNrTTecMsccra3tD4o4TYixZDJLzH4S",
+   "progress": {
+    "ok": true,
+    "value": {
+     "slot": 512862381,
+     "complete": false,
+     "progressPct": 0,
+     "quoteMint": "So11111111111111111111111111111111111111112"
+    }
+   },
+   "holders": {
+    "ok": false,
+    "error": "fetch failed"
+   },
+   "trades": {
+    "ok": true,
+    "slot": 512600800,
+    "complete": true,
+    "count": 0,
+    "sides": [],
+    "creatorFeeTotal": "0"
+   }
+  },
+  {
+   "mint": "81jmbNJyn4CTBPqnQ7UVgfpy4SoWfoSrEiM9WKgFjjJd",
+   "progress": {
+    "ok": true,
+    "value": {
+     "slot": 512862449,
+     "complete": false,
+     "progressPct": 0,
+     "quoteMint": "So11111111111111111111111111111111111111112"
+    }
+   },
+   "holders": {
+    "ok": false,
+    "error": "429 Too Many Requests:  {\"jsonrpc\":\"2.0\",\"error\":{\"code\": 429, \"message\":\"Too many requests for a specific RPC call\"}, \"id\": \"505605fa-e222-47cc-a394-a1e6f6ab807a\" } \r\n"
+   },
+   "trades": {
+    "ok": true,
+    "slot": 512580894,
+    "complete": true,
+    "count": 0,
+    "sides": [],
+    "creatorFeeTotal": "0"
+   }
+  },
+  {
+   "mint": "EvqsbYiQFtB7iEEYyrYuMngvNP8DzqrqRumqKUUUBmZK",
+   "progress": {
+    "ok": true,
+    "value": {
+     "slot": 512862709,
+     "complete": false,
+     "progressPct": 0,
+     "quoteMint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+    }
+   },
+   "holders": {
+    "ok": false,
+    "error": "429 Too Many Requests:  {\"jsonrpc\":\"2.0\",\"error\":{\"code\": 429, \"message\":\"Too many requests for a specific RPC call\"}, \"id\": \"2ac790fb-30cc-428c-91e6-c7a868772b5e\" } \r\n"
+   },
+   "trades": {
+    "ok": true,
+    "slot": 512583040,
+    "complete": false,
+    "count": 0,
+    "sides": [],
+    "creatorFeeTotal": "0"
+   }
+  }
+ ]
+}

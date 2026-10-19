@@ -88,3 +88,9 @@ Prior real external-service evidence remains in the
 additional real launch, charge, claim or payout.
 
 Font sources and redistribution licenses: [DM Sans](https://github.com/google/fonts/blob/main/ofl/dmsans/OFL.txt) and [Libre Caslon Display](https://github.com/google/fonts/blob/main/ofl/librecaslondisplay/OFL.txt). Original Google Fonts CSS subsets are retained without conversion or modification.
+
+## Dedicated Roadmap follow-up
+
+The complete eight-phase timeline has moved from About to its own Roadmap page.
+About now links to it through a short Where We're Going section. See
+[dedicated roadmap](dedicated-roadmap.md) for routing, status and verification scope.

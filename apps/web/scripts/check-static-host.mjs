@@ -8,7 +8,7 @@ const home = await get("/"); assert.equal(home.status, 200);
 assert.match(home.headers.get("content-type") ?? "", /text\/html/);
 assert.equal(home.headers.get("cache-control"), "no-cache");
 const html = await home.text(); assert.match(html, /id="root"/);
-for (const path of ["/explore", "/communities", "/studio", "/economy", "/treasury", "/launchpad", "/about"]) {
+for (const path of ["/explore", "/explore/example-mint", "/communities", "/agent-studio", "/studio", "/economy", "/treasury", "/launchpad", "/launchpad/", "/roadmap", "/about"]) {
   const response = await get(path); assert.equal(response.status, 200);
   assert.equal(await response.text(), html, `${path} must retain SPA fallback.`);
 }
@@ -18,6 +18,8 @@ assert.match(asset.headers.get("cache-control") ?? "", /immutable/);
 assert.match(asset.headers.get("content-type") ?? "", /javascript/);
 assert.equal((await get("/assets/missing-deployment-file.js")).status, 404);
 assert.equal((await get("/api/v1/world/bootstrap")).status, 404);
+for (const path of ["/api", "/fonts/missing.woff2", "/missing-image.png", "/unknown-route", "/healthz/missing"])
+  assert.equal((await get(path)).status, 404, `${path} must not return the SPA.`);
 // Host override is only meaningful for the local Caddy probe. Public TLS domains
 // must be checked directly after Railway issues their certificates.
 if (["127.0.0.1", "localhost"].includes(base.hostname)) {

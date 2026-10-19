@@ -63,7 +63,7 @@ export function MobileNavigation({ items, active, modeLabel, onNavigate, onClose
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
           event.preventDefault(); onNavigate("about");
         }}><Info size={16} aria-hidden="true" />About the world<ArrowUpRight size={15} aria-hidden="true" /></a>
-        <ProjectLinks /><p>A World That Works. One living world.</p></footer>
+        <ProjectLinks /></footer>
     </section>
   </div>, document.body);
 }

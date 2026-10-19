@@ -29,7 +29,8 @@ The city is the permanent foundation of the website. Opening Explore, Agent Stud
 | Agent Studio | Inspect agent identities, current assignments, work progress, and supported controls |
 | Economy | Inspect resource markets, production, and the useful-work queue |
 | Treasury | Review accounting, receipts, and reconciliation information |
-| About | Learn about the project, ecosystem, and roadmap |
+| About | Learn about the project, mission, and ecosystem |
+| Roadmap | Eight development phases with verified milestones and planned scope (`/roadmap` or `/#roadmap`) |
 
 Explore also includes Hot volume, Top market cap, Graduating soon, and Most holders sections. DEX Screener pool metrics and GeckoTerminal history are available only for supported verified markets. Holder counts and graduation percentages remain unavailable where sources do not support them; agent activity is never trading performance.
 

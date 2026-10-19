@@ -112,6 +112,9 @@ describe('quote-aware launch confirmation',()=>{
   const native='So11111111111111111111111111111111111111112';
   expect(verifyLaunch(exp(native,false),tx,routing(native)).outcome).toBe('confirmed');
   expect(verifyLaunch(exp(native,false),tx,routing(null)).outcome).toBe('confirmed');
+  // Observed on public devnet: SOL curves can report the all-zero (legacy/unset) quote address.
+  expect(verifyLaunch(exp(native,false),tx,routing('11111111111111111111111111111111')).outcome).toBe('confirmed');
+  expect(verifyLaunch(exp(USDC,true),tx,routing('11111111111111111111111111111111')).outcome).toBe('recovery_needed');
   expect(verifyLaunch(exp(native,false),tx,routing(USDC)).outcome).toBe('recovery_needed');
  });
 });

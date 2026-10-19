@@ -54,6 +54,8 @@ const Env = z.object({
   FEE_ROUTING_VERIFIED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_LOOKUP_TABLE: PublicKey.optional(),
+  /** TOKEN/USDC launches. Default off; effective only where PUMP_LAUNCH_ENABLED already applies. */
+  USDC_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
   PUMP_LOCAL_GENESIS_HASH: PublicKey.optional(),
   PINATA_JWT: z.string().optional(),
   IPFS_GATEWAY: z.string().url().default("https://gateway.pinata.cloud"),
@@ -66,6 +68,16 @@ export type AppConfig = ReturnType<typeof loadConfig>;
 
 /** Deterministic placeholder treasuries for demo mode only — derived from public seeds, NEVER real accounts. */
 const demoKey = (label: string) => Keypair.fromSeed(createHash("sha256").update(`agentic-economy-demo:${label}`).digest()).publicKey.toBase58();
+/**
+ * USDC quote mints accepted by Pump per network. Devnet's is the six-decimal SPL mint in the live devnet
+ * Global allowlist (the mainnet USDC address is not a token mint on devnet); localnet clones devnet.
+ * Prepare still verifies the allowlist, owner and decimals on chain before building a launch.
+ */
+export const USDC_QUOTE_MINTS = {
+  devnet: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+  localnet: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+  "mainnet-beta": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+} as const;
 export const DEMO_PLATFORM_TREASURY = demoKey("platform-treasury");
 export const DEMO_AGENT_TREASURY = demoKey("agent-rewards-treasury");
 
@@ -116,7 +128,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     },
     corsOrigins: e.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
     feeRoutingVerified,
-    pumpLaunch: {enabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null},
+    pumpLaunch: {enabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null,
+      usdcEnabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true"&&e.USDC_LAUNCH_ENABLED==="true",
+      // The quote mint is fixed per network, never client-supplied; prepare re-checks it against the live Pump Global allowlist.
+      usdcMint:USDC_QUOTE_MINTS[e.SOLANA_CLUSTER]},
     /**
      * Real execution is restricted to verified devnet. Mainnet stays hard-disabled
      * even if a deployment accidentally sets FEE_ROUTING_VERIFIED=true.

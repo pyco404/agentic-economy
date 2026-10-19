@@ -2,8 +2,8 @@ import { ProjectLinks } from "./ProjectLinks";
 import {project} from "../content/project";
 import { ArrowRight, ArrowUpRight, Blocks, Box, Building2, Check, Database, Globe2, Leaf,
   LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Users, Workflow } from "lucide-react";
-import { useEffect, type MouseEvent, type ReactNode } from "react";
-import { AgentClasses, FutureFees, Roadmap, EcosystemFaq } from "./Ecosystem";
+import { type MouseEvent, type ReactNode } from "react";
+import { AgentClasses, FutureFees, EcosystemFaq } from "./Ecosystem";
 import { aboutConnection, aboutFees, aboutStatus } from "../content/about";
 import { routeUrl, type Page } from "../navigation/routes";
 
@@ -12,7 +12,6 @@ interface Props {
   source: "demo" | "http";
   connected: boolean;
   mode?: string;
-  roadmapRequest?: number;
 }
 const systems = [
   { title: "The World", icon: Building2, text: "A persistent procedural city makes buildings, infrastructure, resources and supported activity visible." },
@@ -22,10 +21,7 @@ const systems = [
   { title: "Solana infrastructure", icon: Network, text: "Wallet authentication, owned token drafts and Pinata preparation connect to a guarded Solana launch pipeline. SOL launches are verified on devnet; staging financial execution stays disabled." },
 ] as const;
 
-export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 }: Props) {
-  useEffect(() => {
-    if (roadmapRequest) document.getElementById("about-roadmap")?.scrollIntoView({ block: "start" });
-  }, [roadmapRequest]);
+export function About({ onNavigate, source, connected, mode }: Props) {
   const connection = aboutConnection(source, connected, mode);
   const navigate = (event: MouseEvent<HTMLAnchorElement>, page: Page) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -43,7 +39,7 @@ export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 
         <p className="about-kicker"><Leaf size={14} aria-hidden="true" />About Agentic Economy</p>
         <h1 id="about-title">A world<br />that works<span>.</span></h1>
         <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. Common Agents and a separate, advanced Super-Agent class form the planned next layers of participation.</p>
-        <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}<button className="about-cta" type="button" onClick={() => document.getElementById("about-roadmap")?.scrollIntoView({ block: "start" })}>View Roadmap<ArrowRight size={16} aria-hidden="true" /></button></div>
+        <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}{link("roadmap", "View Roadmap")}</div>
         <p className="about-hero-footnote">A World That Works. Powered by the planned $AECO ecosystem token.<br />Explore the simulation today. Live financial operations are not enabled.</p><ProjectLinks /><p className="small"><a href={project.website} target="_blank" rel="noopener noreferrer">Official website · useaeco.xyz</a></p>
       </div>
       <div className="about-world-window" aria-label="A view into the same procedural city behind this page">
@@ -124,7 +120,11 @@ export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 
       <p className="about-status-context"><Radio size={14} aria-hidden="true" /><strong>{connection.label}.</strong> {connection.detail}</p>
     </section>
 
-    <Roadmap />
+    <section className="about-paper" aria-labelledby="about-direction-title">
+      <p className="about-kicker">08 / Our direction</p><h2 id="about-direction-title">Where We're Going</h2>
+      <p className="about-section-intro">From a persistent city and verified token preparation to holder-linked Common Agents, a distinct Super-Agent class and a wider agent-driven economy. Each step depends on verification, clear permissions and responsible rollout.</p>
+      <div className="about-actions">{link("roadmap", "Explore Our Roadmap")}</div>
+    </section>
     <EcosystemFaq />
 
     <section className="about-vision" aria-labelledby="about-vision-title"><p className="about-kicker">The direction is shared</p>

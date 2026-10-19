@@ -1,5 +1,15 @@
 # Main-only integration and staging gate — 18 October 2026
 
+> Current status, 19 October 2026: the transition is complete. Both staging services
+> deploy compatible contract 0.3.1 releases from main; production has no triggers.
+> The 18 October release at dd17c4f applied approved migration 003 only after a
+> restorable staging backup (9010bcf9-d81e-4127-a7c1-e180f1248069), isolated rehearsal
+> and identity audit. Existing agents and draft records were preserved. The earlier
+> blocked checkpoints below are historical, not the current deployment state.
+> Later releases retain demo restrictions. See the root README and latest release
+> reports; no additional database migration or production change is authorized.
+
+
 ## Current Task 1 status
 
 Staging was recovered to a compatible **0.2.0 frontend/API pair** on 18 October 2026 after live browser checks exposed the previously deployed 0.3 frontend / 0.2 API mismatch. The full upgrade to main remains blocked at the explicitly required backup/restore gate. No migration was applied. See the Task 1 recheck below for exact deployment IDs, evidence and outstanding acceptance criteria.

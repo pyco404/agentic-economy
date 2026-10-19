@@ -13,9 +13,14 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     const camera = JSON.parse((await city.getAttribute("data-camera"))!);
     await canvas.evaluate((node) => { (window as any).__ecosystemCanvas = node; });
     await expect(page.locator(".world-header")).toContainText("A World That Works");
-    await expect(page.locator(".world-header")).toContainText("planned");
+    await expect(page.locator(".world-header").getByRole("heading", { name: "A city in motion." })).toBeVisible();
     await page.screenshot({ path: `artifacts/ecosystem-world-${viewport.width}.png` });
-    await page.getByRole("button", { name: "View Roadmap", exact: true }).press("Enter");
+    const roadmapLink = page.locator(".topbar .nav").getByRole("link", { name: "Roadmap", exact: true });
+    if (await roadmapLink.isVisible()) await roadmapLink.press("Enter");
+    else {
+      await page.getByRole("button", { name: "Toggle navigation" }).click();
+      await page.getByRole("dialog", { name: "Navigation", exact: true }).getByRole("link", { name: "Roadmap", exact: true }).click();
+    }
     const roadmap = page.getByRole("region", { name: "Eight development phases" });
     await expect(roadmap).toBeVisible();
     await expect(roadmap.locator("summary")).toHaveCount(8);

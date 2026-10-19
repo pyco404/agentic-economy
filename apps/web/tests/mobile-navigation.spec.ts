@@ -41,7 +41,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
     ["Economy", "economy"], ["Treasury", "treasury"], ["Roadmap", "roadmap"]]) {
     await toggle.press("Enter");
     await dialog.getByRole("link", { name: label, exact: true }).press("Enter");
-    await expect(dialog).toHaveCount(0); expect(new URL(page.url()).hash).toBe(`#${route}`);
+    await expect(dialog).toHaveCount(0); expect(new URL(page.url()).pathname).toBe(route === "studio" ? "/agent-studio" : `/${route}`); expect(new URL(page.url()).hash).toBe("");
     await expect(page.getByRole("button", { name: "Close page and view city", exact: true })).toBeFocused();
     await toggle.press("Enter"); await expect(dialog.getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
     await dialog.getByRole("button", { name: "Close navigation" }).press("Enter");

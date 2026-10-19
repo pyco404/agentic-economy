@@ -26,6 +26,8 @@ export interface FeeRoutingState {
   sharingConfig: SharingConfigState | null;
   bondingCurveCreator: string | null;
   bondingCurveComplete: boolean | null;
+  /** Quote mint recorded on the bonding curve (native mint for SOL); null when unavailable. */
+  bondingCurveQuoteMint?: string | null;
 }
 
 export interface TokenBalance {
@@ -44,6 +46,9 @@ export interface BuildLaunchInput {
   uri: string;
   platformTreasury: string;
   agentRewardsTreasury: string;
+  /** Default SOL. USDC requires the server-configured, allowlist-verified quote mint. */
+  quoteAsset?: "SOL" | "USDC";
+  quoteMint?: string;
 }
 
 export interface BuiltLaunchTransaction {
@@ -64,6 +69,8 @@ export interface ChainGateway {
   getFeeRoutingState(mint: string): Promise<FeeRoutingState>;
   getTokenBalance(owner: string, mint: string): Promise<TokenBalance>;
   buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction>;
+  /** Throws ChainFeatureUnavailable unless `mint` is an initialized six-decimal SPL mint in Pump's live Global quote allowlist. */
+  verifyQuoteMint?(mint: string): Promise<void>;
   submitLaunchTransaction?(transaction:string):Promise<string>;
   getFinalizedBlockHeight?():Promise<number>;
   /** Newest-first signatures touching `address`, stopping at `until` (exclusive). */

@@ -1,7 +1,7 @@
 # Dedicated development roadmap
 
 The eight-phase roadmap now has its own editorial page, available through
-`/roadmap` and the application's existing `/#roadmap` navigation. Launch and
+`/roadmap`. The former `/#roadmap` links normalize to that clean path. Launch and
 Explore remain first and second in both navigation menus. Home's View Roadmap,
 About's View Roadmap, and About's Explore Our Roadmap all open the same page.
 

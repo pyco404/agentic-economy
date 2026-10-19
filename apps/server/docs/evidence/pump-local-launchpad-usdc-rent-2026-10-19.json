@@ -1,0 +1,108 @@
+{
+  "network": "isolated-localnet (devnet programs/config cloned)",
+  "genesis": "5Xjvs8iVShDHU9Sn97tLdfGrTDU3koSpGaxi18mZpyaX",
+  "quoteAsset": "USDC",
+  "quoteMint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+  "stubbed": [
+    "Pinata uploads (fixed CIDs)"
+  ],
+  "financialScope": "local validator lamports only",
+  "steps": [
+    {
+      "name": "lookup_table",
+      "table": "7Armzv2fB4AGgMxfE3HNdNezepZqqe3J8dyYU8SXEeFt",
+      "staticEntries": 20
+    },
+    {
+      "name": "capabilities",
+      "launchEnabled": true,
+      "usdc": "draft"
+    },
+    {
+      "name": "review",
+      "quoteAsset": "USDC",
+      "launchEnabled": true,
+      "ready": true
+    },
+    {
+      "name": "prepared",
+      "launchId": "lch_dd4fe96a1cfc563d82c2942d",
+      "mint": "42Vy2NcoMxF5SFcJL9aYKuDPGtRKFfWAewTXJxEcALNZ",
+      "packetBytes": 1139,
+      "instructions": 7,
+      "execution": {
+        "quoteAsset": "USDC",
+        "quoteMint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+      },
+      "fees": {
+        "platformLaunchFeeLamports": "50000000",
+        "platformTreasury": "9jszKxTsbExkwCES2amXouJCimyMoRE5k9ju47bygUU9",
+        "estimatedNetworkFeesLamports": "10000",
+        "estimatedAccountRentLamports": "24005040",
+        "launcherCreatorFeeBps": 0,
+        "creatorFeeSplit": {
+          "agentRewardsTreasury": "9XPTPTWp2ChxvADz9tYWuWQHVHXU5AhXfXmsau22ULgB",
+          "agentRewardsBps": 6000,
+          "platformTreasury": "9jszKxTsbExkwCES2amXouJCimyMoRE5k9ju47bygUU9",
+          "platformBps": 4000
+        },
+        "notes": [
+          "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+          "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+          "Solana network fees and account rent are paid by your wallet and are estimates.",
+          "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+          "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split."
+        ]
+      }
+    },
+    {
+      "name": "verified",
+      "signature": "cP2bLxdh3LXpy7pP515NXBuundbaKN9XvhPRiaygttwiKt4q4tWN2YiymQMsKT57qgiujRkGJNw9ybgPXh2tEas",
+      "slot": 142,
+      "communityId": "com_o3rvkCZo7xi1eX",
+      "curveQuote": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "platformLamports": 50000000,
+      "receipts": [
+        {
+          "amount": "50000000",
+          "account": "platform",
+          "finality": "pending"
+        }
+      ],
+      "market": {
+        "holders": 0,
+        "holdersLowerBound": false,
+        "graduation": "bonding_curve",
+        "progress": 0,
+        "chain": {
+          "source": "solana_rpc",
+          "network": "localnet",
+          "slot": 144,
+          "asOf": "2026-10-19T16:19:09.000Z",
+          "fetchedAt": "2026-10-19T16:19:10.506Z"
+        }
+      },
+      "trades": {
+        "status": "available",
+        "n": 0,
+        "reason": "No bonding-curve trades yet."
+      },
+      "rent": {
+        "previewed": "24005040",
+        "paid": 24005040
+      },
+      "checks": {
+        "confirmed": true,
+        "duplicateSubmitSameLaunch": true,
+        "curveQuoteMatches": true,
+        "routing6040": true,
+        "provenanceQuote": true,
+        "platformCharge": true,
+        "oneLaunchFeeReceipt": true,
+        "rentMatchesNetwork": true,
+        "chainMetrics": true
+      }
+    }
+  ],
+  "result": "passed"
+}

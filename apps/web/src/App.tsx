@@ -25,6 +25,7 @@ import {
   Play,
   Plus,
   Rocket,
+  Route,
   RotateCw,
   Search,
   ShieldCheck,
@@ -56,6 +57,7 @@ import { OverlayClose } from "./components/OverlayClose";
 import { Communities } from "./components/Communities";
 import { Explore } from "./components/Explore";
 import { About } from "./components/About";
+import { Roadmap } from "./components/Roadmap";
 import "./about.css";
 import { MobileNavigation } from "./components/MobileNavigation";
 import "./mobile-navigation.css";
@@ -66,6 +68,7 @@ const pages = [
   { id: "studio", label: "Agent Studio", icon: Blocks },
   { id: "economy", label: "Economy", icon: ChartNoAxesCombined },
   { id: "treasury", label: "Treasury", icon: ShieldCheck },
+  { id: "roadmap", label: "Roadmap", icon: Route },
 ] as const;
 export default function App() {
   useDraftUnloadGuard();
@@ -106,7 +109,6 @@ export default function App() {
       drawCalls: 0,
       fps: 0,
     });
-  const [roadmapRequest, setRoadmapRequest] = useState(0);
   const city = useRef<CityHandle>(null);
   const closeMenu = useCallback(() => setMenu(false), []);
   useEffect(() => {
@@ -386,12 +388,12 @@ export default function App() {
         tabIndex={-1}
         className={worldVisible ? `world-main${immersive ? " is-immersive" : ""}` : "page-main"}
       >
-        {page === "about" && <div hidden={worldVisible} className="page-content about-shell">
+        {(page === "about" || page === "roadmap") && <div hidden={worldVisible} className="page-content about-shell">
           <div className="page-overlay-controls"><OverlayClose onClose={closePage} /></div>
-          <About onNavigate={go} roadmapRequest={roadmapRequest} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />
+          {page === "roadmap" ? <Roadmap /> : <About onNavigate={go} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />}
           <footer className="page-footer"><span>Agentic Economy · A World That Works</span><ProjectLinks /><span>Demo preview · Financial execution disabled</span></footer>
         </div>}
-        {(page !== "about" || worldVisible) && (worldVisible && world && !data ? (
+        {((page !== "about" && page !== "roadmap") || worldVisible) && (worldVisible && world && !data ? (
           <div className="world-summary-pending" role="status">
             <h1>A city in motion.</h1>
             <p>{error ? "The city is ready. Dashboard information is temporarily unavailable." : "The city is ready. Loading dashboard information…"}</p>
@@ -475,7 +477,7 @@ export default function App() {
                         Create Coin <ArrowRight size={16} />
                       </button>
                       <p className="world-vision-note">Watch rule-based agents work, produce and deliver. Common Agents, Super Agents and funded $AECO rewards are planned.</p>
-                      <div className="world-vision-actions"><button onClick={() => go("explore")}>Explore Tokens</button><button onClick={() => setImmersive(true)}>Explore the World</button><button onClick={() => { if (go("about")) setRoadmapRequest((n) => n + 1); }}>View Roadmap</button></div>
+                      <div className="world-vision-actions"><button onClick={() => go("explore")}>Explore Tokens</button><button onClick={() => setImmersive(true)}>Explore the World</button><button onClick={() => go("roadmap")}>View Roadmap</button></div>
                     <ProjectLinks />
                     </div>
                     <div className="district-badge">
@@ -948,7 +950,7 @@ export default function App() {
                   )}
                 </>
               )}
-              {page !== "world" && page !== "about" && (
+              {page !== "world" && page !== "about" && page !== "roadmap" && (
                 <div hidden={worldVisible} key={page} className={`page-content ${page === "communities" || page === "explore" ? "discovery-page" : ""}`}>
                   <div className="page-overlay-controls">
                     <OverlayClose onClose={closePage} />

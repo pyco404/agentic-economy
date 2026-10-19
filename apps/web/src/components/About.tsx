@@ -1,3 +1,5 @@
+import { ProjectLinks } from "./ProjectLinks";
+import {project} from "../content/project";
 import { ArrowRight, ArrowUpRight, Blocks, Box, Building2, Check, Database, Globe2, Leaf,
   LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Users, Workflow } from "lucide-react";
 import { useEffect, type MouseEvent, type ReactNode } from "react";
@@ -14,10 +16,10 @@ interface Props {
 }
 const systems = [
   { title: "The World", icon: Building2, text: "A persistent procedural city makes buildings, infrastructure, resources and supported activity visible." },
-  { title: "Autonomous agents", icon: Blocks, text: "Software-driven participants perform the tasks supported by the simulation, with identifiable roles and state." },
+  { title: "Autonomous agents", icon: Blocks, text: "Rule-based planners assign production, delivery and maintenance tasks with stable identities and observable state. Today’s workers are not LLM-driven financial agents." },
   { title: "Communities", icon: Users, text: "Groups participate through agents, headquarters and useful economic activity in one shared environment." },
   { title: "Economic activity", icon: Workflow, text: "Production, inventory and services come from authoritative backend records. Simulation transactions are distinct from blockchain transactions." },
-  { title: "Solana infrastructure", icon: Network, text: "The integration layer is intended for verified launches, wallet-based identity and supported financial operations. Live actions remain disabled." },
+  { title: "Solana infrastructure", icon: Network, text: "Wallet authentication, owned token drafts and Pinata preparation connect to a guarded Solana launch pipeline. SOL launches are verified on devnet; staging financial execution stays disabled." },
 ] as const;
 
 export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 }: Props) {
@@ -42,7 +44,7 @@ export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 
         <h1 id="about-title">A world<br />that works<span>.</span></h1>
         <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. Common Agents and a separate, advanced Super-Agent class form the planned next layers of participation.</p>
         <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}<button className="about-cta" type="button" onClick={() => document.getElementById("about-roadmap")?.scrollIntoView({ block: "start" })}>View Roadmap<ArrowRight size={16} aria-hidden="true" /></button></div>
-        <p className="about-hero-footnote">A World That Works. Powered by the planned $AECO ecosystem token.<br />Explore the simulation today. Live financial operations are not enabled.</p>
+        <p className="about-hero-footnote">A World That Works. Powered by the planned $AECO ecosystem token.<br />Explore the simulation today. Live financial operations are not enabled.</p><ProjectLinks /><p className="small"><a href={project.website} target="_blank" rel="noopener noreferrer">Official website · useaeco.xyz</a></p>
       </div>
       <div className="about-world-window" aria-label="A view into the same procedural city behind this page">
         <span className="about-coordinate"><Globe2 size={15} aria-hidden="true" />One living world.<br /><small>Every page belongs to it.</small></span>
@@ -87,7 +89,7 @@ export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 
     </section>
 
     <section id="about-economic-model" className="about-paper about-economics" aria-labelledby="about-economics-title">
-      {heading("05", "A transparent economic model", "Clear rules. Separate streams.", "The intended allocations below describe the product rules. Live settlement and fee sharing remain disabled pending verification.")}
+      {heading("05", "A transparent economic model", "Clear rules. Separate streams.", "The intended allocations below describe the product rules. Locked routing is verified in test-network launches. Earned-fee collection and live settlement remain separate verification gates.")}
       <div className="about-fee-layout"><div className="about-launch-charge"><span className="about-kicker">Platform token-launch charge</span>
         <div className="about-fee-number">{aboutFees.launchSol}<small>SOL</small></div><strong>100% to Platform Treasury</strong>
         <p>The 0.05 SOL launch charge is independent of SOL or USDC pair selection and separate from creator fees. No real payment is initiated here.</p></div>
@@ -115,9 +117,9 @@ export function About({ onNavigate, source, connected, mode, roadmapRequest = 0 
     </section>
 
     <section id="about-status" className="about-paper about-status" aria-labelledby="about-status-title">
-      {heading("07", "Where we are", "Built in the open. Clear about what’s next.", "A working demo and a longer-term vision. No invented milestones, launch dates or progress percentages.")}
+      {heading("07", "Where we are", "Built in the open. Clear about what’s next.", "Staging availability, test-network results, external verification and future phases are distinct. No invented launch dates or progress percentages.")}
       <div className="about-status-grid">{aboutStatus.map((group) => <div key={group.id} className={`about-status-column about-status-${group.id}`}>
-        <span className="about-status-mark" aria-hidden="true">{group.id === "demo" ? <Check size={17} /> : group.id === "development" ? <Sparkles size={17} /> : <LockKeyhole size={17} />}</span>
+        <span className="about-status-mark" aria-hidden="true">{group.id === "demo" ? <Check size={17} /> : group.id === "local" ? <Sparkles size={17} /> : <LockKeyhole size={17} />}</span>
         <h3>{group.title}</h3><p>{group.note}</p><ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul></div>)}</div>
       <p className="about-status-context"><Radio size={14} aria-hidden="true" /><strong>{connection.label}.</strong> {connection.detail}</p>
     </section>

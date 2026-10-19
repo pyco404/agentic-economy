@@ -1,7 +1,7 @@
 import bs58 from "bs58";
 import { isDeepStrictEqual } from "node:util";
 import { AddressLookupTableProgram, Connection, PublicKey, VersionedTransaction, type VersionedTransactionResponse } from "@solana/web3.js";
-import { SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
+import { LAUNCH_FEE_LAMPORTS, SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
 import { anchorAccountDiscriminator, bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
 import sdk from "./pump-sdk.cjs";
 import { pumpTradesFromLogs } from "./pump-events.js";
@@ -175,11 +175,16 @@ export class SolanaRpcChain implements ChainGateway {
     if(!table||!table.isActive())throw new ChainFeatureUnavailable("invalid_lookup_table","Launch lookup table is inactive");
     const latest=await this.conn.getLatestBlockhash("confirmed"),{buildPumpLaunch}=await import("./pump-builder.js");
     const built=await buildPumpLaunch(input,latest.blockhash,[table]);
-    const simulation=await this.conn.simulateTransaction(VersionedTransaction.deserialize(Buffer.from(built.transaction,"base64")),{sigVerify:false,commitment:"confirmed"});
+    const before=await this.conn.getBalance(new PublicKey(input.launcherWallet),"confirmed").catch(()=>null); // estimate input only
+    const simulation=await this.conn.simulateTransaction(VersionedTransaction.deserialize(Buffer.from(built.transaction,"base64")),{sigVerify:false,commitment:"confirmed",accounts:{encoding:"base64",addresses:[input.launcherWallet]}});
     if(simulation.value.err)throw new ChainFeatureUnavailable("pump_simulation_failed","Launch simulation failed; no launch or platform charge was submitted");
     const fee=await this.conn.getFeeForMessage(VersionedTransaction.deserialize(Buffer.from(built.transaction,"base64")).message,"confirmed");
     if(fee.value===null)throw new ChainFeatureUnavailable("blockhash_expired","Launch blockhash expired while estimating fees; prepare again");
-    return {transaction:built.transaction,lastValidBlockHeight:latest.lastValidBlockHeight,demo:false,genesisHash,estimatedNetworkFeesLamports:String(fee.value)};
+    // Rent is the network's (devnet's differs from mainnet's) and grows with metadata length, so measure it:
+    // simulated launcher debit minus the network fee and the platform charge. Omitted if the wallet moved meanwhile.
+    const after=simulation.value.accounts?.[0]?.lamports,rent=after==null||before===null?null:BigInt(before)-BigInt(after)-BigInt(fee.value)-LAUNCH_FEE_LAMPORTS;
+    return {transaction:built.transaction,lastValidBlockHeight:latest.lastValidBlockHeight,demo:false,genesisHash,estimatedNetworkFeesLamports:String(fee.value),
+      ...(rent!==null&&rent>0n&&rent<100_000_000n?{estimatedAccountRentLamports:rent.toString()}:{})};
   }
   async submitLaunchTransaction(transaction:string){
     await this.launchGenesis();

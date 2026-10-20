@@ -60,6 +60,7 @@ export class LaunchService {
     private readonly reader: StateReader,
     private readonly now: () => Date = () => new Date(),
     private readonly submissions:SignedLaunchStore = new SignedLaunchStore(),
+    private readonly diagnose:(event:{stage:string;launchId:string;signature?:string;code?:string})=>void=()=>{},
   ) {}
 
   feeBreakdown(quote: LaunchQuote = { asset: "SOL" }): FeeBreakdown {
@@ -210,10 +211,14 @@ export class LaunchService {
       await this.assertExpiredMintAbsent(l);
       const expired=this.transition(l,"expired");await this.store.updateLaunch(expired,record.version);return expired;
     }
+    try{await this.chain.assertLaunchSubmissionAllowed?.();}catch(e){this.diagnose({stage:'submission_blocked',launchId:id,signature:checked.signature,code:e instanceof ChainFeatureUnavailable?e.code:'operator_gate'});throw new AppError('feature_disabled',e instanceof ChainFeatureUnavailable?e.message:'Launch submission is disabled by this verification environment');}
+    this.diagnose({stage:'persisting_signed_payload',launchId:id,signature:checked.signature});
     await this.submissions.put({wallet,launchId:id,mint:l.mint,genesisHash:l.execution.genesisHash,signature:checked.signature,transaction:signed});
     const pending={...this.transition(l,"submitted"),signature:checked.signature};
     try{await this.store.updateLaunch(pending,record.version);}catch(e){if(e instanceof ConflictError){const latest=(await this.store.getLaunch(id))!.launch;if(latest.signature!==checked.signature)throw new AppError("conflict","Another launch submission won the race");return latest;}throw e;}
-    try{const returned=await this.chain.submitLaunchTransaction(signed);if(returned!==checked.signature)throw new Error("RPC signature mismatch");}catch{throw new AppError("unavailable","Submission is uncertain. Check this launch again; retry only the same signed transaction.");}
+    this.diagnose({stage:'rpc_broadcast',launchId:id,signature:checked.signature});
+    try{const returned=await this.chain.submitLaunchTransaction(signed);if(returned!==checked.signature)throw new Error("RPC signature mismatch");}catch{this.diagnose({stage:"rpc_submission_uncertain",launchId:id,signature:checked.signature});throw new AppError("unavailable","Submission is uncertain. Check this launch again; retry only the same signed transaction.");}
+    this.diagnose({stage:"rpc_acknowledged",launchId:id,signature:checked.signature});
     return pending;
   }
   /** Explicitly resume only the original signed message; never prepare a new mint or ask the wallet again. */
@@ -310,6 +315,17 @@ export class LaunchService {
 
     try {
       if (v.outcome === "pending") {
+        // A saved signature is evidence of signing, not proof that the RPC accepted a broadcast.
+        // Require rooted height, history-aware absence AND finalized mint absence before closing it.
+        if(launch.execution&&this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>launch.execution.lastValidBlockHeight){
+          if(!this.chain.getSignatureStatus)throw new AppError('unavailable','Signature history verification is unavailable. Keep this original attempt.');
+          const status=await this.chain.getSignatureStatus(signature);
+          if(status)throw new AppError('unavailable','The signature has chain evidence but its transaction is unavailable. Keep this attempt for reconciliation.');
+          await this.assertExpiredMintAbsent(launch);
+          const next={...this.transition(launch,'expired'),signature,errors:[...launch.errors,{code:'submission_expired_unobserved',message:'The signed transaction expired without a chain transaction or finalized mint. No successful token creation was observed.',at}]};
+          await this.store.updateLaunch(next,rec.version);
+          this.diagnose({stage:'expired_unobserved',launchId,signature});return next;
+        }
         const next = { ...this.transition(launch, "submitted"), signature };
         await this.store.updateLaunch(next, rec.version);
         return next;

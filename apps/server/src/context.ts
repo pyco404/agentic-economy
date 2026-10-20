@@ -1,3 +1,5 @@
+import { HeliusReader, HeliusReadBudget } from './chain/helius.js';
+import { heliusMarketChain } from './chain/helius-market.js';
 import {SignedLaunchStore} from './store/signed-launch.js';
 import {TokenMarketService} from './services/token-market.js';
 import type { AppConfig } from "./config.js";
@@ -82,7 +84,11 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
 
   const runtime = await CityRuntime.create(config, store, coord, logger);
   const auth = new AuthService(store, config);
-  const treasury = new TreasuryService(store, config);
+  const heliusBudget = new HeliusReadBudget();
+  const monitoringReader = config.heliusApiKey && config.role !== 'sim' ? new HeliusReader(config.heliusApiKey, 'mainnet-beta', heliusBudget) : undefined;
+  const marketReader = config.heliusApiKey && config.mode !== 'demo' && config.solana.cluster !== 'localnet' && config.role !== 'sim' ? new HeliusReader(config.heliusApiKey, config.solana.cluster, heliusBudget) : undefined;
+  const marketChain = marketReader ? heliusMarketChain(chain, marketReader) : chain;
+  const treasury = new TreasuryService(store, config, undefined, monitoringReader);
   const communities = new CommunityService(store, runtime.reader);
   const eligibility = new EligibilityService(chain, communities, config);
   const agents = new AgentService(runtime.reader, runtime.bus, store, config);
@@ -113,7 +119,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     runtime,
     auth,
     treasury,
-    tokenMarket:new TokenMarketService(store,chain,config.mode==='demo'?'demo':config.solana.cluster),
+    tokenMarket:new TokenMarketService(store,marketChain,config.mode==='demo'?'demo':config.solana.cluster),
     launches,
     communities,
     eligibility,

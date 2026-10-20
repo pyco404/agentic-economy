@@ -1,5 +1,8 @@
 # Phase 2 (Token Launchpad): completion record, 19 October 2026
 
+> Superseded scope, 20 October 2026: Phase 2 new launches are TOKEN/SOL only. USDC launch and USDC-specific fee acceptance are deferred, not completion blockers. Historical evidence below is retained for audit; instructions to enable USDC are obsolete and must not be executed. See [current acceptance scope](phase2-sol-only-acceptance.md).
+
+
 Owner: Claude (took over from Codex). Builds on [the final blockchain audit](phase2-final-blockchain-audit.md). Staging stays `MODE=demo`; mainnet, real charges, claims, payouts and treasury signing remain disabled. No migration was added or applied.
 
 ## What changed today

@@ -1,4 +1,4 @@
-import {DraftFields as DraftFieldsSchema,tokenFieldIssues} from './shared';
+import {NewLaunchDraftFields as DraftFieldsSchema,tokenFieldIssues} from './shared';
 import type { z } from 'zod';
 import type { DraftFields, DraftReview, SavedLaunchDraft } from './shared';
 

@@ -177,6 +177,14 @@ export class LaunchService {
       throw new AppError("unavailable", "Launch RPC network does not match the prepared attempt. Your saved attempt is unchanged.");
   }
 
+  /** Adapted from AgenticPad: finalized height alone cannot prove a mint was never created. */
+  private async assertExpiredMintAbsent(launch:TokenLaunch){
+    if(!this.chain.mintAccountExists)throw new AppError("unavailable","Finalized mint verification is unavailable. Keep this saved launch; do not create another coin.");
+    let exists:boolean;
+    try{exists=await this.chain.mintAccountExists(launch.mint);}catch{throw new AppError("unavailable","Finalized mint verification failed. Keep this saved launch; retry checking its status.");}
+    if(exists)throw new AppError("unavailable","This mint exists on-chain and requires recovery. Do not create another coin or pay again.");
+  }
+
   /** Persist submission BEFORE broadcast: a lost RPC response remains recoverable. */
   async submit(wallet:string,id:string,signed:string):Promise<TokenLaunch>{
     this.assertEnabled();
@@ -195,6 +203,7 @@ export class LaunchService {
       // A previously broadcast transaction may be missing from this RPC's history.
       // Keep uncertainty recoverable instead of asserting that no charge occurred.
       if(l.signature)return l;
+      await this.assertExpiredMintAbsent(l);
       const expired=this.transition(l,"expired");await this.store.updateLaunch(expired,record.version);return expired;
     }
     const pending={...this.transition(l,"submitted"),signature:checked.signature};
@@ -207,6 +216,7 @@ export class LaunchService {
     if(l.signature&&!['confirmed','failed','expired'].includes(l.status))return this.confirm(wallet,id,l.signature);
     if(l.execution&&!l.signature)await this.assertPreparedNetwork(l);
     if(l.execution&&!l.signature&&this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
+      await this.assertExpiredMintAbsent(l);
       const expired=this.transition(l,"expired");
       try{await this.store.updateLaunch(expired,initial.version);return expired;}catch(e){if(e instanceof ConflictError)return(await this.store.getLaunch(id))!.launch;throw e;}
     }

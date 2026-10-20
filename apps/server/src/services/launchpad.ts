@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import sharp from 'sharp';
-import { DraftFields, DraftImage, DraftReview, IpfsAsset, SavedLaunchDraft, type DraftFields as Fields } from '@agentic-economy/shared';
+import { DraftImage, DraftReview, IpfsAsset, SavedLaunchDraft, tokenFieldIssues, type DraftFields as Fields } from '@agentic-economy/shared';
 import type { AppConfig } from '../config.js';
 import type { LaunchpadStore } from '../store/launchpad.js';
 import { AppError } from '../util/errors.js';
@@ -16,11 +16,16 @@ export class PinataPinning implements Pinning {
   try{const {data}=await response.json() as {data:{cid:string}};const gateway=new URL(this.config.gateway);if(gateway.protocol!=='https:'||gateway.username||gateway.password)throw new Error();return IpfsAsset.parse({cid:data.cid,ipfsUri:`ipfs://${data.cid}`,gatewayUrl:`${gateway.origin}/ipfs/${data.cid}`});}catch{throw new AppError('unavailable','Pinata returned an invalid upload receipt');}
  }
 }
-const required=DraftFields.refine(f=>!!f.name&&!!f.symbol,'Token name and symbol are required');
+/** Network-dependent launch checks (quote asset, Developer Buy availability); issues block uploads. */
+export type LaunchReadiness=(fields:Fields)=>Promise<{field:'quoteAsset'|'devBuyBps';code:string;message:string}[]>;
 const digest=(v:unknown)=>createHash('sha256').update(typeof v==='string'?v:JSON.stringify(v)).digest('hex');
 export class LaunchpadService {
  private decoding=0;
- constructor(readonly store:LaunchpadStore,private config:AppConfig,private pinning:Pinning=new PinataPinning(config.pinata)){}
+ constructor(readonly store:LaunchpadStore,private config:AppConfig,private pinning:Pinning=new PinataPinning(config.pinata),private readiness:LaunchReadiness=async()=>[]){}
+ /** Every launch-readiness issue for these fields: protocol byte limits, application rules and network support. */
+ async launchIssues(fields:Fields){return [...tokenFieldIssues(fields,true),...await this.readiness(fields)];}
+ /** Gate before anything is sent to Pinata: invalid details never consume IPFS storage. */
+ private async assertLaunchReady(fields:Fields){const issues=await this.launchIssues(fields);if(issues.length)throw new AppError('bad_request',issues[0]!.message,{issues});}
  async operation<T>(wallet:string,key:string,kind:string,content:unknown,work:()=>Promise<T>):Promise<T>{const claim=await this.store.claim(wallet,key,kind,digest(content));if(claim.replayed)return claim.result as T;try{const out=await work();await this.store.finish(wallet,key,kind,out);return out;}catch(e){await this.store.finish(wallet,key,kind,null,true);throw e;}}
  create(wallet:string,key:string,fields:Fields){return this.operation(wallet,key,'create',fields,async()=>{
   // Deterministic operation identity also survives a crash between insertion and receipt persistence.
@@ -33,6 +38,7 @@ export class LaunchpadService {
   if(!bytes.length||bytes.length>this.config.pinata.maxBytes)throw new AppError('bad_request','Image must be non-empty and within the configured size limit');
   return this.operation(wallet,key,'image',{id,version,sha256:digest(bytes.toString('base64'))},async()=>{
    const d=await this.store.get(wallet,id);if(d.version!==version)throw new AppError('conflict','Draft changed. Reload before uploading.');
+   await this.assertLaunchReady(d.fields);
    if(!this.config.pinata.jwt)throw new AppError('feature_disabled','IPFS uploads are not configured for this deployment');
    if(this.decoding>=2)throw new AppError('unavailable','Image processing is busy. Retry shortly.');this.decoding++;
    let clean:Buffer,width:number,height:number,mime:'image/png'|'image/jpeg'|'image/webp';
@@ -57,12 +63,12 @@ export class LaunchpadService {
   await this.store.get(wallet,id);
   return this.operation(wallet,key,'metadata',{id,version},async()=>{
    const d=await this.store.get(wallet,id);if(d.version!==version)throw new AppError('conflict','Draft changed. Reload before preparing metadata.');
-   required.parse(d.fields);if(!d.image)throw new AppError('bad_request','A backend-verified logo is required');
+   await this.assertLaunchReady(d.fields);if(!d.image)throw new AppError('bad_request','A backend-verified logo is required');
    const {name,symbol,description,website,twitter,telegram}=d.fields;
    const json={name,symbol,description,image:d.image.gatewayUrl,showName:true,createdOn:new URL(this.config.auth.uri).origin,...(website?{website}:{}),...(twitter?{twitter}:{}),...(telegram?{telegram}:{})};
    const metadata=await this.pinning.pin(new TextEncoder().encode(JSON.stringify(json)),'application/json',`metadata-${id}.json`);
    const next={...d,metadata,version:d.version+1,updatedAt:new Date().toISOString()};await this.store.save(next,version);return next;
   });
  }
- async review(wallet:string,id:string){const draft=await this.store.get(wallet,id),issues:string[]=[];if(!draft.fields.name||!draft.fields.symbol)issues.push('Token name and symbol are required');if(!draft.image)issues.push('Upload a verified logo');if(!draft.metadata)issues.push('Generate metadata for the latest saved details');return DraftReview.parse({draft,issues,readyForNextMilestone:!issues.length,launchEnabled:false,launchChargeSol:'0.05'});}
+ async review(wallet:string,id:string){const draft=await this.store.get(wallet,id),fieldIssues=await this.launchIssues(draft.fields),issues:string[]=fieldIssues.map(i=>i.message);if(!draft.image)issues.push('Upload a verified logo');if(!draft.metadata)issues.push('Generate metadata for the latest saved details');return DraftReview.parse({draft,issues,fieldIssues,readyForNextMilestone:!issues.length,launchEnabled:false,launchChargeSol:'0.05'});}
 }

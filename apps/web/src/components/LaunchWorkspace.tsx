@@ -5,7 +5,7 @@ import { useDevBuyQuote } from '../api/devBuy';
 import { LaunchDevBuy, type DevBuyAvailability } from './LaunchDevBuy';
 import { jsonRequest, launchpadApiOrigin, launchpadRequest, useWalletSession } from '../api/walletSession';
 import { DraftWriter, draftFingerprint, hasDraftContent } from '../api/draftWriter';
-import { DraftFields as DraftFieldsSchema } from '../api/shared';
+import { NewLaunchDraftFields as DraftFieldsSchema } from '../api/shared';
 import { MyDrafts } from './MyDrafts';
 import { prepareLaunchDraft, type PreparationStage } from '../api/prepareLaunchDraft';
 import { LaunchExecution } from './LaunchExecution';
@@ -37,7 +37,7 @@ export function LaunchWorkspace() {
  const [fields,setFields] = useState<Fields>(empty), [busy,setBusy] = useState(false), [error,setError] = useState(''), [message,setMessage] = useState('');
  const [review,setReview] = useState<z.infer<typeof DraftReview>|null>(null), [uploads,setUploads] = useState<boolean|null>(null);
  const [maxBytes,setMaxBytes] = useState(5_000_000), [memoryStorage,setMemoryStorage] = useState(false), [logoScope,setLogoScope] = useState(newScope);
- const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false),[usdcEnabled,setUsdcEnabled]=useState(false),[devBuyAvailability,setDevBuyAvailability]=useState<DevBuyAvailability|null>(null),[attempted,setAttempted]=useState(false);
+ const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false),[devBuyAvailability,setDevBuyAvailability]=useState<DevBuyAvailability|null>(null),[attempted,setAttempted]=useState(false);
  const [devBuyValid,setDevBuyValid]=useState(true),[reviewedDevBuyMax,setReviewedDevBuyMax]=useState<string|null>(null);
  const flowActive=review?.launchEnabled===true;
  const [phase,setPhase] = useState<PreparationStage|null>(null), [progress,setProgress] = useState<number|null>(null), [removed,setRemoved] = useState(false);
@@ -83,8 +83,8 @@ export function LaunchWorkspace() {
  useEffect(()=>{
   const version=++generation.current;
   if(previousOwner.current&&previousOwner.current!==owner){selected.current=null;setLocalFile(null);form.current=empty;setFields(empty);setRemoved(false);setLogoScope(newScope());}
-  previousOwner.current=owner;beginEditor(null);keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setDraftsOpen(false);setImageReselect(false);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setUsdcEnabled(false);setDevBuyAvailability(null);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);setRestoring(!!owner);
-  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setUsdcEnabled(c.quotes.USDC==='draft');setDevBuyAvailability(c.devBuy?{status:c.devBuy.status,reason:c.devBuy.reason}:null);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
+  previousOwner.current=owner;beginEditor(null);keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setDraftsOpen(false);setImageReselect(false);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setDevBuyAvailability(null);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);setRestoring(!!owner);
+  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setDevBuyAvailability(c.devBuy?{status:c.devBuy.status,reason:c.devBuy.reason}:null);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
   if(owner){const before=draftFingerprint(form.current),hadContent=hasDraftContent(form.current);void (async()=>{
    try{const result=await launchpadRequest(base,z.object({items:z.array(SavedLaunchDraft)}));if(version!==generation.current)return;setItems(result.items.filter(d=>d.wallet===owner));
     const active=localGet(activeKey(owner));if(active==='new'||hadContent||draftFingerprint(form.current)!==before)return;
@@ -125,7 +125,7 @@ export function LaunchWorkspace() {
   if(!owner){session.open();return;}
   setAttempted(true);
   // Nothing is saved or uploaded while any detail is invalid.
-  if(restoring||tokenFieldIssues(form.current,true).length||devBuyBlocked||!devBuyValid){setError('Fix the highlighted details before creating your coin.');return;}
+  if(restoring||form.current.quoteAsset!=='SOL'||tokenFieldIssues(form.current,true).length||devBuyBlocked||!devBuyValid){setError('Fix the highlighted details before creating your coin.');return;}
   setReviewedDevBuyMax(!devQuote.loading&&devQuote.quote?.status==='available'&&devQuote.quote.bps===form.current.devBuyBps?devQuote.quote.maxQuoteCost:null);
   void run(async(signal,check)=>{
    if(uploads===null)throw new Error('Token preparation is still loading. Please try again in a moment.');
@@ -160,7 +160,7 @@ export function LaunchWorkspace() {
       <p className="launch-field-meta" id="description-meta"><span>Optional · maximum {DESCRIPTION_MAX} characters.</span><span data-over={fields.description.length>DESCRIPTION_MAX}>{fields.description.length}/{DESCRIPTION_MAX}</span></p>
       {fieldIssues('description').length>0&&<p className="launch-field-error" role="alert">{fieldIssues('description')[0]!.message}</p>}</div>
      <details><summary>Project links (optional)</summary>{(['website','twitter','telegram']as const).map(key=><label key={key}>{key==='twitter'?'X profile':key}<input type="url" value={fields[key]??''} placeholder="https://…" onChange={e=>edit(key,e.target.value)}/></label>)}</details>
-     <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} usdcEnabled={usdcEnabled} onChange={quote=>{if(quote==='SOL'||quote==='USDC')edit('quoteAsset',quote);}}/>
+     <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} onChange={quote=>{if(quote==='SOL')edit('quoteAsset',quote);}}/>
      <LaunchDevBuy onValidityChange={setDevBuyValid} bps={fields.devBuyBps} onChange={bps=>edit('devBuyBps',bps)} availability={devBuyAvailability} quoteAsset={fields.quoteAsset} symbol={fields.symbol} quote={devQuote.quote} loading={devQuote.loading} error={devQuote.error}/>
      <LaunchLogoUpload key={logoScope} selectionOnly disabled={busy||executionBusy||flowActive} onValidationChange={setLogoValidating} automaticMetadata={false} name={fields.name} symbol={fields.symbol} description={fields.description} quoteAsset={fields.quoteAsset}
       imageUrl={removed?'':draft?.image?.ipfsUri??''} trustedImage={removed?null:draft?.image??null} scope={logoScope} maxBytes={maxBytes}

@@ -17,3 +17,17 @@
 .launch-preview-dev-buy { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .launch-preview-dev-buy strong { color: #33664d; overflow-wrap: anywhere; }
 .launch-quote-change { border: 1px solid #d9b98a; background: #fbf3e4; border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
+
+/* Keep the optional purchase compact; expanded details stay in the same card. */
+.launch-dev-buy { margin: 20px 0; padding: 14px 16px; border: 1px solid #e1e5d8; border-radius: 12px; background: #faf9f1; }
+.launch-dev-buy legend { font-size: 14px; margin: 0; padding: 0 4px; }
+.launch-dev-buy #dev-buy-help { margin: 4px 0 8px; font-size: 11px; line-height: 1.6; }
+.launch-dev-buy-amount { border: 0; background: none; margin-top: 8px; padding: 0; }
+.launch-dev-buy-estimate { font-size: 12px; margin: 12px 0; }
+.launch-dev-buy-estimate > div { border: 0; padding: 5px 0; }
+.launch-dev-buy details summary { cursor: pointer; }
+.surface .launch-dev-buy-inputs input[type="range"] { margin-block: 8px; }
+@media (max-width: 700px) {
+ .launch-workspace .launch-dev-buy-estimate > div { flex-direction: row; gap: 12px; }
+ .launch-workspace .launch-dev-buy-estimate dd { text-align: right; }
+}

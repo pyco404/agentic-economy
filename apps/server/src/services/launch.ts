@@ -90,7 +90,7 @@ export class LaunchService {
   private assertEnabled() {
     if (this.config.mode === "demo") return;
     if (!this.config.financialFeaturesEnabled)
-      throw new AppError("feature_disabled", "Launches are disabled until Pump.fun fee routing has been verified for this deployment (FEE_ROUTING_VERIFIED).");
+      throw new AppError("feature_disabled", "Coin creation is unavailable in this environment.");
   }
 
   async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
@@ -361,7 +361,7 @@ export class LaunchService {
         tick: this.reader.tick,
         at,
         type: "launch.confirmed",
-        summary: `${launch.draft.name} ($${launch.draft.symbol}) launched on Pump.fun through Agentic Economy`,
+        summary: `${launch.draft.name} ($${launch.draft.symbol}) launched on Agentic Economy.`,
         agentId: null,
         buildingId: null,
         communityId,

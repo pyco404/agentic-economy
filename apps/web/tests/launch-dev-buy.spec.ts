@@ -46,14 +46,15 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await toggle.check();
     const percent = group.getByRole('textbox', { name: 'Share of total supply', exact: true });
     await percent.fill('3.5');
-    await expect(group).toContainText('35,000,000 of 1,000,000,000');
+    await expect(group).toContainText('35,000,000 MOSS');
     await expect(group).toContainText('0.010242053 SOL'); await expect(group).toContainText('0.010344474 SOL'); await expect(group).toContainText('6.85%');
-    await expect(group.getByRole('slider')).toHaveValue('350');
+    await expect(percent).toHaveValue('3.5');
+    await expect(group.getByText('Estimated cost includes', { exact: false })).toBeHidden();
     await expect(page.getByRole('region', { name: 'Live token preview' })).toContainText('3.5% of supply · ≈ 35,000,000 MOSS');
     await percent.fill('3.6'); await expect(group.getByRole('alert')).toContainText('from 0% to 3.5%'); await expect(percent).toHaveAttribute('aria-invalid', 'true');
     await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeDisabled();
     expect(writes).toEqual([]);
-    await percent.fill('1'); await expect(group).toContainText('10,000,000 of 1,000,000,000');
+    await percent.fill('1'); await expect(group).toContainText('10,000,000 MOSS');
     await toggle.uncheck(); await expect(group).toContainText('Developer Buy off');
     await expect(page.getByRole('region', { name: 'Live token preview' })).not.toContainText('Developer Buy');
     await toggle.check(); await percent.fill('3.5');

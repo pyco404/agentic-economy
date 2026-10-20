@@ -1,4 +1,4 @@
-import {DraftFields as DraftFieldsSchema} from './shared';
+import {DraftFields as DraftFieldsSchema,tokenFieldIssues} from './shared';
 import type { z } from 'zod';
 import type { DraftFields, DraftReview, SavedLaunchDraft } from './shared';
 
@@ -17,11 +17,14 @@ export interface PreparationPort {
 /** An explicit review action prepares assets; it never constructs or signs a launch transaction. */
 export async function prepareLaunchDraft(input: {
  fields: DraftFields; draft: SavedLaunchDraft | null; file: File | null; removeImage: boolean; uploads: boolean;
+ /** From backend capabilities: a Developer Buy can be prepared for this pair on this network. */
+ devBuyAvailable?: boolean;
 }, port: PreparationPort) {
  port.check();
- if (!input.fields.name.trim() || !input.fields.symbol.trim()) throw new Error('Enter a token name and symbol.');
+ // Same rules as the server, checked before anything is saved or uploaded (the server re-checks before Pinata).
+ const issue=tokenFieldIssues(input.fields,true)[0];if(issue)throw new Error(issue.message);
  const parsed=DraftFieldsSchema.safeParse(input.fields);if(!parsed.success)throw new Error(parsed.error.issues[0]?.message??'Check your token details.');
- if(new TextEncoder().encode(input.fields.name.trim()).length>32||new TextEncoder().encode(input.fields.symbol.trim()).length>13)throw new Error('Token name or symbol exceeds the supported byte length.');
+ if(input.fields.devBuyBps>0&&!input.devBuyAvailable)throw new Error('Developer Buy is unavailable for this pair or network. Turn it off to continue.');
  let draft = input.draft;
  const keep = (value: SavedLaunchDraft) => { port.check(); draft = value; port.accept(value); return value; };
  if (!draft || JSON.stringify(draft.fields) !== JSON.stringify(input.fields)) {

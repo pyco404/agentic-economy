@@ -1,6 +1,42 @@
 import { z } from "zod";
 import { AmountString, DataMode, LaunchId, PublicKey, TxSignature } from "./primitives.js";
 
+/** Owner-supplied future Mainnet identities. Public keys only; ownership is not proven by an RPC balance. */
+export const OFFICIAL_TREASURIES = Object.freeze({
+  platform: "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+  agentRewards: "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",
+  aecoDeployer: "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+});
+
+export const OfficialTreasuryWallet = z.object({
+  account: z.enum(["platform", "agent_rewards"]),
+  address: PublicKey,
+  network: z.literal("mainnet-beta"),
+  identity: z.literal("owner_supplied"),
+  source: z.literal("solana_rpc"),
+  status: z.enum(["available", "unavailable"]),
+  balanceLamports: AmountString.nullable(),
+  slot: z.number().int().nonnegative().nullable(),
+  updatedAt: z.iso.datetime({ offset: true }).nullable(),
+  checkedAt: z.iso.datetime({ offset: true }),
+  message: z.string(),
+  accounting: z.object({
+    coverage: z.literal("deployment_ledger_only"),
+    creatorFeesLamports: AmountString,
+    launchChargesLamports: AmountString,
+    lifetimeCreatorFeesLamports: AmountString.nullable(),
+    pendingDistributionsLamports: AmountString.nullable(),
+  }),
+  recentTransactions: z.array(z.object({
+    signature: TxSignature,
+    slot: z.number().int().nonnegative(),
+    blockTime: z.number().int().nullable(),
+    failed: z.boolean(),
+    classification: z.enum(["verified_creator_fee", "verified_launch_charge", "unclassified"]),
+  })),
+});
+export type OfficialTreasuryWallet = z.infer<typeof OfficialTreasuryWallet>;
+
 /** Revenue streams are NEVER mixed: launch fees are platform-only; only creator fees are split 60/40. */
 export const TreasuryStream = z.enum(["launch_fee", "creator_fee"]).meta({ id: "TreasuryStream" });
 export type TreasuryStream = z.infer<typeof TreasuryStream>;
@@ -89,6 +125,7 @@ export const TreasurySummary = z
       mode: z.literal("disabled_dry_run"),
       description: z.string(),
     }),
+    officialWallets: z.array(OfficialTreasuryWallet).optional(),
     recentEntries: z.array(TreasuryEntry),
     asOf: z.iso.datetime({ offset: true }),
   })

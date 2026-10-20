@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.4.1
+  version: 0.5.0
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -26,6 +26,206 @@ tags:
   - name: system
   - name: demo
 paths:
+  /api/v1/launchpad/capabilities:
+    get:
+      operationId: getLaunchpadCapabilities
+      summary: Authenticated workspace features and safe-network Developer Buy availability
+      tags:
+        - launches
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: number
+                    const: 1
+                  authentication:
+                    type: string
+                    const: cookie
+                  uploads:
+                    type: boolean
+                  maxBytes:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  maxPixels:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  storage:
+                    type: string
+                    enum:
+                      - memory
+                      - postgres
+                  launchEnabled:
+                    type: boolean
+                  quotes:
+                    type: object
+                    properties:
+                      SOL:
+                        type: string
+                        const: draft
+                      USDC:
+                        type: string
+                        enum:
+                          - planned
+                          - draft
+                        description: draft = USDC launches are enabled on this safe network; planned = disabled
+                      AECO:
+                        type: string
+                        const: future
+                    required:
+                      - SOL
+                      - USDC
+                      - AECO
+                  devBuy:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum:
+                          - available
+                          - unavailable
+                      maxBps:
+                        type: number
+                        const: 350
+                      quoteAssets:
+                        type: array
+                        items:
+                          type: string
+                          const: SOL
+                      reason:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - status
+                      - maxBps
+                      - quoteAssets
+                      - reason
+                required:
+                  - version
+                  - authentication
+                  - uploads
+                  - maxBytes
+                  - maxPixels
+                  - storage
+                  - launchEnabled
+                  - quotes
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/launchpad/dev-buy-quote:
+    get:
+      operationId: getDevBuyQuote
+      summary: Estimate an optional SOL Developer Buy from live Pump supply and fee configuration; never submits a transaction
+      tags:
+        - launches
+      parameters:
+        - name: bps
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 350
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        const: available
+                      bps:
+                        type: integer
+                        minimum: 0
+                        maximum: 350
+                      quoteAsset:
+                        type: string
+                        const: SOL
+                      network:
+                        type: string
+                        enum:
+                          - devnet
+                          - localnet
+                          - mainnet-beta
+                      totalSupply:
+                        $ref: "#/components/schemas/AmountString"
+                      tokenDecimals:
+                        type: number
+                        const: 6
+                      tokenAmount:
+                        $ref: "#/components/schemas/AmountString"
+                      capTokenAmount:
+                        $ref: "#/components/schemas/AmountString"
+                      estimatedQuoteCost:
+                        description: Lamports, including Pump protocol and creator fees
+                        $ref: "#/components/schemas/AmountString"
+                      pumpFees:
+                        $ref: "#/components/schemas/AmountString"
+                      maxQuoteCost:
+                        description: Lamports; the buy fails rather than spend more
+                        $ref: "#/components/schemas/AmountString"
+                      priceImpactBps:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      slot:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - status
+                      - bps
+                      - quoteAsset
+                      - network
+                      - totalSupply
+                      - tokenDecimals
+                      - tokenAmount
+                      - capTokenAmount
+                      - estimatedQuoteCost
+                      - pumpFees
+                      - maxQuoteCost
+                      - priceImpactBps
+                      - slot
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        const: unavailable
+                      bps:
+                        type: integer
+                        minimum: 0
+                        maximum: 350
+                      reason:
+                        type: string
+                    required:
+                      - status
+                      - bps
+                      - reason
+                $defs:
+                  AmountString:
+                    type: string
+                    pattern: ^(0|[1-9][0-9]*)$
+                    description: Non-negative integer in the asset's base units, encoded as a decimal string.
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /healthz:
     get:
       operationId: health
@@ -3748,6 +3948,113 @@ components:
         - industrial
         - agricultural
         - waterfront
+    DraftFields:
+      type: object
+      properties:
+        name:
+          default: ""
+          type: string
+          maxLength: 256
+        symbol:
+          default: ""
+          type: string
+          maxLength: 64
+        description:
+          default: ""
+          type: string
+          maxLength: 4000
+        quoteAsset:
+          default: SOL
+          type: string
+          enum:
+            - SOL
+            - USDC
+        website:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        twitter:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        telegram:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        devBuyBps:
+          default: 0
+          description: Optional Developer Buy in basis points of total supply (0–350 = 0%–3.5%)
+          type: integer
+          minimum: 0
+          maximum: 350
+      required:
+        - name
+        - symbol
+        - description
+        - quoteAsset
+        - website
+        - twitter
+        - telegram
+        - devBuyBps
+      additionalProperties: false
+    DraftFieldsInput:
+      type: object
+      properties:
+        name:
+          default: ""
+          type: string
+          maxLength: 256
+        symbol:
+          default: ""
+          type: string
+          maxLength: 64
+        description:
+          default: ""
+          type: string
+          maxLength: 4000
+        quoteAsset:
+          default: SOL
+          type: string
+          enum:
+            - SOL
+            - USDC
+        website:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        twitter:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        telegram:
+          default: null
+          anyOf:
+            - type: string
+              maxLength: 200
+              format: uri
+            - type: "null"
+        devBuyBps:
+          default: 0
+          description: Optional Developer Buy in basis points of total supply (0–350 = 0%–3.5%)
+          type: integer
+          minimum: 0
+          maximum: 350
+      additionalProperties: false
     EconomicEvent:
       type: object
       properties:
@@ -4080,6 +4387,42 @@ components:
         launcherCreatorFeeBps:
           type: number
           const: 0
+        developerBuy:
+          anyOf:
+            - type: object
+              properties:
+                bps:
+                  type: integer
+                  minimum: 1
+                  maximum: 350
+                quoteAsset:
+                  type: string
+                  const: SOL
+                totalSupply:
+                  $ref: "#/components/schemas/AmountString"
+                tokenAmount:
+                  $ref: "#/components/schemas/AmountString"
+                estimatedQuoteCost:
+                  $ref: "#/components/schemas/AmountString"
+                pumpFees:
+                  $ref: "#/components/schemas/AmountString"
+                maxQuoteCost:
+                  $ref: "#/components/schemas/AmountString"
+                priceImpactBps:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+              required:
+                - bps
+                - quoteAsset
+                - totalSupply
+                - tokenAmount
+                - estimatedQuoteCost
+                - pumpFees
+                - maxQuoteCost
+                - priceImpactBps
+              additionalProperties: false
+            - type: "null"
         creatorFeeSplit:
           type: object
           properties:
@@ -4129,6 +4472,41 @@ components:
         launcherCreatorFeeBps:
           type: number
           const: 0
+        developerBuy:
+          anyOf:
+            - type: object
+              properties:
+                bps:
+                  type: integer
+                  minimum: 1
+                  maximum: 350
+                quoteAsset:
+                  type: string
+                  const: SOL
+                totalSupply:
+                  $ref: "#/components/schemas/AmountString"
+                tokenAmount:
+                  $ref: "#/components/schemas/AmountString"
+                estimatedQuoteCost:
+                  $ref: "#/components/schemas/AmountString"
+                pumpFees:
+                  $ref: "#/components/schemas/AmountString"
+                maxQuoteCost:
+                  $ref: "#/components/schemas/AmountString"
+                priceImpactBps:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+              required:
+                - bps
+                - quoteAsset
+                - totalSupply
+                - tokenAmount
+                - estimatedQuoteCost
+                - pumpFees
+                - maxQuoteCost
+                - priceImpactBps
+            - type: "null"
         creatorFeeSplit:
           type: object
           properties:
@@ -4587,11 +4965,9 @@ components:
         name:
           type: string
           minLength: 1
-          maxLength: 32
         symbol:
           type: string
           minLength: 1
-          maxLength: 13
           pattern: ^[A-Za-z0-9$_.-]+$
         description:
           default: ""
@@ -4599,7 +4975,6 @@ components:
           maxLength: 1000
         metadataUri:
           type: string
-          maxLength: 200
           format: uri
         imageUri:
           default: null
@@ -4645,11 +5020,9 @@ components:
         name:
           type: string
           minLength: 1
-          maxLength: 32
         symbol:
           type: string
           minLength: 1
-          maxLength: 13
           pattern: ^[A-Za-z0-9$_.-]+$
         description:
           default: ""
@@ -4657,7 +5030,6 @@ components:
           maxLength: 1000
         metadataUri:
           type: string
-          maxLength: 200
           format: uri
         imageUri:
           default: null
@@ -6419,6 +6791,22 @@ components:
             initiator:
               type: string
               const: HUMAN
+            devBuy:
+              type: object
+              properties:
+                bps:
+                  type: integer
+                  minimum: 1
+                  maximum: 350
+                tokenAmount:
+                  $ref: "#/components/schemas/AmountString"
+                maxQuoteCost:
+                  $ref: "#/components/schemas/AmountString"
+              required:
+                - bps
+                - tokenAmount
+                - maxQuoteCost
+              additionalProperties: false
           required:
             - draftId
             - draftVersion
@@ -6430,6 +6818,26 @@ components:
             - platformOrigin
             - initiator
           additionalProperties: false
+        devBuyResult:
+          anyOf:
+            - type: object
+              properties:
+                tokenAmount:
+                  $ref: "#/components/schemas/AmountString"
+                quoteSpent:
+                  $ref: "#/components/schemas/AmountString"
+                allocationBps:
+                  type: string
+                  description: Exact share of total supply in basis points, as a decimal string
+                signature:
+                  $ref: "#/components/schemas/TxSignature"
+              required:
+                - tokenAmount
+                - quoteSpent
+                - allocationBps
+                - signature
+              additionalProperties: false
+            - type: "null"
         signature:
           anyOf:
             - $ref: "#/components/schemas/TxSignature"
@@ -6545,6 +6953,21 @@ components:
             initiator:
               type: string
               const: HUMAN
+            devBuy:
+              type: object
+              properties:
+                bps:
+                  type: integer
+                  minimum: 1
+                  maximum: 350
+                tokenAmount:
+                  $ref: "#/components/schemas/AmountString"
+                maxQuoteCost:
+                  $ref: "#/components/schemas/AmountString"
+              required:
+                - bps
+                - tokenAmount
+                - maxQuoteCost
           required:
             - draftId
             - draftVersion
@@ -6555,6 +6978,25 @@ components:
             - quoteAsset
             - platformOrigin
             - initiator
+        devBuyResult:
+          anyOf:
+            - type: object
+              properties:
+                tokenAmount:
+                  $ref: "#/components/schemas/AmountString"
+                quoteSpent:
+                  $ref: "#/components/schemas/AmountString"
+                allocationBps:
+                  type: string
+                  description: Exact share of total supply in basis points, as a decimal string
+                signature:
+                  $ref: "#/components/schemas/TxSignature"
+              required:
+                - tokenAmount
+                - quoteSpent
+                - allocationBps
+                - signature
+            - type: "null"
         signature:
           anyOf:
             - $ref: "#/components/schemas/TxSignature"

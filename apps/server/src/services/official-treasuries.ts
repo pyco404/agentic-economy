@@ -14,7 +14,7 @@ export class OfficialTreasuryMonitor {
   private pending: Promise<OfficialTreasuryWallet[]> | undefined;
   constructor(private readonly rpcUrl: string | null, private readonly request: typeof fetch = fetch, private readonly now: () => Date = () => new Date()) {}
 
-  private async rpc(method: 'getGenesisHash' | 'getBalance' | 'getSignaturesForAddress', params: unknown[]) {
+  private async rpc(method: 'getGenesisHash' | 'getBalance' | 'getSignaturesForAddress' | 'getTransaction', params: unknown[]) {
     const response = await this.request(this.rpcUrl!, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(5000),
@@ -44,7 +44,20 @@ export class OfficialTreasuryMonitor {
         this.rpc('getSignaturesForAddress', [wallet.address, { commitment: 'finalized', limit: 12 }]).then(value => signaturesResult.parse(value)),
       ]);
       if (balance.status === 'fulfilled') Object.assign(wallet, { status: 'available', balanceLamports: BigInt(balance.value.value).toString(), slot: balance.value.context.slot, updatedAt: checkedAt });
-      if (history.status === 'fulfilled') wallet.recentTransactions = history.value.map(tx => ({ signature: tx.signature, slot: tx.slot, blockTime: tx.blockTime, failed: tx.err !== null, classification: 'unclassified' }));
+      if (history.status === 'fulfilled') wallet.recentTransactions = await Promise.all(history.value.map(async (tx, index) => {
+        const base: OfficialTreasuryWallet['recentTransactions'][number] = { signature: tx.signature, slot: tx.slot, blockTime: tx.blockTime, failed: tx.err !== null, classification: 'unclassified', netChangeLamports: null, direction: null };
+        // A bounded sample of full finalized transactions, never an expensive wallet-history API.
+        if (tx.err !== null || index >= 2) return base;
+        try {
+          const observed = z.object({ slot: integer, transaction:z.object({message:z.object({accountKeys:z.array(z.string())})}), meta:z.object({err:z.null(),preBalances:z.array(integer),postBalances:z.array(integer),loadedAddresses:z.object({writable:z.array(z.string()),readonly:z.array(z.string())}).optional()}) }).parse(await this.rpc('getTransaction',[tx.signature,{commitment:'finalized',encoding:'json',maxSupportedTransactionVersion:0}]));
+          if (observed.slot !== tx.slot) return base;
+          const keys = [...observed.transaction.message.accountKeys,...(observed.meta.loadedAddresses?.writable??[]),...(observed.meta.loadedAddresses?.readonly??[])], position = keys.indexOf(wallet.address);
+          const before=observed.meta.preBalances[position],after=observed.meta.postBalances[position];
+          if (position < 0 || before === undefined || after === undefined) return base;
+          const delta=BigInt(after)-BigInt(before);
+          return {...base,netChangeLamports:delta.toString(),direction:delta>0n?'incoming' as const:delta<0n?'outgoing' as const:'neutral' as const};
+        } catch { return base; }
+      }));
       wallet.message = balance.status === 'fulfilled'
         ? `Finalized Mainnet RPC balance. ${history.status === 'fulfilled' ? 'Recent transactions are not automatically creator-fee income.' : 'Recent transaction history is unavailable.'} Lifetime fee history and unclaimed distributions are not fully indexed.`
         : 'Verified Mainnet balance is unavailable; no zero balance is assumed.';

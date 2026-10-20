@@ -23,7 +23,7 @@ export class LaunchpadService {
  private decoding=0;
  constructor(readonly store:LaunchpadStore,private config:AppConfig,private pinning:Pinning=new PinataPinning(config.pinata),private readiness:LaunchReadiness=async()=>[]){}
  /** Every launch-readiness issue for these fields: protocol byte limits, application rules and network support. */
- async launchIssues(fields:Fields){return [...tokenFieldIssues(fields,true),...await this.readiness(fields)];}
+ async launchIssues(fields:Fields){return [...tokenFieldIssues(fields,true),...(fields.quoteAsset==='SOL'?[]:[{field:'quoteAsset' as const,code:'quote_unavailable',message:'Only SOL is supported for new launches.'}]),...await this.readiness(fields)];}
  /** Gate before anything is sent to Pinata: invalid details never consume IPFS storage. */
  private async assertLaunchReady(fields:Fields){const issues=await this.launchIssues(fields);if(issues.length)throw new AppError('bad_request',issues[0]!.message,{issues});}
  async operation<T>(wallet:string,key:string,kind:string,content:unknown,work:()=>Promise<T>):Promise<T>{const claim=await this.store.claim(wallet,key,kind,digest(content));if(claim.replayed)return claim.result as T;try{const out=await work();await this.store.finish(wallet,key,kind,out);return out;}catch(e){await this.store.finish(wallet,key,kind,null,true);throw e;}}

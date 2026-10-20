@@ -72,7 +72,7 @@ try{
   const state=await online.fetchBuyState(mint.publicKey,buyer.publicKey,T22);
   if(state.bondingCurve.complete)break;
   const amount=state.bondingCurve.realTokenReserves,solAmount=sdk.getBuySolAmountFromTokenAmount({global,feeConfig,mintSupply:null,bondingCurve:state.bondingCurve,amount,quoteMint:state.quoteMint});
-  const buy=await sdk.PUMP_SDK.buyInstructions({global,bondingCurveAccountInfo:state.bondingCurveAccountInfo,bondingCurve:state.bondingCurve,associatedUserAccountInfo:state.associatedUserAccountInfo,mint:mint.publicKey,user:buyer.publicKey,amount,solAmount,slippage:5,tokenProgram:T22});
+  const buy=process.env.AECO_LOCAL_TEST_SWEEPS==='true'?await sdk.PUMP_SDK.buyV3Instructions({bondingCurve:state.bondingCurve,associatedUserAccountInfo:state.associatedUserAccountInfo,mint:mint.publicKey,user:buyer.publicKey,amount,quoteAmount:solAmount,slippage:5,tokenProgram:T22}):await sdk.PUMP_SDK.buyInstructions({global,bondingCurveAccountInfo:state.bondingCurveAccountInfo,bondingCurve:state.bondingCurve,associatedUserAccountInfo:state.associatedUserAccountInfo,mint:mint.publicKey,user:buyer.publicKey,amount,solAmount,slippage:5,tokenProgram:T22});
   const sig=await send(buy,[buyer]);
   step('buy',{signature:sig,tokens:amount.toString(),solAmount:solAmount.toString()});
  }

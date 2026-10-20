@@ -1,0 +1,75 @@
+{
+  "checkedAt": "2026-10-20T17:00:16.787Z",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "height": 500438303,
+  "attempts": [
+    {
+      "id": "lch_31963308e0804ebe2d4903a6",
+      "wallet": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+      "mint": "5sUhXHUUcvLWtiUYVhCXbANKjYaRHvyysCpZpj33jUoN",
+      "signature": null,
+      "status": "expired",
+      "lastValidBlockHeight": 500350565,
+      "mintExists": false,
+      "mintHistory": [],
+      "signatureStatus": null,
+      "transactionFound": false,
+      "transactionError": null
+    },
+    {
+      "id": "lch_d4a0ff36249a0f998aed8891",
+      "wallet": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+      "mint": "97XnP56RqF925TgrQTr7pxpixZgYFeADcvb6RTHFi3Gv",
+      "signature": null,
+      "status": "expired",
+      "lastValidBlockHeight": 500351917,
+      "mintExists": false,
+      "mintHistory": [],
+      "signatureStatus": null,
+      "transactionFound": false,
+      "transactionError": null
+    },
+    {
+      "id": "lch_81180034cef889665c3273a4",
+      "wallet": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+      "mint": "9r4CjUUxuiHhYJtcfKtNvDKKX5rzUDxSfziLU5EfP776",
+      "signature": "FPNuUdggBKf8SyMiZTe11VeCMVtPHK83zBEzrcEL4mYHKdsMDDex7fmGwH5jbNPgaGufwgKF34a2kpbHRSDrMhg",
+      "status": "submitted",
+      "lastValidBlockHeight": 500428760,
+      "mintExists": false,
+      "mintHistory": [],
+      "signatureStatus": null,
+      "transactionFound": false,
+      "transactionError": null
+    }
+  ],
+  "walletBalanceLamports": 4938443160,
+  "recentWalletSignatures": [
+    {
+      "blockTime": 1792432886,
+      "confirmationStatus": "finalized",
+      "err": null,
+      "memo": null,
+      "signature": "CNKRM9hEHYGEjpTKYBX7HDsyCdwWSXjgyYKzVkdBk45FUReAtXDtxKffaEmNJbEAQsLSetZgtJFoDvDyew1Cfkw",
+      "slot": 512881872,
+      "transactionIndex": 18
+    },
+    {
+      "blockTime": 1792431084,
+      "confirmationStatus": "finalized",
+      "err": null,
+      "memo": null,
+      "signature": "2FiuEUqaEzEUb7iGCoJQtQeUjqqECQLTdb9hGJNcRV6DLQ1xa3iymUUAi3absCv6A51S5iAHmWu2ZKnz2KJDbyeF",
+      "slot": 512874312,
+      "transactionIndex": 27
+    }
+  ],
+  "broadcastGateAtInvestigation": false,
+  "broadcastGateScope": "local verification API only; Railway unchanged",
+  "reconciledAttempt": "lch_81180034cef889665c3273a4",
+  "reconciledStatus": "expired",
+  "replayed": false,
+  "newHomeMintCreated": false,
+  "historicalSignedPayloadAvailable": false,
+  "note": "Saved signature is not proof of a broadcast. Finalized height exceeded lastValidBlockHeight; full signature history, transaction and finalized mint were absent. Existing wallet records/signature preserved."
+}

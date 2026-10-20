@@ -1,0 +1,165 @@
+{
+  "network": "public-devnet",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "database": "aeco_launch_execution_20261018_test",
+  "signer": "dedicated locally controlled disposable wallet, not Phantom",
+  "pinata": "actual authenticated image and metadata pipeline",
+  "lookupTable": "3fzk4ecq4NZ6XtVyayTBo2cYJTcMJMgNYr4cAFcgYLrn",
+  "checkedAt": "2026-10-20T17:17:36.336Z",
+  "results": [
+    {
+      "bps": 300,
+      "wallet": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+      "launchId": "lch_fb08c407f58b519d32a7b0d3",
+      "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+      "signature": "5ZC3TLEaS5VJfx8ZBq7tftJpwHbt7XV3smNCFKbspGRoGZNa8zMRUo4sjB16VinC1jxJYYxm6hxLVD78rUnUZmph",
+      "commitment": "finalized",
+      "slot": 513231159,
+      "tokenSupplyRaw": "1000000000000000",
+      "decimals": 6,
+      "developerTokensRaw": "30000000000000",
+      "allocationPercent": "3",
+      "purchaseLamports": "8736818",
+      "curveQuoteLamports": "8628955",
+      "protocolFeesLamports": "81976",
+      "creatorFeesLamports": "25887",
+      "networkFeeLamports": "10000",
+      "rentLamports": "15102840",
+      "walletDebitLamports": "73849658",
+      "platformChargeLamports": "50000000",
+      "platformChargeCount": 1,
+      "platformReceiptCount": 1,
+      "feesPreview": {
+        "platformLaunchFeeLamports": "50000000",
+        "platformTreasury": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "estimatedNetworkFeesLamports": "10000",
+        "estimatedAccountRentLamports": "15102840",
+        "launcherCreatorFeeBps": 0,
+        "developerBuy": {
+          "bps": 300,
+          "quoteAsset": "SOL",
+          "totalSupply": "1000000000000000",
+          "tokenAmount": "30000000000000",
+          "estimatedQuoteCost": "8736818",
+          "pumpFees": "107863",
+          "maxQuoteCost": "8824187",
+          "priceImpactBps": 583
+        },
+        "creatorFeeSplit": {
+          "agentRewardsTreasury": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+          "agentRewardsBps": 6000,
+          "platformTreasury": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+          "platformBps": 4000
+        },
+        "notes": [
+          "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+          "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+          "Solana network fees and account rent are paid by your wallet and are estimates.",
+          "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+          "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split."
+        ]
+      },
+      "backendLaunchStatus": "confirmed",
+      "exploreVerified": true,
+      "image": {
+        "cid": "bafkreihqqiakhwd3czghndzo2dzotytdivx5x6ut2u6e5kyvthcflcbxbe",
+        "mime": "image/png",
+        "width": 64,
+        "height": 64,
+        "status": "verified",
+        "ipfsUri": "ipfs://bafkreihqqiakhwd3czghndzo2dzotytdivx5x6ut2u6e5kyvthcflcbxbe",
+        "uploadId": "a0f8d210-ca01-478d-a89f-499a85f4e4be",
+        "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreihqqiakhwd3czghndzo2dzotytdivx5x6ut2u6e5kyvthcflcbxbe"
+      },
+      "metadata": {
+        "cid": "bafkreieiqfcea64a5was6c6aslxs3zfh6pglhhus7mstzf7nimlbwlca4m",
+        "ipfsUri": "ipfs://bafkreieiqfcea64a5was6c6aslxs3zfh6pglhhus7mstzf7nimlbwlca4m",
+        "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreieiqfcea64a5was6c6aslxs3zfh6pglhhus7mstzf7nimlbwlca4m"
+      },
+      "metadataRetrievable": true,
+      "imageRetrievable": true,
+      "transactionBytes": 1171,
+      "computeUnitsConsumed": 361860,
+      "lookupTables": [
+        "3fzk4ecq4NZ6XtVyayTBo2cYJTcMJMgNYr4cAFcgYLrn"
+      ]
+    },
+    {
+      "bps": 350,
+      "wallet": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+      "launchId": "lch_12783f89d727426dd305693f",
+      "mint": "6BqWNJQZGVYWEbanASYtDgQ7skpT3LjXeDfozWvkirfZ",
+      "signature": "4dbksmrgciU8HSzjiqSWefMfsntrWXAJqKhqQA7U4hMNgprxs34SBXZxmDBvBVP2YfqnX7GmT432tUYcYjYXqtPX",
+      "commitment": "finalized",
+      "slot": 513232156,
+      "tokenSupplyRaw": "1000000000000000",
+      "decimals": 6,
+      "developerTokensRaw": "35000000000000",
+      "allocationPercent": "3.5",
+      "purchaseLamports": "10242053",
+      "curveQuoteLamports": "10115607",
+      "protocolFeesLamports": "96099",
+      "creatorFeesLamports": "30347",
+      "networkFeeLamports": "10000",
+      "rentLamports": "13761720",
+      "walletDebitLamports": "74013773",
+      "platformChargeLamports": "50000000",
+      "platformChargeCount": 1,
+      "platformReceiptCount": 1,
+      "feesPreview": {
+        "platformLaunchFeeLamports": "50000000",
+        "platformTreasury": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "estimatedNetworkFeesLamports": "10000",
+        "estimatedAccountRentLamports": "13761720",
+        "launcherCreatorFeeBps": 0,
+        "developerBuy": {
+          "bps": 350,
+          "quoteAsset": "SOL",
+          "totalSupply": "1000000000000000",
+          "tokenAmount": "35000000000000",
+          "estimatedQuoteCost": "10242053",
+          "pumpFees": "126446",
+          "maxQuoteCost": "10344474",
+          "priceImpactBps": 685
+        },
+        "creatorFeeSplit": {
+          "agentRewardsTreasury": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+          "agentRewardsBps": 6000,
+          "platformTreasury": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+          "platformBps": 4000
+        },
+        "notes": [
+          "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+          "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+          "Solana network fees and account rent are paid by your wallet and are estimates.",
+          "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+          "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split."
+        ]
+      },
+      "backendLaunchStatus": "confirmed",
+      "exploreVerified": true,
+      "image": {
+        "cid": "bafkreihqqiakhwd3czghndzo2dzotytdivx5x6ut2u6e5kyvthcflcbxbe",
+        "mime": "image/png",
+        "width": 64,
+        "height": 64,
+        "status": "verified",
+        "ipfsUri": "ipfs://bafkreihqqiakhwd3czghndzo2dzotytdivx5x6ut2u6e5kyvthcflcbxbe",
+        "uploadId": "bc3131a2-4f3c-4db2-9443-4d11f7a590ee",
+        "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreihqqiakhwd3czghndzo2dzotytdivx5x6ut2u6e5kyvthcflcbxbe"
+      },
+      "metadata": {
+        "cid": "bafkreifbomjqrxy2bgg7feylbg6ypbmxl6dpz7mzxg6fttec2emcqnz5iq",
+        "ipfsUri": "ipfs://bafkreifbomjqrxy2bgg7feylbg6ypbmxl6dpz7mzxg6fttec2emcqnz5iq",
+        "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreifbomjqrxy2bgg7feylbg6ypbmxl6dpz7mzxg6fttec2emcqnz5iq"
+      },
+      "metadataRetrievable": true,
+      "imageRetrievable": true,
+      "transactionBytes": 1172,
+      "computeUnitsConsumed": 393556,
+      "lookupTables": [
+        "3fzk4ecq4NZ6XtVyayTBo2cYJTcMJMgNYr4cAFcgYLrn"
+      ]
+    }
+  ]
+}

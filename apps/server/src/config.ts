@@ -39,6 +39,7 @@ const Env = z.object({
   SOLANA_CLUSTER: z.enum(["devnet", "mainnet-beta", "localnet"]).default("devnet"),
   /** Read-only Mainnet monitoring, independent of launch execution and the demo ledger. */
   TREASURY_READ_RPC_URL: z.string().url().optional(),
+  HELIUS_API_KEY: z.string().min(1).optional(),
   PLATFORM_TREASURY: PublicKey.optional(),
   AGENT_REWARDS_TREASURY: PublicKey.optional(),
   /** Raw base units (6 decimals for Pump coins). Default 1,000 tokens. */
@@ -132,6 +133,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     indexerIntervalMs: e.INDEXER_INTERVAL_MS,
     solana: { rpcUrl: e.SOLANA_RPC_URL ?? null, cluster: e.SOLANA_CLUSTER },
     treasuryReadRpcUrl: e.TREASURY_READ_RPC_URL ?? null,
+    heliusApiKey: e.HELIUS_API_KEY ?? null,
     treasuries: {
       platform: e.PLATFORM_TREASURY ?? DEMO_PLATFORM_TREASURY,
       agentRewards: e.AGENT_REWARDS_TREASURY ?? DEMO_AGENT_TREASURY,

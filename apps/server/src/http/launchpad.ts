@@ -13,8 +13,9 @@ const version=z.object({version:z.number().int().nonnegative()}).strict();
 const idOf=(req:FastifyRequest)=>z.object({id:z.string().uuid()}).parse(req.params).id;
 /** Cookie-only browser API. Explicit Origin on all mutations provides CSRF protection across allowed sibling origins. */
 export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
+ const executionEnabled=async()=>{if(!ctx.config.pumpLaunch.enabled)return false;try{await ctx.chain.assertLaunchSubmissionAllowed?.();return true;}catch{return false;}};
  const devBuySupport=async()=>{
-  if(ctx.config.mode==='demo'||!ctx.config.pumpLaunch.enabled||!ctx.chain.devBuySupport)return{available:false,reason:'Developer Buy is available only where coin creation is enabled on a verified test network'};
+  if(ctx.config.mode==='demo'||!await executionEnabled()||!ctx.chain.devBuySupport)return{available:false,reason:'Developer Buy is available only where coin creation is enabled on a verified test network'};
   try{return await ctx.chain.devBuySupport();}catch{return{available:false,reason:'Developer Buy availability could not be checked. Try again shortly.'};}
  };
  // Network-dependent readiness, checked before any upload: the selected pair and an optional Developer Buy.
@@ -46,7 +47,7 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  let executionsInFlight=0;
  const executionOwner=async(req:FastifyRequest)=>{csrf(req);return wallet(req);};
  const execution=async<T>(work:()=>Promise<T>)=>{if(executionsInFlight>=4)throw new AppError('unavailable','Launch processing is busy. Retry the same attempt shortly.');executionsInFlight++;try{return await work();}finally{executionsInFlight--;}};
- app.get(launchpadPaths.capabilities,async()=>{const dev=await devBuySupport();return{version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:ctx.config.pumpLaunch.enabled,quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
+ app.get(launchpadPaths.capabilities,async()=>{const dev=await devBuySupport();return{version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:await executionEnabled(),quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
   devBuy:{status:dev.available?'available':'unavailable',maxBps:DEV_BUY_MAX_BPS,quoteAssets:['SOL'],reason:dev.reason}};});
  // Public estimate for the form; the transaction itself is re-quoted and simulated at preparation.
  app.get(launchpadPaths.devBuyQuote,async(req,reply)=>{
@@ -71,7 +72,7 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  app.delete(path,async(req)=>{const owner=await mutation(req),body=version.parse(req.body);await service.store.remove(owner,idOf(req),body.version);return{ok:true};});
  app.delete(path+'/logo',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);const draft=await service.store.get(owner,idOf(req));const next={...draft,image:null,metadata:null,version:draft.version+1,updatedAt:new Date().toISOString()};await service.store.save(next,body.version);return next;});
  app.post(path+'/metadata',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
- app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const review=await service.review(await wallet(req),idOf(req));const quoteEnabled=review.draft.fields.quoteAsset==='SOL'&&ctx.config.pumpLaunch.enabled;return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
+ app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const review=await service.review(await wallet(req),idOf(req));const quoteEnabled=review.draft.fields.quoteAsset==='SOL'&&await executionEnabled();return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
  // Execution consumes only a server-owned, latest-version draft and its pinned assets.
  app.post(path+'/launch',async(req)=>{
   const owner=await executionOwner(req),body=version.parse(req.body),id=idOf(req),requestKey=key(req);

@@ -11,5 +11,6 @@ export * from "./auth.js";
 export * from "./events.js";
 export * from "./api.js";
 export * from './launchpad.js';
+export * from './tokenRules.js';
 
 export * from './market.js';

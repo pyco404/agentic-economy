@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { Keypair } from "@solana/web3.js";
 import { z } from "zod";
-import { PublicKey } from "@agentic-economy/shared";
+import { OFFICIAL_TREASURIES, PublicKey } from "@agentic-economy/shared";
 
 /**
  * Runtime configuration. Modes:
@@ -37,6 +37,8 @@ const Env = z.object({
   INDEXER_INTERVAL_MS: z.coerce.number().int().min(1_000).default(30_000),
   SOLANA_RPC_URL: z.string().url().optional(),
   SOLANA_CLUSTER: z.enum(["devnet", "mainnet-beta", "localnet"]).default("devnet"),
+  /** Read-only Mainnet monitoring, independent of launch execution and the demo ledger. */
+  TREASURY_READ_RPC_URL: z.string().url().optional(),
   PLATFORM_TREASURY: PublicKey.optional(),
   AGENT_REWARDS_TREASURY: PublicKey.optional(),
   /** Raw base units (6 decimals for Pump coins). Default 1,000 tokens. */
@@ -103,6 +105,13 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (e.PLATFORM_TREASURY && e.PLATFORM_TREASURY === e.AGENT_REWARDS_TREASURY)
     throw new Error("PLATFORM_TREASURY and AGENT_REWARDS_TREASURY must be distinct accounts");
 
+  if (e.PLATFORM_TREASURY === OFFICIAL_TREASURIES.aecoDeployer || e.AGENT_REWARDS_TREASURY === OFFICIAL_TREASURIES.aecoDeployer)
+    throw new Error("The AECO deployer is reserved and cannot receive treasury fees");
+  if (e.MODE === "production" && usesChain && (e.PLATFORM_TREASURY !== OFFICIAL_TREASURIES.platform || e.AGENT_REWARDS_TREASURY !== OFFICIAL_TREASURIES.agentRewards))
+    throw new Error("Mainnet treasury recipients must match the official platform and Agent Rewards identities");
+  if (e.MODE !== "production" && [e.PLATFORM_TREASURY, e.AGENT_REWARDS_TREASURY].some(a => a === OFFICIAL_TREASURIES.platform || a === OFFICIAL_TREASURIES.agentRewards))
+    throw new Error("Official Mainnet treasury identities cannot be used as demo or Devnet fee recipients");
+
   if (e.MODE === "production" && e.LAUNCH_REGISTRATION_COMMITMENT === "confirmed")
     throw new Error("MODE=production registers launches only at finalized commitment");
   const feeRoutingVerified = e.FEE_ROUTING_VERIFIED === "true";
@@ -122,6 +131,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     leaderRetryMs: e.LEADER_RETRY_MS,
     indexerIntervalMs: e.INDEXER_INTERVAL_MS,
     solana: { rpcUrl: e.SOLANA_RPC_URL ?? null, cluster: e.SOLANA_CLUSTER },
+    treasuryReadRpcUrl: e.TREASURY_READ_RPC_URL ?? null,
     treasuries: {
       platform: e.PLATFORM_TREASURY ?? DEMO_PLATFORM_TREASURY,
       agentRewards: e.AGENT_REWARDS_TREASURY ?? DEMO_AGENT_TREASURY,

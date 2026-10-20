@@ -9,7 +9,7 @@ const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
 test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
 test('safe-network signing UI handles rejection and verified confirmation (mock RPC, real transaction signatures)',async({page})=>{
  test.setTimeout(360000);await page.setViewportSize({width:390,height:844});
- const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='',submittedPayload='';let resumptions=0;const prepareKeys:string[]=[];
+ const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let executionEnabled=true;let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='',submittedPayload='';let resumptions=0;const prepareKeys:string[]=[];
  let launch:Record<string,unknown>|undefined,prepared='';
  await page.exposeFunction('__signMessage',(bytes:number[])=>Array.from(nacl.sign.detached(Uint8Array.from(bytes),creator.secretKey)));
  await page.exposeFunction('__signTransaction',(bytes:number[])=>{signs++;if(reject)throw new Error('Launch signature rejected by user');const tx=VersionedTransaction.deserialize(Uint8Array.from(bytes));tx.sign([creator]);return Array.from(tx.serialize());});
@@ -21,8 +21,8 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
   const provider={version:'1.0.0',name:'Phantom',icon:'data:image/png;base64,',accounts:[account],chains:['solana:devnet'],features:{'standard:connect':{version:'1.0.0',connect:async()=>({accounts:[account]})},'solana:signMessage':{version:'1.0.0',signMessage:async({message}:{message:Uint8Array})=>[{signedMessage:message,signature:new Uint8Array(await w.__signMessage(Array.from(message)))}]}}};
   window.addEventListener('wallet-standard:app-ready',event=>(event as CustomEvent).detail.register(provider));
  },{wallet,publicKey:Array.from(creator.publicKey.toBytes())});
- await page.route('**/api/v1/launchpad/capabilities',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:true}});});
- await page.route(/\/launchpad\/drafts\/[^/]+\/review$/,async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:true}});});
+ await page.route('**/api/v1/launchpad/capabilities',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:executionEnabled}});});
+ await page.route(/\/launchpad\/drafts\/[^/]+\/review$/,async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),launchEnabled:executionEnabled}});});
  await page.route(/\/launchpad\/drafts\/[^/]+\/launch$/,async route=>{
   prepareKeys.push(route.request().headers()['idempotency-key']??'');
   if(launch){await route.fulfill({json:{launch,transaction:prepared,demoTransaction:false,lastValidBlockHeight:100000}});return;}
@@ -65,6 +65,9 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  launch={...launch!,status:'expired'};await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
  await expect(execution).toContainText('Checking your signed transaction');
  await expect(execution.getByRole('button',{name:'Prepare a new attempt',exact:true})).toHaveCount(0);
+ launch={...launch!,signature:submittedSignature,errors:[{code:'submission_expired_unobserved',message:'Finalized history and mint checks passed',at:new Date().toISOString()}]};await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
+ await expect(execution).toContainText('This signed transaction expired without a confirmed token');await expect(execution.getByRole('button',{name:'Resume same transaction',exact:true})).toHaveCount(0);expect(submissions).toBe(1);expect(signs).toBe(2);
+ executionEnabled=false;await page.reload();await waitForApplicationReady(page);await expect(page.getByText('Saved launch status is shown below. New signing and submissions are disabled.')).toBeVisible();await expect(execution).toContainText('Launch status: expired');await expect(execution.getByRole('button',{name:'Approve in wallet',exact:true})).toHaveCount(0);expect(signs).toBe(2);expect(preparations).toBe(1);
  resolveSubmission=true;await page.getByRole('button',{name:'Check launch status',exact:true}).click();await expect(execution).toContainText('Token creation verified');
  expect(preparations).toBe(1);expect(submissions).toBe(1);expect(signs).toBe(2);expect(bs58.decode(String(launch!.signature))).toHaveLength(64);
  await page.screenshot({path:'artifacts/launch-execution-mocked-mobile.png',fullPage:true});

@@ -1,5 +1,14 @@
 # HOME Devnet reconciliation — 20 October 2026
 
+## Later signed attempt: independently reconciled
+
+A third attempt, `lch_81180034cef889665c3273a4`, was prepared at 16:21 UTC on 20 October. Its mint is `9r4CjUUxuiHhYJtcfKtNvDKKX5rzUDxSfziLU5EfP776`; recorded signature is `FPNuUdggBKf8SyMiZTe11VeCMVtPHK83zBEzrcEL4mYHKdsMDDex7fmGwH5jbNPgaGufwgKF34a2kpbHRSDrMhg`. The local verification process retained `AECO_DEVNET_WALLET_TRANSACTIONS_APPROVED=false`. The adapter therefore refused broadcasting after the service had persisted `submitted`; confirmation polling never expired signed-but-unobserved attempts. This explains the newer stuck confirmation state, independently of the earlier unsigned attempts below.
+
+At finalized height 500438303 (last valid: 500428760), full signature history and transaction were absent, the mint account was absent, and mint history was empty. The wallet's latest finalized history still contained only its earlier transactions. No HOME holding, successful HOME creation, platform receipt or HOME network fee was observed. The record was reconciled to `expired` after history and finalized-mint checks; its original signature/mint and draft are retained. Nothing was replayed or charged. See [public evidence](../../server/docs/evidence/home-devnet-expired-2026-10-20.json) and the [controlled Developer Buy report](../../server/docs/developer-buy-devnet-verification-2026-10-20.md).
+
+The sections below retain the earlier investigation as historical evidence.
+
+
 This investigation was read-only against the existing disposable local database and public Solana Devnet. No launch, signature request, transaction submission, payment, database migration, production or Railway configuration change was performed.
 
 ## Existing records

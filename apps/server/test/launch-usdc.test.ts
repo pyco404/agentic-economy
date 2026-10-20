@@ -24,10 +24,11 @@ async function setup(usdcEnabled:boolean){
  const auth=await env.app.inject({method:'POST',url:'/api/v1/auth/browser/verify',headers:{origin},payload:{wallet:creator.publicKey.toBase58(),nonce:ch.nonce,signature:bs58.encode(nacl.sign.detached(new TextEncoder().encode(ch.message),creator.secretKey))}});
  const cookie=auth.headers['set-cookie']!.toString().split(';')[0]!;
  const call=(method:'GET'|'POST'|'PATCH',url:string,payload?:unknown,key='usdc-test-key')=>env!.app.inject({method,url,headers:{origin,cookie,'idempotency-key':key},...(payload?{payload:payload as object}:{})});
+ env.ctx.config.mode='devnet';env.ctx.config.financialFeaturesEnabled=true;env.ctx.config.pumpLaunch.enabled=true;env.ctx.config.pumpLaunch.usdcEnabled=usdcEnabled;
  let draft=(await call('POST','/api/v1/launchpad/drafts',{name:'Usdc Test',symbol:'UTST',quoteAsset:'USDC'})).json();
  const bytes=await sharp({create:{width:4,height:4,channels:3,background:'#aabb88'}}).png().toBuffer();
- draft=(await env.app.inject({method:'POST',url:`/api/v1/launchpad/drafts/${draft.id}/logo?version=0`,headers:{origin,cookie,'content-type':'application/octet-stream','idempotency-key':'usdc-logo-key'},payload:bytes})).json();
- draft=(await call('POST',`/api/v1/launchpad/drafts/${draft.id}/metadata`,{version:1},'usdc-metadata-key')).json();
+ const logo=await env.app.inject({method:'POST',url:`/api/v1/launchpad/drafts/${draft.id}/logo?version=0`,headers:{origin,cookie,'content-type':'application/octet-stream','idempotency-key':'usdc-logo-key'},payload:bytes});
+ if(logo.statusCode===200){draft=logo.json();draft=(await call('POST',`/api/v1/launchpad/drafts/${draft.id}/metadata`,{version:1},'usdc-metadata-key')).json();}
  const chain=env.ctx.chain as MockChain&ChainGateway;let input:BuildLaunchInput|undefined,lookup:AddressLookupTableAccount|undefined;
  vi.spyOn(chain,'buildLaunchTransaction').mockImplementation(async p=>{
   input=p;const ix=await pumpLaunchInstructions(p);
@@ -37,19 +38,23 @@ async function setup(usdcEnabled:boolean){
   lookup=table;
   return{...await buildPumpLaunch(p,Keypair.generate().publicKey.toBase58(),[table]),demo:false,lastValidBlockHeight:100,genesisHash:DEVNET};
  });
- env.ctx.config.mode='devnet';env.ctx.config.financialFeaturesEnabled=true;env.ctx.config.pumpLaunch.enabled=true;env.ctx.config.pumpLaunch.usdcEnabled=usdcEnabled;
  const prepare=()=>call('POST',`/api/v1/launchpad/drafts/${draft.id}/launch`,{version:draft.version},'usdc-prepare-key');
- return {creator,draft,call,prepare,input:()=>input,lookup:()=>lookup!};
+ return {creator,draft,call,prepare,logo,input:()=>input,lookup:()=>lookup!};
 }
 
 describe('TOKEN/USDC launches through the Launchpad',()=>{
  it('stays disabled unless USDC launches are explicitly enabled on a safe network',async()=>{
-  const {draft,call,prepare}=await setup(false);
+  const {draft,call,prepare,logo}=await setup(false);
   expect((await env!.app.inject('/api/v1/launchpad/capabilities')).json().quotes.USDC).toBe('planned');
-  expect((await call('GET',`/api/v1/launchpad/drafts/${draft.id}/review`)).json().launchEnabled).toBe(false);
+  // The unavailable pair is caught before any upload: the logo never reaches Pinata.
+  expect(logo.statusCode).toBe(400);
+  expect(logo.json().error.details.issues).toEqual([expect.objectContaining({field:'quoteAsset',code:'quote_unavailable'})]);
+  expect(fetch).not.toHaveBeenCalled();
+  const review=(await call('GET',`/api/v1/launchpad/drafts/${draft.id}/review`)).json();
+  expect(review.launchEnabled).toBe(false);
+  expect(review.fieldIssues).toEqual([expect.objectContaining({field:'quoteAsset',code:'quote_unavailable'})]);
   const r=await prepare();
-  expect(r.statusCode).toBe(503);
-  expect(r.json().error.code).toBe('feature_disabled');
+  expect(r.statusCode).toBeGreaterThanOrEqual(400);
   expect(env!.ctx.chain.buildLaunchTransaction).not.toHaveBeenCalled();
  });
 

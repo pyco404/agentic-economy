@@ -60,9 +60,9 @@ describe('read-only official wallet monitoring', () => {
     const request = reader(), monitor = new OfficialTreasuryMonitor('https://rpc.invalid', request, now);
     const [a, b] = await Promise.all([monitor.read([]), monitor.read([])]);
     expect(a).toEqual(b); expect(a[0]).toMatchObject({ balanceLamports: '123456789', status: 'available', network: 'mainnet-beta', slot: 100, updatedAt: now().toISOString() });
-    expect(request).toHaveBeenCalledTimes(5);
+    expect(request).toHaveBeenCalledTimes(7);
     const calls = vi.mocked(request).mock.calls.map(([, init]) => JSON.parse(String(init?.body)));
-    expect(new Set(calls.map(c => c.method))).toEqual(new Set(['getGenesisHash', 'getBalance', 'getSignaturesForAddress']));
+    expect(new Set(calls.map(c => c.method))).toEqual(new Set(['getGenesisHash', 'getBalance', 'getSignaturesForAddress', 'getTransaction']));
     for (const call of calls.filter(c => c.method !== 'getGenesisHash')) expect(call.params[1].commitment).toBe('finalized');
     expect(a[0]!.recentTransactions[0]!.classification).toBe('unclassified');
   });
@@ -83,3 +83,11 @@ describe('read-only official wallet monitoring', () => {
     expect((await monitor.read([entry(), entry({ id: 'reversal', supersedes: 'tre_real', finality: 'reversed' })]))[1]!.accounting.creatorFeesLamports).toBe('0');
   });
 });
+
+ it('verifies incoming finalized balance changes without labeling arbitrary funds creator-fee income', async()=>{
+  const address=OFFICIAL_TREASURIES.agentRewards;
+  const request=reader(method=>method==='getTransaction'?{slot:99,transaction:{message:{accountKeys:[address]}},meta:{err:null,preBalances:[100],postBalances:[200]}}:rpc(method));
+  const wallets=await new OfficialTreasuryMonitor('https://rpc.invalid',request,now).read([]);
+  expect(wallets[1]!.recentTransactions[0]).toMatchObject({direction:'incoming',netChangeLamports:'100',classification:'unclassified'});
+  expect(wallets[1]!.accounting.creatorFeesLamports).toBe('0');
+ });

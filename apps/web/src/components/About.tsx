@@ -88,7 +88,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       {heading("05", "A transparent economic model", "Clear rules. Separate streams.", "The intended allocations below describe the product rules. Locked routing is verified in test-network launches. Earned-fee collection and live settlement remain separate verification gates.")}
       <div className="about-fee-layout"><div className="about-launch-charge"><span className="about-kicker">Platform token-launch charge</span>
         <div className="about-fee-number">{aboutFees.launchSol}<small>SOL</small></div><strong>100% to Platform Treasury</strong>
-        <p>The 0.05 SOL launch charge is independent of SOL or USDC pair selection and separate from creator fees. No real payment is initiated here.</p></div>
+        <p>New launches use TOKEN/SOL. The fixed 0.05 SOL platform launch charge is separate from creator fees. No real payment is initiated here.</p></div>
         <div className="about-creator-allocation"><p className="about-kicker">Human-launched token · target allocation</p>
           <p>Of the eligible Pump.fun creator-fee portion <strong>actually received and verified</strong>:</p>
           <div className="about-split" aria-label={`${aboutFees.agentPercent}% Agent Rewards Treasury; ${aboutFees.platformPercent}% Platform Treasury`}>

@@ -104,7 +104,7 @@ export const TokenLaunch = z
   .meta({ id: "TokenLaunch" });
 export type TokenLaunch = z.infer<typeof TokenLaunch>;
 
-export const PrepareLaunchRequest = z.object({ draft: LaunchDraft }).meta({ id: "PrepareLaunchRequest" });
+export const PrepareLaunchRequest = z.object({ draft: LaunchDraft.strict() }).strict().meta({ id: "PrepareLaunchRequest" });
 export type PrepareLaunchRequest = z.infer<typeof PrepareLaunchRequest>;
 
 export const PrepareLaunchResponse = z

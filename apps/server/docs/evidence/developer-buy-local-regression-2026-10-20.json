@@ -1,0 +1,309 @@
+{
+  "scope": "Fresh isolated local validator; in-memory application store; no PostgreSQL resets; Pinata mocked",
+  "cases": [
+    {
+      "case": "zero-buy",
+      "evidence": {
+        "network": "isolated-localnet (devnet programs/config cloned)",
+        "genesis": "GhTk1SHfKW39jVnvr5mzq7QnvMwiQQfQa2UQvZpwjByY",
+        "quoteAsset": "SOL",
+        "stubbed": [
+          "Pinata uploads (fixed CIDs)"
+        ],
+        "financialScope": "local validator lamports only",
+        "steps": [
+          {
+            "name": "lookup_table",
+            "table": "21XcbzzoKQa3TkkspKAFsVmSCmT6QThmCSmCFXLNbEtD",
+            "staticEntries": 20
+          },
+          {
+            "name": "capabilities",
+            "launchEnabled": true,
+            "usdc": "planned",
+            "devBuy": {
+              "status": "unavailable",
+              "maxBps": 350,
+              "quoteAssets": [
+                "SOL"
+              ],
+              "reason": "The launch lookup table lacks 18 account(s) a Developer Buy needs"
+            },
+            "devQuote": null
+          },
+          {
+            "name": "review",
+            "quoteAsset": "SOL",
+            "launchEnabled": true,
+            "ready": true
+          },
+          {
+            "name": "prepared",
+            "launchId": "lch_5f7fb49637bbc616656d8931",
+            "mint": "6MZkWMxn9dprRnUo3ccJxkYnUzU5YQePihxCYBQvB3xw",
+            "packetBytes": 1016,
+            "instructions": 5,
+            "execution": {
+              "quoteAsset": "SOL"
+            },
+            "fees": {
+              "platformLaunchFeeLamports": "50000000",
+              "platformTreasury": "8WbtzuZCDYqUG3ZMVceMh441LF7s98oBFTLvUGGdNvtC",
+              "estimatedNetworkFeesLamports": "10000",
+              "estimatedAccountRentLamports": "15834000",
+              "launcherCreatorFeeBps": 0,
+              "creatorFeeSplit": {
+                "agentRewardsTreasury": "7URUnxEHASZ17ef6S14UQAdJYAPbMERitxhsDvnUBdhS",
+                "agentRewardsBps": 6000,
+                "platformTreasury": "8WbtzuZCDYqUG3ZMVceMh441LF7s98oBFTLvUGGdNvtC",
+                "platformBps": 4000
+              },
+              "notes": [
+                "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+                "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+                "Solana network fees and account rent are paid by your wallet and are estimates.",
+                "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+                "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split."
+              ],
+              "developerBuy": null
+            }
+          },
+          {
+            "name": "verified",
+            "signature": "4wUSutT8Ki1PiXFod2KsgbWynXk3GhXy5WTfCCXQ5Y68qaTQjJxARUc7W1zqqcYdpBayMkXdvKhFCdo368tZV6DN",
+            "slot": 557,
+            "communityId": "com_Qp0zrYyAHZn9RC",
+            "curveQuote": "So11111111111111111111111111111111111111112",
+            "platformLamports": 50000000,
+            "receipts": [
+              {
+                "amount": "50000000",
+                "account": "platform",
+                "finality": "pending"
+              }
+            ],
+            "market": {
+              "holders": 0,
+              "holdersLowerBound": false,
+              "graduation": "bonding_curve",
+              "progress": 0,
+              "chain": {
+                "source": "solana_rpc",
+                "network": "localnet",
+                "slot": 558,
+                "asOf": "2026-10-20T17:19:57.000Z",
+                "fetchedAt": "2026-10-20T17:19:58.548Z"
+              }
+            },
+            "trades": {
+              "status": "available",
+              "n": 0,
+              "reason": "No bonding-curve trades yet."
+            },
+            "rent": {
+              "previewed": "15834000",
+              "paid": 15834000
+            },
+            "devBuy": null,
+            "checks": {
+              "confirmed": true,
+              "duplicateSubmitSameLaunch": true,
+              "curveQuoteMatches": true,
+              "routing6040": true,
+              "provenanceQuote": true,
+              "platformCharge": true,
+              "oneLaunchFeeReceipt": true,
+              "rentMatchesNetwork": true,
+              "chainMetrics": true
+            }
+          }
+        ],
+        "result": "passed"
+      }
+    },
+    {
+      "case": "max-3.5-percent",
+      "evidence": {
+        "network": "isolated-localnet (devnet programs/config cloned)",
+        "genesis": "GhTk1SHfKW39jVnvr5mzq7QnvMwiQQfQa2UQvZpwjByY",
+        "quoteAsset": "SOL",
+        "stubbed": [
+          "Pinata uploads (fixed CIDs)"
+        ],
+        "financialScope": "local validator lamports only",
+        "steps": [
+          {
+            "name": "lookup_table",
+            "table": "CXU4d6EQca4ghXPSfGJejpDP652WCcpyRT3RD9T3uanG",
+            "staticEntries": 38
+          },
+          {
+            "name": "capabilities",
+            "launchEnabled": true,
+            "usdc": "planned",
+            "devBuy": {
+              "status": "available",
+              "maxBps": 350,
+              "quoteAssets": [
+                "SOL"
+              ],
+              "reason": null
+            },
+            "devQuote": {
+              "status": "available",
+              "bps": 350,
+              "quoteAsset": "SOL",
+              "network": "localnet",
+              "totalSupply": "1000000000000000",
+              "tokenDecimals": 6,
+              "tokenAmount": "35000000000000",
+              "capTokenAmount": "35000000000000",
+              "estimatedQuoteCost": "10242053",
+              "pumpFees": "126446",
+              "maxQuoteCost": "10344474",
+              "priceImpactBps": 685,
+              "slot": 675
+            }
+          },
+          {
+            "name": "review",
+            "quoteAsset": "SOL",
+            "launchEnabled": true,
+            "ready": true
+          },
+          {
+            "name": "prepared",
+            "launchId": "lch_1bfec1302d9b7b860196523c",
+            "mint": "9qnGqVUsC7HG9SPoaAZM8qHZjvvnhtVzUXznYypgMZdx",
+            "packetBytes": 1164,
+            "instructions": 6,
+            "execution": {
+              "quoteAsset": "SOL"
+            },
+            "fees": {
+              "platformLaunchFeeLamports": "50000000",
+              "platformTreasury": "3xx2bETRzKbKrCMKjWi5YtkMYjwcHqZQXCCGo6mDk9Jf",
+              "estimatedNetworkFeesLamports": "10000",
+              "estimatedAccountRentLamports": "20643360",
+              "launcherCreatorFeeBps": 0,
+              "creatorFeeSplit": {
+                "agentRewardsTreasury": "GgnqLsZmtT2ysKvhmQb3VeMEaGPd6vWtoWYTtxaiUPfc",
+                "agentRewardsBps": 6000,
+                "platformTreasury": "3xx2bETRzKbKrCMKjWi5YtkMYjwcHqZQXCCGo6mDk9Jf",
+                "platformBps": 4000
+              },
+              "notes": [
+                "0.05 SOL is charged once per launch and goes 100% to the Agentic Economy platform treasury.",
+                "The charge and the Pump.fun token creation are in ONE atomic transaction: if creation fails, nothing is charged (network fees aside).",
+                "Solana network fees and account rent are paid by your wallet and are estimates.",
+                "You (the launcher) receive 0% of creator fees. Creator fees actually collected are split 60% agent rewards treasury / 40% platform treasury via Pump.fun's fee-sharing config, locked at launch.",
+                "Pump.fun protocol and liquidity-provider fees are governed by Pump.fun and are not part of this split."
+              ],
+              "developerBuy": {
+                "bps": 350,
+                "quoteAsset": "SOL",
+                "totalSupply": "1000000000000000",
+                "tokenAmount": "35000000000000",
+                "estimatedQuoteCost": "10242053",
+                "pumpFees": "126446",
+                "maxQuoteCost": "10344474",
+                "priceImpactBps": 685
+              }
+            }
+          },
+          {
+            "name": "verified",
+            "signature": "4A4Km1hnASBt4qL3xhiiW29oNGUgHAHJ42mLSHXLLwXVzTQZSp6nRctF7WiEYHUgYQ7ofZTQnMoErJQ9746APtgh",
+            "slot": 708,
+            "communityId": "com_Vp1dAsCNNkVbUT",
+            "curveQuote": "So11111111111111111111111111111111111111112",
+            "platformLamports": 50000000,
+            "receipts": [
+              {
+                "amount": "50000000",
+                "account": "platform",
+                "finality": "pending"
+              }
+            ],
+            "market": {
+              "holders": 1,
+              "holdersLowerBound": false,
+              "graduation": "bonding_curve",
+              "progress": 4.41,
+              "chain": {
+                "source": "solana_rpc",
+                "network": "localnet",
+                "slot": 708,
+                "asOf": "2026-10-20T17:21:09.000Z",
+                "fetchedAt": "2026-10-20T17:21:12.005Z"
+              }
+            },
+            "trades": {
+              "status": "available",
+              "n": 1,
+              "reason": null
+            },
+            "rent": {
+              "previewed": "20643360",
+              "paid": 20643360
+            },
+            "devBuy": {
+              "requestedBps": 350,
+              "requested": "35000000000000",
+              "cap": "35000000000000",
+              "received": "35000000000000",
+              "result": {
+                "tokenAmount": "35000000000000",
+                "quoteSpent": "10242053",
+                "allocationBps": "350",
+                "signature": "4A4Km1hnASBt4qL3xhiiW29oNGUgHAHJ42mLSHXLLwXVzTQZSp6nRctF7WiEYHUgYQ7ofZTQnMoErJQ9746APtgh"
+              },
+              "previewed": {
+                "bps": 350,
+                "quoteAsset": "SOL",
+                "totalSupply": "1000000000000000",
+                "tokenAmount": "35000000000000",
+                "estimatedQuoteCost": "10242053",
+                "pumpFees": "126446",
+                "maxQuoteCost": "10344474",
+                "priceImpactBps": 685
+              },
+              "launcherCreatorVault": 0,
+              "sharedVaultCreatorFee": 30347,
+              "checks": {
+                "exactTokens": true,
+                "withinCap": true,
+                "allocationRecorded": true,
+                "withinCeiling": true,
+                "previewedSpendExact": true,
+                "creatorFeeToSharingVault": true,
+                "quoteMatchesPreparation": true,
+                "spendMatchesSdkQuote": true
+              }
+            },
+            "checks": {
+              "confirmed": true,
+              "duplicateSubmitSameLaunch": true,
+              "curveQuoteMatches": true,
+              "routing6040": true,
+              "provenanceQuote": true,
+              "platformCharge": true,
+              "oneLaunchFeeReceipt": true,
+              "rentMatchesNetwork": true,
+              "devBuy_exactTokens": true,
+              "devBuy_withinCap": true,
+              "devBuy_allocationRecorded": true,
+              "devBuy_withinCeiling": true,
+              "devBuy_previewedSpendExact": true,
+              "devBuy_creatorFeeToSharingVault": true,
+              "devBuy_quoteMatchesPreparation": true,
+              "devBuy_spendMatchesSdkQuote": true,
+              "chainMetrics": true
+            }
+          }
+        ],
+        "result": "passed"
+      }
+    }
+  ]
+}

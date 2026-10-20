@@ -1,3 +1,4 @@
+import {SignedLaunchStore} from './store/signed-launch.js';
 import {TokenMarketService} from './services/token-market.js';
 import type { AppConfig } from "./config.js";
 import { MockChain } from "./chain/mock.js";
@@ -85,7 +86,12 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
   const communities = new CommunityService(store, runtime.reader);
   const eligibility = new EligibilityService(chain, communities, config);
   const agents = new AgentService(runtime.reader, runtime.bus, store, config);
-  const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader);
+  const submissions=new SignedLaunchStore(store instanceof PostgresStore?store.pool:undefined);
+  await submissions.prune();
+  let pruning:Promise<void>|undefined;
+  const recoveryPruner=setInterval(()=>{if(!pruning)pruning=submissions.prune().catch(()=>logger.warn({},'Signed launch payload cleanup is temporarily unavailable')).finally(()=>{pruning=undefined;});},60_000);
+  recoveryPruner.unref();
+  const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader,undefined,submissions);
 
   const runsIndexer = config.role === "indexer" || (config.role === "all" && config.mode !== "demo");
   const indexer = runsIndexer
@@ -116,6 +122,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     authPruner,
     wsStats: { connections: 0 },
     async close() {
+      clearInterval(recoveryPruner);await pruning;
       await indexer?.stop();
       await authPruner?.stop();
       await runtime.stop();

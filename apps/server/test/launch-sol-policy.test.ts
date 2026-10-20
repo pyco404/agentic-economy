@@ -1,7 +1,7 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import {randomUUID} from 'node:crypto';
 import {SavedLaunchDraft} from '@agentic-economy/shared';
-import {makeEnv,newWallet,type TestEnv} from './helpers.js';
+import {login,makeEnv,newWallet,type TestEnv} from './helpers.js';
 import {loadConfig} from '../src/config.js';
 import {LaunchpadStore} from '../src/store/launchpad.js';
 import {LaunchpadService} from '../src/services/launchpad.js';
@@ -39,4 +39,13 @@ it('rejects service-level USDC preparation even with legacy configuration enable
  const build=vi.spyOn(env.chain,'buildLaunchTransaction');
  await expect(env.ctx.launches.prepare(newWallet().wallet,{name:'Old',symbol:'OLD',description:'',metadataUri:'ipfs://old',imageUri:null,website:null,twitter:null,telegram:null},undefined,{asset:'USDC',mint:env.ctx.config.pumpLaunch.usdcMint})).rejects.toThrow('Only SOL');
  expect(build).not.toHaveBeenCalled();
+});
+
+it('rejects quote overrides on the legacy preparation endpoint instead of silently changing their meaning',async()=>{
+ env=await makeEnv();const user=await login(env.app),draft={name:'Home',symbol:'HOME',metadataUri:'https://example.invalid/token.json'};
+ for(const payload of [{draft,quoteAsset:'USDC'},{draft:{...draft,quoteAsset:'USDC'}},{draft:{...draft,quoteMint:'arbitrary'}}]){
+  const response=await env.app.inject({method:'POST',url:'/api/v1/launches/prepare',headers:{...user.auth,'idempotency-key':'reject-legacy-quote'},payload});
+  expect(response.statusCode).toBe(400);
+ }
+ expect(await env.ctx.store.allTreasuryEntries()).toEqual([]);
 });

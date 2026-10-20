@@ -14,25 +14,24 @@ export const agentClasses = [
       "Rentals can be released or expire. Access and fee-claim rights end at expiry; higher financial performance is not guaranteed."] },
 ] as const;
 
+/** Public product milestones. Engineering evidence belongs in repository documentation. */
 export const roadmap = [
-  { phase: 1, title: "Platform Stabilization", status: "Core milestones verified · ongoing stabilization", summary: "A persistent demo city connected to an authoritative economy.",
-    built: ["Persistent procedural Three.js city, roads, rivers, railways, transport and complete-world cinematic readiness", "Persistent rule-based simulation, production, deliveries and City Credits", "Stable agent identities, wallet authentication infrastructure and typed HTTP/WebSocket integration", "Compatible main-branch Railway staging and PostgreSQL persistence"],
-    pending: ["Ongoing reliability, performance and device testing"] },
-  { phase: 2, title: "Token Launchpad", status: "In progress · current development phase", summary: "SOL token preparation and verified, explicitly approved launch execution.",
-    built: ["Staging: Phantom authentication, owned drafts and real Pinata image/metadata integration", "Local artwork preview and one Create Coin preparation workflow with secure IPFS metadata", "Local validator: transaction, persistence and recovery tests", "Public devnet: Pump.fun SOL application launches, desktop Phantom signing and atomic 0.05 test-SOL charge", "Explore discovery, verified launch provenance and source-attributed available market data", "Creator-fee ingestion, denomination-aware accounting and deterministic reconciliation tests"],
-    pending: ["Real-device mobile wallet acceptance", "Real Phantom Developer Buy acceptance up to 3.5% of supply", "Earned creator-fee collection and graduation evidence", "Final security and staging acceptance; mainnet and payouts remain disabled"] },
-  { phase: 3, title: "Common Agents and $AECO Utility", status: "Planned", summary: "Holder-based participation and funded rewards for verified work.", built: [],
-    pending: ["$AECO ecosystem token integration", "One Common Agent per qualifying token position; proposed minimum $20 eligible holding, distinct from simulation/house agents", "Mandatory AECO holding for cross-token participation; minimum not finalized", "Holding-duration tracking, holding weight, and performance scoring", "Verified ownership, agent activation, lifecycle and useful economic participation", "Simulation Credits and potential rewards from a funded, capped AECO pool; no guaranteed conversion or earnings", "Anti-abuse and eligibility validation"] },
-  { phase: 4, title: "$AECO Trading Pairs", status: "Planned", summary: "Optional TOKEN/AECO launches alongside SOL, subject to future approval.", built: [],
-    pending: ["AECO issuance first, followed by quote-token eligibility and liquidity verification", "Activate TOKEN/AECO only after protocol verification", "Preserve SOL launches; verify AECO-specific fees and accounting before activation"] },
-  { phase: 5, title: "Super Agents", status: "Planned", summary: "A distinct advanced class rented by locking $AECO.", built: [],
-    pending: ["Autonomous reasoning and decision-making", "Controlled Solana execution wallets with defined permissions, limits and human oversight", "Advanced work and higher-value services", "Persistent agent identity and reputation; a separate class, not upgraded Common Agents", "AECO-lock rentals with capabilities influenced by lock amount, duration, activity, and verified performance"] },
-  { phase: 6, title: "Autonomous Finance", status: "Planned", summary: "Policy-controlled financial capabilities with explicit authorization initially.", built: [],
-    pending: ["Super-Agent payments and controlled trading of supported platform tokens", "External news and research analysis", "Agent-created token proposals and authorized autonomous launches", "Wallet spending policies, transaction limits, and audit trails", "Explicit authorization for financially consequential actions initially"] },
-  { phase: 7, title: "Super-Agent Rental Marketplace", status: "Planned", summary: "Rent established agents while preserving their reputation and history.", built: [],
-    pending: ["Super-Agent listings and auctions; bid by locking $AECO", "Highest valid bidders receive rental access", "Persistent portfolios and historical token-launch associations", "Rental expiry and release; time-limited claims during active rentals only", "Next renter receives future eligible portfolio fee entitlement, never historical entitlement", "Future verified eligible creator fees only: active rental 50% Agent Rewards / 40% Platform / 10% Current Renter; no active rental 60% Agent Rewards / 40% Platform", "Protocol trading fees and LP fees are excluded; no payouts enabled"] },
-  { phase: 8, title: "Advanced Autonomous Economy", status: "Planned", summary: "A growing city built around useful, verifiable economic contributions.", built: [],
-    pending: ["Agent-owned and operated businesses", "Multi-agent coordination and advanced economic services", "Contracts, service agreements, and resource and service markets", "Verified real-world economic integrations and Proof of Useful Work", "Business growth and expanded autonomous city participation driven by economic activity"] },
+  { phase: 1, title: "Platform Foundation", status: "Completed milestone", summary: "We built the foundations of a living digital economy: a persistent 3D city populated by agents performing useful work.",
+    milestones: ["Persistent, explorable 3D city", "Working agents and economic activities", "Connected neighborhoods and infrastructure", "Resource production and community systems"] },
+  { phase: 2, title: "Token Launchpad", status: "In progress", summary: "Create, launch and discover Solana tokens through an intuitive experience connected to Agentic Economy.",
+    milestones: ["Simple token creation with live previews", "SOL-paired token launches", "Optional Developer Buy, capped at 3.5%", "Token discovery and creator-fee infrastructure"] },
+  { phase: 3, title: "Common Agents & $AECO Utility", status: "Planned", summary: "Connect token ownership to the living economy through Common Agents and future $AECO utility.",
+    milestones: ["Holder-linked Common Agents", "Token ownership and eligibility verification", "Agent participation in economic activities", "Future funded reward opportunities"] },
+  { phase: 4, title: "$AECO Trading Pairs", status: "Planned", summary: "Expand the ecosystem with optional trading pairs using $AECO.",
+    milestones: ["Supported TOKEN/AECO trading pairs", "Ecosystem liquidity integrations", "Additional token utility"] },
+  { phase: 5, title: "Super Agents", status: "Planned", summary: "Introduce an advanced class of AI agents designed for more complex work, intelligent decision-making and economic services.",
+    milestones: ["Advanced agent reasoning", "Distinct identities and capabilities, separate from Common Agents", "Access through planned $AECO locking", "Controlled wallets and permissions"] },
+  { phase: 6, title: "Autonomous Finance", status: "Planned", summary: "Enable Super Agents to perform authorized financial and economic operations under controlled conditions.",
+    milestones: ["Authorized payments with secure permissions and safeguards", "Research and decision-making", "Controlled token trading", "Agent-initiated token creation"] },
+  { phase: 7, title: "Super Agent Rental Marketplace", status: "Planned", summary: "Build a marketplace where users can compete to rent persistent Super Agents and participate in their future economic activity.",
+    milestones: ["$AECO-lock rental auctions", "Persistent agent reputations", "Agent token-launch portfolios", "Time-limited renter creator-fee participation"] },
+  { phase: 8, title: "Advanced Autonomous Economy", status: "Planned", summary: "Expand Agentic Economy into a connected ecosystem of agent-operated services, businesses and collaborative economic activity.",
+    milestones: ["Agent-operated businesses", "Multi-agent coordination", "Advanced service markets", "Broader economic integrations"] },
 ] as const;
 
 /** Proposed editorial allocations, NOT executable treasury constants. */

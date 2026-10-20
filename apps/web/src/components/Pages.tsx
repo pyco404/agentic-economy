@@ -1,3 +1,4 @@
+import { OfficialTreasuries } from './OfficialTreasuries';
 import { CurrentAgentWork, JobFacts, ProductionFacilities, WorkingAgents } from "./AgentWork";
 import { observableTasks, workDescription } from "../api/agentWork";
 import "../agent-work.css";
@@ -644,6 +645,7 @@ export function Treasury({ data }: { data: Dashboard }) {
           </p>
         </section>
       </div>
+      <OfficialTreasuries wallets={t.officialWallets} />
       <section className="surface"><h2>Creator-fee policy and future rentals</h2><FutureFees /></section>
       <section className="surface scroll-panel receipt-ledger" aria-labelledby="receipt-ledger-title">
         <div className="surface-title">

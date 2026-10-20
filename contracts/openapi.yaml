@@ -8234,6 +8234,126 @@ components:
             - mode
             - description
           additionalProperties: false
+        officialWallets:
+          type: array
+          items:
+            type: object
+            properties:
+              account:
+                type: string
+                enum:
+                  - platform
+                  - agent_rewards
+              address:
+                $ref: "#/components/schemas/PublicKey"
+              network:
+                type: string
+                const: mainnet-beta
+              identity:
+                type: string
+                const: owner_supplied
+              source:
+                type: string
+                const: solana_rpc
+              status:
+                type: string
+                enum:
+                  - available
+                  - unavailable
+              balanceLamports:
+                anyOf:
+                  - $ref: "#/components/schemas/AmountString"
+                  - type: "null"
+              slot:
+                anyOf:
+                  - type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  - type: "null"
+              updatedAt:
+                anyOf:
+                  - type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+                  - type: "null"
+              checkedAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+              message:
+                type: string
+              accounting:
+                type: object
+                properties:
+                  coverage:
+                    type: string
+                    const: deployment_ledger_only
+                  creatorFeesLamports:
+                    $ref: "#/components/schemas/AmountString"
+                  launchChargesLamports:
+                    $ref: "#/components/schemas/AmountString"
+                  lifetimeCreatorFeesLamports:
+                    anyOf:
+                      - $ref: "#/components/schemas/AmountString"
+                      - type: "null"
+                  pendingDistributionsLamports:
+                    anyOf:
+                      - $ref: "#/components/schemas/AmountString"
+                      - type: "null"
+                required:
+                  - coverage
+                  - creatorFeesLamports
+                  - launchChargesLamports
+                  - lifetimeCreatorFeesLamports
+                  - pendingDistributionsLamports
+                additionalProperties: false
+              recentTransactions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    signature:
+                      $ref: "#/components/schemas/TxSignature"
+                    slot:
+                      type: integer
+                      minimum: 0
+                      maximum: 9007199254740991
+                    blockTime:
+                      anyOf:
+                        - type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        - type: "null"
+                    failed:
+                      type: boolean
+                    classification:
+                      type: string
+                      enum:
+                        - verified_creator_fee
+                        - verified_launch_charge
+                        - unclassified
+                  required:
+                    - signature
+                    - slot
+                    - blockTime
+                    - failed
+                    - classification
+                  additionalProperties: false
+            required:
+              - account
+              - address
+              - network
+              - identity
+              - source
+              - status
+              - balanceLamports
+              - slot
+              - updatedAt
+              - checkedAt
+              - message
+              - accounting
+              - recentTransactions
+            additionalProperties: false
         recentEntries:
           type: array
           items:
@@ -8334,6 +8454,123 @@ components:
           required:
             - mode
             - description
+        officialWallets:
+          type: array
+          items:
+            type: object
+            properties:
+              account:
+                type: string
+                enum:
+                  - platform
+                  - agent_rewards
+              address:
+                $ref: "#/components/schemas/PublicKey"
+              network:
+                type: string
+                const: mainnet-beta
+              identity:
+                type: string
+                const: owner_supplied
+              source:
+                type: string
+                const: solana_rpc
+              status:
+                type: string
+                enum:
+                  - available
+                  - unavailable
+              balanceLamports:
+                anyOf:
+                  - $ref: "#/components/schemas/AmountString"
+                  - type: "null"
+              slot:
+                anyOf:
+                  - type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  - type: "null"
+              updatedAt:
+                anyOf:
+                  - type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+                  - type: "null"
+              checkedAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+              message:
+                type: string
+              accounting:
+                type: object
+                properties:
+                  coverage:
+                    type: string
+                    const: deployment_ledger_only
+                  creatorFeesLamports:
+                    $ref: "#/components/schemas/AmountString"
+                  launchChargesLamports:
+                    $ref: "#/components/schemas/AmountString"
+                  lifetimeCreatorFeesLamports:
+                    anyOf:
+                      - $ref: "#/components/schemas/AmountString"
+                      - type: "null"
+                  pendingDistributionsLamports:
+                    anyOf:
+                      - $ref: "#/components/schemas/AmountString"
+                      - type: "null"
+                required:
+                  - coverage
+                  - creatorFeesLamports
+                  - launchChargesLamports
+                  - lifetimeCreatorFeesLamports
+                  - pendingDistributionsLamports
+              recentTransactions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    signature:
+                      $ref: "#/components/schemas/TxSignature"
+                    slot:
+                      type: integer
+                      minimum: 0
+                      maximum: 9007199254740991
+                    blockTime:
+                      anyOf:
+                        - type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        - type: "null"
+                    failed:
+                      type: boolean
+                    classification:
+                      type: string
+                      enum:
+                        - verified_creator_fee
+                        - verified_launch_charge
+                        - unclassified
+                  required:
+                    - signature
+                    - slot
+                    - blockTime
+                    - failed
+                    - classification
+            required:
+              - account
+              - address
+              - network
+              - identity
+              - source
+              - status
+              - balanceLamports
+              - slot
+              - updatedAt
+              - checkedAt
+              - message
+              - accounting
+              - recentTransactions
         recentEntries:
           type: array
           items:

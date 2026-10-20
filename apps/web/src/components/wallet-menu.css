@@ -1,0 +1,14 @@
+.wallet-menu-root { position: relative; }
+.wallet-account.surface { position: absolute; z-index: 90; right: 0; top: calc(100% + 10px); width: min(300px, calc(100vw - 32px)); padding: 20px; box-shadow: 0 12px 36px #344d3820; }
+.wallet-account code { display: block; font-size: 12px; overflow-wrap: anywhere; white-space: normal; }
+.wallet-account button { margin: 8px 8px 0 0; }
+.wallet-account p { margin: 0 0 10px; }
+
+@media (max-width: 600px) {
+ .wallet-menu-connected .wallet-button { display: inline-flex; width: 30px; min-width: 30px; padding: 6px; justify-content: center; }
+ .topbar:has(.wallet-menu-connected) { gap: 8px; padding-inline: 12px; }
+ .topbar:has(.wallet-menu-connected) .brand { font-size: 14px; gap: 8px; }
+ .topbar:has(.wallet-menu-connected) .brand-mark { width: 30px; height: 30px; }
+ .topbar:has(.wallet-menu-connected) .header-actions { gap: 6px; }
+ .wallet-account.surface { position: fixed; right: 12px; top: 72px; width: min(320px, calc(100vw - 24px)); }
+}

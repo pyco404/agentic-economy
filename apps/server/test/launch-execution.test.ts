@@ -160,3 +160,27 @@ it('sanitizes unavailable genesis checks and permits recovery with the same atte
   }
   expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
  });
+
+it('resumes the exact stored signed transaction without signing again and retains one launch/receipt',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`,signed=f.signed(p.transaction);f.failRpc();
+ expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(503);
+ const status=await f.call('GET',url);expect(status.json().recovery).toMatchObject({canResume:true});expect(status.body).not.toContain(signed);
+ // Restart the service using the same private recovery repository: no wallet signature is requested.
+ const service=env!.ctx.launches;const submissions=(service as unknown as {submissions:unknown}).submissions;
+ const {LaunchService}=await import('../src/services/launch.js');
+ env!.ctx.launches=new LaunchService(env!.ctx.store,f.chain,env!.ctx.config,env!.ctx.treasury,env!.ctx.coord,env!.ctx.runtime.bus,env!.ctx.runtime.reader,undefined,submissions as ConstructorParameters<typeof LaunchService>[8]);
+ await f.call('POST',url+'/resume',{});
+ expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(2);
+ expect(vi.mocked(f.chain.submitLaunchTransaction!).mock.calls.map(c=>c[0])).toEqual([signed,signed]);
+ f.setLanded();const recovered=await f.call('POST',url+'/resume',{});expect(recovered.json().launch.status).toBe('confirmed');
+ expect((await env!.ctx.store.allTreasuryEntries()).filter(e=>e.launchId===p.launch.id)).toHaveLength(1);
+});
+it('recovers a payload that never reached submit using the same attempt, while rejecting unauthorized or changed payloads',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+ expect((await env!.app.inject({method:'POST',url:url+'/resume',payload:{}})).statusCode).toBe(403);
+ expect((await f.call('POST',url+'/resume',{transaction:p.transaction})).statusCode).toBe(400);
+ const signed=f.signed(p.transaction),results=await Promise.all([f.call('POST',url+'/resume',{transaction:signed}),f.call('POST',url+'/resume',{transaction:signed})]);
+ expect(results.every(r=>r.statusCode===200)).toBe(true);
+ expect((await f.call('GET',url)).json().launch.signature).toBeTruthy();
+ expect(vi.mocked(f.chain.submitLaunchTransaction!).mock.calls.every(c=>c[0]===signed)).toBe(true);
+});

@@ -183,6 +183,7 @@ if (check) {
   console.log("contracts up to date");
 } else {
   await writeFile(target, openapi);
+  if(process.argv.includes("--openapi-only")){console.log("wrote contracts/openapi.yaml (existing fixtures preserved)");process.exit(0);}
   const { fixtures } = await buildFixtures();
   const dir = `${ROOT}packages/shared/fixtures/`;
   await mkdir(dir, { recursive: true });

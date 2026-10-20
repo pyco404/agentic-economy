@@ -26,15 +26,20 @@ import { buildApp } from '../src/http/app.js';
 
 const PUBLIC = ['EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG', '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d'];
 const rpc = process.env.AECO_LOCAL_TEST_RPC ?? '', genesis = process.env.PUMP_LOCAL_GENESIS_HASH ?? '', db = process.env.TEST_DATABASE_URL ?? '';
-if (process.env.AECO_RUN_LOCAL_PROTOCOL !== 'true' || !rpc || !genesis || !db) throw Error('Explicit local opt-in, loopback RPC, local genesis and disposable *_test database required');
+const memory = process.env.AECO_LOCAL_TEST_MEMORY === 'true';
+if (process.env.AECO_RUN_LOCAL_PROTOCOL !== 'true' || !rpc || !genesis || (!db && !memory)) throw Error('Explicit local opt-in, loopback RPC, local genesis and disposable *_test database required');
 const host = new URL(rpc);
 if (!['127.0.0.1', 'localhost', '[::1]'].includes(host.hostname) || host.username || host.password) throw Error('Loopback RPC required');
-if (!/_test(\?|$)/.test(new URL(db).pathname + (new URL(db).search ? '?' : ''))) throw Error('Database must be a disposable *_test database');
+if (memory && db) throw Error('Memory-only verification must not specify a database');
+if (!memory && process.env.AECO_LOCAL_TEST_RESET_APPROVED !== 'true') throw Error('Explicit approval is required before resetting the disposable database');
+if (!memory && !/_test(\?|$)/.test(new URL(db).pathname + (new URL(db).search ? '?' : ''))) throw Error('Database must be a disposable *_test database');
 const conn = new Connection(rpc, 'confirmed');
 if ((await conn.getGenesisHash()) !== genesis || PUBLIC.includes(genesis)) throw Error('RPC is not the expected isolated local validator');
 
 // AECO_LOCAL_TEST_QUOTE=SOL runs the same journey for SOL (regression for the quote-aware confirmation).
 const QUOTE = process.env.AECO_LOCAL_TEST_QUOTE === 'SOL' ? 'SOL' as const : 'USDC' as const, NATIVE = 'So11111111111111111111111111111111111111112';
+/** Optional Developer Buy in basis points of total supply (SOL only), e.g. AECO_LOCAL_TEST_DEV_BUY_BPS=350. */
+const DEV_BUY_BPS = Number(process.env.AECO_LOCAL_TEST_DEV_BUY_BPS ?? 0);
 const report: Record<string, unknown> = { network: 'isolated-localnet (devnet programs/config cloned)', genesis, quoteAsset: QUOTE, ...(QUOTE === 'USDC' ? { quoteMint: USDC_QUOTE_MINTS.localnet } : {}), stubbed: ['Pinata uploads (fixed CIDs)'], financialScope: 'local validator lamports only' };
 const steps: unknown[] = (report.steps = []) as unknown[];
 const step = (name: string, data: unknown) => { steps.push({ name, ...(data as object) }); console.log(name, JSON.stringify(data)); };
@@ -46,22 +51,29 @@ try {
   // Static-only lookup table: accounts shared by every launch (no per-mint accounts), for both quotes.
   const sample = async (quoteAsset?: 'USDC') => { const m = Keypair.generate(); const ix = await pumpLaunchInstructions({ launcherWallet: Keypair.generate().publicKey.toBase58(), mint: m.publicKey.toBase58(), mintSecretKey: m.secretKey, name: 'N', symbol: 'S', uri: 'ipfs://x', platformTreasury: platform.toBase58(), agentRewardsTreasury: agent.toBase58(), ...(quoteAsset ? { quoteAsset, quoteMint: USDC_QUOTE_MINTS.localnet } : {}) }); return new Set(ix.flatMap((i) => [i.programId, ...i.keys.filter((k) => !k.isSigner).map((k) => k.pubkey)]).map((k) => k.toBase58())); };
   const [s1, s2, u1, u2] = await Promise.all([sample(), sample(), sample('USDC'), sample('USDC')]);
-  const statics = [...new Set([...s1].filter((k) => s2.has(k)).concat([...u1].filter((k) => u2.has(k))))].map((k) => new PublicKey(k));
+  // Developer Buy: the buy's fixed accounts plus every protocol and buyback fee recipient the SDK may choose.
+  const global = await new sdk.OnlinePumpSdk(conn).fetchGlobal();
+  const devSample = async () => { const m = Keypair.generate(); const ix = await pumpLaunchInstructions({ launcherWallet: Keypair.generate().publicKey.toBase58(), mint: m.publicKey.toBase58(), mintSecretKey: m.secretKey, name: 'N', symbol: 'S', uri: 'ipfs://x', platformTreasury: platform.toBase58(), agentRewardsTreasury: agent.toBase58(), devBuy: { tokenAmount: 1n, maxQuoteCost: 1n } }, global); return new Set(ix.flatMap((i) => [i.programId, ...i.keys.filter((k) => !k.isSigner).map((k) => k.pubkey)]).map((k) => k.toBase58())); };
+  const [d1, d2] = [await devSample(), await devSample()];
+  const recipients = ([global.feeRecipient, ...global.feeRecipients, ...(global.buybackFeeRecipients ?? [])] as PublicKey[]).map((k) => k.toBase58()).filter((k) => k !== '11111111111111111111111111111111');
+  const statics = [...new Set([...s1].filter((k) => s2.has(k)).concat([...u1].filter((k) => u2.has(k)), DEV_BUY_BPS ? [...d1].filter((k) => d2.has(k)).concat(recipients) : []))].map((k) => new PublicKey(k));
   const [create, table] = AddressLookupTableProgram.createLookupTable({ authority: admin.publicKey, payer: admin.publicKey, recentSlot: await conn.getSlot('finalized') });
-  await sendAndConfirmTransaction(conn, new Transaction().add(create, AddressLookupTableProgram.extendLookupTable({ authority: admin.publicKey, payer: admin.publicKey, lookupTable: table, addresses: statics })), [admin], { commitment: 'confirmed' });
+  await sendAndConfirmTransaction(conn, new Transaction().add(create, AddressLookupTableProgram.extendLookupTable({ authority: admin.publicKey, payer: admin.publicKey, lookupTable: table, addresses: statics.slice(0, 20) })), [admin], { commitment: 'confirmed' });
+  for (let i = 20; i < statics.length; i += 20) await sendAndConfirmTransaction(conn, new Transaction().add(AddressLookupTableProgram.extendLookupTable({ authority: admin.publicKey, payer: admin.publicKey, lookupTable: table, addresses: statics.slice(i, i + 20) })), [admin], { commitment: 'confirmed' });
   const extended = await conn.getSlot('confirmed'); while ((await conn.getSlot('confirmed')) <= extended) await new Promise((r) => setTimeout(r, 200));
   step('lookup_table', { table: table.toBase58(), staticEntries: statics.length });
 
   // The real application, configured for the isolated network.
-  const pool = new pg.Pool({ connectionString: db }); await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;'); await pool.end();
+  if (!memory) { const pool = new pg.Pool({ connectionString: db }); await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;'); await pool.end(); }
   const origin = 'http://127.0.0.1:5199', cid = 'bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m';
-  const config = loadConfig({ MODE: 'devnet', ROLE: 'all', LOG_LEVEL: 'warn', DATABASE_URL: db, SOLANA_RPC_URL: rpc, SOLANA_CLUSTER: 'localnet', PUMP_LOCAL_GENESIS_HASH: genesis,
+  const config = loadConfig({ MODE: 'devnet', ROLE: 'all', LOG_LEVEL: 'warn', DATABASE_URL: memory ? 'postgres:///unused_local_protocol_test' : db, SOLANA_RPC_URL: rpc, SOLANA_CLUSTER: 'localnet', PUMP_LOCAL_GENESIS_HASH: genesis,
     FEE_ROUTING_VERIFIED: 'true', PUMP_LAUNCH_ENABLED: 'true', USDC_LAUNCH_ENABLED: 'true', PUMP_LAUNCH_LOOKUP_TABLE: table.toBase58(),
     PLATFORM_TREASURY: platform.toBase58(), AGENT_REWARDS_TREASURY: agent.toBase58(), PINATA_JWT: 'local-acceptance-stub', AUTH_URI: origin, CORS_ORIGINS: origin, SIM_AUTOSTART: 'false' });
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => String(url).startsWith('https://uploads.pinata.cloud/') ? Response.json({ data: { cid } }) : realFetch(url, init)) as typeof fetch;
-  const { migrate } = await import('../src/store/postgres.js'); const mp = new pg.Pool({ connectionString: db }); await migrate(mp); await mp.end();
-  const ctx = await createContext(config), app = await buildApp(ctx); ctx.runtime.start();
+  if (!memory) { const { migrate } = await import('../src/store/postgres.js'); const mp = new pg.Pool({ connectionString: db }); await migrate(mp); await mp.end(); }
+  const { MemoryStore } = await import('../src/store/memory.js');
+  const ctx = await createContext(config, memory ? {store:new MemoryStore()} : {}), app = await buildApp(ctx); ctx.runtime.start();
   try {
     const call = (method: 'GET' | 'POST' | 'PATCH', url: string, payload?: unknown, key = 'usdc-local-' + Math.random().toString(36).slice(2, 10), cookie?: string, type = 'application/json') =>
       app.inject({ method, url, headers: { origin, 'idempotency-key': key, ...(cookie ? { cookie } : {}), 'content-type': type }, ...(payload !== undefined ? { payload: payload as string } : {}) });
@@ -69,8 +81,9 @@ try {
     const verified = await call('POST', '/api/v1/auth/browser/verify', { wallet: creator.publicKey.toBase58(), nonce: ch.nonce, signature: bs58.encode(nacl.sign.detached(new TextEncoder().encode(ch.message), creator.secretKey)) });
     const cookie = verified.headers['set-cookie']!.toString().split(';')[0]!;
     const caps = (await call('GET', '/api/v1/launchpad/capabilities', undefined, undefined, cookie)).json();
-    step('capabilities', { launchEnabled: caps.launchEnabled, usdc: caps.quotes.USDC });
-    let draft = (await call('POST', '/api/v1/launchpad/drafts', { name: `AECO ${QUOTE} Local`, symbol: `AE${QUOTE}`, description: 'Isolated local acceptance', quoteAsset: QUOTE }, undefined, cookie)).json();
+    const devQuote = DEV_BUY_BPS ? (await call('GET', `/api/v1/launchpad/dev-buy-quote?bps=${DEV_BUY_BPS}`)).json() : null;
+    step('capabilities', { launchEnabled: caps.launchEnabled, usdc: caps.quotes.USDC, devBuy: caps.devBuy, devQuote });
+    let draft = (await call('POST', '/api/v1/launchpad/drafts', { name: `AECO ${QUOTE} Local`, symbol: `AE${QUOTE}`, description: 'Isolated local acceptance', quoteAsset: QUOTE, devBuyBps: DEV_BUY_BPS }, undefined, cookie)).json();
     const png = await sharp({ create: { width: 64, height: 64, channels: 3, background: '#4f7a4a' } }).png().toBuffer();
     draft = (await app.inject({ method: 'POST', url: `/api/v1/launchpad/drafts/${draft.id}/logo?version=${draft.version}`, headers: { origin, cookie, 'idempotency-key': 'usdc-local-logo', 'content-type': 'application/octet-stream' }, payload: png })).json();
     draft = (await call('POST', `/api/v1/launchpad/drafts/${draft.id}/metadata`, { version: draft.version }, 'usdc-local-metadata', cookie)).json();
@@ -102,17 +115,39 @@ try {
     const platformLamports = await conn.getBalance(platform);
     // The previewed rent must equal what the launcher actually paid: debit minus network fee and platform charge.
     const landed = (await conn.getTransaction(current.signature, { maxSupportedTransactionVersion: 0, commitment: 'confirmed' }))!.meta!;
-    const landedRent = landed.preBalances[0]! - landed.postBalances[0]! - landed.fee - 50_000_000;
+    const devSpent = Number(current.devBuyResult?.quoteSpent ?? 0);
+    const landedRent = landed.preBalances[0]! - landed.postBalances[0]! - landed.fee - 50_000_000 - devSpent;
+    let devBuy: Record<string, unknown> | null = null;
+    if (DEV_BUY_BPS) {
+      const supply = BigInt(global.tokenTotalSupply.toString()), cap = supply * 350n / 10_000n, requested = supply * BigInt(DEV_BUY_BPS) / 10_000n;
+      const held = await conn.getParsedTokenAccountsByOwner(creator.publicKey, { mint: new PublicKey(launch.mint) }, 'confirmed');
+      const balance = BigInt(held.value[0]?.account.data.parsed.info.tokenAmount.amount ?? '0');
+      // The dev buy's creator fee must accrue to the sharing config's vault (split 60/40), never the launcher's.
+      const { creatorVaultPda, sharingConfigPda } = await import('../src/chain/pump.js');
+      const launcherVault = await conn.getBalance(new PublicKey(creatorVaultPda(creator.publicKey.toBase58())));
+      const sharedVault = await conn.getAccountInfo(new PublicKey(creatorVaultPda(sharingConfigPda(launch.mint))));
+      const sharedFee = sharedVault ? sharedVault.lamports - await conn.getMinimumBalanceForRentExemption(sharedVault.data.length) : 0;
+      if (process.env.AECO_LOCAL_TEST_FIXTURE) await writeFile(process.env.AECO_LOCAL_TEST_FIXTURE, JSON.stringify({ capturedFrom: 'isolated local validator (cloned devnet Pump programs)', launcher: creator.publicKey.toBase58(), mint: launch.mint, platform: platform.toBase58(), agent: agent.toBase58(), devBuy: launch.execution.devBuy, totalSupply: supply.toString(), tx: await ctx.chain.getTransaction(current.signature) }, (_k, v) => (typeof v === 'bigint' ? { $bigint: v.toString() } : v), 1) + '\n');
+      devBuy = { requestedBps: DEV_BUY_BPS, requested: requested.toString(), cap: cap.toString(), received: balance.toString(), result: current.devBuyResult, previewed: launch.fees.developerBuy, launcherCreatorVault: launcherVault, sharedVaultCreatorFee: sharedFee };
+      Object.assign(devBuy, { checks: {
+        exactTokens: balance === requested && current.devBuyResult?.tokenAmount === requested.toString(), withinCap: balance <= cap, allocationRecorded: current.devBuyResult?.allocationBps === String(DEV_BUY_BPS),
+        withinCeiling: BigInt(current.devBuyResult?.quoteSpent ?? '0') <= BigInt(launch.execution.devBuy.maxQuoteCost), previewedSpendExact: launch.fees.developerBuy?.estimatedQuoteCost === current.devBuyResult?.quoteSpent,
+        creatorFeeToSharingVault: launcherVault === 0 && sharedFee > 0, quoteMatchesPreparation: devQuote?.tokenAmount === requested.toString(),
+        // Independent of the formula: what remains after charge, fee and buy is exactly the new accounts' rent.
+        spendMatchesSdkQuote: devQuote?.estimatedQuoteCost === current.devBuyResult?.quoteSpent } });
+    }
     const checks = {
       confirmed: current.status === 'confirmed', duplicateSubmitSameLaunch: again.id === launch.id && again.status === 'confirmed',
       curveQuoteMatches: routing.bondingCurveQuoteMint === (QUOTE === 'USDC' ? USDC_QUOTE_MINTS.localnet : NATIVE), routing6040: routing.sharingConfig?.adminRevoked === true && routing.sharingConfig.shareholders.length === 2,
       provenanceQuote: community.provenance?.quoteAsset === QUOTE, platformCharge: platformLamports === 50_000_000, oneLaunchFeeReceipt: receipts.length === 1,
       rentMatchesNetwork: current.fees.estimatedAccountRentLamports === String(landedRent),
-      chainMetrics: market.chain?.source === 'solana_rpc' && market.graduationProgress === 0 && market.priceUsd === null,
+      ...(devBuy ? Object.fromEntries(Object.entries(devBuy.checks as Record<string, boolean>).map(([k, v]) => [`devBuy_${k}`, v])) : {}),
+      // A Developer Buy moves the curve: progress is the bought share of the initial real reserves (floored bps).
+      chainMetrics: market.chain?.source === 'solana_rpc' && market.priceUsd === null && market.graduationProgress === (DEV_BUY_BPS ? Number(BigInt(global.tokenTotalSupply.toString()) * BigInt(DEV_BUY_BPS) / 10_000n * 10_000n / BigInt(global.initialRealTokenReserves.toString())) / 100 : 0),
     };
     step('verified', { signature: current.signature, slot: current.slot, communityId: current.communityId, curveQuote: routing.bondingCurveQuoteMint, platformLamports,
       receipts: receipts.map((r: { amount: string; account: string; finality: string }) => ({ amount: r.amount, account: r.account, finality: r.finality })),
-      market: { holders: market.holders, holdersLowerBound: market.holdersLowerBound, graduation: market.graduation, progress: market.graduationProgress, chain: market.chain }, trades: { status: trades.status, n: trades.trades.length, reason: trades.reason }, rent: { previewed: current.fees.estimatedAccountRentLamports, paid: landedRent }, checks });
+      market: { holders: market.holders, holdersLowerBound: market.holdersLowerBound, graduation: market.graduation, progress: market.graduationProgress, chain: market.chain }, trades: { status: trades.status, n: trades.trades.length, reason: trades.reason }, rent: { previewed: current.fees.estimatedAccountRentLamports, paid: landedRent }, devBuy, checks });
     if (!Object.values(checks).every(Boolean)) throw Error('One or more acceptance checks failed');
     if (process.env.AECO_LOCAL_TEST_FEES === 'true' && QUOTE === 'SOL') {
       // One isolated test buy (local lamports, separate fresh buyer), then the SDK's standard distribution.

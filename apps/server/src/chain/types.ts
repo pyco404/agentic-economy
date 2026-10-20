@@ -1,3 +1,4 @@
+import type { HeliusHolderObservation, IndexedMetadata } from './helius.js';
 import type { PumpTrade } from "./pump-events.js";
 import type { SharingConfigState } from "./pump.js";
 
@@ -104,7 +105,8 @@ export interface ChainGateway {
   /** Authoritative bonding-curve state read at `slot`; null when the curve account does not exist. */
   getCurveProgress?(mint: string): Promise<CurveProgress | null>;
   /** Distinct owners holding a positive balance of `mint` (excluding the curve's own vault); null holders when too many to count safely. */
-  getHolderCount?(mint: string): Promise<{ slot: number; holders: number | null; exact: boolean }>;
+  getHolderCount?(mint: string): Promise<{ slot: number; holders: number | null; exact: boolean; index?: HeliusHolderObservation["index"] }>;
+  getIndexedMetadata?(mint: string): Promise<IndexedMetadata | null>;
   /** Most recent bonding-curve trades, newest first, from Pump's own events. */
   getRecentTrades?(mint: string, limit: number): Promise<{ slot: number; complete: boolean; trades: ChainTrade[] }>;
   getBlockTime?(slot: number): Promise<number | null>;

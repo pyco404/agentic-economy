@@ -43,7 +43,7 @@ export function LaunchDevBuy({ bps, onChange, availability, quoteAsset, symbol, 
           <div><dt>Price impact</dt><dd>{(quote.priceImpactBps / 100).toFixed(2)}%</dd></div>
         </> : <div><dt>Estimate</dt><dd>{loading ? 'Calculating…' : error || (quote?.status === 'unavailable' ? quote.reason : 'Shown when Developer Buy is available')}</dd></div>}
       </dl>
-      <details className="small muted"><summary>How Developer Buy works</summary><p>Exactly this many tokens are bought, or the whole transaction fails. Final costs are shown before wallet approval. The limit applies to this launch only.</p>{quote?.status==='available'&&<p>Estimated cost includes {formatSol(quote.pumpFees)} in Pump.fun fees.</p>}</details>
+      <details className="small muted"><summary>How Developer Buy works</summary><p>Exactly this many tokens are bought, or the whole transaction fails. Final costs are shown before wallet approval. The limit applies to this launch only.</p>{quote?.status==='available'&&<p>Estimated cost includes {formatSol(quote.pumpFees)} in protocol fees.</p>}</details>
     </div>}
   </fieldset>;
 }

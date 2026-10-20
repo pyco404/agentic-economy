@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { DEV_BUY_MAX_BPS, DevBuyQuote, DraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, launchpadPaths } from '@agentic-economy/shared';
+import { DEV_BUY_MAX_BPS, DevBuyQuote, NewLaunchDraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, launchpadPaths } from '@agentic-economy/shared';
 import { ChainFeatureUnavailable } from '../chain/types.js';
 import type { AppContext } from '../context.js';
 import { hashToken } from '../services/auth.js';
@@ -20,9 +20,8 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  // Network-dependent readiness, checked before any upload: the selected pair and an optional Developer Buy.
  const readiness=async(f:{quoteAsset:'SOL'|'USDC';devBuyBps:number})=>{
   const out:{field:'quoteAsset'|'devBuyBps';code:string;message:string}[]=[];
-  if(f.quoteAsset==='USDC'&&!ctx.config.pumpLaunch.usdcEnabled)out.push({field:'quoteAsset',code:'quote_unavailable',message:'The USDC pair is not available on this network yet.'});
   if(f.devBuyBps>0){
-   if(f.quoteAsset!=='SOL')out.push({field:'devBuyBps',code:'dev_buy_pair',message:'Developer Buy is available for SOL pairs only.'});
+   if(f.quoteAsset!=='SOL')out.push({field:'devBuyBps',code:'dev_buy_unavailable',message:'Developer Buy is available for SOL pairs only.'});
    else{const s=await devBuySupport();if(!s.available)out.push({field:'devBuyBps',code:'dev_buy_unavailable',message:s.reason??'Developer Buy is unavailable on this network.'});}
   }
   return out;
@@ -47,7 +46,7 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  let executionsInFlight=0;
  const executionOwner=async(req:FastifyRequest)=>{csrf(req);return wallet(req);};
  const execution=async<T>(work:()=>Promise<T>)=>{if(executionsInFlight>=4)throw new AppError('unavailable','Launch processing is busy. Retry the same attempt shortly.');executionsInFlight++;try{return await work();}finally{executionsInFlight--;}};
- app.get(launchpadPaths.capabilities,async()=>{const dev=await devBuySupport();return{version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:ctx.config.pumpLaunch.enabled,quotes:{SOL:'draft',USDC:ctx.config.pumpLaunch.usdcEnabled?'draft':'planned',AECO:'future'},
+ app.get(launchpadPaths.capabilities,async()=>{const dev=await devBuySupport();return{version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:ctx.config.pumpLaunch.enabled,quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
   devBuy:{status:dev.available?'available':'unavailable',maxBps:DEV_BUY_MAX_BPS,quoteAssets:['SOL'],reason:dev.reason}};});
  // Public estimate for the form; the transaction itself is re-quoted and simulated at preparation.
  app.get(launchpadPaths.devBuyQuote,async(req,reply)=>{
@@ -65,14 +64,14 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  app.get(launchpadPaths.session,async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.auth.authenticate(`Bearer ${token(req)??''}`);});
  app.post(launchpadPaths.logout,async(req,reply)=>{csrf(req);if(token(req))await ctx.store.revokeSession(hashToken(token(req)!));reply.header('Set-Cookie',cookie('',0)).header('Cache-Control','no-store');return{ok:true};});
  app.get(launchpadPaths.drafts,async(req,reply)=>{reply.header('Cache-Control','no-store');return{items:await service.store.list(await wallet(req))};});
- app.post(launchpadPaths.drafts,async(req)=>service.create(await mutation(req),key(req),DraftFields.parse(req.body)));
+ app.post(launchpadPaths.drafts,async(req)=>service.create(await mutation(req),key(req),NewLaunchDraftFields.parse(req.body)));
  const path=launchpadPaths.drafts+'/:id';
  app.get(path,async(req,reply)=>{reply.header('Cache-Control','no-store');return service.store.get(await wallet(req),idOf(req));});
- app.patch(path,async(req)=>{const owner=await mutation(req),body=z.object({version:version.shape.version,fields:DraftFields}).strict().parse(req.body);return service.update(owner,idOf(req),body.version,body.fields);});
+ app.patch(path,async(req)=>{const owner=await mutation(req),body=z.object({version:version.shape.version,fields:NewLaunchDraftFields}).strict().parse(req.body);return service.update(owner,idOf(req),body.version,body.fields);});
  app.delete(path,async(req)=>{const owner=await mutation(req),body=version.parse(req.body);await service.store.remove(owner,idOf(req),body.version);return{ok:true};});
  app.delete(path+'/logo',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);const draft=await service.store.get(owner,idOf(req));const next={...draft,image:null,metadata:null,version:draft.version+1,updatedAt:new Date().toISOString()};await service.store.save(next,body.version);return next;});
  app.post(path+'/metadata',async(req)=>{const owner=await mutation(req),body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
- app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const review=await service.review(await wallet(req),idOf(req));const quoteEnabled=review.draft.fields.quoteAsset==='USDC'?ctx.config.pumpLaunch.usdcEnabled:ctx.config.pumpLaunch.enabled;return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
+ app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const review=await service.review(await wallet(req),idOf(req));const quoteEnabled=review.draft.fields.quoteAsset==='SOL'&&ctx.config.pumpLaunch.enabled;return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
  // Execution consumes only a server-owned, latest-version draft and its pinned assets.
  app.post(path+'/launch',async(req)=>{
   const owner=await executionOwner(req),body=version.parse(req.body),id=idOf(req),requestKey=key(req);
@@ -82,16 +81,17 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
    if(d.version!==body.version)throw new AppError('conflict','Draft changed. Review it again before launching.');
    if(!review.readyForNextMilestone||!d.image||!d.metadata)throw new AppError('bad_request','Save and prepare the token logo and metadata before launching');
    // The quote comes only from the server-owned draft; its mint only from server configuration.
-   if(d.fields.quoteAsset==='USDC'&&!ctx.config.pumpLaunch.usdcEnabled)throw new AppError('feature_disabled','USDC launches are not enabled on this network');
-   const quote=d.fields.quoteAsset==='USDC'?{asset:'USDC' as const,mint:ctx.config.pumpLaunch.usdcMint}:{asset:'SOL' as const};
+   if(d.fields.quoteAsset!=='SOL')throw new AppError('feature_disabled','Only SOL is supported for new launches');
+   const quote={asset:'SOL' as const};
    const launchId='lch_'+createHash('sha256').update(`${owner}:${requestKey}`).digest('hex').slice(0,24);
    return ctx.launches.prepare(owner,{name:d.fields.name,symbol:d.fields.symbol,description:d.fields.description,metadataUri:d.metadata.ipfsUri,imageUri:d.image.gatewayUrl,website:d.fields.website,twitter:d.fields.twitter,telegram:d.fields.telegram},{id,version:d.version,launchId,devBuyBps:d.fields.devBuyBps},quote);
   }));
  });
  const launchPath='/api/v1/launchpad/launches/:launchId';
  const launchId=(req:FastifyRequest)=>z.object({launchId:z.string().regex(/^lch_[A-Za-z0-9]+$/)}).parse(req.params).launchId;
- app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');return{launch:TokenLaunch.parse(await ctx.launches.refresh(await wallet(req),launchId(req)))};});
+ app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),id=launchId(req);return{launch:TokenLaunch.parse(await ctx.launches.refresh(owner,id)),recovery:await ctx.launches.recovery(owner,id)};});
  app.post(launchPath+'/submit',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644)}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.submit(owner,launchId(req),body.transaction)))};});
+ app.post(launchPath+'/resume',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644).optional()}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.resume(owner,launchId(req),body.transaction)))};});
  // The parser is scoped to image/octet-stream uploads. Authenticate before buffering any body.
  app.addContentTypeParser('application/octet-stream',{parseAs:'buffer',bodyLimit:ctx.config.pinata.maxBytes},(_req,body,done)=>done(null,body));
  app.route({method:'POST',url:path+'/logo',bodyLimit:ctx.config.pinata.maxBytes,

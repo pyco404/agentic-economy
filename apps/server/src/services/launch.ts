@@ -1,6 +1,7 @@
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
+  DEV_BUY_MAX_BPS,
   LAUNCH_FEE_LAMPORTS,
   PLATFORM_TREASURY_CREATOR_FEE_BPS,
   type Community,
@@ -13,7 +14,7 @@ import {
 import type { AppConfig } from "../config.js";
 import { MockChain, type MockLaunchOutcome } from "../chain/mock.js";
 import { sharingConfigPda } from "../chain/pump.js";
-import { ChainFeatureUnavailable, type ChainGateway } from "../chain/types.js";
+import { ChainFeatureUnavailable, type ChainGateway, type DevBuyChainQuote } from "../chain/types.js";
 import { verifyLaunch } from "../chain/verify.js";
 import type { Coordinator } from "../coord/types.js";
 import type { CommandBus, StateReader } from "../roles/read-model.js";
@@ -34,6 +35,11 @@ export const TOKEN_ACCOUNT_RENT_LAMPORTS = 2_039_280n;
  * vault, the two fee-sharing quote vaults and, unless it already exists, the creator's own USDC account. */
 const USDC_VAULT_RENT_LAMPORTS = 4n * TOKEN_ACCOUNT_RENT_LAMPORTS;
 const NATIVE_MINT = "So11111111111111111111111111111111111111112";
+/** amount/total in basis points as an exact decimal string (up to 6 decimal places, trailing zeros dropped). */
+export function exactBps(amount: bigint, total: bigint): string {
+  const scaled = (amount * 10_000n * 1_000_000n) / total, whole = scaled / 1_000_000n, frac = (scaled % 1_000_000n).toString().padStart(6, "0").replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : whole.toString();
+}
 export type LaunchQuote = { asset: "SOL" } | { asset: "USDC"; mint: string };
 const NETWORK_FEE_ESTIMATE_LAMPORTS = 50_000n;
 
@@ -83,7 +89,7 @@ export class LaunchService {
       throw new AppError("feature_disabled", "Launches are disabled until Pump.fun fee routing has been verified for this deployment (FEE_ROUTING_VERIFIED).");
   }
 
-  async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
+  async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
     this.assertEnabled();
     if(this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
     if(quote.asset==="USDC"&&(!owned||!this.config.pumpLaunch.usdcEnabled))throw new AppError("feature_disabled","USDC launches are not enabled on this network");
@@ -92,6 +98,22 @@ export class LaunchService {
       return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
     }}
     if(Buffer.byteLength(draft.name)>32||Buffer.byteLength(draft.symbol)>13||Buffer.byteLength(draft.metadataUri)>200)throw new AppError("bad_request","Token name, symbol or metadata URI exceeds protocol byte limits");
+    // Developer Buy comes only from the server-owned draft; quoted from the live chain, never from the client.
+    const devBuyBps=owned?.devBuyBps??0;
+    let devQuote:DevBuyChainQuote|null=null;
+    if(devBuyBps!==0){
+      if(!Number.isInteger(devBuyBps)||devBuyBps<0||devBuyBps>DEV_BUY_MAX_BPS)throw new AppError("bad_request",`Developer Buy must be between 0% and ${DEV_BUY_MAX_BPS/100}% of total supply`);
+      if(!owned||quote.asset!=="SOL"||!this.chain.quoteDevBuy||!this.chain.devBuySupport)throw new AppError("feature_disabled","Developer Buy is available only for SOL launches on an enabled test network");
+      try{
+        const support=await this.chain.devBuySupport();
+        if(!support.available)throw new ChainFeatureUnavailable("dev_buy_unavailable",support.reason??"Developer Buy is unavailable on this network");
+        devQuote=await this.chain.quoteDevBuy(devBuyBps);
+      }catch(e){
+        if(e instanceof ChainFeatureUnavailable)throw new AppError("feature_disabled",e.message,{code:e.code});
+        throw new AppError("unavailable","Developer Buy pricing is temporarily unavailable. Retry the same attempt; nothing has been submitted.");
+      }
+      if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount)throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
+    }
     const mintKp = Keypair.generate();
     const mint = mintKp.publicKey.toBase58();
     let built;
@@ -106,6 +128,7 @@ export class LaunchService {
         platformTreasury: this.config.treasuries.platform,
         agentRewardsTreasury: this.config.treasuries.agentRewards,
         ...(quote.asset === "USDC" ? { quoteAsset: "USDC" as const, quoteMint: quote.mint } : {}),
+        ...(devQuote ? { devBuy: { tokenAmount: devQuote.tokenAmount, maxQuoteCost: devQuote.maxQuoteCost } } : {}),
       });
     } catch (e) {
       if (e instanceof ChainFeatureUnavailable) throw new AppError("feature_disabled", e.message, { code: e.code });
@@ -120,8 +143,12 @@ export class LaunchService {
       draft,
       mint,
       feeSharingConfig: sharingConfigPda(mint),
-      fees: {...this.feeBreakdown(quote),...(built.estimatedNetworkFeesLamports?{estimatedNetworkFeesLamports:built.estimatedNetworkFeesLamports}:{}),...(built.estimatedAccountRentLamports?{estimatedAccountRentLamports:built.estimatedAccountRentLamports}:{})},
-      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster as "devnet"|"localnet",quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const}}:{}),
+      fees: {...this.feeBreakdown(quote),...(built.estimatedNetworkFeesLamports?{estimatedNetworkFeesLamports:built.estimatedNetworkFeesLamports}:{}),...(built.estimatedAccountRentLamports?{estimatedAccountRentLamports:built.estimatedAccountRentLamports}:{}),
+        // The simulated spend (exact for this transaction) replaces the formula estimate when available.
+        developerBuy:devQuote?{bps:devBuyBps,quoteAsset:"SOL" as const,totalSupply:devQuote.totalSupply.toString(),tokenAmount:devQuote.tokenAmount.toString(),
+          estimatedQuoteCost:built.devBuy?.quoteSpent??devQuote.estimatedQuoteCost.toString(),pumpFees:devQuote.pumpFees.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString(),priceImpactBps:devQuote.priceImpactBps}:null},
+      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster as "devnet"|"localnet",quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const,
+        ...(devQuote?{devBuy:{bps:devBuyBps,tokenAmount:devQuote.tokenAmount.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString()}}:{})}}:{}),
       signature: null,
       slot: null,
       communityId: null,
@@ -230,6 +257,7 @@ export class LaunchService {
         agentRewardsTreasury: launch.fees.creatorFeeSplit.agentRewardsTreasury,
         sharingConfig: launch.feeSharingConfig,
         ...(launch.execution ? { quoteMint: launch.execution.quoteAsset === "USDC" ? launch.execution.quoteMint : NATIVE_MINT, quoteRequired: launch.execution.quoteAsset === "USDC" } : {}),
+        ...(launch.execution?.devBuy && launch.fees.developerBuy ? { devBuy: { tokenAmount: BigInt(launch.execution.devBuy.tokenAmount), maxQuoteCost: BigInt(launch.execution.devBuy.maxQuoteCost), totalSupply: BigInt(launch.fees.developerBuy.totalSupply) } } : {}),
         ...(this.chain.source === "solana_rpc" ? {draft:launch.draft,...(launch.execution?{preparedMessageBase64:Buffer.from(VersionedTransaction.deserialize(Buffer.from(launch.execution.transaction,"base64")).message.serialize()).toString("base64")}:{} )} : {}),
       },
       tx,
@@ -265,7 +293,10 @@ export class LaunchService {
       }
       const communityId = newId("com");
       const community = this.buildCommunity(launch, communityId, signature, at);
-      const next: TokenLaunch = { ...this.transition(launch, "confirmed"), signature, slot: v.slot, communityId };
+      // Record what actually executed (not the request): exact tokens, lamports spent and share of total supply.
+      const devBuyResult = v.devBuy && launch.fees.developerBuy ? { tokenAmount: v.devBuy.tokenAmount.toString(), quoteSpent: v.devBuy.quoteSpent.toString(),
+        allocationBps: exactBps(v.devBuy.tokenAmount, BigInt(launch.fees.developerBuy.totalSupply)), signature } : null;
+      const next: TokenLaunch = { ...this.transition(launch, "confirmed"), signature, slot: v.slot, communityId, ...(devBuyResult ? { devBuyResult } : {}) };
       await this.store.confirmLaunch(next, rec.version, community, [feeEntry], {
         id: `evt_l${launch.id.slice(4)}`,
         tick: this.reader.tick,

@@ -1,3 +1,4 @@
+import {SignedLaunchStore} from "../store/signed-launch.js";
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
@@ -41,6 +42,7 @@ export function exactBps(amount: bigint, total: bigint): string {
   return frac ? `${whole}.${frac}` : whole.toString();
 }
 export type LaunchQuote = { asset: "SOL" } | { asset: "USDC"; mint: string };
+const currentQuoteAllowed=(quote:LaunchQuote):boolean=>quote.asset==="SOL";
 const NETWORK_FEE_ESTIMATE_LAMPORTS = 50_000n;
 
 /**
@@ -57,6 +59,7 @@ export class LaunchService {
     private readonly bus: CommandBus,
     private readonly reader: StateReader,
     private readonly now: () => Date = () => new Date(),
+    private readonly submissions:SignedLaunchStore = new SignedLaunchStore(),
   ) {}
 
   feeBreakdown(quote: LaunchQuote = { asset: "SOL" }): FeeBreakdown {
@@ -92,7 +95,7 @@ export class LaunchService {
   async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
     this.assertEnabled();
     if(this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
-    if(quote.asset==="USDC"&&(!owned||!this.config.pumpLaunch.usdcEnabled))throw new AppError("feature_disabled","USDC launches are not enabled on this network");
+    if(!currentQuoteAllowed(quote))throw new AppError("feature_disabled","Only SOL is supported for new launches");
     if(owned){const existing=await this.store.getLaunch(owned.launchId);if(existing){
       const l=existing.launch;if(l.launcherWallet!==wallet||l.execution?.draftId!==owned.id||l.execution.draftVersion!==owned.version)throw new AppError("conflict","Launch attempt does not match this draft");
       return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
@@ -198,6 +201,7 @@ export class LaunchService {
     if(l.status==="confirmed"||l.status==="failed")return l;
     await this.assertPreparedNetwork(l);
     if(await this.chain.getTransaction(checked.signature))return this.confirm(wallet,id,checked.signature);
+    if(l.execution.quoteAsset!=="SOL")throw new AppError("feature_disabled","Only SOL submissions are enabled. Historical launches remain available for reconciliation.");
     if(l.status==="expired")return l;
     if(this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
       // A previously broadcast transaction may be missing from this RPC's history.
@@ -206,14 +210,43 @@ export class LaunchService {
       await this.assertExpiredMintAbsent(l);
       const expired=this.transition(l,"expired");await this.store.updateLaunch(expired,record.version);return expired;
     }
+    await this.submissions.put({wallet,launchId:id,mint:l.mint,genesisHash:l.execution.genesisHash,signature:checked.signature,transaction:signed});
     const pending={...this.transition(l,"submitted"),signature:checked.signature};
     try{await this.store.updateLaunch(pending,record.version);}catch(e){if(e instanceof ConflictError){const latest=(await this.store.getLaunch(id))!.launch;if(latest.signature!==checked.signature)throw new AppError("conflict","Another launch submission won the race");return latest;}throw e;}
     try{const returned=await this.chain.submitLaunchTransaction(signed);if(returned!==checked.signature)throw new Error("RPC signature mismatch");}catch{throw new AppError("unavailable","Submission is uncertain. Check this launch again; retry only the same signed transaction.");}
     return pending;
   }
+  /** Explicitly resume only the original signed message; never prepare a new mint or ask the wallet again. */
+  async resume(wallet:string,id:string,transaction?:string){
+    this.assertEnabled();
+    const record=await this.store.getLaunch(id);
+    if(!record||record.launch.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
+    const reconciled=await this.refresh(wallet,id);
+    if(['confirmed','failed','expired'].includes(reconciled.status))return reconciled;
+    const receipt=await this.submissions.get(wallet,id);
+    const signed=transaction??receipt?.transaction;
+    if(!signed)throw new AppError('unavailable','Signed payload is no longer available. Check the original transaction; do not sign or pay again.');
+    if(receipt?.transaction&&transaction&&receipt.transaction!==transaction)throw new AppError('conflict','Resume must use the original signed transaction');
+    return this.submit(wallet,id,signed);
+  }
+  async recovery(wallet:string,id:string){
+    const record=await this.store.getLaunch(id);if(!record||record.launch.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
+    const receipt=await this.submissions.get(wallet,id);if(!receipt)return undefined;
+    return {signature:receipt.signature,canResume:!!receipt.transaction&&this.config.pumpLaunch.enabled&&!['confirmed','failed','expired'].includes(record.launch.status)};
+  }
   async refresh(wallet:string,id:string){
     const initial=await this.store.getLaunch(id);if(!initial)throw new AppError("not_found","Launch not found");const l=initial.launch;if(l.launcherWallet!==wallet)throw new AppError("forbidden","Only the creator can inspect this preparation");
+    const saved=await this.submissions.get(wallet,id);
+    if(saved&&(saved.mint!==l.mint||saved.genesisHash!==l.execution?.genesisHash))throw new AppError('conflict','Stored submission does not match this launch network or mint');
+    if(!l.signature&&saved)return this.confirm(wallet,id,saved.signature);
     if(l.signature&&!['confirmed','failed','expired'].includes(l.status))return this.confirm(wallet,id,l.signature);
+    if(l.signature&&['confirmed','failed'].includes(l.status)&&saved?.transaction){
+      const tx=await this.chain.getTransaction(l.signature);
+      if(tx?.commitment==='finalized'&&tx.genesisHash===l.execution?.genesisHash){
+        if((l.status==='confirmed')!==(tx.err===null))throw new AppError('unavailable','RPC evidence contradicts the recorded outcome. Keep this launch for reconciliation.');
+        await this.submissions.erase(wallet,id);
+      }
+    }
     if(l.execution&&!l.signature)await this.assertPreparedNetwork(l);
     if(l.execution&&!l.signature&&this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
       await this.assertExpiredMintAbsent(l);

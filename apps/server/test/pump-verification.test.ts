@@ -64,3 +64,11 @@ describe('RPC evidence and simulation failure gates',()=>{
   await expect(chain.buildLaunchTransaction(f.input)).rejects.toMatchObject({code:'pump_simulation_failed'});expect(send).not.toHaveBeenCalled();
  });
 });
+
+it('uses full signature history and preserves contradictory observations for safe expiry checks',async()=>{
+ const rpc=vi.spyOn(Connection.prototype,'getSignatureStatuses').mockResolvedValue({context:{slot:10},value:[null]});
+ const chain=new SolanaRpcChain('http://127.0.0.1:1');expect(await chain.getSignatureStatus('test-signature')).toBeNull();expect(rpc).toHaveBeenCalledWith(['test-signature'],{searchTransactionHistory:true});
+ rpc.mockResolvedValue({context:{slot:11},value:[{slot:11,confirmations:null,confirmationStatus:'finalized',err:null}]});
+ expect(await chain.getSignatureStatus('test-signature')).toEqual({slot:11,confirmationStatus:'finalized',err:null});
+ rpc.mockRejectedValue(new Error('RPC unavailable'));await expect(chain.getSignatureStatus('test-signature')).rejects.toThrow('RPC unavailable');
+});

@@ -34,6 +34,7 @@ async function setup(){
  });
  chain.getGenesisHash=async()=>'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
  chain.getFinalizedBlockHeight=async()=>finalizedHeight;
+ chain.mintAccountExists=vi.fn(async()=>false);
  chain.submitLaunchTransaction=vi.fn(async transaction=>{pendingSig=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);if(rpcFailure)throw new Error('RPC timed out');return pendingSig;});
  env.ctx.config.mode='devnet';env.ctx.config.financialFeaturesEnabled=true;env.ctx.config.pumpLaunch.enabled=true;
  const prepare=async(key='prepare-test-key')=>call('POST',`/api/v1/launchpad/drafts/${draft.id}/launch`,{version:draft.version},key);
@@ -142,3 +143,20 @@ it('sanitizes unavailable genesis checks and permits recovery with the same atte
  expect((await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})).json().launch.status).toBe('submitted');
  f.setLanded();expect((await f.call('GET',url)).json().launch.status).toBe('confirmed');
 });
+
+ it('retains an expired-height preparation when its mint exists instead of declaring nonpayment',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;f.expire();f.chain.mintAccountExists=vi.fn(async()=>true);
+  for(const response of [await f.call('GET',url),await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})]){expect(response.statusCode).toBe(503);expect(response.json().error.message).toContain('requires recovery');}
+  expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch.status).toBe('awaiting_signature');
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();expect(await env!.ctx.store.allTreasuryEntries()).toEqual([]);
+ });
+ it('fails closed on absent or unavailable finalized mint readers without losing the original attempt',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;f.expire();
+  for(const reader of [undefined,async():Promise<boolean>=>{throw Error('RPC unavailable');}]){
+   f.chain.mintAccountExists=reader;
+   expect((await f.call('GET',url)).statusCode).toBe(503);
+   expect((await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})).statusCode).toBe(503);
+   expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch.status).toBe('awaiting_signature');
+  }
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });

@@ -33,6 +33,7 @@ const ctx=await createContext(config);
 const broadcastsApproved=process.env.AECO_DEVNET_WALLET_TRANSACTIONS_APPROVED==='true';
 if(!ctx.chain.submitLaunchTransaction)throw Error('Devnet transaction submission adapter is unavailable');
 const submit=ctx.chain.submitLaunchTransaction.bind(ctx.chain);
+ctx.chain.assertLaunchSubmissionAllowed=async()=>{if(!broadcastsApproved)throw new ChainFeatureUnavailable('verification_approval_required','Devnet wallet transaction approval is still pending. Nothing was broadcast.');};
 ctx.chain.submitLaunchTransaction=async transaction=>{
  if(!broadcastsApproved)throw new ChainFeatureUnavailable('verification_approval_required','Devnet wallet transaction approval is still pending. Nothing was broadcast.');
  return submit(transaction);

@@ -129,7 +129,7 @@ export const ConfirmLaunchRequest = z
   .meta({ id: "ConfirmLaunchRequest" });
 export type ConfirmLaunchRequest = z.infer<typeof ConfirmLaunchRequest>;
 
-export const LaunchResponse = z.object({ launch: TokenLaunch }).meta({ id: "LaunchResponse" });
+export const LaunchResponse = z.object({ launch: TokenLaunch, recovery:z.object({signature:TxSignature,canResume:z.boolean()}).optional() }).meta({ id: "LaunchResponse" });
 export type LaunchResponse = z.infer<typeof LaunchResponse>;
 
 export const LaunchModeInfo = z.object({ mode: DataMode }).meta({ id: "LaunchModeInfo" });

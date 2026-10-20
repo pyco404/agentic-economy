@@ -1,5 +1,5 @@
 import { ComputeBudgetProgram, Keypair, PublicKey, SystemProgram, TransactionInstruction, TransactionMessage, VersionedTransaction, type AddressLookupTableAccount } from '@solana/web3.js';
-import { DEV_BUY_MAX_BPS, LAUNCH_FEE_LAMPORTS, LaunchDraft } from '@agentic-economy/shared';
+import { AGENT_TREASURY_CREATOR_FEE_BPS, PLATFORM_TREASURY_CREATOR_FEE_BPS, BPS_DENOMINATOR, OFFICIAL_TREASURIES, DEV_BUY_MAX_BPS, LAUNCH_FEE_LAMPORTS, LaunchDraft } from '@agentic-economy/shared';
 import { sharingConfigPda } from './pump.js';
 import type { BuildLaunchInput } from './types.js';
 
@@ -23,11 +23,13 @@ export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unkn
  // The protocol limits UTF-8 bytes, not JavaScript UTF-16 code units.
  if(Buffer.byteLength(input.name)>32||Buffer.byteLength(input.symbol)>13||Buffer.byteLength(input.uri)>200)throw new Error('Pump metadata exceeds UTF-8 byte limits');
  const mint=Keypair.fromSecretKey(input.mintSecretKey),user=new PublicKey(input.launcherWallet),platform=new PublicKey(input.platformTreasury),agent=new PublicKey(input.agentRewardsTreasury);
+ if([input.platformTreasury,input.agentRewardsTreasury].includes(OFFICIAL_TREASURIES.aecoDeployer))throw new Error('The AECO deployer cannot be a treasury recipient');
+ if(AGENT_TREASURY_CREATOR_FEE_BPS+PLATFORM_TREASURY_CREATOR_FEE_BPS!==BPS_DENOMINATOR)throw new Error('Human creator-fee shares must total 10000 basis points');
  if(mint.publicKey.toBase58()!==input.mint)throw new Error('Mint signing key does not match the prepared mint');
  if(platform.equals(agent)||platform.equals(user)||agent.equals(user)||platform.equals(mint.publicKey)||agent.equals(mint.publicKey)||user.equals(mint.publicKey))throw new Error('Creator, mint and treasury roles must be distinct');
  const create=await PUMP_SDK.createV2Instruction({mint:mint.publicKey,user,creator:user,name:input.name,symbol:input.symbol,uri:input.uri,mayhemMode:false,cashback:false,holderReward:false,...(input.quoteAsset==='USDC'?{quoteMint,quoteTokenProgram:tokenProgram}:{})});
  const sharing=await PUMP_SDK.createFeeSharingConfig({creator:user,mint:mint.publicKey,pool:null});
- const shares=await PUMP_SDK.updateFeeSharesV2({authority:user,mint:mint.publicKey,currentShareholders:[user],newShareholders:[{address:agent,shareBps:6000},{address:platform,shareBps:4000}],quoteMint,quoteTokenProgram:tokenProgram,bondingCurveComplete:false});
+ const shares=await PUMP_SDK.updateFeeSharesV2({authority:user,mint:mint.publicKey,currentShareholders:[user],newShareholders:[{address:agent,shareBps:AGENT_TREASURY_CREATOR_FEE_BPS},{address:platform,shareBps:PLATFORM_TREASURY_CREATOR_FEE_BPS}],quoteMint,quoteTokenProgram:tokenProgram,bondingCurveComplete:false});
  // Non-native distribution during the final share update reads both source
  // vault ATAs even when their balances are zero. Initialize them atomically.
  const vaults=input.quoteAsset==='USDC'?[7,17].map(index=>{

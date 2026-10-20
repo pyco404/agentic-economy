@@ -1,6 +1,6 @@
 import bs58 from "bs58";
 import { isDeepStrictEqual } from "node:util";
-import { AddressLookupTableProgram, Connection, Keypair, PublicKey, VersionedTransaction, type AddressLookupTableAccount, type VersionedTransactionResponse } from "@solana/web3.js";
+import { AddressLookupTableProgram, Connection, Keypair, PublicKey, VersionedTransaction, type ConnectionConfig, type AddressLookupTableAccount, type VersionedTransactionResponse } from "@solana/web3.js";
 import { DEV_BUY_MAX_BPS, LAUNCH_FEE_LAMPORTS, devBuyTokenAmount, SYSTEM_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_FEES_PROGRAM_ID, PUMP_AMM_PROGRAM_ID } from "@agentic-economy/shared";
 import { anchorAccountDiscriminator, bondingCurvePda, decodeBondingCurveCreator, decodeSharingConfig, sharingConfigPda } from "./pump.js";
 import sdk from "./pump-sdk.cjs";
@@ -16,8 +16,8 @@ export class SolanaRpcChain implements ChainGateway {
   readonly source = "solana_rpc" as const;
   private readonly conn: Connection;
 
-  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet"}) {
-    this.conn = new Connection(rpcUrl, "confirmed");
+  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet"}, readOptions?: Pick<ConnectionConfig,"fetch">) {
+    this.conn = new Connection(rpcUrl, {commitment:"confirmed", ...readOptions});
   }
 
   getGenesisHash(){return this.conn.getGenesisHash();}
@@ -119,7 +119,9 @@ export class SolanaRpcChain implements ChainGateway {
       if (res.value.length > 20_000) return { slot: res.context.slot, holders: null, exact: false };
       const owners = new Set<string>();
       for (const { account } of res.value) {
-        const data = Buffer.from(account.data), owner = bs58.encode(data.subarray(0, 32));
+        const data = Buffer.from(account.data);
+        if (data.length !== 40) throw new Error("Holder account slice is malformed");
+        const owner = bs58.encode(data.subarray(0, 32));
         if (owner !== curve && data.length >= 40 && data.readBigUInt64LE(32) > 0n) owners.add(owner);
       }
       return { slot: res.context.slot, holders: owners.size, exact: true };
@@ -132,11 +134,13 @@ export class SolanaRpcChain implements ChainGateway {
     const nonZero = largest.value.filter((a) => a.amount !== "0");
     const infos = nonZero.length ? (await this.conn.getMultipleParsedAccounts(nonZero.map((a) => a.address), { commitment: "confirmed" })).value : [];
     const owners = new Set<string>();
+    let complete = infos.length === nonZero.length;
     for (const info of infos) {
       const owner = info && "parsed" in info.data ? (info.data.parsed as { info?: { owner?: string } }).info?.owner : undefined;
+      if (!owner) complete = false;
       if (owner && owner !== curve) owners.add(owner);
     }
-    return { slot: largest.context.slot, holders: owners.size, exact: nonZero.length < 20 };
+    return { slot: largest.context.slot, holders: owners.size, exact: nonZero.length < 20 && complete };
   }
 
   async getRecentTrades(mint: string, limit: number): Promise<{ slot: number; complete: boolean; trades: ChainTrade[] }> {

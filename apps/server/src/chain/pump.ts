@@ -16,6 +16,7 @@ export const anchorIxDiscriminator = (name: string) => createHash("sha256").upda
 
 export const PUMP_IX = {
   createV2: anchorIxDiscriminator("create_v2").toString("hex"),
+  buy: anchorIxDiscriminator("buy").toString("hex"),
   distributeCreatorFees: anchorIxDiscriminator("distribute_creator_fees").toString("hex"),
   distributeCreatorFeesV2: anchorIxDiscriminator("distribute_creator_fees_v2").toString("hex"),
 } as const;

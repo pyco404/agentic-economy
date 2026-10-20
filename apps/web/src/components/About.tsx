@@ -122,7 +122,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
 
     <section className="about-paper" aria-labelledby="about-direction-title">
       <p className="about-kicker">08 / Our direction</p><h2 id="about-direction-title">Where We're Going</h2>
-      <p className="about-section-intro">From a persistent city and verified token preparation to holder-linked Common Agents, a distinct Super-Agent class and a wider agent-driven economy. Each step depends on verification, clear permissions and responsible rollout.</p>
+      <p className="about-section-intro">Our vision grows from a living digital city into an agent-powered economy. Explore the journey and our current focus on the dedicated Roadmap.</p>
       <div className="about-actions">{link("roadmap", "Explore Our Roadmap")}</div>
     </section>
     <EcosystemFaq />

@@ -1,0 +1,88 @@
+{
+  "network": "mainnet-beta",
+  "readOnly": true,
+  "source": "https://api.mainnet-beta.solana.com",
+  "checkedAt": "2026-10-20T18:42:09.625306+00:00",
+  "ownershipVerification": "Owner-supplied identities; RPC does not prove control",
+  "results": [
+    {
+      "method": "getGenesisHash",
+      "params": [],
+      "response": {
+        "jsonrpc": "2.0",
+        "result": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+        "id": 1
+      }
+    },
+    {
+      "method": "getBalance",
+      "params": [
+        "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+        {
+          "commitment": "finalized"
+        }
+      ],
+      "response": {
+        "jsonrpc": "2.0",
+        "result": {
+          "context": {
+            "apiVersion": "4.3.2",
+            "slot": 459333196
+          },
+          "value": 0
+        },
+        "id": 1
+      }
+    },
+    {
+      "method": "getSignaturesForAddress",
+      "params": [
+        "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+        {
+          "commitment": "finalized",
+          "limit": 12
+        }
+      ],
+      "response": {
+        "jsonrpc": "2.0",
+        "result": [],
+        "id": 1
+      }
+    },
+    {
+      "method": "getBalance",
+      "params": [
+        "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",
+        {
+          "commitment": "finalized"
+        }
+      ],
+      "response": {
+        "jsonrpc": "2.0",
+        "result": {
+          "context": {
+            "apiVersion": "4.3.2",
+            "slot": 459333219
+          },
+          "value": 0
+        },
+        "id": 1
+      }
+    },
+    {
+      "method": "getSignaturesForAddress",
+      "params": [
+        "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",
+        {
+          "commitment": "finalized",
+          "limit": 12
+        }
+      ],
+      "response": {
+        "jsonrpc": "2.0",
+        "result": [],
+        "id": 1
+      }
+    }
+  ]
+}

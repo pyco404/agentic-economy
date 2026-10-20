@@ -22,8 +22,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     test.setTimeout(180000); await page.setViewportSize(viewport);
     const errors: string[] = [], writes: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    page.on('request', (r) => { if (r.method() !== 'GET' && /launchpad\/drafts|pinata/.test(r.url())) writes.push(r.url()); });
-    await page.route('**/api/v1/launchpad/drafts',route=>route.request().method()==='GET'?route.fulfill({json:{items:[]}}):route.continue());
+    page.on('request', (r) => { if (r.method() !== 'GET' && /\/(logo|metadata|launch)$|pinata/.test(r.url())) writes.push(r.url()); });
+    let d:Record<string,unknown>|null=null;
+    await page.route('**/api/v1/launchpad/drafts',route=>route.request().method()==='GET'?route.fulfill({json:{items:d?[d]:[]}}):route.fulfill({json:d={id:'3d850366-84c9-438b-847f-17bcb084e531',wallet:'11111111111111111111111111111111',version:0,fields:route.request().postDataJSON(),image:null,metadata:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}}));
+    await page.route('**/api/v1/launchpad/drafts/3d850366-84c9-438b-847f-17bcb084e531',route=>route.fulfill({json:route.request().method()==='PATCH'?d={...d,fields:route.request().postDataJSON().fields,version:Number(d?.version??0)+1}:d}));
     await page.route('**/api/v1/auth/browser/session',route=>route.fulfill({json:{wallet:'11111111111111111111111111111111',sessionExpiresAt:new Date(Date.now()+3600000).toISOString()}}));
     await open(page, 'available');
     const name = page.getByLabel('Token name', { exact: true }), symbol = page.getByLabel('Symbol', { exact: true });
@@ -58,7 +60,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
 
     await page.screenshot({ path: `artifacts/launch-dev-buy-${viewport.width}.png`, fullPage: true });
     expect(await page.locator('main').evaluate((n) => n.scrollWidth <= n.clientWidth + 1)).toBe(true);
-    expect(writes).toEqual([]); // editing never saves or uploads
+    expect(writes).toEqual([]); // background text saves never upload artwork
     expect(errors).toEqual([]);
   });
 

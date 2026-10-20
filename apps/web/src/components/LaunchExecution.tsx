@@ -1,4 +1,5 @@
 import bs58 from 'bs58';
+import '../launch-review.css';
 import {eraseSignedLaunch,readSignedLaunch,saveSignedLaunch} from '../api/signedLaunch';
 import {routeUrl} from "../navigation/routes";
 import {useEffect,useRef,useState} from 'react';
@@ -13,6 +14,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  reviewedMaxDevBuyCost?:string|null;autoPrepare?:boolean;executionAllowed?:boolean;onBusyChange?:(busy:boolean)=>void;onLockChange?:(locked:boolean)=>void;onEdit?:()=>void;onConfirmed?:(created:boolean)=>void;onNewCoin?:()=>void}){
  const session=useWalletSession(),[launch,setLaunch]=useState<TokenLaunch|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[restoring,setRestoring]=useState(true),[submissionUncertain,setSubmissionUncertain]=useState(false),[signingStage,setSigningStage]=useState('');
  const [acceptedMax,setAcceptedMax]=useState<string|null>(null),[canResume,setCanResume]=useState(false);
+ const [copyMessage,setCopyMessage]=useState('');
  const binding=(l:TokenLaunch)=>({wallet:draft.wallet,id:l.id,mint:l.mint,network:l.execution!.network});
  const received=(r:{launch:TokenLaunch;recovery?:{signature:string;canResume:boolean}})=>{
   let local:ReturnType<typeof readSignedLaunch>=null;
@@ -100,27 +102,70 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  // Never silently raise what the creator agreed to: a higher (or unseen) maximum must be accepted again.
  const needsAcceptance=devBuyNeedsAcceptance(dev?.maxQuoteCost??null,reviewedMaxDevBuyCost,acceptedMax);
  const total=(extra:string)=>launch?formatSol((BigInt(launch.fees.platformLaunchFeeLamports)+BigInt(launch.fees.estimatedNetworkFeesLamports)+BigInt(launch.fees.estimatedAccountRentLamports)+BigInt(extra)).toString()):'';
- return <section aria-label="Launch execution"><h3>Review fees and approve</h3><p className="small">Testing networks only. Mainnet launches remain disabled.</p>
+ const confirmed=launch?.status==='confirmed';
+ const terminal=!!launch&&['failed','expired'].includes(launch.status);
+ const interrupted=submissionUncertain&&!confirmed;
+ const pending=!!launch&&['submitted','recovery_needed'].includes(launch.status);
+ const safeRetry=executionAllowed&&!submissionUncertain&&terminal;
+ const canEdit=onEdit&&!busy&&!submissionUncertain&&launch&&((!launch.signature&&['awaiting_signature','expired'].includes(launch.status))||launch.status==='failed');
+ const short=(value:string)=>`${value.slice(0,6)}…${value.slice(-6)}`;
+ const copyMint=async()=>{if(!launch)return;try{await navigator.clipboard.writeText(launch.mint);setCopyMessage('Mint copied');}catch{setCopyMessage('Could not copy. Select the full mint in Technical details.');}};
+ const token=<div className="launch-review-token">
+  {draft.image?<img src={draft.image.gatewayUrl} alt={`${draft.fields.name} logo`}/>:<span className="launch-review-monogram" aria-hidden="true">{draft.fields.symbol.slice(0,2)}</span>}
+  <div><h4>{draft.fields.name} <span>{draft.fields.symbol}</span></h4><p className="small muted">{draft.fields.symbol}/{launch?.execution?.quoteAsset??draft.fields.quoteAsset}{launch?.execution?.network&&` · ${launch.execution.network}`}</p></div>
+ </div>;
+ return <section className={`launch-execution${confirmed?' launch-result-success':''}`} aria-label="Launch execution">
+  <p className="launch-stage-label">{confirmed||pending||interrupted||terminal?'3 · Result':'2 · Review'}</p>
+  <h3 aria-live="polite">{confirmed?'Coin created successfully':interrupted?'We lost connection while checking your launch':pending?'Launch in progress':terminal?'This launch attempt did not complete':'Review before wallet approval'}</h3>
   {!launch?<>{(busy||restoring)&&<p role="status">Preparing your launch transaction…</p>}{executionAllowed&&!busy&&!restoring&&!error&&<button className="secondary wide" onClick={prepare}>Prepare transaction</button>}</>:<>
-   <p role="status">Launch status: {launch.status.replaceAll('_',' ')}</p>
-   <dl className="fee-list"><div><dt>Network</dt><dd>{launch.execution?.network}</dd></div><div><dt>Trading pair</dt><dd>{launch.draft.symbol}/{launch.execution?.quoteAsset??"SOL"}</dd></div><div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Treasury destination</dt><dd><code className="ui-select-text">{launch.fees.platformTreasury}</code></dd></div><div><dt>Estimated network fee</dt><dd>{Number(launch.fees.estimatedNetworkFeesLamports)/1e9} SOL</dd></div><div><dt>Estimated account rent</dt><dd>{Number(launch.fees.estimatedAccountRentLamports)/1e9} SOL</dd></div>
-    {dev&&<><div><dt>Developer Buy</dt><dd>{formatTokens(dev.tokenAmount)} {launch.draft.symbol} ({percentFromBps(dev.bps)}% of supply)</dd></div>
-     <div><dt>Developer Buy cost (simulated)</dt><dd>{formatSol(dev.estimatedQuoteCost)}</dd></div><div><dt>Includes Pump.fun fees</dt><dd>{formatSol(dev.pumpFees)}</dd></div>
-     <div><dt>Developer Buy maximum</dt><dd>{formatSol(dev.maxQuoteCost)}</dd></div><div><dt>Price impact</dt><dd>{(dev.priceImpactBps/100).toFixed(2)}%</dd></div></>}
-    <div><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')}{dev&&` (at most ${total(dev.maxQuoteCost)})`}</dd></div></dl>
-   {launch.status==='awaiting_signature'&&needsAcceptance&&<div className="launch-quote-change" role="alert"><p className="small">{reviewedMaxDevBuyCost===null?'Review the Developer Buy amounts above before approving.':`The Developer Buy maximum changed from ${formatSol(reviewedMaxDevBuyCost)} to ${formatSol(dev!.maxQuoteCost)}.`} Your wallet will be asked to approve exactly this transaction.</p><button className="secondary" onClick={()=>setAcceptedMax(dev!.maxQuoteCost)}>Accept these amounts</button></div>}
-   <p className="small">Your wallet pays network fees and account rent separately. The 0.05 SOL platform charge is in the same transaction as token creation and fee sharing; a failed transaction can still incur network fees.</p>
-   {executionAllowed&&launch.status==='awaiting_signature'&&!submissionUncertain&&<button className="primary wide" disabled={busy||needsAcceptance} onClick={sign}>{busy?signingStage||'Preparing…':'Approve in wallet'}</button>}
-   {['submitted','recovery_needed'].includes(launch.status)&&<p role="status">{launch.status==='submitted'?'Confirming your coin on-chain…':'Checking your saved transaction…'}</p>}
-   {signingStage&&<p role="status">{signingStage}</p>}{submissionUncertain&&!signingStage&&<p role="status">Checking your signed transaction. Keep this saved attempt.</p>}
-   {onEdit&&!busy&&!submissionUncertain&&((!launch.signature&&['awaiting_signature','expired'].includes(launch.status))||launch.status==='failed')&&<button className="text-button" onClick={onEdit}>Edit token details</button>}
-   <button className="secondary" disabled={busy} onClick={check}>Check launch status</button>
-   {executionAllowed&&canResume&&!['confirmed','failed','expired'].includes(launch.status)&&<button className="secondary" disabled={busy} onClick={resume}>Resume same transaction</button>}
-   {executionAllowed&&!submissionUncertain&&['expired','failed'].includes(launch.status)&&<button className="secondary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare a new attempt</button>}
-   {launch.status==='confirmed'&&<><p>Token creation verified. <a href={routeUrl("explore", launch.mint)}>View in Explore</a></p>{launch.devBuyResult&&<p className="small" role="status">Developer Buy verified on-chain: {formatTokens(launch.devBuyResult.tokenAmount)} {launch.draft.symbol} ({Number(launch.devBuyResult.allocationBps)/100}% of supply) for {formatSol(launch.devBuyResult.quoteSpent)}.</p>}<p className="small ui-select-text">Mint: {launch.mint}</p>{launch.execution?.network==='devnet'&&<a href={`https://explorer.solana.com/tx/${launch.signature}?cluster=devnet`} target="_blank" rel="noreferrer">Confirmed transaction</a>}{executionAllowed&&onNewCoin&&<button className="secondary" onClick={onNewCoin}>Create another coin</button>}</>}
-   {launch.status==='expired'&&launch.errors.some(e=>e.code==='submission_expired_unobserved')&&<p role="status">This signed transaction expired without a confirmed token. Its signature is preserved; it will not be resubmitted.</p>}
-   {launch.status==='recovery_needed'&&<p role="alert">The transaction landed, but platform verification needs recovery. Do not launch or pay again.</p>}
+   {token}
+   {!executionAllowed&&!confirmed&&<p className="small muted">Status checks only. Wallet approval is unavailable in this environment.</p>}
+   {confirmed?<>
+    <p className="small">Your coin is now live and visible in Explore.</p>
+    <dl className="launch-summary"><div><dt>Mint</dt><dd><code className="ui-select-text">{short(launch.mint)}</code></dd></div>
+     {launch.devBuyResult&&<div><dt>Developer Buy received</dt><dd>{formatTokens(launch.devBuyResult.tokenAmount)} {launch.draft.symbol} <span className="muted">({Number(launch.devBuyResult.allocationBps)/100}%)</span></dd></div>}
+     <div><dt>Transaction</dt><dd>{launch.execution?.network==='devnet'?<a href={`https://explorer.solana.com/tx/${launch.signature}?cluster=devnet`} target="_blank" rel="noreferrer">Confirmed transaction ↗</a>:<span>Confirmed</span>}</dd></div>
+    </dl>
+    <div className="launch-review-actions"><a className="primary launch-action-link" href={routeUrl('explore',launch.mint)}>View in Explore</a><button className="secondary" onClick={()=>void copyMint()}>Copy mint</button>{executionAllowed&&onNewCoin&&<button className="text-button" onClick={onNewCoin}>Create another coin</button>}</div>
+    {copyMessage&&<p className="small" role="status">{copyMessage}</p>}
+   </>:pending||interrupted||terminal?<>
+    <p role="status">{interrupted?'Your wallet approval may still have succeeded. Check the launch status before trying again.':pending?'We’re checking your transaction and confirming the result on-chain.':'No completed launch was verified for this attempt. You can prepare a new attempt once its status is resolved.'}</p>
+    {launch.status==='recovery_needed'&&<p className="small muted">Your transaction needs an additional verification check. Keep this attempt; do not launch or pay again.</p>}
+    {terminal&&!submissionUncertain&&<p className="small muted">A new attempt is available. Any network fees from an earlier failed transaction may still apply.</p>}
+    <div className="launch-review-actions"><button className={safeRetry?'secondary':'primary'} disabled={busy} onClick={check}>Check launch status</button>
+     {safeRetry&&<button className="primary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare new attempt</button>}
+     {canEdit&&<button className="text-button" onClick={onEdit}>Back to edit</button>}
+    </div>
+   </>:<>
+    {draft.fields.description&&<p className="launch-review-description">{draft.fields.description}</p>}
+    <div className="launch-review-heading"><h4>Launch summary</h4><span className="launch-network-label">{launch.execution?.network}</span></div>
+    <dl className="launch-summary"><div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Estimated network fee</dt><dd>{Number(launch.fees.estimatedNetworkFeesLamports)/1e9} SOL</dd></div><div><dt>Estimated account rent</dt><dd>{Number(launch.fees.estimatedAccountRentLamports)/1e9} SOL</dd></div>
+     {dev&&<div><dt>Developer Buy <span className="muted">({percentFromBps(dev.bps)}%)</span></dt><dd>{formatSol(dev.estimatedQuoteCost)}<small>{formatTokens(dev.tokenAmount)} {launch.draft.symbol}</small></dd></div>}
+     <div className="launch-summary-total"><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')} SOL{dev&&<small>At most {total(dev.maxQuoteCost)} SOL</small>}</dd></div>
+    </dl>
+    <p className="launch-fee-sharing">Creator fees: 60% Agent Rewards / 40% Platform / 0% Launcher</p>
+    <p className="small muted">{launch.execution?.network==='devnet'?'Devnet test SOL only. ':''}A failed transaction may still incur network fees.</p>
+    {launch.status==='awaiting_signature'&&needsAcceptance&&<div className="launch-quote-change" role="alert"><p className="small">{reviewedMaxDevBuyCost===null?'Review the Developer Buy amounts before approving.':`The Developer Buy maximum changed from ${formatSol(reviewedMaxDevBuyCost)} to ${formatSol(dev!.maxQuoteCost)}.`}</p><button className="secondary" onClick={()=>setAcceptedMax(dev!.maxQuoteCost)}>Accept these amounts</button></div>}
+    {executionAllowed&&launch.status==='awaiting_signature'&&!submissionUncertain&&<button className="primary wide" disabled={busy||needsAcceptance} onClick={sign}>{busy?signingStage||'Preparing…':'Approve in wallet'}</button>}
+    {signingStage&&<p className="small" role="status">{signingStage}</p>}
+    {canEdit&&<button className="text-button" onClick={onEdit}>Back to edit</button>}
+   </>}
+   <details className="launch-technical"><summary>Technical details</summary>
+    <dl className="launch-summary"><div><dt>Attempt status</dt><dd>{launch.status.replaceAll('_',' ')}</dd></div><div><dt>Network</dt><dd>{launch.execution?.network}</dd></div><div><dt>Mint</dt><dd><code className="ui-select-text">{launch.mint}</code></dd></div><div><dt>Creator wallet</dt><dd><code className="ui-select-text">{launch.launcherWallet}</code></dd></div><div><dt>Platform treasury</dt><dd><code className="ui-select-text">{launch.fees.platformTreasury}</code></dd></div>
+     <div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Estimated network fee</dt><dd>{Number(launch.fees.estimatedNetworkFeesLamports)/1e9} SOL</dd></div><div><dt>Estimated account rent</dt><dd>{Number(launch.fees.estimatedAccountRentLamports)/1e9} SOL</dd></div><div><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')} SOL{dev&&<small>At most {total(dev.maxQuoteCost)} SOL</small>}</dd></div>
+     {dev&&<div><dt>Developer Buy allocation</dt><dd>{formatTokens(dev.tokenAmount)} {launch.draft.symbol} ({percentFromBps(dev.bps)}%)</dd></div>}
+     {launch.signature&&<div><dt>Transaction signature</dt><dd><code className="ui-select-text">{launch.signature}</code></dd></div>}
+     {dev&&<><div><dt>Developer Buy maximum</dt><dd>{formatSol(dev.maxQuoteCost)}</dd></div><div><dt>Includes Pump.fun fees</dt><dd>{formatSol(dev.pumpFees)}</dd></div><div><dt>Price impact</dt><dd>{(dev.priceImpactBps/100).toFixed(2)}%</dd></div></>}
+     {launch.devBuyResult&&<div><dt>Verified Developer Buy cost</dt><dd>{formatSol(launch.devBuyResult.quoteSpent)}</dd></div>}
+     <div><dt>Description</dt><dd className="ui-select-text">{draft.fields.description||'Not provided'}</dd></div><div><dt>Image IPFS URI</dt><dd><code className="ui-select-text">{draft.image?.ipfsUri??'Not uploaded'}</code></dd></div><div><dt>Metadata IPFS URI</dt><dd><code className="ui-select-text">{draft.metadata?.ipfsUri??'Not prepared'}</code></dd></div>
+    </dl>
+    {launch.errors.map((issue,i)=><p className="small ui-select-text" key={i}>{issue.message}</p>)}
+    {error&&<p className="small ui-select-text">{error}</p>}
+    {!pending&&!interrupted&&!terminal&&!confirmed&&<button className="secondary" disabled={busy} onClick={check}>Check launch status</button>}
+    {confirmed&&<button className="secondary" disabled={busy} onClick={check}>Check launch status</button>}
+    {executionAllowed&&canResume&&!['confirmed','failed','expired'].includes(launch.status)&&<button className="secondary" disabled={busy} onClick={resume}>Resume same transaction</button>}
+   </details>
   </>}
-  {error&&<><p role="alert">{error}</p><button className="secondary" disabled={busy} onClick={launch||savedId.current?check:prepare}>{launch||savedId.current?'Retry status check':'Retry preparation'}</button></>}
+  {error&&!interrupted&&!pending&&<div className="launch-inline-error" role="alert"><p>{interrupted?'Check your launch status before trying again.':launch?(/reject|cancel|declin/i.test(error)?'Wallet approval was cancelled. Your saved attempt is preserved.':'We couldn’t complete this step. Your saved attempt is preserved.'):'We couldn’t prepare your launch. Please try again.'}</p>{!launch&&<details><summary>Technical details</summary><p className="small ui-select-text">{error}</p></details>}{!interrupted&&<button className="secondary" disabled={busy} onClick={launch||savedId.current?check:prepare}>{launch||savedId.current?'Retry status check':'Retry preparation'}</button>}</div>}
  </section>;
 }

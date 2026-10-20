@@ -35,6 +35,7 @@ async function setup(){
  chain.getGenesisHash=async()=>'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
  chain.getFinalizedBlockHeight=async()=>finalizedHeight;
  chain.mintAccountExists=vi.fn(async()=>false);
+ chain.getSignatureStatus=vi.fn(async()=>null);
  chain.submitLaunchTransaction=vi.fn(async transaction=>{pendingSig=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);if(rpcFailure)throw new Error('RPC timed out');return pendingSig;});
  env.ctx.config.mode='devnet';env.ctx.config.financialFeaturesEnabled=true;env.ctx.config.pumpLaunch.enabled=true;
  const prepare=async(key='prepare-test-key')=>call('POST',`/api/v1/launchpad/drafts/${draft.id}/launch`,{version:draft.version},key);
@@ -183,4 +184,24 @@ it('recovers a payload that never reached submit using the same attempt, while r
  expect(results.every(r=>r.statusCode===200)).toBe(true);
  expect((await f.call('GET',url)).json().launch.signature).toBeTruthy();
  expect(vi.mocked(f.chain.submitLaunchTransaction!).mock.calls.every(c=>c[0]===signed)).toBe(true);
+});
+
+it('closes a signed but unobserved expired attempt only after history and mint checks, preserving its signature',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+ const submitted=await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)});const signature=submitted.json().launch.signature;
+ f.expire();const status=await f.call('GET',url);expect(status.statusCode).toBe(200);expect(status.json().launch).toMatchObject({status:'expired',signature});
+ expect(status.json().launch.errors).toEqual(expect.arrayContaining([expect.objectContaining({code:'submission_expired_unobserved'})]));
+ expect(await env!.ctx.store.allTreasuryEntries()).toEqual([]);expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
+});
+it('keeps an expired-height signed attempt unresolved when history contradicts a missing transaction or mint exists',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)});f.expire();
+ f.chain.getSignatureStatus=async()=>({slot:99,confirmationStatus:'finalized',err:null});expect((await f.call('GET',url)).statusCode).toBe(503);
+ f.chain.getSignatureStatus=async()=>null;f.chain.mintAccountExists=async()=>true;expect((await f.call('GET',url)).statusCode).toBe(503);
+ f.chain.mintAccountExists=async()=>{throw Error('RPC unavailable');};expect((await f.call('GET',url)).statusCode).toBe(503);
+ expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch.status).toBe('submitted');expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
+});
+it('reports the operator broadcast gate before recording a misleading submitted state',async()=>{
+ const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+ f.chain.assertLaunchSubmissionAllowed=async()=>{throw Error('disabled');};expect((await env!.app.inject('/api/v1/launchpad/capabilities')).json().launchEnabled).toBe(false);expect((await f.call('GET',`/api/v1/launchpad/drafts/${f.draft.id}/review`)).json().launchEnabled).toBe(false);const response=await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)});
+ expect(response.statusCode).toBe(503);expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch).toMatchObject({status:'awaiting_signature',signature:null});expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
 });

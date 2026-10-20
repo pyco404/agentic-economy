@@ -39,8 +39,12 @@ export function agentIdentity(agent: IdentityAgent) {
 export const displayAgentName = (agent: IdentityAgent) => agentIdentity(agent).displayName;
 
 /** Format attribution without editing the persisted historical summary. */
-export function displayActivity(event: Pick<EconomicEvent, "summary" | "agentId">, agents: IdentityAgent[]) {
-  if (!event.agentId) return event.summary;
+export function displayActivity(event: Pick<EconomicEvent, "summary" | "agentId"> & Partial<Pick<EconomicEvent, "type">>, agents: IdentityAgent[]) {
+  // Normalize only our exact historical confirmed-launch template, never token/user content.
+  // The authoritative event, signature and confirmation status remain untouched.
+  if (!event.agentId) return event.type === "launch.confirmed"
+    ? event.summary.replace(/^(.* \(\$[^()\r\n]+\)) launched on Pump\.fun through Agentic Economy\.?$/, "$1 launched on Agentic Economy.")
+    : event.summary;
   const agent = agents.find((a) => a.id === event.agentId);
   const name = displayAgentName(agent ?? { id: event.agentId, name: "Agent" });
   return agent?.name && event.summary.includes(agent.name)

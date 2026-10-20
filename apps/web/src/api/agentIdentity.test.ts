@@ -58,3 +58,23 @@ describe("authoritative agent identities", () => {
     expect(event.summary).toBe("Integration Courier completed delivery");
   });
 });
+
+
+describe("public launch activity branding", () => {
+  it("formats confirmed historical launch copy without changing the authoritative event", () => {
+    for(const name of ["Zappercoin", "Pump.fun Fan Club"]){
+      const summary=`${name} ($ZAP) launched on Pump.fun through Agentic Economy`;
+      const event=Object.freeze({type:"launch.confirmed" as const,agentId:null,summary});
+      expect(displayActivity(event,[])).toBe(`${name} ($ZAP) launched on Agentic Economy.`);
+      expect(event.summary).toBe(summary);
+      expect(displayActivity({...event,summary:summary+"."},[])).toBe(`${name} ($ZAP) launched on Agentic Economy.`);
+    }
+  });
+  it("does not rewrite other events, user-supplied text or invent confirmation", () => {
+    const summary="Zappercoin ($ZAP) launched on Pump.fun through Agentic Economy";
+    for(const type of [undefined,"community.registered","building.placed"] as const)
+      expect(displayActivity({type,agentId:null,summary},[])).toBe(summary);
+    for(const summary of ["Pump.fun is in this token’s description", "Zappercoin joined Pump.fun", "Zappercoin ($ZAP) launched on Agentic Economy."])
+      expect(displayActivity({type:"launch.confirmed",agentId:null,summary},[])).toBe(summary);
+  });
+});

@@ -18,7 +18,7 @@ async function fixture(quoteAsset:'SOL'|'USDC'='SOL'){
    ...(quoteAsset==='USDC'?{quoteMint:USDC_QUOTE_MINTS.devnet}:{}),platformOrigin:'PLATFORM',initiator:'HUMAN'}} as unknown as TokenLaunch;
  await store.createLaunch(launch);
  vi.spyOn(store,'allCommunities').mockResolvedValue([{id:'com_chain001',mint,launchId:launch.id,launchSignature:signature} as Community]);
- const trade=(over:Partial<ChainTrade>={}):ChainTrade=>({signature:sig(),slot:500,blockTime:1_760_000_000,side:'buy',user:key(),tokenAmount:'3497882795867',quoteAmount:'100000000',quoteMint:WRAPPED_SOL_MINT,creatorFee:'300000',timestamp:1_760_000_000,...over});
+ const trade=(over:Partial<ChainTrade>={}):ChainTrade=>({signature:sig(),slot:500,blockTime:1_760_000_000,side:'buy',user:key(),tokenAmount:'3497882795867',quoteAmount:'100000000',quoteMint:WRAPPED_SOL_MINT,creatorFee:'300000',protocolFee:'0',buybackFee:'0',timestamp:1_760_000_000,...over});
  const gateway={source:'solana_rpc' as const,getGenesisHash:vi.fn(async()=>DEVNET),
   getCurveProgress:vi.fn(async()=>({slot:510,complete:false,progressPct:12.34,quoteMint:WRAPPED_SOL_MINT})),
   getHolderCount:vi.fn(async()=>({slot:512,holders:19,exact:false})),

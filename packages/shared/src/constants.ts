@@ -11,7 +11,7 @@ export const FUTURE_TOKEN_TICKER = "$AECO";
 /** HTTP API major version (path prefix /api/v1). */
 export const API_VERSION = "v1";
 /** Contract (schemas + OpenAPI + events) semantic version. Bump on any change. */
-export const CONTRACT_VERSION = "0.4.1";
+export const CONTRACT_VERSION = "0.5.0";
 /** WebSocket envelope protocol version (field `v` on every message). */
 export const WS_PROTOCOL_VERSION = 1;
 
@@ -35,12 +35,15 @@ export const PUMP_FEES_PROGRAM_ID = "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ
 export const SYSTEM_PROGRAM_ID = "11111111111111111111111111111111";
 export const WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112";
 
-/** Pump.fun create_v2 metadata limits (docs/instructions/COIN_CREATION.md). */
+/** Pump.fun create_v2 metadata limits in UTF-8 BYTES, as the deployed program enforces them (verified by devnet
+ * simulation: NameTooLong 6043, SymbolTooLong 6044, UriTooLong 6045). */
 export const PUMP_NAME_MAX = 32;
 export const PUMP_SYMBOL_MAX = 13;
 export const PUMP_URI_MAX = 200;
 /** Pump coins use 6 decimals. */
 export const PUMP_TOKEN_DECIMALS = 6;
+/** Optional Developer Buy at launch: at most 3.5% (350 basis points) of the coin's total supply. */
+export const DEV_BUY_MAX_BPS = 350;
 
 /** World layout. */
 export const CHUNK_SIZE = 32;

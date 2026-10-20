@@ -35,6 +35,12 @@ describe("ecosystem editorial boundary", () => {
     expect(AGENT_TREASURY_CREATOR_FEE_BPS).toBe(6000);
     expect(PLATFORM_TREASURY_CREATOR_FEE_BPS).toBe(4000);
   });
+  it("labels verified platform provenance without fabricating legacy provenance", () => {
+    const html=renderToStaticMarkup(createElement(LaunchOriginTag,{demo:false,provenance:{platformOrigin:"PLATFORM",initiator:"HUMAN",network:"devnet",quoteAsset:"SOL"}}));
+    expect(html).toContain("Verified platform launch");
+    expect(html).toContain("devnet");
+    expect(html).toContain('data-origin="HUMAN"');
+  });
   it("cannot turn a missing provenance field into a claimed launch classification", () => {
     const demo = renderToStaticMarkup(createElement(LaunchOriginTag, { demo: true }));
     const real = renderToStaticMarkup(createElement(LaunchOriginTag, { demo: false }));

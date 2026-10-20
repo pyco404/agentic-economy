@@ -1,3 +1,4 @@
+import type { HeliusReader } from '../chain/helius.js';
 import { OfficialTreasuryMonitor } from './official-treasuries.js';
 import {distributionMint,verifiedCreatorDistribution} from '../chain/creator-fees.js';
 import {
@@ -45,7 +46,8 @@ export class TreasuryService {
     private readonly store: Store,
     private readonly config: AppConfig,
     private readonly now: () => Date = () => new Date(),
-  ) { this.officialWallets = new OfficialTreasuryMonitor(config.treasuryReadRpcUrl, fetch, now); }
+    helius?: HeliusReader,
+  ) { this.officialWallets = new OfficialTreasuryMonitor(helius ? 'https://read-only.helius.invalid' : config.treasuryReadRpcUrl, helius ? helius.withFallback(config.treasuryReadRpcUrl) : fetch, now); }
 
   private entry(p: {
     stream: TreasuryEntry["stream"];

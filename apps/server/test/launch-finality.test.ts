@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { Keypair } from "@solana/web3.js";
 import { loadConfig } from "../src/config.js";
 import { idem, login, makeEnv, DRAFT, type TestEnv } from "./helpers.js";
 
@@ -55,7 +54,7 @@ describe("launch registration finality policy", () => {
   });
 
   it("production always requires finalized", () => {
-    const base = { MODE: "production", DATABASE_URL: "postgres://localhost/x", SOLANA_RPC_URL: "https://rpc.example", PLATFORM_TREASURY: Keypair.generate().publicKey.toBase58(), AGENT_REWARDS_TREASURY: Keypair.generate().publicKey.toBase58() };
+    const base = { MODE: "production", DATABASE_URL: "postgres://localhost/x", SOLANA_RPC_URL: "https://rpc.example", PLATFORM_TREASURY: "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2", AGENT_REWARDS_TREASURY: "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi" };
     expect(() => loadConfig({ ...base, LAUNCH_REGISTRATION_COMMITMENT: "confirmed" })).toThrow(/finalized/);
     expect(loadConfig(base).launchRegistrationCommitment).toBe("finalized");
   });

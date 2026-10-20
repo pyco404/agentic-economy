@@ -1,5 +1,5 @@
 /**
- * TOKEN/USDC (default) or TOKEN/SOL acceptance through the real Launchpad application on an isolated local validator.
+ * TOKEN/SOL acceptance (historical USDC harness retained but disabled) through the real Launchpad application on an isolated local validator.
  *
  * Real: HTTP routes, browser wallet sign-in (Ed25519), draft/logo/metadata/review/launch/submit/confirm,
  * SolanaRpcChain (allowlist check, lookup table, simulation, submission, confirmation), PostgreSQL,
@@ -37,7 +37,9 @@ const conn = new Connection(rpc, 'confirmed');
 if ((await conn.getGenesisHash()) !== genesis || PUBLIC.includes(genesis)) throw Error('RPC is not the expected isolated local validator');
 
 // AECO_LOCAL_TEST_QUOTE=SOL runs the same journey for SOL (regression for the quote-aware confirmation).
-const QUOTE = process.env.AECO_LOCAL_TEST_QUOTE === 'SOL' ? 'SOL' as const : 'USDC' as const, NATIVE = 'So11111111111111111111111111111111111111112';
+if(process.env.AECO_LOCAL_TEST_QUOTE&&process.env.AECO_LOCAL_TEST_QUOTE!=='SOL')throw Error('Only SOL launches are enabled by product policy');
+// Broad type preserves the dormant quote-aware harness without enabling its USDC path.
+const QUOTE = 'SOL' as 'SOL'|'USDC', NATIVE = 'So11111111111111111111111111111111111111112';
 /** Optional Developer Buy in basis points of total supply (SOL only), e.g. AECO_LOCAL_TEST_DEV_BUY_BPS=350. */
 const DEV_BUY_BPS = Number(process.env.AECO_LOCAL_TEST_DEV_BUY_BPS ?? 0);
 const report: Record<string, unknown> = { network: 'isolated-localnet (devnet programs/config cloned)', genesis, quoteAsset: QUOTE, ...(QUOTE === 'USDC' ? { quoteMint: USDC_QUOTE_MINTS.localnet } : {}), stubbed: ['Pinata uploads (fixed CIDs)'], financialScope: 'local validator lamports only' };

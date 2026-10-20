@@ -1,7 +1,8 @@
 import {expect,it} from 'vitest';
 import {DraftFields,IpfsAsset,LaunchpadCapabilities} from '../src/launchpad.js';
 it('permits draft editing without treating supplied asset references or unsupported pairs as trusted',()=>{
- expect(DraftFields.parse({name:' Moss ',symbol:'MOSS'})).toMatchObject({name:'Moss',quoteAsset:'SOL'});
+ // Stored exactly as entered (no silent trimming); surrounding spaces are a launch-readiness issue instead.
+ expect(DraftFields.parse({name:' Moss ',symbol:'MOSS'})).toMatchObject({name:' Moss ',quoteAsset:'SOL',devBuyBps:0});
  expect(DraftFields.parse({name:'Moss',quoteAsset:'USDC'}).quoteAsset).toBe('USDC');
  for(const fields of [{quoteAsset:'AECO'},{quoteAsset:'USDC',quoteMint:'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'},{image:{cid:'invented'}},{metadataUri:'https://example.com/meta'},{website:'javascript:alert(1)'},{website:'https://user:secret@example.com'}])expect(DraftFields.safeParse(fields).success).toBe(false);
 });

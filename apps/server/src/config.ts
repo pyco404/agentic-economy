@@ -60,7 +60,7 @@ const Env = z.object({
   FEE_ROUTING_VERIFIED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_LOOKUP_TABLE: PublicKey.optional(),
-  /** TOKEN/USDC launches. Default off; effective only where PUMP_LAUNCH_ENABLED already applies. */
+  /** Legacy compatibility setting; ignored by the current SOL-only launch policy. */
   USDC_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
   /** Commitment a launch needs before its community is registered (immutable). Production always requires finalized. */
   LAUNCH_REGISTRATION_COMMITMENT: z.enum(["confirmed", "finalized"]).optional(),
@@ -147,7 +147,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     corsOrigins: e.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
     feeRoutingVerified,
     pumpLaunch: {enabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null,
-      usdcEnabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true"&&e.USDC_LAUNCH_ENABLED==="true",
+      usdcEnabled:false, // Product policy: preserve legacy implementation, never enable new USDC launches.
       // The quote mint is fixed per network, never client-supplied; prepare re-checks it against the live Pump Global allowlist.
       usdcMint:USDC_QUOTE_MINTS[e.SOLANA_CLUSTER]},
     /**

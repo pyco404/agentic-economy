@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {DraftFields,IpfsAsset,LaunchpadCapabilities} from '../src/launchpad.js';
+import {NewLaunchDraftFields,DraftFields,IpfsAsset,LaunchpadCapabilities} from '../src/launchpad.js';
 it('permits draft editing without treating supplied asset references or unsupported pairs as trusted',()=>{
  // Stored exactly as entered (no silent trimming); surrounding spaces are a launch-readiness issue instead.
  expect(DraftFields.parse({name:' Moss ',symbol:'MOSS'})).toMatchObject({name:' Moss ',quoteAsset:'SOL',devBuyBps:0});
@@ -13,4 +13,11 @@ it('requires consistent IPFS references and represents backend-gated execution c
  expect(LaunchpadCapabilities.safeParse({version:1,authentication:'cookie',uploads:true,maxBytes:5000000,maxPixels:16000000,storage:'postgres',launchEnabled:true,quotes:{SOL:'draft',USDC:'planned',AECO:'future'}}).success).toBe(true);
  for(const USDC of ['draft','planned'])expect(LaunchpadCapabilities.safeParse({version:1,authentication:'cookie',uploads:true,maxBytes:5000000,maxPixels:16000000,storage:'postgres',launchEnabled:true,quotes:{SOL:'draft',USDC,AECO:'future'}}).success).toBe(true);
  expect(LaunchpadCapabilities.safeParse({version:1,authentication:'cookie',uploads:true,maxBytes:5000000,maxPixels:16000000,storage:'postgres',launchEnabled:true,quotes:{SOL:'draft',USDC:'live',AECO:'future'}}).success).toBe(false);
+});
+
+it('accepts only SOL for new draft writes while retaining historical USDC reads',()=>{
+ expect(NewLaunchDraftFields.parse({name:'Moss'}).quoteAsset).toBe('SOL');
+ for(const quoteAsset of ['USDC','AECO','BTC'])expect(NewLaunchDraftFields.safeParse({quoteAsset}).success).toBe(false);
+ expect(DraftFields.parse({quoteAsset:'USDC'}).quoteAsset).toBe('USDC');
+ expect(NewLaunchDraftFields.safeParse({quoteAsset:'SOL',quoteMint:'custom'}).success).toBe(false);
 });

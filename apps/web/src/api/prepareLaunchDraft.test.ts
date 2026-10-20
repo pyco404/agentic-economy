@@ -13,7 +13,7 @@ function fixture() {
   removeImage:vi.fn(async d=>{calls.push('remove');return {...d,image:null,metadata:null,version:d.version+1};}),
   upload:vi.fn(async d=>{calls.push('upload');return {...d,image,metadata:null,version:d.version+1};}),
   metadata:vi.fn(async d=>{calls.push('metadata');return {...d,metadata:asset,version:d.version+1};}),
-  review:vi.fn(async d=>{calls.push('review');return {draft:d,readyForNextMilestone:true,issues:[],launchEnabled:false as const,launchChargeSol:'0.05' as const};}),
+  review:vi.fn(async d=>{calls.push('review');return {draft:d,readyForNextMilestone:true,issues:[],fieldIssues:[],launchEnabled:false as const,launchChargeSol:'0.05' as const};}),
  };
  return {port,calls,input:{fields,draft:null as SavedLaunchDraft|null,file:file as File|null,removeImage:false,uploads:true}};
 }
@@ -54,7 +54,16 @@ describe('one-action token preparation',()=>{
   for(const invalid of [{...fields,name:'é'.repeat(17)},{...fields,website:'javascript:alert(1)'},{...fields,symbol:'BAD SYMBOL'}]){const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,fields:invalid},port)).rejects.toThrow();expect(calls).toEqual([]);}
  });
  it('rejects empty details before any write',async()=>{
-  const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,fields:{...fields,name:' '}},port)).rejects.toThrow('name and symbol');expect(calls).toEqual([]);
+  const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,fields:{...fields,name:' '}},port)).rejects.toThrow('Enter a token name');expect(calls).toEqual([]);
+ });
+ it('reports surrounding spaces instead of silently trimming, before any write',async()=>{
+  const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,fields:{...fields,name:'Moss '}},port)).rejects.toThrow('Remove spaces');expect(calls).toEqual([]);
+ });
+ it('refuses a Developer Buy the network cannot serve before any write, and keeps one that it can',async()=>{
+  const blocked=fixture();await expect(prepareLaunchDraft({...blocked.input,fields:{...fields,devBuyBps:350}},blocked.port)).rejects.toThrow('Developer Buy');expect(blocked.calls).toEqual([]);
+  const over=fixture();await expect(prepareLaunchDraft({...over.input,fields:{...fields,devBuyBps:351},devBuyAvailable:true},over.port)).rejects.toThrow('3.5%');expect(over.calls).toEqual([]);
+  const ok=fixture();const result=await prepareLaunchDraft({...ok.input,fields:{...fields,devBuyBps:350},devBuyAvailable:true},ok.port);
+  expect(ok.calls).toEqual(['save','upload','metadata','review']);expect(result.review?.draft.fields.devBuyBps).toBe(350);
  });
  it('stops after cancellation or wallet change and does not accept another owner’s response',async()=>{
   const {input,port,calls}=fixture();let cancelled=false;port.check=()=>{if(cancelled)throw new DOMException('Wallet changed','AbortError');};
@@ -62,7 +71,7 @@ describe('one-action token preparation',()=>{
   await expect(prepareLaunchDraft(input,port)).rejects.toHaveProperty('name','AbortError');expect(calls).toEqual([]);expect(port.accept).not.toHaveBeenCalled();expect(port.upload).not.toHaveBeenCalled();
  });
  it('rejects a stale review instead of presenting readiness',async()=>{
-  const {input,port}=fixture();vi.mocked(port.review).mockResolvedValueOnce({draft,readyForNextMilestone:true,issues:[],launchEnabled:false,launchChargeSol:'0.05'});
+  const {input,port}=fixture();vi.mocked(port.review).mockResolvedValueOnce({draft,readyForNextMilestone:true,issues:[],fieldIssues:[],launchEnabled:false,launchChargeSol:'0.05'});
   await expect(prepareLaunchDraft(input,port)).rejects.toThrow('changed while preparing');
  });
 });

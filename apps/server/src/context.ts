@@ -91,7 +91,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
   let pruning:Promise<void>|undefined;
   const recoveryPruner=setInterval(()=>{if(!pruning)pruning=submissions.prune().catch(()=>logger.warn({},'Signed launch payload cleanup is temporarily unavailable')).finally(()=>{pruning=undefined;});},60_000);
   recoveryPruner.unref();
-  const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader,undefined,submissions);
+  const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader,undefined,submissions,event=>logger.info(event,'Launch execution stage'));
 
   const runsIndexer = config.role === "indexer" || (config.role === "all" && config.mode !== "demo");
   const indexer = runsIndexer

@@ -1,11 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
 import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
+  DEV_BUY_MAX_BPS,
   LAUNCH_FEE_LAMPORTS,
   PLATFORM_TREASURY_CREATOR_FEE_BPS,
   PUMP_PROGRAM_ID,
 } from "@agentic-economy/shared";
 import { PUMP_IX } from "./pump.js";
+import { pumpTradesFromInner } from "./pump-events.js";
 import type { FeeRoutingState, ObservedTransaction } from "./types.js";
 
 export interface LaunchExpectation {
@@ -21,7 +23,12 @@ export interface LaunchExpectation {
   quoteMint?: string;
   /** True when the quote is not SOL: its curve quote must be read and match, never assumed. */
   quoteRequired?: boolean;
+  /** Prepared Developer Buy: exact token amount, its lamport ceiling and the coin's total supply (for the 3.5% cap). */
+  devBuy?: { tokenAmount: bigint; maxQuoteCost: bigint; totalSupply: bigint };
 }
+
+/** Developer Buy as executed, read from the landed transaction. */
+export interface DevBuyOutcome { tokenAmount: bigint; quoteSpent: bigint }
 
 export interface VerificationIssue {
   code: string;
@@ -32,7 +39,7 @@ export type LaunchVerification =
   | { outcome: "pending" }
   | { outcome: "failed"; issues: VerificationIssue[] }
   | { outcome: "recovery_needed"; issues: VerificationIssue[]; feeIxIndex: number; slot: number; commitment: ObservedTransaction["commitment"] }
-  | { outcome: "confirmed"; feeIxIndex: number; slot: number; commitment: ObservedTransaction["commitment"] };
+  | { outcome: "confirmed"; feeIxIndex: number; slot: number; commitment: ObservedTransaction["commitment"]; devBuy: DevBuyOutcome | null };
 
 /**
  * Pure verification of a launch transaction + resulting on-chain fee-routing state.
@@ -111,6 +118,22 @@ export function verifyLaunch(exp: LaunchExpectation, tx: ObservedTransaction | n
   if (r.bondingCurveCreator !== exp.sharingConfig)
     issues.push({ code: "creator_not_sharing_config", message: `bonding curve creator ${r.bondingCurveCreator ?? "unknown"} is not the sharing config PDA` });
 
+  // Developer Buy: the landed transaction must show exactly one buy of exactly the prepared tokens, received by the
+  // launcher's own token account, within the reviewed ceiling and never above 3.5% of total supply.
+  const buys = tx.instructions.filter((ix) => ix.programId === PUMP_PROGRAM_ID && ix.discriminatorHex === PUMP_IX.buy);
+  let devBuy: DevBuyOutcome | null = null;
+  if (exp.devBuy) {
+    const d = exp.devBuy, buy = buys.length === 1 ? buys[0]! : null;
+    const account = Object.values(tx.tokenAccounts ?? {}).filter((t) => t.mint === exp.mint && t.owner === exp.launcherWallet);
+    const received = account.length === 1 ? account[0]!.post - account[0]!.pre : null;
+    const events = buy ? pumpTradesFromInner(tx.innerInstructions ?? [], exp.mint, buy.ixIndex).filter((t) => t.side === "buy" && t.user === exp.launcherWallet) : [];
+    const e = events.length === 1 ? events[0]! : null;
+    const spent = e ? BigInt(e.quoteAmount) + BigInt(e.protocolFee) + BigInt(e.creatorFee) : null; // buyback is inside the protocol fee
+    if (!buy || received === null || received !== d.tokenAmount || !e || BigInt(e.tokenAmount) !== received || spent === null || spent > d.maxQuoteCost || !r.tokenTotalSupply || r.tokenTotalSupply !== d.totalSupply || received * 10_000n > r.tokenTotalSupply * BigInt(DEV_BUY_MAX_BPS))
+      issues.push({ code: "dev_buy_mismatch", message: "The Developer Buy in this transaction does not match the prepared exact amount and ceiling" });
+    else devBuy = { tokenAmount: received, quoteSpent: spent! };
+  } else if (buys.length > 0) issues.push({ code: "unexpected_buy", message: "The transaction contains a buy that was not prepared" });
+
   if (issues.length > 0) return { outcome: "recovery_needed", issues, feeIxIndex, slot: tx.slot, commitment: tx.commitment };
-  return { outcome: "confirmed", feeIxIndex, slot: tx.slot, commitment: tx.commitment };
+  return { outcome: "confirmed", feeIxIndex, slot: tx.slot, commitment: tx.commitment, devBuy };
 }

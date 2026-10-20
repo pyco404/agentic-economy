@@ -7,6 +7,8 @@ export const TokenMarket=z.object({
  network:z.enum(['mainnet-beta','devnet','localnet','demo']),fetchedAt:z.iso.datetime().nullable(),sourceAsOf:z.iso.datetime().nullable(),
  source:z.literal('dexscreener').nullable(),sourceUrl:z.string().url().nullable(),pairAddress:PublicKey.nullable(),quoteAsset:z.enum(['SOL','USDC']).nullable(),
  priceUsd:value,volume24hUsd:value,marketCapUsd:value,liquidityUsd:value,priceChange24h:z.number().finite().nullable(),
+ holderIndex:z.object({source:z.literal('helius_das'),indexedSlot:z.number().int().nonnegative(),fetchedAt:z.iso.datetime(),complete:z.boolean(),scannedAccounts:z.number().int().nonnegative(),owners:z.array(z.object({address:PublicKey,amount:AmountString})).max(25),reason:z.string().nullable()}).optional(),
+ indexedMetadata:z.object({source:z.literal('helius_das'),mint:PublicKey,name:z.string().nullable(),symbol:z.string().nullable(),fetchedAt:z.iso.datetime()}).nullable().optional(),
  holders:z.number().int().nonnegative().nullable(),buys24h:z.number().int().nonnegative().nullable(),sells24h:z.number().int().nonnegative().nullable(),
  graduation:z.enum(['unknown','bonding_curve','curve_complete','graduated']),graduationProgress:z.number().finite().min(0).max(100).nullable(),
  /** True when `holders` is only a minimum (the RPC could not enumerate every holder). */

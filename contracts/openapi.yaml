@@ -5657,7 +5657,60 @@ components:
       type: object
       properties:
         draft:
-          $ref: "#/components/schemas/LaunchDraft"
+          type: object
+          properties:
+            name:
+              type: string
+              minLength: 1
+            symbol:
+              type: string
+              minLength: 1
+              pattern: ^[A-Za-z0-9$_.-]+$
+            description:
+              default: ""
+              type: string
+              maxLength: 1000
+            metadataUri:
+              type: string
+              format: uri
+            imageUri:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 500
+                  format: uri
+                - type: "null"
+            website:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 200
+                  format: uri
+                - type: "null"
+            twitter:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 200
+                  format: uri
+                - type: "null"
+            telegram:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 200
+                  format: uri
+                - type: "null"
+          required:
+            - name
+            - symbol
+            - description
+            - metadataUri
+            - imageUri
+            - website
+            - twitter
+            - telegram
+          additionalProperties: false
       required:
         - draft
       additionalProperties: false
@@ -5665,9 +5718,58 @@ components:
       type: object
       properties:
         draft:
-          $ref: "#/components/schemas/LaunchDraftInput"
+          type: object
+          properties:
+            name:
+              type: string
+              minLength: 1
+            symbol:
+              type: string
+              minLength: 1
+              pattern: ^[A-Za-z0-9$_.-]+$
+            description:
+              default: ""
+              type: string
+              maxLength: 1000
+            metadataUri:
+              type: string
+              format: uri
+            imageUri:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 500
+                  format: uri
+                - type: "null"
+            website:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 200
+                  format: uri
+                - type: "null"
+            twitter:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 200
+                  format: uri
+                - type: "null"
+            telegram:
+              default: null
+              anyOf:
+                - type: string
+                  maxLength: 200
+                  format: uri
+                - type: "null"
+          required:
+            - name
+            - symbol
+            - metadataUri
+          additionalProperties: false
       required:
         - draft
+      additionalProperties: false
     PrepareLaunchResponse:
       type: object
       properties:

@@ -1,0 +1,141 @@
+{
+  "checkedAt": "2026-10-20T19:48:31.502Z",
+  "readOnly": true,
+  "transport": "Audit-only proxy-compatible Python HTTPS bridge; real Helius responses parsed by production TypeScript readers",
+  "plan": "Free (owner-confirmed); account billing/remaining-credit dashboard not inspected",
+  "methods": [
+    "getGenesisHash",
+    "getBalance",
+    "getSignaturesForAddress",
+    "getTokenAccounts",
+    "getAsset",
+    "getTransaction",
+    "getSignatureStatuses"
+  ],
+  "networks": {
+    "mainnet": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+    "devnet": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"
+  },
+  "treasuries": [
+    {
+      "account": "platform",
+      "address": "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+      "network": "mainnet-beta",
+      "identity": "owner_supplied",
+      "source": "solana_rpc",
+      "status": "available",
+      "balanceLamports": "0",
+      "slot": 459351656,
+      "updatedAt": "2026-10-20T19:48:50.270Z",
+      "checkedAt": "2026-10-20T19:48:50.270Z",
+      "message": "Finalized Mainnet RPC balance. Recent transactions are not automatically creator-fee income. Lifetime fee history and unclaimed distributions are not fully indexed.",
+      "accounting": {
+        "coverage": "deployment_ledger_only",
+        "creatorFeesLamports": "0",
+        "launchChargesLamports": "0",
+        "lifetimeCreatorFeesLamports": null,
+        "pendingDistributionsLamports": null
+      },
+      "recentTransactions": []
+    },
+    {
+      "account": "agent_rewards",
+      "address": "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",
+      "network": "mainnet-beta",
+      "identity": "owner_supplied",
+      "source": "solana_rpc",
+      "status": "available",
+      "balanceLamports": "0",
+      "slot": 459351666,
+      "updatedAt": "2026-10-20T19:48:50.270Z",
+      "checkedAt": "2026-10-20T19:48:50.270Z",
+      "message": "Finalized Mainnet RPC balance. Recent transactions are not automatically creator-fee income. Lifetime fee history and unclaimed distributions are not fully indexed.",
+      "accounting": {
+        "coverage": "deployment_ledger_only",
+        "creatorFeesLamports": "0",
+        "launchChargesLamports": "0",
+        "lifetimeCreatorFeesLamports": null,
+        "pendingDistributionsLamports": null
+      },
+      "recentTransactions": []
+    }
+  ],
+  "devnetHolders": {
+    "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+    "slot": 513271187,
+    "holders": null,
+    "exact": false,
+    "index": {
+      "source": "helius_das",
+      "indexedSlot": 513271187,
+      "fetchedAt": "2026-10-20T19:48:56.863Z",
+      "complete": false,
+      "scannedAccounts": 2,
+      "owners": [
+        {
+          "address": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+          "amount": "30000000000000"
+        }
+      ],
+      "reason": "Index changed during enumeration; no current holder count is claimed."
+    }
+  },
+  "devnetMetadata": {
+    "source": "helius_das",
+    "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+    "name": "AECO Dev Buy 300 Test",
+    "symbol": "ADBT3",
+    "fetchedAt": "2026-10-20T19:48:57.861Z"
+  },
+  "mainnetMetadata": {
+    "source": "helius_das",
+    "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "fetchedAt": "2026-10-20T19:48:58.860Z"
+  },
+  "devnetLaunchTransaction": {
+    "signature": "5ZC3TLEaS5VJfx8ZBq7tftJpwHbt7XV3smNCFKbspGRoGZNa8zMRUo4sjB16VinC1jxJYYxm6hxLVD78rUnUZmph",
+    "slot": 513231159,
+    "commitment": "finalized",
+    "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    "err": null,
+    "networkFeeLamports": "10000",
+    "platformCharges": [
+      {
+        "to": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "amount": "50000000"
+      }
+    ]
+  },
+  "devnetRecentSignatures": [
+    {
+      "signature": "4dbksmrgciU8HSzjiqSWefMfsntrWXAJqKhqQA7U4hMNgprxs34SBXZxmDBvBVP2YfqnX7GmT432tUYcYjYXqtPX",
+      "slot": 513232156,
+      "err": null,
+      "memo": null,
+      "blockTime": 1792516431,
+      "confirmationStatus": "finalized",
+      "transactionIndex": 10
+    },
+    {
+      "signature": "5ZC3TLEaS5VJfx8ZBq7tftJpwHbt7XV3smNCFKbspGRoGZNa8zMRUo4sjB16VinC1jxJYYxm6hxLVD78rUnUZmph",
+      "slot": 513231159,
+      "err": null,
+      "memo": null,
+      "blockTime": 1792516193,
+      "confirmationStatus": "finalized",
+      "transactionIndex": 22
+    },
+    {
+      "signature": "2xhd2PRsUvb4saGzm2UsgbDu9FaWZ7WRu2GmZnKNhg81uVuRduRYd4Cv8hftA3ByFVF4GKj3umXewemZ3EM68ge6",
+      "slot": 513230124,
+      "err": null,
+      "memo": null,
+      "blockTime": 1792515947,
+      "confirmationStatus": "finalized",
+      "transactionIndex": 32
+    }
+  ],
+  "requests": 14
+}

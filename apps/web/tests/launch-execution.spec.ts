@@ -9,7 +9,7 @@ const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
 test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
 test('safe-network signing UI handles rejection and verified confirmation (mock RPC, real transaction signatures)',async({page})=>{
  test.setTimeout(180000);await page.setViewportSize({width:390,height:844});
- const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let reject=true,signs=0,preparations=0,submissions=0;const prepareKeys:string[]=[];
+ const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='';const prepareKeys:string[]=[];
  let launch:Record<string,unknown>|undefined,prepared='';
  await page.exposeFunction('__signMessage',(bytes:number[])=>Array.from(nacl.sign.detached(Uint8Array.from(bytes),creator.secretKey)));
  await page.exposeFunction('__signTransaction',(bytes:number[])=>{signs++;if(reject)throw new Error('Launch signature rejected by user');const tx=VersionedTransaction.deserialize(Uint8Array.from(bytes));tx.sign([creator]);return Array.from(tx.serialize());});
@@ -36,9 +36,9 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
   await route.fulfill({status:503,json:{error:{message:'Preparation response lost. Retry safely.'}}});
  });
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/submit',async route=>{
-  submissions++;const checked=await validateSignedPumpLaunch(prepared,route.request().postDataJSON().transaction);launch={...launch,status:'submitted',signature:checked.signature};await route.fulfill({status:503,json:{error:{message:'Submission response lost'}}});
+  submissions++;const checked=await validateSignedPumpLaunch(prepared,route.request().postDataJSON().transaction);submittedSignature=checked.signature;await route.fulfill({status:503,json:{error:{message:'Submission response lost'}}});
  });
- await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest',route=>route.fulfill({json:{launch:{...launch,status:submissions?'confirmed':launch!.status,slot:submissions?1234:null,communityId:submissions?'com_BrowserExecutionTest':null}}}));
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest',route=>{if(submissions&&resolveSubmission)launch={...launch!,status:'confirmed',signature:submittedSignature,slot:1234,communityId:'com_BrowserExecutionTest'};return route.fulfill({json:{launch}});});
  await page.route('https://gateway.pinata.cloud/ipfs/**',route=>route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')}));
  await page.goto(site!+'/launchpad?source=backend');await expect(page.getByLabel('Token name',{exact:true})).toBeVisible({timeout:30000});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
@@ -49,7 +49,20 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  const execution=page.getByRole('region',{name:'Launch execution'});await expect(execution.getByRole('alert')).toContainText('Preparation response lost');expect(signs).toBe(0);await execution.getByRole('button',{name:'Retry preparation',exact:true}).click();await expect(execution).toContainText('0.05 SOL');expect(prepareKeys).toHaveLength(2);expect(prepareKeys[0]).toBeTruthy();expect(prepareKeys[1]).toBe(prepareKeys[0]);expect(signs).toBe(0);expect(submissions).toBe(0);
  await page.reload();await waitForApplicationReady(page);await expect(execution).toContainText('0.05 SOL');await expect(page.getByLabel('Token name',{exact:true})).toBeDisabled();expect(preparations).toBe(1);
  await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();await expect(execution.getByRole('alert')).toContainText('rejected');expect(submissions).toBe(0);
- reject=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();await page.getByRole('button',{name:'Check launch status',exact:true}).click();await expect(execution).toContainText('Token creation verified');
+ reject=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();
+ await expect(execution.getByRole('alert')).toContainText('HTTP 503: Submission response lost');
+ await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
+ await expect(execution.getByRole('button',{name:'Approve in wallet',exact:true})).toHaveCount(0);
+ await expect(execution).toContainText('Checking your signed transaction');
+ await page.reload();await waitForApplicationReady(page);await expect(execution).toContainText('Checking your signed transaction');
+ await expect(execution.getByRole('button',{name:'Approve in wallet',exact:true})).toHaveCount(0);
+ expect(submissions).toBe(1);expect(signs).toBe(2);
+ const hint=await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('aeco:launch:')).map(k=>JSON.parse(localStorage.getItem(k)!)).find(v=>v.submissionUncertain));
+ expect(hint.walletSignature).toBe(submittedSignature);
+ launch={...launch!,status:'expired'};await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
+ await expect(execution).toContainText('Checking your signed transaction');
+ await expect(execution.getByRole('button',{name:'Prepare a new attempt',exact:true})).toHaveCount(0);
+ resolveSubmission=true;await page.getByRole('button',{name:'Check launch status',exact:true}).click();await expect(execution).toContainText('Token creation verified');
  expect(preparations).toBe(1);expect(submissions).toBe(1);expect(signs).toBe(2);expect(bs58.decode(String(launch!.signature))).toHaveLength(64);
  await page.screenshot({path:'artifacts/launch-execution-mocked-mobile.png',fullPage:true});
  const canvas=page.locator('canvas');await canvas.evaluate(node=>{(window as any).__launchRouteCanvas=node;});

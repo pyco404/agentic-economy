@@ -73,7 +73,7 @@ describe('owned launch execution API (mock RPC, real transaction bytes/signature
   expect((await f.prepare('new-intent-key')).json().launch.id).not.toBe(p.launch.id);
  });
  it('keeps mainnet execution disabled even if verification switches are set',()=>{
-  const config=loadConfig({MODE:'production',DATABASE_URL:'postgres://not-connected',SOLANA_RPC_URL:'https://api.mainnet-beta.solana.com',PLATFORM_TREASURY:Keypair.generate().publicKey.toBase58(),AGENT_REWARDS_TREASURY:Keypair.generate().publicKey.toBase58(),FEE_ROUTING_VERIFIED:'true',PUMP_LAUNCH_ENABLED:'true'});
+  const config=loadConfig({MODE:'production',DATABASE_URL:'postgres://not-connected',SOLANA_RPC_URL:'https://api.mainnet-beta.solana.com',PLATFORM_TREASURY:"HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",AGENT_REWARDS_TREASURY:"GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",FEE_ROUTING_VERIFIED:'true',PUMP_LAUNCH_ENABLED:'true'});
   expect(config.financialFeaturesEnabled).toBe(false);expect(config.pumpLaunch.enabled).toBe(false);
  });
 });

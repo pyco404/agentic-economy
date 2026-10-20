@@ -269,6 +269,7 @@ export class SolanaRpcChain implements ChainGateway {
     return this.conn.sendRawTransaction(Buffer.from(transaction,"base64"),{skipPreflight:false,maxRetries:20});
   }
   getFinalizedBlockHeight(){return this.conn.getBlockHeight("finalized");}
+  async mintAccountExists(mint:string){return (await this.conn.getAccountInfo(new PublicKey(mint),"finalized"))!==null;}
 
 }
 

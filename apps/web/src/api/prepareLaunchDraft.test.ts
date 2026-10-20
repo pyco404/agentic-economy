@@ -50,6 +50,9 @@ describe('one-action token preparation',()=>{
  it('requires a logo and removes old assets before reviewing a removed image',async()=>{
   const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,file:null,removeImage:true,draft:{...draft,image,metadata:asset}},port)).rejects.toThrow('Choose a logo');expect(calls).toEqual(['remove']);
  });
+ it('rejects a historical USDC choice before saving or uploading',async()=>{
+  const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,fields:{...fields,quoteAsset:'USDC'}},port)).rejects.toThrow();expect(calls).toEqual([]);
+ });
  it('rejects invalid links and UTF-8 overflow before saving or uploading',async()=>{
   for(const invalid of [{...fields,name:'é'.repeat(17)},{...fields,website:'javascript:alert(1)'},{...fields,symbol:'BAD SYMBOL'}]){const {input,port,calls}=fixture();await expect(prepareLaunchDraft({...input,fields:invalid},port)).rejects.toThrow();expect(calls).toEqual([]);}
  });

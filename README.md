@@ -66,7 +66,7 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 | Agents and economy | Authoritative assignments, travel, workplace activity, production, deliveries, maintenance, receipts, and observable work progress | Agents currently use a deterministic utility planner, not a live LLM service |
 | Communities and Explore | Grouped discovery sections, confirmed launch/community listings, search, agent rankings, and token details | Demo records are labelled; unavailable market statistics and charts are not invented |
 | Launch workspace | Publicly visible form and logo picker; wallet message authentication; owned drafts; verified image upload and IPFS metadata when configured | Disconnected primary action is **Connect wallet**; **Create Coin** starts validation, deferred uploads, metadata and fee review on enabled test networks; wallet signing remains explicit; demo staging does not execute launches |
-| Trading pairs | SOL application flow; USDC protocol harness verified on devnet | USDC application selection remains disabled; optional AECO pairing is Phase 4 |
+| Trading pairs | TOKEN/SOL only; optional Developer Buy of 0–3.5% paid in SOL | USDC launch code is retained but disabled and outside Phase 2; TOKEN/AECO is reserved for Phase 4 |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |
 
 Implemented code on main is **not necessarily deployed to staging**. See the release status below.

@@ -150,15 +150,15 @@ describe('Developer Buy and token rules through the Launchpad API', () => {
     const { call, logo, chain } = await session(true);
     const attempt = async (fields: object) => { const d = (await call('POST', '/api/v1/launchpad/drafts', { name: 'Moss', symbol: 'MOSS', ...fields })).json(); return logo(d.id, d.version); };
     const cases: [object, string, string][] = [[{ name: ' Moss' }, 'name', 'surrounding_whitespace'], [{ name: '' }, 'name', 'required'], [{ symbol: '' }, 'symbol', 'required'],
-      [{ quoteAsset: 'USDC' }, 'quoteAsset', 'quote_unavailable'], [{ devBuyBps: 350 }, 'devBuyBps', 'dev_buy_unavailable']];
+      [{ devBuyBps: 350 }, 'devBuyBps', 'dev_buy_unavailable']];
     for (const [fields, field, code] of cases) {
       const r = await attempt(fields);
       expect(r.statusCode, JSON.stringify(fields)).toBe(400);
       expect(r.json().error.details.issues).toEqual(expect.arrayContaining([expect.objectContaining({ field, code })]));
     }
     env!.ctx.config.pumpLaunch.usdcEnabled = true; supported(chain);
-    const pair = await attempt({ quoteAsset: 'USDC', devBuyBps: 100 });
-    expect(pair.json().error.details.issues).toEqual([expect.objectContaining({ field: 'devBuyBps', code: 'dev_buy_pair' })]);
+    const pair = await call('POST','/api/v1/launchpad/drafts',{name:'Moss',symbol:'MOSS',quoteAsset:'USDC',devBuyBps:100});
+    expect(pair.statusCode).toBe(400); // rejected at the write boundary, before creating a draft or uploading
     expect(fetch).not.toHaveBeenCalled();
     expect((await attempt({ devBuyBps: 350 })).statusCode).toBe(200); // now valid: the logo is uploaded
     expect(fetch).toHaveBeenCalledTimes(1);

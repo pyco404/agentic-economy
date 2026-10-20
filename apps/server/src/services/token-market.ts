@@ -56,11 +56,11 @@ export class TokenMarketService{
   const network=this.network==='demo'?null:this.network;
   if(!network||!this.chain.getCurveProgress||!this.chain.getHolderCount)return {};
   // Each metric fails independently: public RPCs often rate-limit holder enumeration but still serve the curve.
-  const [curveRead,holdersRead]=await Promise.allSettled([this.chain.getCurveProgress(mint),this.chain.getHolderCount(mint)]);
+  const [curveRead,holdersRead,metadataRead]=await Promise.allSettled([this.chain.getCurveProgress(mint),this.chain.getHolderCount(mint),this.chain.getIndexedMetadata?.(mint)]);
   if(curveRead.status==='rejected'&&holdersRead.status==='rejected')throw curveRead.reason;
   const curve=curveRead.status==='fulfilled'?curveRead.value:null,holders=holdersRead.status==='fulfilled'?holdersRead.value:null;
   const slot=Math.max(curve?.slot??0,holders?.slot??0),blockTime=await this.chain.getBlockTime?.(slot).catch(()=>null)??null;
-  return {holders:holders?.holders??null,holdersLowerBound:!!holders&&holders.holders!==null&&!holders.exact,
+  return {...(holders?.index?{holderIndex:holders.index}:{}),...(metadataRead.status==='fulfilled'&&metadataRead.value?{indexedMetadata:metadataRead.value}:{}),holders:holders?.holders??null,holdersLowerBound:!!holders&&holders.holders!==null&&!holders.exact,
    ...(curve?{graduation:curve.complete?'curve_complete' as const:'bonding_curve' as const,graduationProgress:curve.progressPct}:{}),
    chain:{source:'solana_rpc',network,slot,asOf:blockTime===null?null:new Date(blockTime*1000).toISOString(),fetchedAt:new Date(this.now()).toISOString()}};
  }

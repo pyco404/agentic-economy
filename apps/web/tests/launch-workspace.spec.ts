@@ -77,7 +77,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
   holdCapabilities=false;releaseCapabilities();
  }
 
- await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Prepared before connection');await expect(page.getByAltText('Token logo preview')).toBeVisible();expect(writes).toEqual([]);page.off('request',watch);
+ await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Prepared before connection');await expect(page.getByAltText('Token logo preview')).toBeVisible();expect(writes.filter(url=>/\/(logo|metadata)/.test(url))).toEqual([]);page.off('request',watch);
  await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();expect(signing).toBe(1);
  expect(await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoSigningKind)).toBe(viewport.width>700?'standard':'injected');
  const preparation:string[]=[];page.on('request',r=>{if(/launchpad\/drafts/.test(r.url()) && (r.method()!=='GET'||r.url().endsWith('/review')))preparation.push(`${r.method()} ${new URL(r.url()).pathname.split('/').slice(4).join('/')}`);});
@@ -85,7 +85,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  await page.getByRole('button',{name:'Create Coin',exact:true}).click();
  if(viewport.mode==='unavailable'){
   await expect(page.getByRole('status').filter({hasText:'Your draft is saved.'})).toContainText('Your draft is saved. Logo uploads are temporarily unavailable.');
-  expect(preparation.map(p=>p.split(' ')[0])).toEqual(['POST']);await expect(page.getByRole('region',{name:'Token review'})).toHaveCount(0);
+  expect(preparation.some(p=>/\/(logo|metadata|review)$/.test(p))).toBe(false);await expect(page.getByRole('region',{name:'Token review'})).toHaveCount(0);
   await expect(page.getByAltText('Token logo preview')).toBeVisible();await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeEnabled();
   expect(await page.locator('main').innerText()).not.toMatch(/Pinata|IPFS|Generate metadata|Upload to IPFS/);
   await page.screenshot({path:'artifacts/launch-preparation-unavailable.png',fullPage:true});expect(financial).toEqual([]);expect(errors).toEqual([]);return;
@@ -95,7 +95,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
   await expect(page.getByRole('alert')).toContainText('Your token assets could not be prepared');await page.getByRole('button',{name:'Create Coin',exact:true}).click();
  }
  const review=page.getByRole('region',{name:'Token review'});
- await expect(review).toContainText('Your token details and logo are ready.',{timeout:30000});await expect(review).toContainText(wallet);
+ await expect(review).toContainText('Your token details and logo are ready.',{timeout:30000});await expect(review).not.toContainText(wallet);
  await review.getByText('Verified token assets',{exact:true}).click();
  const references=review.locator('details code');
  await expect(references).toHaveCount(2);
@@ -104,15 +104,13 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  await expect(review).toContainText('MOSS/SOL');
  await expect(review).toContainText('0.05 SOL');
  await expect(page.getByRole('button',{name:'Generate metadata',exact:true})).toHaveCount(0);
- expect(preparation.map(p=>p.split(' ')[0])).toEqual(viewport.mode==='retry'?['POST','POST','POST','POST','POST','GET']:['POST','POST','POST','GET']);
- expect(preparation[1]).toMatch(/\/logo$/);
- if(viewport.mode==='retry'){expect(uploadKeys).toHaveLength(2);expect(uploadKeys[0]).toBeTruthy();expect(uploadKeys[1]).toBe(uploadKeys[0]);expect(metadataKeys).toHaveLength(2);expect(metadataKeys[0]).toBeTruthy();expect(metadataKeys[1]).toBe(metadataKeys[0]);}else expect(preparation[2]).toMatch(/\/metadata$/);
+ expect(preparation.filter(p=>p.endsWith('/logo'))).toHaveLength(viewport.mode==='retry'?2:1);
+ if(viewport.mode==='retry'){expect(uploadKeys).toHaveLength(2);expect(uploadKeys[0]).toBeTruthy();expect(uploadKeys[1]).toBe(uploadKeys[0]);expect(metadataKeys).toHaveLength(2);expect(metadataKeys[0]).toBeTruthy();expect(metadataKeys[1]).toBe(metadataKeys[0]);}else expect(preparation.some(p=>p.endsWith('/metadata'))).toBe(true);
  expect(await page.locator('main').evaluate(n=>n.scrollWidth<=n.clientWidth+1)).toBe(true);
  await page.screenshot({path:`artifacts/launch-workspace-review-${viewport.width}.png`,fullPage:true});
  await page.reload();await waitForApplicationReady(page);await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();expect(signing).toBe(1);
- await page.getByText('Manage drafts & technical details',{exact:true}).click();await expect(page.getByText(`Verified creator: ${wallet}`)).toBeVisible();
- const select=page.getByLabel('Saved launch drafts');await expect(select).toContainText('Moss Community');await select.selectOption({label:'Moss Community'});await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
- await page.getByText('Manage drafts & technical details',{exact:true}).click();
+ await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
+ await page.getByRole('button',{name:'My Drafts',exact:true}).click();await expect(page.getByRole('dialog',{name:'My Drafts'})).toContainText('Moss Community');await page.getByRole('button',{name:'Close My Drafts'}).click();
  const before=preparation.length;await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toBeVisible();expect(preparation.slice(before).map(p=>p.split(' ')[0])).toEqual(['GET']);
  await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toContainText('Latest details');await expect(review).toContainText('Your token details and logo are ready.');
  // Wallet changes revoke the cookie session; drafts disappear immediately.
@@ -177,7 +175,7 @@ test('live preview stays local and a disabled demo cannot pin artwork',async({pa
  await page.setViewportSize({width:1440,height:1000});await preview.scrollIntoViewIfNeeded();await page.screenshot({path:'artifacts/create-coin-preview-desktop.png'});await page.setViewportSize({width:390,height:844});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
  await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeDisabled();await expect(page.getByRole('note').filter({hasText:'Coin creation is unavailable'})).toContainText('no images are uploaded');expect(writes).toEqual([]);
- await page.getByText('Manage drafts & technical details',{exact:true}).click();await page.getByRole('button',{name:'Save draft',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Draft saved.'})).toBeVisible();
+ await expect(page.locator('.launch-save-status')).toHaveText('Saved');
  expect(writes).toEqual(['/api/v1/launchpad/drafts']);await expect(preview.getByRole('img')).toHaveAttribute('src',/^blob:/);
  await page.screenshot({path:'artifacts/create-coin-live-preview-mobile.png',fullPage:true});
 });

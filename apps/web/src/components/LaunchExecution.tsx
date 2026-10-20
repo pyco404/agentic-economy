@@ -1,7 +1,8 @@
+import bs58 from 'bs58';
 import {routeUrl} from "../navigation/routes";
 import {useEffect,useRef,useState} from 'react';
 import {LaunchResponse,PrepareLaunchResponse,type SavedLaunchDraft,type TokenLaunch} from '../api/shared';
-import {jsonRequest,launchpadRequest,useWalletSession} from '../api/walletSession';
+import {ApiResponseError,SessionExpired,jsonRequest,launchpadRequest,useWalletSession} from '../api/walletSession';
 import {devBuyNeedsAcceptance,formatSol,formatTokens,percentFromBps} from '../api/devBuy';
 const encoded=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
 const decoded=(value:string)=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
@@ -12,18 +13,21 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  const session=useWalletSession(),[launch,setLaunch]=useState<TokenLaunch|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[restoring,setRestoring]=useState(true),[submissionUncertain,setSubmissionUncertain]=useState(false),[signingStage,setSigningStage]=useState('');
  const [acceptedMax,setAcceptedMax]=useState<string|null>(null);
  const scope=`aeco:launch:${draft.wallet}:${draft.id}:${draft.version}`,alive=useRef(true),lock=useRef(false),automatic=useRef(false),savedId=useRef('');
- const requestKey=useRef('');
+ const requestKey=useRef(''),unresolvedSubmission=useRef(false);
+ const walletSignature=useRef('');
  const remember=(l:TokenLaunch)=>{
   if(!alive.current)return;
   if(l.launcherWallet!==draft.wallet||l.execution?.draftId!==draft.id||l.execution.draftVersion!==draft.version||l.fees.platformLaunchFeeLamports!=='50000000')throw new Error('This launch does not match your saved token. Reload the correct draft.');
-  savedId.current=l.id;setLaunch(l);try{localStorage.setItem(scope,JSON.stringify({key:requestKey.current,id:l.id}));}catch{/* The server remains authoritative. */}
+  if(l.signature||['confirmed','failed'].includes(l.status))unresolvedSubmission.current=false;
+  setSubmissionUncertain(unresolvedSubmission.current);savedId.current=l.id;setLaunch(l);try{localStorage.setItem(scope,JSON.stringify({key:requestKey.current,id:l.id,submissionUncertain:unresolvedSubmission.current,walletSignature:walletSignature.current}));}catch{/* The server remains authoritative. */}
  };
  const rememberRef=useRef(remember);rememberRef.current=remember;
  useEffect(()=>{
   alive.current=true;const abort=new AbortController();
   const restore=async()=>{
-   try{const saved=JSON.parse(localStorage.getItem(scope)??'null') as {key?:string;id?:string}|null;
+   try{const saved=JSON.parse(localStorage.getItem(scope)??'null') as {key?:string;id?:string;submissionUncertain?:boolean;walletSignature?:string}|null;
     if(saved?.key)requestKey.current=saved.key;
+    unresolvedSubmission.current=saved?.submissionUncertain===true;walletSignature.current=saved?.walletSignature??'';setSubmissionUncertain(unresolvedSubmission.current);
     if(saved?.id){savedId.current=saved.id;const r=await launchpadRequest(`/api/v1/launchpad/launches/${encodeURIComponent(saved.id)}`,LaunchResponse,{signal:abort.signal});rememberRef.current(r.launch);}
    }catch{if(alive.current&&!abort.signal.aborted)setError('Could not restore this launch. Retry checking before preparing another attempt.');}
    finally{if(alive.current&&!abort.signal.aborted)setRestoring(false);}
@@ -37,7 +41,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  useEffect(()=>{
   if(!launch||(!submissionUncertain&&(!launch.signature||!['submitted','recovery_needed'].includes(launch.status))))return;
   const abort=new AbortController();let polling=false;
-  const timer=setInterval(()=>{if(polling)return;polling=true;void launchpadRequest(`/api/v1/launchpad/launches/${launch.id}`,LaunchResponse,{signal:abort.signal}).then(r=>{if(alive.current){rememberRef.current(r.launch);setSubmissionUncertain(false);setError('');}}).catch(()=>{if(alive.current&&!abort.signal.aborted)setError('Confirmation is temporarily unavailable. Your submission remains pending; do not create another launch.');}).finally(()=>{polling=false;});},2500);
+  const timer=setInterval(()=>{if(polling)return;polling=true;void launchpadRequest(`/api/v1/launchpad/launches/${launch.id}`,LaunchResponse,{signal:abort.signal}).then(r=>{if(alive.current){rememberRef.current(r.launch);if(!unresolvedSubmission.current)setError('');}}).catch(()=>{if(alive.current&&!abort.signal.aborted)setError('Confirmation is temporarily unavailable. Your submission remains pending; do not create another launch.');}).finally(()=>{polling=false;});},2500);
   return()=>{clearInterval(timer);abort.abort();};
  },[launch,submissionUncertain]);
  const run=async(work:()=>Promise<void>)=>{if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await work();}catch(e){if(alive.current)setError(e instanceof Error?e.message:'Launch preparation failed. Retry safely.');}finally{lock.current=false;if(alive.current){setBusy(false);setSigningStage('');}}};
@@ -48,15 +52,21 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  });
  const prepareRef=useRef(prepare);prepareRef.current=prepare;
  useEffect(()=>{if(autoPrepare&&!restoring&&!launch&&!error&&!automatic.current){automatic.current=true;prepareRef.current();}},[autoPrepare,restoring,launch,error]);
- const check=()=>void run(async()=>{const id=launch?.id||savedId.current;if(!id)throw new Error('No saved launch attempt was found.');remember((await launchpadRequest(`/api/v1/launchpad/launches/${encodeURIComponent(id)}`,LaunchResponse)).launch);setSubmissionUncertain(false);});
+ const check=()=>void run(async()=>{const id=launch?.id||savedId.current;if(!id)throw new Error('No saved launch attempt was found.');remember((await launchpadRequest(`/api/v1/launchpad/launches/${encodeURIComponent(id)}`,LaunchResponse)).launch);});
  const sign=()=>void run(async()=>{
   if(!launch?.execution||session.identity?.wallet!==launch.launcherWallet)throw new Error('Connect the verified creator wallet first');
   setSigningStage('Awaiting wallet approval…');
   const signed=await session.signLaunch(decoded(launch.execution.transaction),launch.execution.network);
   if(!alive.current)return;
-  setSigningStage('Submitting signed transaction…');setSubmissionUncertain(true);
-  try{const r=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/submit`,LaunchResponse,jsonRequest('POST',{transaction:encoded(signed)}));remember(r.launch);setSubmissionUncertain(false);}
-  catch{throw new Error('Submission response was interrupted. Check this launch’s status before retrying. Do not create another coin or pay again.');}
+  const {VersionedTransaction}=await import('@solana/web3.js');
+  const signature=VersionedTransaction.deserialize(signed).signatures[0];
+  if(!signature||signature.every(b=>b===0))throw new Error('Wallet did not return a creator signature. Nothing was submitted.');
+  walletSignature.current=bs58.encode(signature);
+  unresolvedSubmission.current=true;setSubmissionUncertain(true);
+  try{localStorage.setItem(scope,JSON.stringify({key:requestKey.current,id:launch.id,submissionUncertain:true,walletSignature:walletSignature.current}));}catch{/* Keep the unresolved submission blocked in memory. */}
+  setSigningStage('Submitting signed transaction…');
+  try{const r=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/submit`,LaunchResponse,jsonRequest('POST',{transaction:encoded(signed)}));remember(r.launch);}
+  catch(e){const reason=e instanceof ApiResponseError?`The API returned HTTP ${e.status}: ${e.message}.`:e instanceof SessionExpired?e.message:'Submission response was interrupted.';throw new Error(`${reason} Check this launch’s status before retrying. Do not create another coin or pay again.`);}
  });
  const dev=launch?.fees.developerBuy??null;
  // Never silently raise what the creator agreed to: a higher (or unseen) maximum must be accepted again.
@@ -77,7 +87,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
    {signingStage&&<p role="status">{signingStage}</p>}{submissionUncertain&&!signingStage&&<p role="status">Checking your signed transaction. Keep this saved attempt.</p>}
    {onEdit&&!busy&&!submissionUncertain&&((!launch.signature&&['awaiting_signature','expired'].includes(launch.status))||launch.status==='failed')&&<button className="text-button" onClick={onEdit}>Edit token details</button>}
    <button className="secondary" disabled={busy} onClick={check}>Check launch status</button>
-   {['expired','failed'].includes(launch.status)&&<button className="secondary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare a new attempt</button>}
+   {!submissionUncertain&&['expired','failed'].includes(launch.status)&&<button className="secondary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare a new attempt</button>}
    {launch.status==='confirmed'&&<><p>Token creation verified. <a href={routeUrl("explore", launch.mint)}>View in Explore</a></p>{launch.devBuyResult&&<p className="small" role="status">Developer Buy verified on-chain: {formatTokens(launch.devBuyResult.tokenAmount)} {launch.draft.symbol} ({Number(launch.devBuyResult.allocationBps)/100}% of supply) for {formatSol(launch.devBuyResult.quoteSpent)}.</p>}<p className="small ui-select-text">Mint: {launch.mint}</p>{launch.execution?.network==='devnet'&&<a href={`https://explorer.solana.com/tx/${launch.signature}?cluster=devnet`} target="_blank" rel="noreferrer">Confirmed transaction</a>}{onNewCoin&&<button className="secondary" onClick={onNewCoin}>Create another coin</button>}</>}
    {launch.status==='recovery_needed'&&<p role="alert">The transaction landed, but platform verification needs recovery. Do not launch or pay again.</p>}
   </>}

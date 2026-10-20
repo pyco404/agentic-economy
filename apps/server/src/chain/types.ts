@@ -106,6 +106,8 @@ export interface ChainGateway {
   getBlockTime?(slot: number): Promise<number | null>;
   submitLaunchTransaction?(transaction:string):Promise<string>;
   getFinalizedBlockHeight?():Promise<number>;
+  /** Finalized mint existence check; expiry requires authoritative absence, not just elapsed height. */
+  mintAccountExists?(mint:string):Promise<boolean>;
   /** Newest-first signatures touching `address`, stopping at `until` (exclusive). */
   listSignaturesForAddress(address: string, until: string | null, limit: number, before?:string): Promise<string[]>;
 }

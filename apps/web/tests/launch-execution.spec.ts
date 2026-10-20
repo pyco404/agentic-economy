@@ -8,8 +8,8 @@ import {sharingConfigPda} from '../../server/src/chain/pump';
 const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
 test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
 test('safe-network signing UI handles rejection and verified confirmation (mock RPC, real transaction signatures)',async({page})=>{
- test.setTimeout(180000);await page.setViewportSize({width:390,height:844});
- const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='';const prepareKeys:string[]=[];
+ test.setTimeout(360000);await page.setViewportSize({width:390,height:844});
+ const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='',submittedPayload='';let resumptions=0;const prepareKeys:string[]=[];
  let launch:Record<string,unknown>|undefined,prepared='';
  await page.exposeFunction('__signMessage',(bytes:number[])=>Array.from(nacl.sign.detached(Uint8Array.from(bytes),creator.secretKey)));
  await page.exposeFunction('__signTransaction',(bytes:number[])=>{signs++;if(reject)throw new Error('Launch signature rejected by user');const tx=VersionedTransaction.deserialize(Uint8Array.from(bytes));tx.sign([creator]);return Array.from(tx.serialize());});
@@ -36,11 +36,12 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
   await route.fulfill({status:503,json:{error:{message:'Preparation response lost. Retry safely.'}}});
  });
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/submit',async route=>{
-  submissions++;const checked=await validateSignedPumpLaunch(prepared,route.request().postDataJSON().transaction);submittedSignature=checked.signature;await route.fulfill({status:503,json:{error:{message:'Submission response lost'}}});
+  submissions++;const checked=await validateSignedPumpLaunch(prepared,route.request().postDataJSON().transaction);submittedSignature=checked.signature;submittedPayload=route.request().postDataJSON().transaction;await route.fulfill({status:503,json:{error:{message:'Submission response lost'}}});
  });
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/resume',async route=>{resumptions++;expect(route.request().postDataJSON().transaction).toBe(submittedPayload);await route.fulfill({status:503,json:{error:{message:'RPC still unavailable; keep this signature'}}});});
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest',route=>{if(submissions&&resolveSubmission)launch={...launch!,status:'confirmed',signature:submittedSignature,slot:1234,communityId:'com_BrowserExecutionTest'};return route.fulfill({json:{launch}});});
  await page.route('https://gateway.pinata.cloud/ipfs/**',route=>route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')}));
- await page.goto(site!+'/launchpad?source=backend');await expect(page.getByLabel('Token name',{exact:true})).toBeVisible({timeout:30000});
+ await page.goto(site!+'/launchpad?source=backend');await waitForApplicationReady(page);await expect(page.getByLabel('Token name',{exact:true})).toBeVisible({timeout:30000});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
  await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();await page.getByLabel('Token name',{exact:true}).fill('Browser Signature Test');await page.getByLabel('Symbol',{exact:true}).fill('BST');
  // Use the known validated image fixture (no genuine Pinata invocation).
@@ -59,6 +60,8 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  expect(submissions).toBe(1);expect(signs).toBe(2);
  const hint=await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('aeco:launch:')).map(k=>JSON.parse(localStorage.getItem(k)!)).find(v=>v.submissionUncertain));
  expect(hint.walletSignature).toBe(submittedSignature);
+ await execution.getByRole('button',{name:'Resume same transaction',exact:true}).click();
+ await expect(execution.getByRole('alert')).toContainText('RPC still unavailable');expect(resumptions).toBe(1);expect(signs).toBe(2);expect(submissions).toBe(1);
  launch={...launch!,status:'expired'};await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
  await expect(execution).toContainText('Checking your signed transaction');
  await expect(execution.getByRole('button',{name:'Prepare a new attempt',exact:true})).toHaveCount(0);

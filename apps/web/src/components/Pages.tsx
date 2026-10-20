@@ -83,7 +83,7 @@ function LocalLaunchpad() {
       <PageHeading
         eyebrow="BUILD A PRESENCE"
         title="Give your community a home."
-        description="Token Launchpad · Phase 2 in development. Prepare your community draft; verified Pump.fun execution and SOL/USDC launches are not enabled here."
+        description="Token Launchpad · Phase 2 in development. Prepare your community draft; TOKEN/SOL is the only launch pair. Mainnet launches remain disabled."
       />
       <div className="two-column">
         <form

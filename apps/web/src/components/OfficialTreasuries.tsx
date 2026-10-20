@@ -33,7 +33,7 @@ export function OfficialTreasuries({ wallets }: { wallets?: OfficialTreasuryWall
           <p className="small muted">Last balance update: {observed?.updatedAt ? <time dateTime={observed.updatedAt}>{new Date(observed.updatedAt).toLocaleString()}</time> : 'Unavailable'}{observed?.slot != null ? ` · finalized slot ${observed.slot}` : ''}</p>
           <details><summary>Recent Mainnet transactions</summary>
             {observed?.recentTransactions.length ? <ul className="ui-select-text">{observed.recentTransactions.map(tx => <li key={tx.signature} style={{ overflowWrap: 'anywhere' }}>
-              <a href={`https://explorer.solana.com/tx/${tx.signature}`} target="_blank" rel="noreferrer">{tx.signature.slice(0, 10)}…{tx.signature.slice(-8)}</a> · {tx.failed ? 'Failed' : tx.classification === 'verified_creator_fee' ? 'Verified creator-fee receipt' : tx.classification === 'verified_launch_charge' ? 'Verified launch charge' : 'Unclassified transaction'} · slot {tx.slot}
+              <a href={`https://explorer.solana.com/tx/${tx.signature}`} target="_blank" rel="noreferrer">{tx.signature.slice(0, 10)}…{tx.signature.slice(-8)}</a> · {tx.failed ? 'Failed' : tx.classification === 'verified_creator_fee' ? 'Verified creator-fee receipt' : tx.classification === 'verified_launch_charge' ? 'Verified launch charge' : 'Unclassified transaction'}{tx.direction?` · ${tx.direction} wallet balance change`:''} · slot {tx.slot}
             </li>)}</ul> : <p className="small muted">{observed?.status === 'available' ? 'No recent transactions returned, or transaction history unavailable.' : 'Transaction history unavailable.'}</p>}
           </details>
         </section>;

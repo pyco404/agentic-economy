@@ -200,7 +200,7 @@ function LocalLaunchpad() {
             <p className="small muted">
               Target split of eligible, verified creator-fee receipts in their actual received asset, where
               supported and verified. Protocol and liquidity-provider fees
-              remain governed by Pump.fun.
+              are set by the external launch protocol and excluded from this split.
             </p>
             <hr />
             <button className="secondary wide" disabled>
@@ -632,7 +632,7 @@ export function Treasury({ data }: { data: Dashboard }) {
           <span className="tag">
             Routing {t.feeRouting.verified ? "verified" : "unverified"}
           </span>
-          <p className="small">{t.feeRouting.notes.join(" ")}</p>
+          <details className="small"><summary>Routing verification details</summary><p>{t.feeRouting.notes.join(" ")}</p></details>
         </section>
         <section className="surface">
           <ShieldCheck size={27} />

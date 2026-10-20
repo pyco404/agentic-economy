@@ -21,6 +21,7 @@ export class SolanaRpcChain implements ChainGateway {
   }
 
   getGenesisHash(){return this.conn.getGenesisHash();}
+  async getSignatureStatus(signature:string){const status=(await this.conn.getSignatureStatuses([signature],{searchTransactionHistory:true})).value[0];return status?{slot:status.slot,confirmationStatus:status.confirmationStatus??null,err:status.err}:null;}
   async verifyMarketPool(pool:string,mint:string,quoteMint:string){
     const a=await this.conn.getAccountInfo(new PublicKey(pool),'confirmed');
     if(pool===bondingCurvePda(mint)&&a?.owner.toBase58()===PUMP_PROGRAM_ID){

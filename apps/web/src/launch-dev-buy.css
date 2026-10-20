@@ -1,0 +1,19 @@
+.launch-dev-buy { margin: 28px 0; padding: 0; border: 0; min-width: 0; }
+.launch-dev-buy legend { font-size: 18px; font-weight: 550; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.launch-dev-buy-optional { font-size: 10px; font-weight: 500; color: #41664b; background: #eef2e4; border-radius: 999px; padding: 3px 9px; letter-spacing: 0.02em; }
+.surface .launch-dev-buy .launch-dev-buy-toggle { display: inline-flex; white-space: nowrap; align-items: center; gap: 10px; margin: 6px 0 4px; font-size: 13px; color: #3e5345; cursor: pointer; }
+.surface .launch-dev-buy .launch-dev-buy-toggle input[type="checkbox"] { display: inline-block; width: 18px; height: 18px; padding: 0; margin: 0; border: 0; background: none; accent-color: #33664d; flex: 0 0 auto; }
+.launch-dev-buy-reason { color: #6b5a3f; background: #f6efe0; border-radius: 8px; padding: 10px 12px; line-height: 1.6; }
+.launch-dev-buy-amount { margin-top: 14px; padding: 16px; border: 1px solid #e2d9c7; border-radius: 10px; background: #fffaf2; }
+.launch-dev-buy-percent { display: flex; align-items: center; gap: 8px; }
+.surface .launch-dev-buy-percent input { max-width: 120px; }
+.launch-dev-buy-estimate { margin: 16px 0 10px; }
+.launch-dev-buy-estimate dd { overflow-wrap: anywhere; }
+.launch-field > label { margin-bottom: 0; }
+.launch-field-meta { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0 0; font-size: 11px; color: #899480; }
+.launch-field-meta [data-over="true"] { color: #914d35; font-weight: 600; }
+.launch-field-error { color: #914d35; font-size: 12px; line-height: 1.6; margin: 6px 0 0; }
+.surface input[aria-invalid="true"], .surface textarea[aria-invalid="true"] { border-color: #b86a4c; box-shadow: inset 0 0 0 1px #b86a4c; }
+.launch-preview-dev-buy { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.launch-preview-dev-buy strong { color: #33664d; overflow-wrap: anywhere; }
+.launch-quote-change { border: 1px solid #d9b98a; background: #fbf3e4; border-radius: 10px; padding: 12px 14px; margin: 12px 0; }

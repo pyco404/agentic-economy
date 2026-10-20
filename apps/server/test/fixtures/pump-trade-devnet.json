@@ -12,6 +12,8 @@
     "quoteAmount": "987654",
     "quoteMint": "So11111111111111111111111111111111111111112",
     "creatorFee": "2963",
+    "protocolFee": "9383",
+    "buybackFee": "938",
     "timestamp": 1792408258,
     "traderTokenBalanceDelta": "3497882795867"
   },

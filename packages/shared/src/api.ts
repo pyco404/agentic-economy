@@ -1,3 +1,5 @@
+import { DevBuyQuote, LaunchpadCapabilities, launchpadPaths } from './launchpad.js';
+import { DEV_BUY_MAX_BPS } from './constants.js';
 import {TokenMarket,TokenHistory,TokenTrades} from './market.js';
 import { z } from "zod";
 import { page, PageQuery, PublicKey, DataMode, AgentId, CommunityId, LaunchId } from "./primitives.js";
@@ -115,6 +117,8 @@ export interface RouteDef {
 const P = "/api/v1";
 
 export const routes = {
+  launchpadCapabilities: { method: "get", path: launchpadPaths.capabilities, operationId: "getLaunchpadCapabilities", summary: "Authenticated workspace features and safe-network Developer Buy availability", tag: "launches", auth: false, response: LaunchpadCapabilities },
+  devBuyQuote: { method: "get", path: launchpadPaths.devBuyQuote, operationId: "getDevBuyQuote", summary: "Estimate an optional SOL Developer Buy from live Pump supply and fee configuration; never submits a transaction", tag: "launches", auth: false, query: z.object({ bps: z.coerce.number().int().min(0).max(DEV_BUY_MAX_BPS) }).strict(), response: DevBuyQuote },
   health: { method: "get", path: "/healthz", operationId: "health", summary: "Liveness + mode, role and simulation leadership", tag: "system", auth: false, response: HealthResponse },
   readiness: { method: "get", path: "/readyz", operationId: "readiness", summary: "Readiness for this process role (503 when not ready)", tag: "system", auth: false, response: ReadinessResponse },
 

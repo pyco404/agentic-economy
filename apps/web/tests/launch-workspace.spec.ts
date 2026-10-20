@@ -176,7 +176,7 @@ test('live preview stays local and a disabled demo cannot pin artwork',async({pa
  await preview.scrollIntoViewIfNeeded();await page.screenshot({path:'artifacts/create-coin-preview-mobile.png'});
  await page.setViewportSize({width:1440,height:1000});await preview.scrollIntoViewIfNeeded();await page.screenshot({path:'artifacts/create-coin-preview-desktop.png'});await page.setViewportSize({width:390,height:844});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
- await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeDisabled();await expect(page.getByRole('note')).toContainText('no images are uploaded');expect(writes).toEqual([]);
+ await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeDisabled();await expect(page.getByRole('note').filter({hasText:'Coin creation is unavailable'})).toContainText('no images are uploaded');expect(writes).toEqual([]);
  await page.getByText('Manage drafts & technical details',{exact:true}).click();await page.getByRole('button',{name:'Save draft',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Draft saved.'})).toBeVisible();
  expect(writes).toEqual(['/api/v1/launchpad/drafts']);await expect(preview.getByRole('img')).toHaveAttribute('src',/^blob:/);
  await page.screenshot({path:'artifacts/create-coin-live-preview-mobile.png',fullPage:true});

@@ -1,3 +1,4 @@
+import {waitForApplicationReady} from './startup';
 import {test,expect} from '@playwright/test';
 import {AddressLookupTableAccount,Keypair,VersionedTransaction} from '@solana/web3.js';
 import bs58 from 'bs58';
@@ -37,7 +38,7 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/submit',async route=>{
   submissions++;const checked=await validateSignedPumpLaunch(prepared,route.request().postDataJSON().transaction);launch={...launch,status:'submitted',signature:checked.signature};await route.fulfill({status:503,json:{error:{message:'Submission response lost'}}});
  });
- await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest',route=>route.fulfill({json:{launch:{...launch,status:'confirmed',slot:1234,communityId:'com_BrowserExecutionTest'}}}));
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest',route=>route.fulfill({json:{launch:{...launch,status:submissions?'confirmed':launch!.status,slot:submissions?1234:null,communityId:submissions?'com_BrowserExecutionTest':null}}}));
  await page.route('https://gateway.pinata.cloud/ipfs/**',route=>route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')}));
  await page.goto(site!+'/launchpad?source=backend');await expect(page.getByLabel('Token name',{exact:true})).toBeVisible({timeout:30000});
  await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();await page.getByRole('button',{name:'Phantom',exact:true}).click();
@@ -46,6 +47,7 @@ test('safe-network signing UI handles rejection and verified confirmation (mock 
  await page.getByLabel('Token logo file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFUlEQVQYlWNYtbuDIGIYVcQwCIMAAJ5MFWCkU82kAAAAAElFTkSuQmCC','base64')});
  await page.getByRole('button',{name:'Create Coin',exact:true}).click();
  const execution=page.getByRole('region',{name:'Launch execution'});await expect(execution.getByRole('alert')).toContainText('Preparation response lost');expect(signs).toBe(0);await execution.getByRole('button',{name:'Retry preparation',exact:true}).click();await expect(execution).toContainText('0.05 SOL');expect(prepareKeys).toHaveLength(2);expect(prepareKeys[0]).toBeTruthy();expect(prepareKeys[1]).toBe(prepareKeys[0]);expect(signs).toBe(0);expect(submissions).toBe(0);
+ await page.reload();await waitForApplicationReady(page);await expect(execution).toContainText('0.05 SOL');await expect(page.getByLabel('Token name',{exact:true})).toBeDisabled();expect(preparations).toBe(1);
  await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();await expect(execution.getByRole('alert')).toContainText('rejected');expect(submissions).toBe(0);
  reject=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();await page.getByRole('button',{name:'Check launch status',exact:true}).click();await expect(execution).toContainText('Token creation verified');
  expect(preparations).toBe(1);expect(submissions).toBe(1);expect(signs).toBe(2);expect(bs58.decode(String(launch!.signature))).toHaveLength(64);

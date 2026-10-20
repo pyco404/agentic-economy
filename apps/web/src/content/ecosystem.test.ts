@@ -6,14 +6,19 @@ import { LAUNCH_FEE_LAMPORTS, AGENT_TREASURY_CREATOR_FEE_BPS, PLATFORM_TREASURY_
 import { LaunchOriginTag } from "../components/LaunchOriginTag";
 
 describe("ecosystem editorial boundary", () => {
-  it("publishes exactly the eight official phases with truthful status and outstanding work", () => {
+  it("publishes eight concise product phases with honest public statuses", () => {
     expect(roadmap.map((p) => p.phase)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(roadmap[0].title).toBe("Platform Foundation");
+    expect(roadmap[0].status).toBe("Completed milestone");
     expect(roadmap[1].title).toBe("Token Launchpad");
-    expect(roadmap[0].status).toContain("Core milestones verified");
-    expect(roadmap[1].status).toContain("current development phase");
-    expect(roadmap[0].built.length).toBeGreaterThan(0);
-    expect(roadmap[0].pending.length).toBeGreaterThan(0);
-    expect(roadmap.slice(2).every((p) => p.status === "Planned" && p.built.length === 0)).toBe(true);
+    expect(roadmap[1].status).toBe("In progress");
+    expect(roadmap.slice(2).every((p) => p.status === "Planned")).toBe(true);
+    expect(roadmap.every((p) => p.milestones.length >= 3 && p.milestones.length <= 4 && p.summary.length > 0)).toBe(true);
+    const copy = JSON.stringify(roadmap);
+    expect(copy).not.toMatch(/USDC|staging|devnet|validator|PostgreSQL|contract version|RPC|migration|harness|test count/i);
+    expect(roadmap[1].milestones.join(" ")).toContain("SOL-paired");
+    expect(roadmap[1].milestones.join(" ")).toContain("3.5%");
+    expect(roadmap[4].milestones.join(" ")).toContain("separate from Common Agents");
   });
   it("keeps Common and Super Agents separate and avoids defining an AECO minimum", () => {
     expect(agentClasses.map((a) => a.name)).toEqual(["Common Agents", "Super Agents"]);

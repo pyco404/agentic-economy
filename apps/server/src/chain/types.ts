@@ -24,6 +24,8 @@ export interface ObservedTransaction {
 }
 
 export interface FeeRoutingState {
+  /** Immutable creation supply recorded on the actual Pump bonding curve, not the pre-launch quote. */
+  tokenTotalSupply?: bigint | null;
   sharingConfig: SharingConfigState | null;
   bondingCurveCreator: string | null;
   bondingCurveComplete: boolean | null;
@@ -50,6 +52,21 @@ export interface BuildLaunchInput {
   /** Default SOL. USDC requires the server-configured, allowlist-verified quote mint. */
   quoteAsset?: "SOL" | "USDC";
   quoteMint?: string;
+  /** Optional Developer Buy (SOL only): exact token base units bought in the same transaction, at most `maxQuoteCost` lamports. */
+  devBuy?: { tokenAmount: bigint; maxQuoteCost: bigint };
+}
+
+/** A Developer Buy quote computed from Pump's live Global and fee configuration for a brand-new curve. */
+export interface DevBuyChainQuote {
+  slot: number;
+  totalSupply: bigint;
+  tokenAmount: bigint;
+  capTokenAmount: bigint;
+  /** Lamports the buy costs, including Pump protocol fee (buyback is part of it) and creator fee. */
+  estimatedQuoteCost: bigint;
+  pumpFees: bigint;
+  maxQuoteCost: bigint;
+  priceImpactBps: number;
 }
 
 export interface BuiltLaunchTransaction {
@@ -61,6 +78,8 @@ export interface BuiltLaunchTransaction {
   estimatedNetworkFeesLamports?:string;
   /** Rent the launcher's wallet pays, measured from this exact transaction's simulation on the target network. */
   estimatedAccountRentLamports?:string;
+  /** Developer Buy as simulated: tokens received (must equal the request) and lamports spent including Pump fees. */
+  devBuy?: { tokenAmount: string; quoteSpent: string };
 }
 
 export interface ChainGateway {
@@ -74,6 +93,10 @@ export interface ChainGateway {
   buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction>;
   /** Throws ChainFeatureUnavailable unless `mint` is an initialized six-decimal SPL mint in Pump's live Global quote allowlist. */
   verifyQuoteMint?(mint: string): Promise<void>;
+  /** Developer Buy support on this network (lookup-table coverage and packet capacity); reason when unavailable. */
+  devBuySupport?(): Promise<{ available: boolean; reason: string | null }>;
+  /** Quote an exact Developer Buy of `bps` basis points of total supply for a new SOL curve. */
+  quoteDevBuy?(bps: number): Promise<DevBuyChainQuote>;
   /** Authoritative bonding-curve state read at `slot`; null when the curve account does not exist. */
   getCurveProgress?(mint: string): Promise<CurveProgress | null>;
   /** Distinct owners holding a positive balance of `mint` (excluding the curve's own vault); null holders when too many to count safely. */

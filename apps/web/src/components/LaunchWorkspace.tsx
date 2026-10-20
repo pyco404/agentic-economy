@@ -39,7 +39,8 @@ export function LaunchWorkspace() {
  const [maxBytes,setMaxBytes] = useState(5_000_000), [memoryStorage,setMemoryStorage] = useState(false), [logoScope,setLogoScope] = useState(newScope);
  const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false),[devBuyAvailability,setDevBuyAvailability]=useState<DevBuyAvailability|null>(null),[attempted,setAttempted]=useState(false);
  const [devBuyValid,setDevBuyValid]=useState(true),[reviewedDevBuyMax,setReviewedDevBuyMax]=useState<string|null>(null);
- const flowActive=review?.launchEnabled===true;
+ const [recoveryOnly,setRecoveryOnly]=useState(false);
+ const flowActive=!!review&&(review.launchEnabled||recoveryOnly);
  const [phase,setPhase] = useState<PreparationStage|null>(null), [progress,setProgress] = useState<number|null>(null), [removed,setRemoved] = useState(false);
  const [draftsOpen,setDraftsOpen]=useState(false),[restoring,setRestoring]=useState(false),[saveState,setSaveState]=useState<{phase:'idle'|'saving'|'saved'|'error';fingerprint:string;error?:string}>({phase:'idle',fingerprint:''}),[retrySave,setRetrySave]=useState(0),[imageReselect,setImageReselect]=useState(false);
  const writer=useRef<DraftWriter|null>(null),editorEpoch=useRef(0);
@@ -73,17 +74,18 @@ export function LaunchWorkspace() {
  const restoreAttempt=async(d:Draft,check:()=>void)=>{
   if(!d.image||!d.metadata)return;
   const hint=localGet(`aeco:launch:${owner}:${d.id}:${d.version}`);if(!hint)return;
-  try{const saved=JSON.parse(hint) as {key?:string;id?:string};if(!saved?.key&&!saved?.id)return;}catch{return;}
+  let hasSavedAttempt=false;
+  try{const saved=JSON.parse(hint) as {key?:string;id?:string};if(!saved?.key&&!saved?.id)return;hasSavedAttempt=!!saved.id;}catch{return;}
   const r=await launchpadRequest(`${base}/${d.id}/review`,DraftReview);check();
   if(r.draft.wallet!==owner||r.draft.id!==d.id||r.draft.version!==d.version)throw Error('Saved launch details changed. Resume the correct draft.');
-  if(r.launchEnabled&&r.readyForNextMilestone){setExecutionBusy(true);setReview(r);}
+  if(hasSavedAttempt||r.launchEnabled&&r.readyForNextMilestone){setRecoveryOnly(!r.launchEnabled||!r.readyForNextMilestone);setExecutionBusy(true);setReview(r);}
  };
 
- const reset=()=>{beginEditor(null);localSet(activeKey(owner),'new');setAttempted(false);setCreated(false);keys.current.clear();selected.current=null;setLocalFile(null);current.current=null;setDraft(null);setFields(empty);setReview(null);setRemoved(false);setImageReselect(false);setLogoScope(newScope());setError('');setMessage('');setDraftsOpen(false);};
+ const reset=()=>{setRecoveryOnly(false);beginEditor(null);localSet(activeKey(owner),'new');setAttempted(false);setCreated(false);keys.current.clear();selected.current=null;setLocalFile(null);current.current=null;setDraft(null);setFields(empty);setReview(null);setRemoved(false);setImageReselect(false);setLogoScope(newScope());setError('');setMessage('');setDraftsOpen(false);};
  useEffect(()=>{
   const version=++generation.current;
   if(previousOwner.current&&previousOwner.current!==owner){selected.current=null;setLocalFile(null);form.current=empty;setFields(empty);setRemoved(false);setLogoScope(newScope());}
-  previousOwner.current=owner;beginEditor(null);keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setDraftsOpen(false);setImageReselect(false);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setDevBuyAvailability(null);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);setRestoring(!!owner);
+  previousOwner.current=owner;setRecoveryOnly(false);beginEditor(null);keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setDraftsOpen(false);setImageReselect(false);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setDevBuyAvailability(null);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);setRestoring(!!owner);
   void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setDevBuyAvailability(c.devBuy?{status:c.devBuy.status,reason:c.devBuy.reason}:null);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
   if(owner){const before=draftFingerprint(form.current),hadContent=hasDraftContent(form.current);void (async()=>{
    try{const result=await launchpadRequest(base,z.object({items:z.array(SavedLaunchDraft)}));if(version!==generation.current)return;setItems(result.items.filter(d=>d.wallet===owner));
@@ -138,7 +140,7 @@ export function LaunchWorkspace() {
     review:d=>launchpadRequest(`${base}/${d.id}/review`,DraftReview,{signal}),
     accept:d=>{accept(d);setRemoved(false);},uploaded:()=>{if(current.current)localSet(imageKey(current.current.id),null);selected.current=null;setLocalFile(null);setImageReselect(false);setLogoScope(newScope());setProgress(null);},
    });
-   check();setReview(result.review);setMessage(result.notice);
+   check();setRecoveryOnly(false);setReview(result.review);setMessage(result.notice);
   });
  };
  const edit = (key:keyof Fields,value:string|number) => {setFields(f=>({...f,[key]:typeof value==='number'?value:value||(['website','twitter','telegram'].includes(key)?null:'')}));setReview(null);setError('');setMessage('');};
@@ -178,13 +180,13 @@ export function LaunchWorkspace() {
    {review&&<section className="launch-review" aria-label="Token review"><h3>Review your token</h3>
     {review.draft.image&&<img src={review.draft.image.gatewayUrl} alt="Token logo"/>}
     <h4>{review.draft.fields.name} ({review.draft.fields.symbol})</h4><p>{review.draft.fields.description}</p>
-    <dl className="fee-list"><div><dt>Trading pair</dt><dd>{review.draft.fields.symbol}/{review.draft.fields.quoteAsset}</dd></div><div><dt>Developer Buy</dt><dd>{review.draft.fields.devBuyBps?`${review.draft.fields.devBuyBps/100}% of supply`:'Off'}</dd></div><div><dt>{review.launchEnabled?"Platform launch charge":"Planned launch charge"}</dt><dd>{review.launchChargeSol} SOL{!review.launchEnabled&&" · not charged"}</dd></div></dl>
+    <dl className="fee-list"><div><dt>Trading pair</dt><dd>{review.draft.fields.symbol}/{review.draft.fields.quoteAsset}</dd></div><div><dt>Developer Buy</dt><dd>{review.draft.fields.devBuyBps?`${review.draft.fields.devBuyBps/100}% of supply`:'Off'}</dd></div><div><dt>{review.launchEnabled||recoveryOnly?"Platform launch charge":"Planned launch charge"}</dt><dd>{review.launchChargeSol} SOL{!review.launchEnabled&&!recoveryOnly&&" · not charged"}</dd></div></dl>
     <details><summary>Verified token assets</summary><dl className="fee-list">
      <div><dt>Image IPFS URI</dt><dd><code className="ui-select-text">{review.draft.image?.ipfsUri??'Not uploaded'}</code></dd></div>
      <div><dt>Metadata IPFS URI</dt><dd><code className="ui-select-text">{review.draft.metadata?.ipfsUri??'Not prepared'}</code></dd></div>
      <div><dt>Preparation checks</dt><dd>{review.readyForNextMilestone&&review.issues.length===0?'Backend checks passed':'Preparation incomplete'}</dd></div>
     </dl></details>
-    <p>{review.launchEnabled?"Token details and logo are prepared. Launch status is shown below.":"Your token details and logo are ready. No token has been launched."}</p><>{review.launchEnabled&&review.readyForNextMilestone?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft} reviewedMaxDevBuyCost={reviewedDevBuyMax} autoPrepare onConfirmed={setCreated} onNewCoin={reset} onBusyChange={setExecutionBusy} onLockChange={setExecutionLocked} onEdit={()=>{setReview(null);setError('');setMessage('Update your details, then choose Create Coin.');}}/>:<button className="secondary wide" disabled>Token launch unavailable</button>}</>
+    <p>{recoveryOnly?'Saved launch status is shown below. New signing and submissions are disabled.':review.launchEnabled?"Token details and logo are prepared. Launch status is shown below.":"Your token details and logo are ready. No token has been launched."}</p><>{(review.launchEnabled&&review.readyForNextMilestone)||recoveryOnly?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft} reviewedMaxDevBuyCost={reviewedDevBuyMax} executionAllowed={!recoveryOnly} autoPrepare={!recoveryOnly} onConfirmed={setCreated} onNewCoin={reset} onBusyChange={setExecutionBusy} onLockChange={setExecutionLocked} onEdit={()=>{setReview(null);setError('');setMessage('Update your details, then choose Create Coin.');}}/>:<button className="secondary wide" disabled>Token launch unavailable</button>}</>
    </section>}
    {draftsOpen&&<MyDrafts items={items} busy={busy} memory={memoryStorage} onClose={()=>setDraftsOpen(false)} onResume={load}
     onNew={()=>void run(async(signal,check)=>{if(!await leaveEditor(signal))return;check();reset();})}

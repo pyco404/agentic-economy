@@ -49,10 +49,14 @@ describe('owned launch execution API (mock RPC, real transaction bytes/signature
   const signed=f.signed(p.transaction),url=`/api/v1/launchpad/launches/${p.launch.id}`;
   expect((await f.call('POST',url+'/submit',{transaction:signed})).json().launch.status).toBe('submitted');
   expect((await f.call('GET',url)).json().launch.status).toBe('submitted');expect((await env!.ctx.store.allCommunities()).filter(c=>c.launchId===p.launch.id)).toHaveLength(0);
+  expect((await env!.ctx.store.listEvents(null,100)).items.filter(e=>e.type==='launch.confirmed')).toHaveLength(0);
   f.setLanded();const confirmed=await f.call('GET',url);expect(confirmed.statusCode).toBe(200);expect(confirmed.json().launch.status).toBe('confirmed');expect((await env!.app.inject(`/api/v1/launches/${p.launch.id}`)).statusCode).toBe(200);
   expect((await f.call('GET',url)).json().launch.status).toBe('confirmed');
   const communities=(await env!.ctx.store.allCommunities()).filter(c=>c.launchId===p.launch.id);expect(communities).toHaveLength(1);expect(communities[0]!.provenance).toMatchObject({initiator:'HUMAN',platformOrigin:'PLATFORM',network:'devnet'});
   expect((await env!.ctx.store.allTreasuryEntries()).filter(e=>e.launchId===p.launch.id)).toHaveLength(1);
+  const events=(await env!.ctx.store.listEvents(null,100)).items.filter(e=>e.type==='launch.confirmed');
+  expect(events).toHaveLength(1);
+  expect(events[0]).toMatchObject({summary:`${p.launch.draft.name} ($${p.launch.draft.symbol}) launched on Agentic Economy.`,communityId:communities[0]!.id,data:{mint:p.launch.mint,signature:confirmed.json().launch.signature}});
  });
  it('rejects invalid signatures, missing authentication and stale drafts before broadcasting',async()=>{
   const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;

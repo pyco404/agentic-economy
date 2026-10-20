@@ -1,5 +1,6 @@
 import { ComputeBudgetProgram, Keypair, PublicKey, SystemProgram, TransactionInstruction, TransactionMessage, VersionedTransaction, type AddressLookupTableAccount } from '@solana/web3.js';
-import { LAUNCH_FEE_LAMPORTS, LaunchDraft } from '@agentic-economy/shared';
+import { DEV_BUY_MAX_BPS, LAUNCH_FEE_LAMPORTS, LaunchDraft } from '@agentic-economy/shared';
+import { sharingConfigPda } from './pump.js';
 import type { BuildLaunchInput } from './types.js';
 
 import sdk from './pump-sdk.cjs';
@@ -7,11 +8,13 @@ const {PUMP_SDK}=sdk;
 export const PUMP_SDK_VERSION='4.1.0';
 export const PUMP_DOCS_COMMIT='639b87fb45c3adeffa6f7c4a1bf0cb85e392bf22';
 const nativeMint=new PublicKey('So11111111111111111111111111111111111111112');
-const tokenProgram=new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const tokenProgram=new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),token2022=new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),associatedTokenProgram=new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+/** Associated Token-2022 account that receives the launcher's Developer Buy. */
+export const devBuyTokenAccount=(owner:string,mint:string)=>PublicKey.findProgramAddressSync([new PublicKey(owner).toBuffer(),token2022.toBuffer(),new PublicKey(mint).toBuffer()],associatedTokenProgram)[0].toBase58();
 /** Construction only: never enables API quotes. USDC requires an explicit network mint;
  * callers must verify its live Global allowlist and token-program ownership before execution.
  */
-export async function pumpLaunchInstructions(input:BuildLaunchInput){
+export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unknown){
  if(input.quoteAsset!==undefined&&!['SOL','USDC'].includes(input.quoteAsset))throw new Error('Unsupported quote asset');
  if(input.quoteAsset==='USDC'&&!input.quoteMint)throw new Error('USDC launches require the configured quote mint');
  const quoteMint=input.quoteAsset==='USDC'?new PublicKey(input.quoteMint!):nativeMint;
@@ -33,11 +36,28 @@ export async function pumpLaunchInstructions(input:BuildLaunchInput){
   if(!ata.equals(shares.keys[index+1]!.pubkey))throw new Error('Unexpected quote vault derivation');
   return new TransactionInstruction({programId:associated,data:Buffer.from([1]),keys:[{pubkey:user,isSigner:true,isWritable:true},{pubkey:ata,isSigner:false,isWritable:true},{pubkey:owner,isSigner:false,isWritable:false},{pubkey:quoteMint,isSigner:false,isWritable:false},{pubkey:SystemProgram.programId,isSigner:false,isWritable:false},{pubkey:tokenProgram,isSigner:false,isWritable:false}]});
  }):[];
- const instructions=[ComputeBudgetProgram.setComputeUnitLimit({units:600_000}),SystemProgram.transfer({fromPubkey:user,toPubkey:platform,lamports:LAUNCH_FEE_LAMPORTS}),create,sharing,...vaults,shares];
- return instructions;
+ const base=[SystemProgram.transfer({fromPubkey:user,toPubkey:platform,lamports:LAUNCH_FEE_LAMPORTS}),create,sharing,...vaults,shares];
+ if(!input.devBuy)return [ComputeBudgetProgram.setComputeUnitLimit({units:600_000}),...base];
+ // Developer Buy: SOL only, an exact token amount (partial fills off), after the locked 60/40 shares so the creator
+ // fee on this buy accrues to the sharing config, never to the launcher. No compute-limit instruction: the
+ // default budget (200k per instruction) covers it, and the packet needs the bytes.
+ if(input.quoteAsset==='USDC')throw new Error('Developer Buy is available for SOL launches only');
+ const g=global as {tokenTotalSupply:{toString():string};initialRealTokenReserves:{toString():string}}|undefined;
+ if(!g)throw new Error('Developer Buy requires the live Pump Global account');
+ const {tokenAmount,maxQuoteCost}=input.devBuy,cap=BigInt(g.tokenTotalSupply.toString())*BigInt(DEV_BUY_MAX_BPS)/10_000n;
+ if(tokenAmount<=0n)throw new Error('Developer Buy amount must be positive');
+ if(tokenAmount>cap||tokenAmount>BigInt(g.initialRealTokenReserves.toString()))throw new Error('Developer Buy exceeds 3.5% of total supply');
+ if(maxQuoteCost<=0n)throw new Error('Developer Buy requires a positive maximum cost');
+ const BN=(g.tokenTotalSupply as object).constructor as new(v:string)=>unknown;
+ // The curve does not exist yet: the SDK only reads its creator (the sharing config after the share update) and
+ // mayhem flag, and prepends the idempotent Token-2022 account creation. slippage 0: max_sol_cost = maxQuoteCost.
+ const buy:TransactionInstruction[]=await PUMP_SDK.buyInstructions({global:g as never,bondingCurveAccountInfo:null as never,bondingCurve:{creator:new PublicKey(sharingConfigPda(input.mint)),isMayhemMode:false} as never,
+  associatedUserAccountInfo:null,mint:mint.publicKey,user,amount:new BN(tokenAmount.toString()) as never,solAmount:new BN(maxQuoteCost.toString()) as never,slippage:0,tokenProgram:token2022});
+ if(buy.length!==2||!buy[0]!.programId.equals(associatedTokenProgram)||!buy[0]!.keys[1]!.pubkey.equals(new PublicKey(devBuyTokenAccount(input.launcherWallet,input.mint))))throw new Error('Unexpected Developer Buy instructions');
+ return [...base,...buy];
 }
-export async function buildPumpLaunch(input:BuildLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[]){
- const instructions=await pumpLaunchInstructions(input),mint=Keypair.fromSecretKey(input.mintSecretKey),user=new PublicKey(input.launcherWallet);
+export async function buildPumpLaunch(input:BuildLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[],global?:unknown){
+ const instructions=await pumpLaunchInstructions(input,global),mint=Keypair.fromSecretKey(input.mintSecretKey),user=new PublicKey(input.launcherWallet);
  const transaction=new VersionedTransaction(new TransactionMessage({payerKey:user,recentBlockhash:blockhash,instructions}).compileToV0Message(lookupTables));
  let bytes:Uint8Array;
  try{transaction.sign([mint]);bytes=transaction.serialize();}catch{throw new Error('Atomic launch exceeds Solana packet capacity; a verified address lookup table is required');}

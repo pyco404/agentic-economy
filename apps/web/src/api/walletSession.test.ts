@@ -1,7 +1,7 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import {z} from 'zod';
 import {Keypair,SystemProgram,TransactionInstruction,TransactionMessage,VersionedTransaction} from '@solana/web3.js';
-import {installedWallets,jsonRequest,launchpadRequest,SessionExpired,validateWalletChallenge,walletApiOrigin} from './walletSession';
+import {ApiResponseError,installedWallets,jsonRequest,launchpadRequest,SessionExpired,validateWalletChallenge,walletApiOrigin} from './walletSession';
 const {registry}=vi.hoisted(()=>({registry:{wallets:[] as unknown[]}}));
 vi.mock('@wallet-standard/app',()=>({getWallets:()=>({get:()=>registry.wallets})}));
 afterEach(()=>{registry.wallets=[];vi.restoreAllMocks();vi.unstubAllGlobals();});
@@ -58,4 +58,11 @@ it('does not issue a second signing prompt after a standard-wallet rejection',as
 it('uses injected v0 support when the standard feature only declares legacy transactions',async()=>{
  const signTransaction=vi.fn(),f=phantomRegistration({supportedTransactionVersions:['legacy'],signTransaction}),wallet=installedWallets().find(w=>w.name==='Phantom')!;await wallet.connect();
  await wallet.signTransaction!(f.tx.serialize(),'devnet');expect(signTransaction).not.toHaveBeenCalled();expect(f.provider.signTransaction).toHaveBeenCalledOnce();
+});
+
+it('preserves a received submission rejection separately from a transport interruption',async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>({status:400,ok:false,json:async()=>({error:{message:'Wallet signatures or transaction message do not match the prepared launch'}})})));
+ await expect(launchpadRequest('/submit',z.object({}),jsonRequest('POST',{}))).rejects.toMatchObject({name:'ApiResponseError',status:400,message:'Wallet signatures or transaction message do not match the prepared launch'});
+ vi.stubGlobal('fetch',vi.fn(async()=>{throw new TypeError('Failed to fetch');}));
+ try{await launchpadRequest('/submit',z.object({}));throw Error('Expected request failure');}catch(e){expect(e).not.toBeInstanceOf(ApiResponseError);expect((e as Error).message).toBe('Failed to fetch');}
 });

@@ -14,11 +14,13 @@ export function walletApiOrigin(configured:string,pageOrigin?:string){
 }
 export const launchpadApiOrigin=()=>walletApiOrigin(String(import.meta.env.VITE_API_URL??'http://127.0.0.1:8787'),typeof location==='undefined'?undefined:location.origin);
 export class SessionExpired extends Error{}
+/** A received API rejection, distinct from a lost transport response. */
+export class ApiResponseError extends Error{constructor(readonly status:number,message:string){super(message);this.name='ApiResponseError';}}
 export async function launchpadRequest<S extends z.ZodType>(path:string,schema:S,options:RequestInit={}):Promise<z.infer<S>>{
  const response=await fetch(launchpadApiOrigin()+path,{...options,credentials:'include',signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(60000)]):AbortSignal.timeout(60000)});
  if(response.status===401){window.dispatchEvent(new Event('aeco:session-expired'));throw new SessionExpired('Your session expired. Connect and authenticate again.');}
  let body:unknown;try{body=await response.json();}catch{throw new Error('The API returned an invalid response. Please retry.');}
- if(!response.ok)throw new Error((body as {error?:{message?:string}})?.error?.message??`Request failed (${response.status})`);
+ if(!response.ok)throw new ApiResponseError(response.status,(body as {error?:{message?:string}})?.error?.message??`Request failed (${response.status})`);
  return schema.parse(body);
 }
 export const jsonRequest=(method:string,body:unknown,key?:string):RequestInit=>({method,headers:{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:JSON.stringify(body)});

@@ -32,6 +32,8 @@ export const OfficialTreasuryWallet = z.object({
     slot: z.number().int().nonnegative(),
     blockTime: z.number().int().nullable(),
     failed: z.boolean(),
+    netChangeLamports: z.string().regex(/^-?\d+$/).nullable().optional(),
+    direction: z.enum(["incoming", "outgoing", "neutral"]).nullable().optional(),
     classification: z.enum(["verified_creator_fee", "verified_launch_charge", "unclassified"]),
   })),
 });

@@ -1,0 +1,46 @@
+{
+  "network": "devnet",
+  "source": "https://api.devnet.solana.com",
+  "readOnly": true,
+  "checkedAt": "2026-10-20T18:46:45.714Z",
+  "slot": 513255543,
+  "note": "Previously authorized controlled launches. Existing Devnet treasury identities remain unchanged; these are not official Mainnet-wallet fee receipts.",
+  "configs": [
+    {
+      "address": "AnfE7cMRR3NtHkVRgEND5h6wsRF3SrunzEevCN6F8Eg4",
+      "version": 2,
+      "status": "Active",
+      "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+      "admin": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+      "adminRevoked": true,
+      "shareholders": [
+        {
+          "address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+          "shareBps": 6000
+        },
+        {
+          "address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+          "shareBps": 4000
+        }
+      ]
+    },
+    {
+      "address": "9tqNHsx3xAZzKfHWUpFvHcanurgL6YUKEtsFcTBJKLc8",
+      "version": 2,
+      "status": "Active",
+      "mint": "6BqWNJQZGVYWEbanASYtDgQ7skpT3LjXeDfozWvkirfZ",
+      "admin": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+      "adminRevoked": true,
+      "shareholders": [
+        {
+          "address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+          "shareBps": 6000
+        },
+        {
+          "address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+          "shareBps": 4000
+        }
+      ]
+    }
+  ]
+}

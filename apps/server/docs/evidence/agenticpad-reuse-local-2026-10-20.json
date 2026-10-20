@@ -1,0 +1,198 @@
+{
+  "date": "2026-10-20",
+  "scope": "Isolated local validator only; public devnet programs cloned, no public launches",
+  "pinata": "Mocked fixed CIDs",
+  "storage": "In-memory; no database migrations",
+  "cases": [
+    {
+      "case": "zero-buy",
+      "network": "isolated-localnet (devnet programs/config cloned)",
+      "genesis": "BztLf2jNtjjfxRiqBCC4aV7ZkvnMBDRMMQRguWMCv8JH",
+      "result": "passed",
+      "bps": 0,
+      "mint": "45EYnXp6XFGF4VdiHZx88RtY6zeeemyTSzkSqRndViCb",
+      "signature": "2WCS75TeGs1xAnQjVJjvZ4J3sB1h5WfEZ1NoAhLCyfMnoKawhNEw8rDc3HDtP3X1L381j6EKTh4ynCdp21EpaxGf",
+      "slot": 157,
+      "packetBytes": 1016,
+      "instructions": 5,
+      "platformLamports": 50000000,
+      "receiptCount": 1,
+      "communityId": "com_0kDJRCwD1gYWVN",
+      "buy": null,
+      "checks": {
+        "confirmed": true,
+        "duplicateSubmitSameLaunch": true,
+        "curveQuoteMatches": true,
+        "routing6040": true,
+        "provenanceQuote": true,
+        "platformCharge": true,
+        "oneLaunchFeeReceipt": true,
+        "rentMatchesNetwork": true,
+        "chainMetrics": true
+      }
+    },
+    {
+      "case": "three-percent",
+      "network": "isolated-localnet (devnet programs/config cloned)",
+      "genesis": "BztLf2jNtjjfxRiqBCC4aV7ZkvnMBDRMMQRguWMCv8JH",
+      "result": "passed",
+      "bps": 300,
+      "mint": "3CVVmVFZ9T2dz9z91jozgmT8CrPRzgoS6u9qzQetoTXt",
+      "signature": "2nBJN14M8rESqsEJsXsMJ7jhcYxWCJ4hpB9ACEc1n2v99fVKHeZ2Dt9vCU57aH8HUCCSeMb2rA41Gmk2Vr2qbRoA",
+      "slot": 1882,
+      "packetBytes": 1164,
+      "instructions": 6,
+      "platformLamports": 50000000,
+      "receiptCount": 1,
+      "communityId": "com_A9H3FNYftzF49R",
+      "buy": {
+        "requestedBps": 300,
+        "requested": "30000000000000",
+        "cap": "35000000000000",
+        "received": "30000000000000",
+        "result": {
+          "tokenAmount": "30000000000000",
+          "quoteSpent": "8736818",
+          "allocationBps": "300",
+          "signature": "2nBJN14M8rESqsEJsXsMJ7jhcYxWCJ4hpB9ACEc1n2v99fVKHeZ2Dt9vCU57aH8HUCCSeMb2rA41Gmk2Vr2qbRoA"
+        },
+        "previewed": {
+          "bps": 300,
+          "quoteAsset": "SOL",
+          "totalSupply": "1000000000000000",
+          "tokenAmount": "30000000000000",
+          "estimatedQuoteCost": "8736818",
+          "pumpFees": "107863",
+          "maxQuoteCost": "8824187",
+          "priceImpactBps": 583
+        },
+        "launcherCreatorVault": 0,
+        "sharedVaultCreatorFee": 25887,
+        "checks": {
+          "exactTokens": true,
+          "withinCap": true,
+          "allocationRecorded": true,
+          "withinCeiling": true,
+          "previewedSpendExact": true,
+          "creatorFeeToSharingVault": true,
+          "quoteMatchesPreparation": true,
+          "spendMatchesSdkQuote": true
+        }
+      },
+      "checks": {
+        "confirmed": true,
+        "duplicateSubmitSameLaunch": true,
+        "curveQuoteMatches": true,
+        "routing6040": true,
+        "provenanceQuote": true,
+        "platformCharge": true,
+        "oneLaunchFeeReceipt": true,
+        "rentMatchesNetwork": true,
+        "devBuy_exactTokens": true,
+        "devBuy_withinCap": true,
+        "devBuy_allocationRecorded": true,
+        "devBuy_withinCeiling": true,
+        "devBuy_previewedSpendExact": true,
+        "devBuy_creatorFeeToSharingVault": true,
+        "devBuy_quoteMatchesPreparation": true,
+        "devBuy_spendMatchesSdkQuote": true,
+        "chainMetrics": true
+      }
+    },
+    {
+      "case": "max-buy",
+      "network": "isolated-localnet (devnet programs/config cloned)",
+      "genesis": "BztLf2jNtjjfxRiqBCC4aV7ZkvnMBDRMMQRguWMCv8JH",
+      "result": "passed",
+      "bps": 350,
+      "mint": "52YvJ9KafgXz91AAnvhuTy9Huhn48QSidLFqbbQ61tqS",
+      "signature": "iep1pQhjCuXN5pKJezeM8keyQLxw9qTPqf7TLfCxqHLSeiswfWjtweosBaXA6PpBFkEXzjnwbU6du6fw7Q1xnFB",
+      "slot": 2271,
+      "packetBytes": 1164,
+      "instructions": 6,
+      "platformLamports": 50000000,
+      "receiptCount": 1,
+      "communityId": "com_KnvS7NvtrgJMLT",
+      "buy": {
+        "requestedBps": 350,
+        "requested": "35000000000000",
+        "cap": "35000000000000",
+        "received": "35000000000000",
+        "result": {
+          "tokenAmount": "35000000000000",
+          "quoteSpent": "10242053",
+          "allocationBps": "350",
+          "signature": "iep1pQhjCuXN5pKJezeM8keyQLxw9qTPqf7TLfCxqHLSeiswfWjtweosBaXA6PpBFkEXzjnwbU6du6fw7Q1xnFB"
+        },
+        "previewed": {
+          "bps": 350,
+          "quoteAsset": "SOL",
+          "totalSupply": "1000000000000000",
+          "tokenAmount": "35000000000000",
+          "estimatedQuoteCost": "10242053",
+          "pumpFees": "126446",
+          "maxQuoteCost": "10344474",
+          "priceImpactBps": 685
+        },
+        "launcherCreatorVault": 0,
+        "sharedVaultCreatorFee": 30347,
+        "checks": {
+          "exactTokens": true,
+          "withinCap": true,
+          "allocationRecorded": true,
+          "withinCeiling": true,
+          "previewedSpendExact": true,
+          "creatorFeeToSharingVault": true,
+          "quoteMatchesPreparation": true,
+          "spendMatchesSdkQuote": true
+        }
+      },
+      "checks": {
+        "confirmed": true,
+        "duplicateSubmitSameLaunch": true,
+        "curveQuoteMatches": true,
+        "routing6040": true,
+        "provenanceQuote": true,
+        "platformCharge": true,
+        "oneLaunchFeeReceipt": true,
+        "rentMatchesNetwork": true,
+        "devBuy_exactTokens": true,
+        "devBuy_withinCap": true,
+        "devBuy_allocationRecorded": true,
+        "devBuy_withinCeiling": true,
+        "devBuy_previewedSpendExact": true,
+        "devBuy_creatorFeeToSharingVault": true,
+        "devBuy_quoteMatchesPreparation": true,
+        "devBuy_spendMatchesSdkQuote": true,
+        "chainMetrics": true
+      }
+    }
+  ],
+  "rollback": {
+    "signature": "4qZ2gBViFhYUxvCYs2f1gQ4NHsn5m5vHmFAR341b4ENkfffkmgxswQwppAH84mUQ62jMPMLRMMg2MmeVckydacsU",
+    "mint": "3wzoXWQvFF6N8SvLdqF5Yu7nNrxoquYXSKvQ2BFmVbFF",
+    "error": {
+      "InstructionError": [
+        4,
+        {
+          "Custom": 6014
+        }
+      ]
+    },
+    "mintAbsent": true,
+    "platformBalanceUnchanged": true
+  },
+  "rollbackResult": "passed",
+  "agenticPadTests": {
+    "passed": 33,
+    "rpcAndIpfs": "mocked"
+  },
+  "economyBackendTests": {
+    "passed": 56,
+    "rpc": "mocked"
+  },
+  "deployTests": {
+    "passed": 9
+  },
+  "publicPhantomDeveloperBuy": "Not verified; existing HOME attempts expired without an observed on-chain transaction"
+}

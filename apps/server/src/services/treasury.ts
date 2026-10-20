@@ -1,3 +1,4 @@
+import { OfficialTreasuryMonitor } from './official-treasuries.js';
 import {distributionMint,verifiedCreatorDistribution} from '../chain/creator-fees.js';
 import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
@@ -39,11 +40,12 @@ export interface CreatorFeeIngestResult {
 }
 
 export class TreasuryService {
+  private readonly officialWallets: OfficialTreasuryMonitor;
   constructor(
     private readonly store: Store,
     private readonly config: AppConfig,
     private readonly now: () => Date = () => new Date(),
-  ) {}
+  ) { this.officialWallets = new OfficialTreasuryMonitor(config.treasuryReadRpcUrl, fetch, now); }
 
   private entry(p: {
     stream: TreasuryEntry["stream"];
@@ -88,6 +90,7 @@ export class TreasuryService {
   launchFeeEntry(launch: TokenLaunch, signature: string, feeIxIndex: number, slot: number, commitment: "confirmed" | "finalized"): TreasuryEntry {
     return this.entry({
       stream: "launch_fee",
+      evidence: { source: this.config.mode === "demo" ? "mock_chain" : "solana_rpc", version: 1, network: this.config.mode === "demo" ? "demo" : this.config.mode === "production" ? "mainnet-beta" : this.config.solana.cluster, distributed: LAUNCH_FEE_LAMPORTS.toString(), distributedDust: "0" },
       accountAddress:launch.fees.platformTreasury,
       account: "platform",
       amount: LAUNCH_FEE_LAMPORTS,
@@ -234,6 +237,7 @@ export class TreasuryService {
         mode: "disabled_dry_run",
         description: "No agent reward payouts are made. Verified service contributions are recorded as points and share estimates only.",
       },
+      officialWallets: await this.officialWallets.read(all),
       recentEntries: recentPage.items,
       asOf: this.now().toISOString(),
     };

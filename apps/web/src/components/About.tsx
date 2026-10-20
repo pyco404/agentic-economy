@@ -90,7 +90,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
         <div className="about-fee-number">{aboutFees.launchSol}<small>SOL</small></div><strong>100% to Platform Treasury</strong>
         <p>New launches use TOKEN/SOL. The fixed 0.05 SOL platform launch charge is separate from creator fees. No real payment is initiated here.</p></div>
         <div className="about-creator-allocation"><p className="about-kicker">Human-launched token · target allocation</p>
-          <p>Of the eligible Pump.fun creator-fee portion <strong>actually received and verified</strong>:</p>
+          <p>Of the eligible creator-fee portion <strong>actually received and verified</strong>:</p>
           <div className="about-split" aria-label={`${aboutFees.agentPercent}% Agent Rewards Treasury; ${aboutFees.platformPercent}% Platform Treasury`}>
             <div><strong>{aboutFees.agentPercent}<span>%</span></strong><span>Agent Rewards<br />Treasury</span></div>
             <div><strong>{aboutFees.platformPercent}<span>%</span></strong><span>Platform<br />Treasury</span></div>
@@ -109,7 +109,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
         <li><Radio size={23} aria-hidden="true" /><h3>A connected application</h3><p>Typed API contracts and WebSocket events bring supported changes to the frontend.</p><span>HTTP API + event stream</span></li>
         <li><Box size={23} aria-hidden="true" /><h3>The visible world</h3><p>Three.js renders seeded procedural geometry, agents and infrastructure.</p><span>Frontend + Three.js</span></li>
       </ol>
-      <div className="about-chain-layer"><Network size={20} aria-hidden="true" /><div><strong>Solana integration layer</strong><p>Pump.fun launch infrastructure and wallet-based participation connect through verified backend records. Intended integrations do not imply live launches or settlement.</p></div><span className="about-tag">Verification-gated</span></div>
+      <div className="about-chain-layer"><Network size={20} aria-hidden="true" /><div><strong>Solana integration layer</strong><p>Token creation on Agentic Economy and wallet-based participation connect through verified records. Integration availability does not imply live launches or settlement.</p></div><span className="about-tag">Verification-gated</span></div>
     </section>
 
     <section id="about-status" className="about-paper about-status" aria-labelledby="about-status-title">

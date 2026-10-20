@@ -85,6 +85,10 @@ export interface BuiltLaunchTransaction {
 export interface ChainGateway {
   readonly source: "mock_chain" | "solana_rpc";
   getGenesisHash?():Promise<string>;
+  /** Optional operator gate, checked before recording a new submission. Never broadcasts. */
+  assertLaunchSubmissionAllowed?():Promise<void>;
+  /** History-aware signature observation; a non-null status must block unseen-transaction expiry. */
+  getSignatureStatus?(signature:string):Promise<{slot:number;confirmationStatus:'processed'|'confirmed'|'finalized'|null;err:unknown}|null>;
   verifyMarketPool?(pool:string,mint:string,quoteMint:string):Promise<boolean>;
   isTransactionOrphaned?(signature:string,slot:number):Promise<boolean>;
   getTransaction(signature: string): Promise<ObservedTransaction | null>;

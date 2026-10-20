@@ -77,3 +77,39 @@
 @media (prefers-reduced-motion: reduce) { .discovery-card { transition: none; } .discovery-card:hover { transform: none; } .discovery-skeleton { animation: none; } }
 
 .discovery-art.token-logo img { object-fit: contain; padding: 18px; box-sizing: border-box; }
+
+/* Financial/token details need a stable reading surface at every camera angle. */
+.page-main .token-detail { color: var(--readable-ink, #263d31); }
+.token-detail .token-header { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); padding: 28px; background: var(--readable-paper, #fffaf2); border: 1px solid #ded5c3; border-radius: 12px; gap: 28px; }
+.token-information { min-width: 0; }
+.token-detail .discovery-art > span { background: var(--readable-paper, #fffaf2); color: var(--readable-secondary, #52634f); font-size: 11px; }
+.token-detail .token-header h1 { color: var(--readable-ink, #263d31); font-size: clamp(34px, 4.5vw, 56px); line-height: 1.12; overflow-wrap: anywhere; }
+.token-detail .token-header p { color: var(--readable-secondary, #52634f); font-size: 15px; line-height: 1.75; margin: 12px 0; }
+.token-detail .token-header :is(.eyebrow, .source-pill, .launch-origin-tag) { color: #365343; font-size: 12px; line-height: 1.6; }
+.token-detail .token-header .source-pill { margin-top: 0; }
+.token-detail .token-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+.token-facts { display: grid; gap: 12px; margin: 22px 0; font-size: 14px; }
+.token-facts > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; }
+.token-facts dt, .token-field-label { color: var(--readable-secondary, #52634f); font-size: 13px; line-height: 1.6; }
+.token-facts dd { margin: 0; color: var(--readable-ink, #263d31); font-weight: 500; overflow-wrap: anywhere; }
+.token-copy-field { margin: 16px 0; }
+.token-detail :is(.token-mint, .token-transaction) { display: flex; align-items: center; gap: 12px; margin: 6px 0 0; padding: 10px 12px; background: #f1f2e7; border: 1px solid #dce1d0; border-radius: 8px; }
+.token-detail :is(.token-mint code, .token-transaction code, .token-transaction a) { min-width: 0; flex: 1; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; line-height: 1.65; color: #2f503d; overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+.token-detail .token-transaction a { text-decoration: underline; text-underline-offset: 3px; }
+.token-detail :is(.token-mint, .token-transaction) button { flex-shrink: 0; min-width: 44px; min-height: 44px; display: grid; place-items: center; padding: 10px; }
+.token-detail .token-copy-status:empty { display: none; }
+.token-detail .token-links { flex-wrap: wrap; gap: 12px 20px; font-size: 14px; margin: 16px 0 0; }
+.token-detail .token-links a { text-decoration: underline; text-underline-offset: 3px; }
+.page-main .token-detail .surface { background: var(--readable-paper, #fffaf2); color: var(--readable-ink, #263d31); }
+.page-main .token-detail .surface :is(p, small, dt, th, li, caption, .muted), .token-detail .market-metrics span { color: var(--readable-secondary, #52634f); }
+.token-detail .market-metrics span { font-size: 13px; }
+.token-detail .market-metrics b { color: var(--readable-ink, #263d31); font-size: 17px; font-weight: 550; }
+.token-detail .token-panels p { font-size: 14px; }
+.token-detail .token-panels :is(.mint, code) { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+ .token-detail .token-header { grid-template-columns: minmax(0, 1fr); padding: 20px 16px; gap: 22px; }
+ .token-detail .token-header h1 { font-size: 36px; }
+ .token-facts > div { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+ .token-detail :is(.token-mint, .token-transaction) { gap: 8px; padding: 8px; }
+ .token-detail .surface { padding: 20px 16px; }
+}

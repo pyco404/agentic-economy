@@ -21,3 +21,10 @@ it('accepts only SOL for new draft writes while retaining historical USDC reads'
  expect(DraftFields.parse({quoteAsset:'USDC'}).quoteAsset).toBe('USDC');
  expect(NewLaunchDraftFields.safeParse({quoteAsset:'SOL',quoteMint:'custom'}).success).toBe(false);
 });
+
+it('returns validation errors for incomplete project URLs instead of throwing during editing',()=>{
+ for(const key of ['website','twitter','telegram'])for(const value of ['h','https://','not a URL','http://example.com','https://user:secret@example.com']){
+  expect(()=>NewLaunchDraftFields.safeParse({[key]:value})).not.toThrow();
+  expect(NewLaunchDraftFields.safeParse({[key]:value}).success).toBe(false);
+ }
+});

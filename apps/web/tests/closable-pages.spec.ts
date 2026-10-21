@@ -18,7 +18,7 @@ for (const width of [1440, 390]) test(`Oxude-style hidden pages reopen over the 
     await nav(name); await expect(close).toBeFocused();
     const bounds = (await close.boundingBox())!; expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
     const url = page.url();
-    if (name === "Communities") await page.locator(".discovery-card").first().press("Enter");
+    if (name === "Communities") await page.getByRole("button", {name: "Explore Community", exact: true}).first().press("Enter");
     if (name === "Explore") await close.click();
     else await close.press("Enter");
     await expect(page.getByRole("heading", { name: "A city in motion." })).toBeVisible();

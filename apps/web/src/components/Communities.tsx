@@ -1,4 +1,3 @@
-import { ProjectLinks } from "./ProjectLinks";
 import { useState } from "react";
 import { ArrowRight, Building2, Search, Users } from "lucide-react";
 import type { ApiAdapter, Dashboard } from "../api/adapter";
@@ -32,7 +31,7 @@ export function Communities({ api, data, selectedId, onSelect, onExplore, onAgen
       <span className="source-pill">{data.mode === "demo" ? "Demo communities · simulated economy" : "Backend-registered communities"}</span></div>
       <div className="discovery-hero-plan" aria-hidden="true"><span /><span /><span /><span /><span /><b>GENESIS<br />A shared place to build.</b></div>
     </header>
-    <p className="small muted">Platform updates from Agentic Economy. Each token community retains its own identity and social accounts.</p><ProjectLinks />
+    <p className="small muted">Platform updates from Agentic Economy. Each token community retains its own identity and social accounts.</p>
     <div className="discovery-summary"><div><b>{number(data.communities.length)}</b><span>Registered communities</span></div>
       <div><b>{number(data.communities.reduce((n, c) => n + c.stats.activeAgents, 0))}</b><span>Active simulation agents</span></div>
       <div><b>{number(data.communities.reduce((n, c) => n + c.stats.verifiedTasks, 0))}</b><span>Verified useful services</span></div>

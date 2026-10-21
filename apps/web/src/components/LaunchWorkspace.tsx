@@ -12,6 +12,7 @@ import { LaunchExecution } from './LaunchExecution';
 import { LaunchTokenPreview } from './LaunchTokenPreview';
 import { LaunchLogoUpload } from './LaunchLogoUpload';
 import { LaunchQuotePicker } from './LaunchQuotePicker';
+import { LaunchProjectLinks } from './LaunchProjectLinks';
 import { PageHeading } from './Pages';
 const empty: Fields = {name:'',symbol:'',description:'',quoteAsset:'SOL',website:null,twitter:null,telegram:null,devBuyBps:0};
 /** Name/symbol input with a live UTF-8 byte counter (the protocol's unit) and inline errors; never truncates. */
@@ -127,7 +128,7 @@ export function LaunchWorkspace() {
   if(!owner){session.open();return;}
   setAttempted(true);
   // Nothing is saved or uploaded while any detail is invalid.
-  if(restoring||form.current.quoteAsset!=='SOL'||tokenFieldIssues(form.current,true).length||devBuyBlocked||!devBuyValid){setError('Fix the highlighted details before creating your coin.');return;}
+  if(restoring||form.current.quoteAsset!=='SOL'||tokenFieldIssues(form.current,true).length||!DraftFieldsSchema.safeParse(form.current).success||devBuyBlocked||!devBuyValid){setError('Fix the highlighted details before creating your coin.');return;}
   setReviewedDevBuyMax(!devQuote.loading&&devQuote.quote?.status==='available'&&devQuote.quote.bps===form.current.devBuyBps?devQuote.quote.maxQuoteCost:null);
   void run(async(signal,check)=>{
    if(uploads===null)throw new Error('Token preparation is still loading. Please try again in a moment.');
@@ -161,7 +162,7 @@ export function LaunchWorkspace() {
      <div className="launch-field"><label htmlFor="launch-description">Description</label><textarea id="launch-description" rows={4} value={fields.description} placeholder="What are you building?" aria-invalid={fieldIssues('description').length>0} aria-describedby="description-meta" onChange={e=>edit('description',e.target.value)}/>
       <p className="launch-field-meta" id="description-meta"><span>Optional · maximum {DESCRIPTION_MAX} characters.</span><span data-over={fields.description.length>DESCRIPTION_MAX}>{fields.description.length}/{DESCRIPTION_MAX}</span></p>
       {fieldIssues('description').length>0&&<p className="launch-field-error" role="alert">{fieldIssues('description')[0]!.message}</p>}</div>
-     <details><summary>Project links (optional)</summary>{(['website','twitter','telegram']as const).map(key=><label key={key}>{key==='twitter'?'X profile':key}<input type="url" value={fields[key]??''} placeholder="https://…" onChange={e=>edit(key,e.target.value)}/></label>)}</details>
+     <LaunchProjectLinks key={logoScope} fields={fields} onChange={edit}/>
      <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} onChange={quote=>{if(quote==='SOL')edit('quoteAsset',quote);}}/>
      <LaunchDevBuy onValidityChange={setDevBuyValid} bps={fields.devBuyBps} onChange={bps=>edit('devBuyBps',bps)} availability={devBuyAvailability} quoteAsset={fields.quoteAsset} symbol={fields.symbol} quote={devQuote.quote} loading={devQuote.loading} error={devQuote.error}/>
      <LaunchLogoUpload key={logoScope} selectionOnly disabled={busy||executionBusy||flowActive} onValidationChange={setLogoValidating} automaticMetadata={false} name={fields.name} symbol={fields.symbol} description={fields.description} quoteAsset={fields.quoteAsset}

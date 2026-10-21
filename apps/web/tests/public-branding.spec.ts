@@ -27,8 +27,7 @@ for(const width of [1440,390])test(`platform branding and historical activity at
  await expect(protocol).toHaveAttribute('target','_blank');
  await external.locator('summary').click();
  await life.scrollIntoViewIfNeeded();await page.screenshot({path:`artifacts/public-branding-activity-${width}.png`,fullPage:true});
- await page.getByRole('button',{name:'Communities',exact:true}).click();
- await page.getByRole('button',{name:`Explore ${community.name} community`,exact:true}).click();
+ await page.getByRole('button',{name:'Explore Community',exact:true}).click();
  await expect(page.getByRole('dialog',{name:`${community.name} community`,exact:true})).toContainText(expected);
  await page.getByRole('button',{name:'Back to communities',exact:true}).click();
  const navigate=async(name:string)=>{

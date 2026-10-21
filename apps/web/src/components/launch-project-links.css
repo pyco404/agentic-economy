@@ -1,0 +1,25 @@
+/* Space direct form sections consistently, including collapsed optional content. */
+.launch-workspace form > fieldset > .launch-field { margin-block: 0 28px; }
+.launch-project-links { margin-block: 28px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #faf8ef; }
+.launch-project-links h3 { margin: 0; font-size: 16px; color: #263d31; }
+.launch-project-links h3 span { font-weight: 400; color: #52634f; }
+.launch-project-links > p { margin: 8px 0 12px; font-size: 13px; line-height: 1.6; color: #52634f; }
+.launch-project-links .project-links-toggle { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 0; text-align: left; color: #33664d; background: transparent; border: 0; }
+.project-links-toggle > svg { margin-left: auto; flex-shrink: 0; transition: transform 160ms ease; }
+.project-links-toggle[aria-expanded="true"] > svg { transform: rotate(180deg); }
+.project-links-count { font-size: 12px; color: #52634f; }
+.project-links-fields { display: grid; gap: 18px; padding-top: 14px; }
+.project-links-fields[hidden] { display: none; }
+.launch-project-links .project-link-field label { display: flex; align-items: center; gap: 9px; margin: 0 0 8px; font-size: 14px; color: #263d31; }
+.project-link-field label svg { flex-shrink: 0; color: #52634f; }
+.launch-project-links .project-link-field input { width: 100%; margin: 0; }
+.launch-project-links input[aria-invalid="true"] { border-color: #914d35; }
+.launch-workspace fieldset.launch-quotes { margin-block: 28px; }
+.launch-project-links button:focus-visible { outline: 2px solid #33664d; outline-offset: 4px; border-radius: 4px; }
+@media(max-width:600px) {
+ .launch-workspace form > fieldset > .launch-field { margin-bottom: 24px; }
+ .launch-project-links, .launch-workspace fieldset.launch-quotes { margin-block: 24px; }
+ .launch-project-links { padding: 14px; }
+ .project-links-toggle { flex-wrap: wrap; }
+}
+@media(prefers-reduced-motion:reduce) { .project-links-toggle > svg { transition: none; } }

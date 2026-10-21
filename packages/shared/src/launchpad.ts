@@ -3,7 +3,7 @@ import { AmountString, PublicKey } from './primitives.js';
 import { DEV_BUY_MAX_BPS } from './constants.js';
 import { tokenFieldIssues } from './tokenRules.js';
 /** Additive workspace API, independent of agent identity/financial launch contracts. */
-const link=z.string().url().max(200).refine(s=>{const u=new URL(s);return u.protocol==='https:'&&!u.username&&!u.password;},'Use a public HTTPS link').nullable().default(null);
+const link=z.string().url().max(200).refine(s=>{try{const u=new URL(s);return u.protocol==='https:'&&!u.username&&!u.password;}catch{return false;}},'Use a public HTTPS link').nullable().default(null);
 /** Saved-draft fields. Values are stored exactly as entered (never trimmed or truncated); `tokenFieldIssues`
  * applies the protocol byte limits on every save and the launch-readiness rules before any upload. */
 export const DraftFields=z.object({name:z.string().max(256).default(''),symbol:z.string().max(64).default(''),description:z.string().max(4000).default(''),quoteAsset:z.enum(['SOL','USDC']).default('SOL'),website:link,twitter:link,telegram:link,

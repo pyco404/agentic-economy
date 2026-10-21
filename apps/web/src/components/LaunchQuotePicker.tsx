@@ -5,8 +5,8 @@ export function LaunchQuotePicker({value,symbol,onChange}:{value:string;symbol:s
  const error=launchQuoteError(value);
  return <fieldset className="launch-quotes" aria-describedby="launch-quote-help">
   <legend>Trading pair</legend>
-  <div className="launch-pair-preview" role="status" aria-live="polite" aria-label="Trading pair preview"><span>Trading pair</span><b>{value==='SOL'||value==='USDC'||value==='AECO'?tradingPair(symbol,value):'Trading pair unavailable'}</b></div>
-  <p id="launch-quote-help" className="small muted">New coins trade against SOL. The platform launch charge is 0.05 SOL.</p>
+  <div className="launch-pair-preview" role="status" aria-live="polite" aria-label="Trading pair preview"><b>{value==='SOL'||value==='USDC'||value==='AECO'?tradingPair(symbol,value).replace('/', ' / '):'Trading pair unavailable'}</b></div>
+  <p id="launch-quote-help" className="small muted">Tokens are paired with Solana.</p>
   {error&&<><p role="alert" className="launch-quote-error">{error}</p><button className="secondary" type="button" onClick={()=>onChange('SOL')}>Use SOL for this draft</button></>}
  </fieldset>;
 }

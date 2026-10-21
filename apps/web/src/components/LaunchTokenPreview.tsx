@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import type {DevBuyQuote,DraftFields} from '../api/shared';
+import {NewLaunchDraftFields,type DevBuyQuote,type DraftFields} from '../api/shared';
 import {formatTokens,percentFromBps} from '../api/devBuy';
 import './launch-token-preview.css';
 import {TokenSocialLinks} from './TokenSocialLinks';
@@ -14,7 +14,7 @@ export function LaunchTokenPreview({fields,file,imageUrl,devBuyQuote=null}:{fiel
   <p className="launch-preview-description">{fields.description.trim()||'Your description will appear here.'}</p>
   <div className="launch-preview-pair"><span>Trading pair</span><strong>{symbol}/{fields.quoteAsset}</strong></div>
   {fields.devBuyBps>0&&<div className="launch-preview-dev-buy"><span>Developer Buy</span><strong>{percentFromBps(fields.devBuyBps)}% of supply{devBuyQuote?.status==='available'&&devBuyQuote.bps===fields.devBuyBps?` · ≈ ${formatTokens(devBuyQuote.tokenAmount)} ${symbol}`:''}</strong></div>}
-  <TokenSocialLinks website={fields.website} twitter={fields.twitter} telegram={fields.telegram}/>
+  <TokenSocialLinks {...Object.fromEntries((['website','twitter','telegram'] as const).map(key=>[key,NewLaunchDraftFields.shape[key].safeParse(fields[key]).success?fields[key]:null]))}/>
   <p className="small muted">Preview only. New images stay on this device until you choose Create Coin.</p>
  </section>;
 }

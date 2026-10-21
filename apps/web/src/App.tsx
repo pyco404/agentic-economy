@@ -101,6 +101,7 @@ export default function App() {
     [query, setQuery] = useState(""),
     [selected, setSelected] = useState<BuildingVisual | null>(null),
     [agentId, setAgentId] = useState<string | null>(null),
+    [communityId, setCommunityId] = useState<string | null>(null),
     [followingAgentId, setFollowingAgentId] = useState<string | null>(null),
     [workplaceHighlights, setWorkplaceHighlights] = useState<string[]>([]),
     [growth, setGrowth] = useState(0),
@@ -215,21 +216,12 @@ export default function App() {
     city.current?.focus(b.x, b.z);
   };
   const exploreCommunity = (id: string) => {
-    if (!go("world")) return;
-    const c = data?.communities.find((c) => c.id === id);
-    const b =
-      buildings.find((b) => b.id === c?.headquartersBuildingId) ??
-      (api.kind === "demo"
-        ? buildings.filter((b) => b.kind === "headquarters")[
-            data?.communities.findIndex((c) => c.id === id) ?? 0
-          ]
-        : undefined);
-    if (b) {
-      setTimeout(() => focus(b), 100);
-    } else {
-      setExplorer(true);
-    }
+    const c = data?.communities.find(c => c.id === id);
+    const b = c?.headquartersBuildingId ? buildings.find(b => b.id === c.headquartersBuildingId) : undefined;
+    if (b && go("world")) focus(b);
   };
+  const openCommunity = (id: string) => { if (go("communities")) setCommunityId(id); };
+
   const regionUpdate = useCallback(
     (markers: typeof regionMarkers) => setRegionMarkers(markers),
     [],
@@ -891,6 +883,7 @@ export default function App() {
                     <aside
                       className="selection-panel"
                       aria-label="Building details"
+                      data-building-id={selectedNow.id}
                     >
                       <button
                         className="close"
@@ -903,6 +896,7 @@ export default function App() {
                         GENESIS / {selectedNow.chunkId}
                       </span>
                       <h2>{selectedNow.name}</h2>
+                      {data?.communities.filter(c => c.headquartersBuildingId === selectedNow.id).map(c => <p key={c.id}>Headquarters of <button className="text-button" onClick={() => openCommunity(c.id)}>{c.name} (${c.symbol})</button></p>)}
                       <span className="tag">
                         {readable(selectedNow.sourceKind ?? selectedNow.kind)} ·{" "}
                         {isDemo ? "Demo building" : "Server building"}
@@ -976,11 +970,11 @@ export default function App() {
                     <OverlayClose onClose={closePage} />
                   </div>
                   {page === "communities" && (
-                    <Communities onCloseWorld={closePage} data={data} onExplore={exploreCommunity} onAgent={setAgentId} onToken={openToken}/>
+                    <Communities api={api} selectedId={communityId} onSelect={setCommunityId} onCloseWorld={closePage} data={data} onExplore={exploreCommunity} onAgent={setAgentId} onToken={openToken}/>
                   )}{" "}
                   {page === "explore" && <Explore api={api} data={data} mint={tokenMint}
                     onToken={openToken} onBack={() => go("explore")} onWorld={exploreCommunity}
-                    onAgent={setAgentId} onCommunity={() => go("communities")}/>}
+                    onAgent={setAgentId} onCommunity={openCommunity}/>}
                   {page === "studio" && (
                     <Studio
                       data={data}

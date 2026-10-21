@@ -82,6 +82,28 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  expect(await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoSigningKind)).toBe(viewport.width>700?'standard':'injected');
  const preparation:string[]=[];page.on('request',r=>{if(/launchpad\/drafts/.test(r.url()) && (r.method()!=='GET'||r.url().endsWith('/review')))preparation.push(`${r.method()} ${new URL(r.url()).pathname.split('/').slice(4).join('/')}`);});
  await page.getByLabel('Token name',{exact:true}).fill('Moss Community');await page.getByLabel('Symbol',{exact:true}).fill('MOSS');await page.getByRole('textbox',{name:'Description',exact:true}).fill('A genuine backend-persisted draft.');
+ const projectLinks=page.getByRole('region',{name:'Project links (Optional)'});
+ await projectLinks.getByRole('button',{name:'Add project links',exact:true}).click();
+ await page.getByLabel('Website',{exact:true}).fill('h');
+ await expect(projectLinks.getByRole('alert')).toContainText('HTTPS');
+ await page.getByLabel('Website',{exact:true}).fill('http://unsafe.example');
+ await expect(page.getByLabel('Website',{exact:true})).toHaveAttribute('aria-invalid','true');
+ await expect(projectLinks.getByRole('alert')).toContainText('HTTPS');
+ await expect(page.getByRole('region',{name:'Live token preview'}).getByRole('link',{name:'Website',exact:false})).toHaveCount(0);
+ await page.getByLabel('Website',{exact:true}).fill(' https://Moss.example/about ');
+ await page.getByLabel('X (Twitter)',{exact:true}).fill('https://x.com/mosscoin');
+ await page.getByLabel('Telegram',{exact:true}).fill('https://t.me/mosscoin');
+ await projectLinks.getByRole('button',{name:/Hide project links/}).press('Enter');
+ await expect(page.getByLabel('Website',{exact:true})).toBeHidden();
+ await projectLinks.getByRole('button',{name:/Edit project links/}).press('Enter');
+ await expect(page.getByLabel('Website',{exact:true})).toHaveValue('https://moss.example/about');
+ await expect(projectLinks.getByRole('alert')).toHaveCount(0);
+ await expect(page.getByRole('region',{name:'Live token preview'}).getByRole('link',{name:'Website',exact:false})).toHaveAttribute('href','https://moss.example/about');
+ // Draft autosave must retain the links before asset preparation.
+ await expect.poll(async()=>{const response=await page.request.get(`http://${new URL(site).hostname}:8796/api/v1/launchpad/drafts`);return (await response.json()).items.find((d:any)=>d.wallet===wallet)?.fields.website;}).toBe('https://moss.example/about');
+ const space=await page.evaluate(()=>{const links=document.querySelector('.launch-project-links')!.getBoundingClientRect(),pair=document.querySelector('.launch-quotes')!.getBoundingClientRect();return pair.top-links.bottom;});
+ expect(space).toBeGreaterThanOrEqual(24);
+ await page.screenshot({path:`artifacts/project-links-${viewport.width}.png`,fullPage:true});
  await page.getByRole('button',{name:'Create Coin',exact:true}).click();
  if(viewport.mode==='unavailable'){
   await expect(page.getByRole('status').filter({hasText:'Your draft is saved.'})).toContainText('Your draft is saved. Logo uploads are temporarily unavailable.');
@@ -95,14 +117,13 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
   await expect(page.getByRole('alert')).toContainText('Your token assets could not be prepared');await page.getByRole('button',{name:'Create Coin',exact:true}).click();
  }
  const review=page.getByRole('region',{name:'Token review'});
- await expect(review).toContainText('Your token details and logo are ready.',{timeout:30000});await expect(review).not.toContainText(wallet);
- await review.getByText('Verified token assets',{exact:true}).click();
- const references=review.locator('details code');
- await expect(references).toHaveCount(2);
- for(const reference of await references.all())await expect(reference).toHaveText('ipfs://bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m');
- await expect(review).toContainText('Backend checks passed');
- await expect(review).toContainText('MOSS/SOL');
- await expect(review).toContainText('0.05 SOL');
+ // Demo fixture deliberately stops before financial execution; inspect authoritative prepared assets.
+ await expect(review).toContainText('Your draft is saved. Coin creation is not available yet.',{timeout:30000});
+ await expect(review).not.toContainText(wallet);
+ const prepared=(await (await page.request.get(`http://${new URL(site).hostname}:8796/api/v1/launchpad/drafts`)).json()).items.find((d:any)=>d.wallet===wallet);
+ expect(prepared.image.ipfsUri).toBe('ipfs://bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m');
+ expect(prepared.metadata.ipfsUri).toBe(prepared.image.ipfsUri);
+ expect(prepared.fields).toMatchObject({website:'https://moss.example/about',twitter:'https://x.com/mosscoin',telegram:'https://t.me/mosscoin',quoteAsset:'SOL'});
  await expect(page.getByRole('button',{name:'Generate metadata',exact:true})).toHaveCount(0);
  expect(preparation.filter(p=>p.endsWith('/logo'))).toHaveLength(viewport.mode==='retry'?2:1);
  if(viewport.mode==='retry'){expect(uploadKeys).toHaveLength(2);expect(uploadKeys[0]).toBeTruthy();expect(uploadKeys[1]).toBe(uploadKeys[0]);expect(metadataKeys).toHaveLength(2);expect(metadataKeys[0]).toBeTruthy();expect(metadataKeys[1]).toBe(metadataKeys[0]);}else expect(preparation.some(p=>p.endsWith('/metadata'))).toBe(true);
@@ -110,9 +131,10 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  await page.screenshot({path:`artifacts/launch-workspace-review-${viewport.width}.png`,fullPage:true});
  await page.reload();await waitForApplicationReady(page);await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();expect(signing).toBe(1);
  await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
+ await expect(page.getByLabel('Website',{exact:true})).toHaveValue('https://moss.example/about');await expect(page.getByLabel('X (Twitter)',{exact:true})).toHaveValue('https://x.com/mosscoin');await expect(page.getByLabel('Telegram',{exact:true})).toHaveValue('https://t.me/mosscoin');
  await page.getByRole('button',{name:'My Drafts',exact:true}).click();await expect(page.getByRole('dialog',{name:'My Drafts'})).toContainText('Moss Community');await page.getByRole('button',{name:'Close My Drafts'}).click();
  const before=preparation.length;await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toBeVisible();expect(preparation.slice(before).map(p=>p.split(' ')[0])).toEqual(['GET']);
- await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toContainText('Latest details');await expect(review).toContainText('Your token details and logo are ready.');
+ await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toContainText('Your draft is saved. Coin creation is not available yet.');
  // Wallet changes revoke the cookie session; drafts disappear immediately.
  await page.evaluate(()=>(window as unknown as TestWalletWindow).__aecoWalletChanged?.());
 

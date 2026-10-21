@@ -21,7 +21,7 @@ function TokenArt({token,building}:{token:VerifiedToken;building?:BuildingVisual
 const date = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 export function Explore({ api, data, mint, onToken, onBack, onWorld, onAgent, onCommunity }: {
   api: ApiAdapter; data: Dashboard; mint: string | null; onToken: (mint: string) => void;
-  onBack: () => void; onWorld: (id: string) => void; onAgent: (id: string) => void; onCommunity: () => void;
+  onBack: () => void; onWorld: (id: string) => void; onAgent: (id: string) => void; onCommunity: (id: string) => void;
 }) {
   const { tokens:verifiedTokens, loading, error, retry } = useTokens(api, data);
   const markets=useTokenMarkets(api,verifiedTokens);
@@ -67,7 +67,7 @@ export function Explore({ api, data, mint, onToken, onBack, onWorld, onAgent, on
 }
 function TokenDetail({ token: { community: c, launch,market }, api,data, source, building, onWorld, onAgent, onCommunity }: {
   token: VerifiedToken; api:ApiAdapter; data: Dashboard; source: string; building?: BuildingVisual;
-  onWorld: (id: string) => void; onAgent: (id: string) => void; onCommunity: () => void;
+  onWorld: (id: string) => void; onAgent: (id: string) => void; onCommunity: (id: string) => void;
 }) {
   const [copy, setCopy] = useState("");
   const validPump = (() => { try { const url = new URL(c.links.pumpFun); return url.protocol === "https:" && ["pump.fun", "www.pump.fun"].includes(url.hostname) && url.pathname.includes(c.mint); } catch { return false; } })();
@@ -78,7 +78,7 @@ function TokenDetail({ token: { community: c, launch,market }, api,data, source,
     <p className="token-copy-status" role="status">{copy}</p>
     <div className="token-links">{validPump&&!launch.execution && <details><summary>Protocol details</summary><a href={c.links.pumpFun} target="_blank" rel="noopener noreferrer">Pump.fun · external protocol ↗</a></details>}{launch.mode !== "demo" && <a href={c.links.explorer} target="_blank" rel="noreferrer">Token explorer ↗</a>}</div><TokenSocialLinks {...c.links}/></div><TokenArt token={{community:c,launch}} building={building}/></header>
     <TokenMarketPanel market={market} mint={c.mint} api={api}/>
-    <div className="token-panels"><section className="surface"><span className="eyebrow">IN THE SHARED WORLD</span><h2>{c.name}</h2><p>{c.stats.agents} agents · {c.stats.activeAgents} active · {c.stats.verifiedTasks.toLocaleString()} verified useful services</p><p>Headquarters: {building?.name ?? "Location unavailable in this view"}</p><div className="discovery-dialog-actions"><button className="primary" disabled={!building} onClick={() => onWorld(c.id)}>View in World <ArrowRight size={15}/></button><button className="secondary" onClick={onCommunity}>Communities</button></div>
+    <div className="token-panels"><section className="surface"><span className="eyebrow">IN THE SHARED WORLD</span><h2>{c.name}</h2><p>{c.stats.agents} agents · {c.stats.activeAgents} active · {c.stats.verifiedTasks.toLocaleString()} verified useful services</p><p>Headquarters: {building?.name ?? "Location unavailable in this view"}</p><div className="discovery-dialog-actions"><button className="primary" disabled={!building} onClick={() => onWorld(c.id)}>View in World <ArrowRight size={15}/></button><button className="secondary" onClick={() => onCommunity(c.id)}>Explore Community</button></div>
       <h3>Community agents</h3>{data.agents.filter((a) => a.communityId === c.id).slice(0, 5).map((a) => <p key={a.id}><button className="secondary" onClick={() => onAgent(a.id)}>{displayAgentName(a)} · {a.profession.replaceAll("_", " ")} · {a.state}</button></p>)}{!data.agents.some((a) => a.communityId === c.id) && <p>No associated agents in the loaded snapshot.</p>}</section>
       <section className="surface"><span className="eyebrow">ACTUAL SIMULATION EVENTS</span><h2>Life in the city.</h2>{data.activities.filter((e) => e.communityId === c.id).slice(0, 6).map((e) => <p key={e.id}>{displayActivity(e, data.agents)}<br/><small>Simulation tick {e.tick}</small></p>)}{!data.activities.some((e) => e.communityId === c.id) && <p>No associated events in the loaded activity feed.</p>}<p>Launch ID: <span className="mint">{launch.id}</span></p><p className="small muted">{launch.mode === "demo" ? "This launch was confirmed by the mock chain. It is not a real blockchain transaction." : "The confirmed launch record matches this community, mint and signature."}</p></section></div>
   </div>;

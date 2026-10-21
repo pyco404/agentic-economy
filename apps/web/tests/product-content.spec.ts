@@ -24,7 +24,7 @@ for(const viewport of viewports)test(`current product content and persistent wor
  await page.screenshot({path:`artifacts/product-home-${viewport.width}.png`});
  await open(page,'Launch');await expect(page.getByRole('region',{name:'Live token preview'})).toBeVisible();
  await page.getByLabel('Token name',{exact:true}).fill('My own community');await page.getByLabel('Symbol',{exact:true}).fill('MINE');
- await page.getByText('Project links (optional)',{exact:true}).click();await page.getByLabel('X profile',{exact:true}).fill('https://x.com/myowncoin');
+ await page.getByRole('button',{name:'Add project links',exact:true}).click();await page.getByLabel('X (Twitter)',{exact:true}).fill('https://x.com/myowncoin');
  const preview=page.getByRole('region',{name:'Live token preview'});
  await expect(preview).toContainText('MINE/SOL');await expect(preview.getByRole('link',{name:'X',exact:false})).toHaveAttribute('href','https://x.com/myowncoin');
  await page.getByLabel('Token logo file').setInputFiles(new URL('../public/aeco-website-logo.png',import.meta.url).pathname);

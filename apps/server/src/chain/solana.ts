@@ -241,19 +241,28 @@ export class SolanaRpcChain implements ChainGateway {
   }
 
   async buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction> {
+    return this.buildLaunch(input);
+  }
+  async buildUnsignedLaunchTransaction(input: Omit<BuildLaunchInput,"mintSecretKey">): Promise<BuiltLaunchTransaction> {
+    return this.buildLaunch(input);
+  }
+  private async buildLaunch(input: Omit<BuildLaunchInput,"mintSecretKey"> & {mintSecretKey?:Uint8Array}): Promise<BuiltLaunchTransaction> {
     if(this.launchOptions?.cluster==="mainnet-beta"){const {OFFICIAL_TREASURIES}=await import("@agentic-economy/shared");if(input.platformTreasury!==OFFICIAL_TREASURIES.platform||input.agentRewardsTreasury!==OFFICIAL_TREASURIES.agentRewards||input.quoteAsset==="USDC")throw new ChainFeatureUnavailable("invalid_mainnet_launch","Mainnet launches require official treasuries and SOL");}
     const genesisHash=await this.launchGenesis();
     if(input.quoteAsset==="USDC")await this.verifyQuoteMint(input.quoteMint??"");
     const table=await this.launchTable();
-    let global:unknown;
+    let global:unknown,globalAccountBase64:string|undefined,protocolFeeRecipients:{feeRecipient:string;buybackFeeRecipient:string}|undefined;
     if(input.devBuy){
       const support=await this.devBuySupport();
       if(!support.available)throw new ChainFeatureUnavailable("dev_buy_unavailable",support.reason??"Developer Buy is unavailable on this network");
-      global=await new sdk.OnlinePumpSdk(this.conn).fetchGlobal();
+      const account=await this.conn.getAccountInfo(sdk.GLOBAL_PDA,"confirmed");
+      if(!account || account.owner.toBase58()!==PUMP_PROGRAM_ID)throw new ChainFeatureUnavailable("dev_buy_unavailable","Global account is unavailable or unrecognized");
+      global=sdk.PUMP_SDK.decodeGlobal(account);globalAccountBase64=account.data.toString("base64");
+      if(!input.mintSecretKey){const g=global as {feeRecipient:PublicKey;buybackFeeRecipients:PublicKey[]};protocolFeeRecipients={feeRecipient:g.feeRecipient.toBase58(),buybackFeeRecipient:g.buybackFeeRecipients[0]!.toBase58()};}
     }
     const latest=await this.conn.getLatestBlockhash("confirmed"),{buildPumpLaunch,devBuyTokenAccount}=await import("./pump-builder.js");
     let built;
-    try{built=await buildPumpLaunch(input,latest.blockhash,[table],global);}
+    try{built=input.mintSecretKey?await buildPumpLaunch({...input,mintSecretKey:input.mintSecretKey},latest.blockhash,[table],global):await (await import("./pump-builder.js")).buildUnsignedPumpLaunch(input,latest.blockhash,[table],global,protocolFeeRecipients);}
     catch(e){if(input.devBuy)throw new ChainFeatureUnavailable("dev_buy_unavailable",(e as Error).message);throw e;}
     const tokenAccount=input.devBuy?devBuyTokenAccount(input.launcherWallet,input.mint):null;
     const before=await this.conn.getBalance(new PublicKey(input.launcherWallet),"confirmed").catch(()=>null); // estimate input only
@@ -280,6 +289,7 @@ export class SolanaRpcChain implements ChainGateway {
     // simulated launcher debit minus the network fee and the platform charge. Omitted if the wallet moved meanwhile.
     const after=simulation.value.accounts?.[0]?.lamports,rent=after==null||before===null?null:BigInt(before)-BigInt(after)-BigInt(fee.value)-LAUNCH_FEE_LAMPORTS-(devBuy?.quoteSpent??0n);
     return {transaction:built.transaction,lastValidBlockHeight:latest.lastValidBlockHeight,demo:false,genesisHash,estimatedNetworkFeesLamports:String(fee.value),
+      ...(!input.mintSecretKey?{mintSigningContext:{lookupTables:[{key:table.key.toBase58(),addresses:table.state.addresses.map(a=>a.toBase58())}],...(globalAccountBase64?{globalAccountBase64}:{}),...(protocolFeeRecipients?{protocolFeeRecipients}:{})}}:{}),
       ...(rent!==null&&rent>0n&&rent<100_000_000n?{estimatedAccountRentLamports:rent.toString()}:{}),
       ...(devBuy?{devBuy:{tokenAmount:devBuy.tokenAmount.toString(),quoteSpent:devBuy.quoteSpent.toString()}}:{})};
   }

@@ -1,6 +1,8 @@
 # Phase 2 acceptance status — 22 October 2026
 
-This is the current checklist; earlier dated reports remain historical evidence. Phase 2 is not yet closed. Do not start Phase 3.
+This is the current checklist; earlier dated reports remain historical evidence. **Phase 2 cannot close, and Phase 3 cannot begin, until the owner launches the official $AECO token through https://useaeco.xyz on Solana Mainnet and independent on-chain verification passes.** Production readiness and separate Mainnet activation/transaction approvals come first. No $AECO parameters or transaction are approved by this requirement.
+
+[Mandatory sequence, parameter approvals and release evidence checklist](PRODUCTION_RELEASE_CHECKLIST.md).
 
 | Milestone | Status |
 | --- | --- |
@@ -9,6 +11,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
+| Official $AECO Mainnet launch | **REQUIRED / NOT LAUNCHED:** owner-initiated production TOKEN/SOL launch and independent mint/supply/metadata/fee-routing/finality/Explore verification are mandatory before Phase 2 completion and Phase 3 |
 | Public website | **LIVE AND VERIFIED:** https://useaeco.xyz; www redirect, valid apex/www/API TLS, official API/WSS, actual-origin automated auth/session refresh and responsive browser checks pass; transactions remain off |
 | Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **6758f91**, compatible contract 0.5.2; fresh HTTPS/API/database checks pass. Prior matched 6758f91 release passed WSS, clean routes, persistent world and responsive browser checks. New capacity/header live acceptance remains pending; financial execution off |
 

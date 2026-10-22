@@ -770,6 +770,8 @@ export default function App() {
                         <b>{population.toLocaleString()}</b>
                         <small>
                           {growth ? "Demo capacity preview" : "Active agents"}
+                          {data.stats.aecoPopulation?.status === "current" && <span> · {data.stats.aecoPopulation.holders.toLocaleString()} $AECO Holders · {data.stats.aecoPopulation.commonAgents.toLocaleString()} Common Agents</span>}
+                          {data.stats.aecoPopulation && ["syncing", "stale"].includes(data.stats.aecoPopulation.status) && <span> · Common Agents updating</span>}
                         </small>
                       </span>
                     </div>

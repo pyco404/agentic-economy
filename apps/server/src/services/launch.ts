@@ -1,3 +1,4 @@
+import { assertLaunchWalletAllowed, launchWalletAllowed } from "./launch-permission.js";
 import {SignedLaunchStore} from "../store/signed-launch.js";
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
@@ -47,7 +48,8 @@ const NETWORK_FEE_ESTIMATE_LAMPORTS = 50_000n;
 
 /**
  * Launch lifecycle. Deliberately NO per-wallet limits, cooldowns, history checks, duplicate-metadata
- * gates or approvals (spec §2.3): any authenticated wallet may prepare any number of launches.
+ * quotas. Mainnet rollout additionally restricts launching to the official deployer until
+ * a separately approved public-launch release; Devnet testing is unaffected.
  */
 export class LaunchService {
   constructor(
@@ -94,6 +96,7 @@ export class LaunchService {
   }
 
   async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
+    assertLaunchWalletAllowed(this.config, wallet);
     this.assertEnabled();
     if(this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
     if(!currentQuoteAllowed(quote))throw new AppError("feature_disabled","Only SOL is supported for new launches");
@@ -118,6 +121,7 @@ export class LaunchService {
       }
       if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount)throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
     }
+    assertLaunchWalletAllowed(this.config, wallet);
     const mintKp = Keypair.generate();
     const mint = mintKp.publicKey.toBase58();
     let built;
@@ -165,6 +169,7 @@ export class LaunchService {
       updatedAt: at,
     };
     if(owned&&!launch.execution)throw new AppError("feature_disabled","Chain adapter did not return a safe-network launch preparation");
+    assertLaunchWalletAllowed(this.config, wallet, launch.execution?.network);
     await this.store.createLaunch(launch);
     return { launch, transaction: built.transaction, demoTransaction: built.demo, lastValidBlockHeight: built.lastValidBlockHeight };
   }
@@ -191,10 +196,12 @@ export class LaunchService {
 
   /** Persist submission BEFORE broadcast: a lost RPC response remains recoverable. */
   async submit(wallet:string,id:string,signed:string):Promise<TokenLaunch>{
+    assertLaunchWalletAllowed(this.config, wallet);
     this.assertEnabled();
     if(!this.config.pumpLaunch.enabled||!this.chain.submitLaunchTransaction)throw new AppError("feature_disabled","Safe-network launch execution is disabled");
     const record=await this.store.getLaunch(id);if(!record)throw new AppError("not_found","Launch not found");
     const l=record.launch;if(l.launcherWallet!==wallet)throw new AppError("forbidden","Only the creator can submit this launch");
+    assertLaunchWalletAllowed(this.config, wallet, l.mode === "production" ? "mainnet-beta" : l.execution?.network);
     if(!l.execution)throw new AppError("bad_request","Launch has no stored execution preparation");
     const {validateSignedPumpLaunch}=await import("../chain/pump-builder.js");
     let checked;try{checked=await validateSignedPumpLaunch(l.execution.transaction,signed);}catch{throw new AppError("bad_request","Wallet signatures or transaction message do not match the prepared launch");}
@@ -212,10 +219,12 @@ export class LaunchService {
       const expired=this.transition(l,"expired");await this.store.updateLaunch(expired,record.version);return expired;
     }
     try{await this.chain.assertLaunchSubmissionAllowed?.();}catch(e){this.diagnose({stage:'submission_blocked',launchId:id,signature:checked.signature,code:e instanceof ChainFeatureUnavailable?e.code:'operator_gate'});throw new AppError('feature_disabled',e instanceof ChainFeatureUnavailable?e.message:'Launch submission is disabled by this verification environment');}
+    assertLaunchWalletAllowed(this.config, wallet, l.execution.network);
     this.diagnose({stage:'persisting_signed_payload',launchId:id,signature:checked.signature});
     await this.submissions.put({wallet,launchId:id,mint:l.mint,genesisHash:l.execution.genesisHash,signature:checked.signature,transaction:signed});
     const pending={...this.transition(l,"submitted"),signature:checked.signature};
     try{await this.store.updateLaunch(pending,record.version);}catch(e){if(e instanceof ConflictError){const latest=(await this.store.getLaunch(id))!.launch;if(latest.signature!==checked.signature)throw new AppError("conflict","Another launch submission won the race");return latest;}throw e;}
+    assertLaunchWalletAllowed(this.config, wallet, l.execution.network);
     this.diagnose({stage:'rpc_broadcast',launchId:id,signature:checked.signature});
     try{const returned=await this.chain.submitLaunchTransaction(signed);if(returned!==checked.signature)throw new Error("RPC signature mismatch");}catch{this.diagnose({stage:"rpc_submission_uncertain",launchId:id,signature:checked.signature});throw new AppError("unavailable","Submission is uncertain. Check this launch again; retry only the same signed transaction.");}
     this.diagnose({stage:"rpc_acknowledged",launchId:id,signature:checked.signature});
@@ -223,9 +232,11 @@ export class LaunchService {
   }
   /** Explicitly resume only the original signed message; never prepare a new mint or ask the wallet again. */
   async resume(wallet:string,id:string,transaction?:string){
+    assertLaunchWalletAllowed(this.config, wallet);
     this.assertEnabled();
     const record=await this.store.getLaunch(id);
     if(!record||record.launch.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
+    assertLaunchWalletAllowed(this.config, wallet, record.launch.mode === 'production' ? 'mainnet-beta' : record.launch.execution?.network);
     const reconciled=await this.refresh(wallet,id);
     if(['confirmed','failed','expired'].includes(reconciled.status))return reconciled;
     const receipt=await this.submissions.get(wallet,id);
@@ -237,7 +248,7 @@ export class LaunchService {
   async recovery(wallet:string,id:string){
     const record=await this.store.getLaunch(id);if(!record||record.launch.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
     const receipt=await this.submissions.get(wallet,id);if(!receipt)return undefined;
-    return {signature:receipt.signature,canResume:!!receipt.transaction&&this.config.pumpLaunch.enabled&&!['confirmed','failed','expired'].includes(record.launch.status)};
+    return {signature:receipt.signature,canResume:launchWalletAllowed(this.config,wallet,record.launch.mode === "production" ? "mainnet-beta" : record.launch.execution?.network)&&!!receipt.transaction&&this.config.pumpLaunch.enabled&&!['confirmed','failed','expired'].includes(record.launch.status)};
   }
   async refresh(wallet:string,id:string){
     const initial=await this.store.getLaunch(id);if(!initial)throw new AppError("not_found","Launch not found");const l=initial.launch;if(l.launcherWallet!==wallet)throw new AppError("forbidden","Only the creator can inspect this preparation");

@@ -11,7 +11,7 @@ import { OFFICIAL_TREASURIES } from '@agentic-economy/shared';
 import { coSignReviewedMint, inspectMintSigningReview, PLANNED_AECO_MINT } from '../src/chain/offline-mint.js';
 
 const args = process.argv.slice(2);
-const allowed = new Set(['--review','--sign','--keypair','--state-dir','--approved-message-sha256','--out']);
+const allowed = new Set(['--review','--sign','--keypair','--state-dir','--approved-message-sha256','--renew-from-message-sha256','--out']);
 const options = new Map<string,string>();
 for(let i=0;i<args.length;i++){
   const arg=args[i]!;
@@ -30,6 +30,8 @@ try {
     note:'Offline inspection does not attest chain, lookup-table contents, simulation, finality or owner approval. No transaction sent.'}));
   if(options.has('--sign')){
     const approved=required('--approved-message-sha256');if(approved!==review.messageSha256)throw new Error('Approved hash differs from review');
+    const predecessor=options.get('--renew-from-message-sha256');
+    if(predecessor!==review.renewal?.previousMessageSha256)throw new Error('Renewal needs explicit approval of its preceding message');
     // Refuse every enclosing Git worktree, including the preserved parent checkout.
     const outside=(p:string)=>{let dir=lstatSync(p).isDirectory()?realpathSync(p):dirname(realpathSync(p));while(true){if(existsSync(join(dir,'.git')))return false;const parent=dirname(dir);if(parent===dir)return true;dir=parent;}};
     const keyPath=required('--keypair'),state=resolve(required('--state-dir')),output=resolve(required('--out'));
@@ -41,7 +43,7 @@ try {
     try {
       const stat=fstatSync(fd);
       if(!stat.isFile()||stat.size>1024||(stat.mode&0o077)!==0||stat.uid!==process.getuid?.())throw new Error('Keypair must be a private, user-owned regular file');
-      await withMintReservation(state,{launchId:review.launchId,mint:review.mint,messageSha256:approved},async()=>{
+      await withMintReservation(state,{launchId:review.launchId,mint:review.mint,messageSha256:approved,...(predecessor?{previousMessageSha256:predecessor}:{})},async()=>{
       const raw:unknown=JSON.parse(readFileSync(fd,'utf8'));
       if(!Array.isArray(raw)||raw.length!==64||!raw.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw new Error('Expected a local Solana keypair file');
       secret=Uint8Array.from(raw as number[]);
@@ -51,7 +53,7 @@ try {
       console.log('Mint-only signature saved. Phantom has not signed. Nothing was broadcast.');
       });
     }finally{secret?.fill(0);closeSync(fd);}
-  } else if(['--keypair','--state-dir','--approved-message-sha256','--out'].some(k=>options.has(k)))throw new Error('Signing arguments require explicit --sign');
+  } else if(['--keypair','--state-dir','--approved-message-sha256','--renew-from-message-sha256','--out'].some(k=>options.has(k)))throw new Error('Signing arguments require explicit --sign');
 }catch{
   // Never echo upstream exceptions, file contents, key paths or private material.
   console.error('Offline mint review/signing stopped. No transaction was broadcast. Check public review/hash, fixed policy, file permissions and existing reservation. Do not delete a reservation or retry another message without reconciliation.');

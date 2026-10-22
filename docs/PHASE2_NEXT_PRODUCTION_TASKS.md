@@ -1,5 +1,7 @@
 # Remaining Phase 2 production work
 
+**Deployment policy:** one permanent Railway `production` environment (frontend, backend/API, isolated PostgreSQL). Local tests/isolated Devnet verification → production build → explicit tested-commit production deployment → live verification. Staging promotion is not required. Migrations, secrets and financial activation are separate; legacy environments remain preserved pending verified retirement requirements and explicit deletion approval. [Release workflow](../infra/railway/README.md), [retirement audit](RAILWAY_SINGLE_PRODUCTION.md).
+
 The public website may run with execution off before Mainnet launch acceptance is complete. DNS/website deployment does not authorize a transaction, treasury signing or payouts. Physical mobile on-chain acceptance remains deferred at the owner's request; do not restart its old gateway or request another signature.
 
 ## Mandatory restricted rollout before Phase 3

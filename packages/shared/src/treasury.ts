@@ -79,7 +79,7 @@ export const TreasuryEntry = z
     tokenMint: PublicKey.nullable().describe("Community token whose launch/creator fees produced this receipt."),
     launchId: LaunchId.nullable(),
     supersedes: z.string().nullable(),
-    evidence:z.object({source:z.enum(['solana_rpc','mock_chain']),version:z.literal(1),network:z.enum(['mainnet-beta','devnet','localnet','demo']),distributed:AmountString,distributedDust:AmountString}).optional(),
+    evidence:z.object({source:z.enum(['solana_rpc','mock_chain']),version:z.literal(1),network:z.enum(['mainnet-beta','devnet','localnet','demo']),distributed:AmountString,distributedDust:AmountString.nullable().describe('Retained rounding units only when uniquely proven; null when the event and balances do not determine the gross amount.')}).optional(),
     recordedAt: z.iso.datetime({ offset: true }),
   })
   .meta({ id: "TreasuryEntry" });

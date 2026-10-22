@@ -63,6 +63,8 @@ paths:
                       - postgres
                   launchEnabled:
                     type: boolean
+                  preparationEnabled:
+                    type: boolean
                   quotes:
                     type: object
                     properties:
@@ -5357,6 +5359,30 @@ components:
             - feeRecipient
             - buybackFeeRecipient
           additionalProperties: false
+        renewal:
+          type: object
+          properties:
+            previousMessageSha256:
+              type: string
+              pattern: ^[a-f0-9]{64}$
+            previousLastValidBlockHeight:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+            finalizedBlockHeight:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+            checkedAt:
+              type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+          required:
+            - previousMessageSha256
+            - previousLastValidBlockHeight
+            - finalizedBlockHeight
+            - checkedAt
+          additionalProperties: false
       required:
         - version
         - launchId
@@ -7203,6 +7229,10 @@ components:
               $ref: "#/components/schemas/PublicKey"
             localMintReview:
               $ref: "#/components/schemas/LocalMintReview"
+            localMintReviewHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/LocalMintReview"
             platformOrigin:
               type: string
               const: PLATFORM
@@ -7368,6 +7398,10 @@ components:
               $ref: "#/components/schemas/PublicKey"
             localMintReview:
               $ref: "#/components/schemas/LocalMintReview"
+            localMintReviewHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/LocalMintReview"
             platformOrigin:
               type: string
               const: PLATFORM

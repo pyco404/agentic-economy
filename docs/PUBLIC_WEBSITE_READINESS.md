@@ -1,19 +1,19 @@
 # Official website readiness — 22 October 2026
 
-**LIVE, reverified 22 October 2026 after the `5fa0507` frontend/API rollout:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
+**LIVE, reverified 22 October 2026 after frontend `16e4bea` (API `5fa0507`):** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
 
 ## Actual deployed applications
 
 | Environment/service | Application SHA | Successful Railway deployment |
 | --- | --- | --- |
-| Production frontend | `5fa0507167695df96d57cecd332a45e9422209b2` | `2de54da5-8ac0-472e-85b0-db56533be625` |
+| Production frontend | `16e4bea3a4c55c8764b58e712a3bbc9526255cf8` | `18f11a0e-cf24-4469-be7e-aa564df8e042` |
 | Production API | `5fa0507167695df96d57cecd332a45e9422209b2` | `4a7f0533-98db-4e93-a47d-f0bcad9b237d` |
 | Staging frontend | `5fa0507167695df96d57cecd332a45e9422209b2` | `ca2e25bc-91b4-41c5-8485-3feed4e8b0b5` |
 | Staging API | `5fa0507167695df96d57cecd332a45e9422209b2` | `d044cfd5-c491-4dc8-b2a6-5f541e5c3213` |
 
-All four application services are SUCCESS at the compatible release, contract 0.6.0. Production was promoted once per service; no duplicate builds, DNS changes, financial changes or migrations were required. Both production repository triggers remain absent. Root documentation commits may follow this application SHA without another deployment.
+Production frontend is `16e4bea`; API and preserved legacy staging releases remain `5fa0507`, contract 0.6.0. Backend runtime is unchanged and compatible. This correction deployed only the tested frontend directly to production, once, with no staging promotion, backend build, DNS/financial/secret change or migration. Production repository triggers remain absent. Root documentation commits may follow the application SHA without another deployment.
 
-The public domain now serves `/assets/index-D3BDbBI-.js` (SHA-256 `41cc5232f5716d9f9e0b603f5cbb3aea2f63866d5290f8dc76860d91261cb6f2`), rather than the prior production bundle. Fresh actual public-origin checks verify routes, secure message-authenticated sessions, official API/WSS, responsive layouts and retained world with execution off. The deployed backend denies ordinary authenticated launch preparation, submission, resume and mint-signature import with 403. [Current release, database and browser evidence](evidence/direct-aeco-preparation-2026-10-22.json).
+The public domain now serves `/assets/index-Ckyn_yA3.js` (SHA-256 `44515ec865ae6893aa4087a642a223efec61fb528b5ec02fcbb4c1af90e31e97`), rather than the prior production bundle. Fresh actual public-origin checks verify routes, secure message-authenticated sessions, official API/WSS, responsive layouts and retained world with execution off. The deployed backend denies ordinary authenticated launch preparation, submission, resume and mint-signature import with 403. [Current allocation correction, release and fresh public browser evidence](evidence/developer-buy-selection-2026-10-22.json). [Existing isolated database and permission-gate evidence](evidence/direct-aeco-preparation-2026-10-22.json).
 
 ## Why the domain returned 404, and what changed
 

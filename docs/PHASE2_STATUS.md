@@ -6,7 +6,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | --- | --- |
 | Real SOL creator-fee distribution | **VERIFIED ON PUBLIC DEVNET** — 15,532 lamports Agent Rewards, 10,354 Platform, 1 retained dust; funding excluded from income |
 | Desktop Phantom Developer Buy | **COMPLETED** — ZAP 2%, 20,000,000 tokens; controlled 3%/3.5% tests separately verified |
-| Physical Phantom mobile | **PENDING** — Samsung Galaxy Z Fold6, Android; folded and unfolded acceptance required |
+| Physical Phantom mobile | **PARTIALLY VERIFIED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; mobile on-chain acceptance PENDING |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
 | Latest application staging release | **QUEUED** — 365ab4124b8a3fb2c904b59598029f9252b0f791 for both services; observed 22 October, no duplicate deployment requested |
@@ -59,3 +59,7 @@ Changed only the gate response policy to `same-origin`, preserving its strict ex
 A native browser-form regression passes at 344×882 and 690×829. The corrected live tunnel returns 401 anonymously, accepts its fresh invitation, and a real browser request receives a 200 challenge for the replacement wallet with the exact public HTTPS URI and Devnet chain. The superseded wallet returns 403, launchEnabled remains false, and no wallet signature or transaction was requested by automation. Physical Phantom sign-in remains pending the owner's retry. The tunnel is still operator-controlled; the invitation was renewed for 30 minutes and the old code/session invalidated.
 
 Underlying browser behavior: [Fetch Standard — append request Origin header](https://fetch.spec.whatwg.org/#append-a-request-origin-header).
+
+## Physical mobile results received
+
+All seven owner-reported physical checks passed on the Samsung Galaxy Z Fold6, plus local phone-image selection/preview. [Physical acceptance and screenshot record](evidence/phantom-fold6-physical-2026-10-22.md). This completes mobile authentication/layout acceptance, not mobile token creation or Developer Buy. Keep broadcasting blocked pending the specific FOLD6 transaction approval.

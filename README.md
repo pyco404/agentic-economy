@@ -69,6 +69,8 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 | Trading pairs | TOKEN/SOL only; optional Developer Buy of 0–3.5% paid in SOL | USDC launch code is retained but disabled and outside Phase 2; TOKEN/AECO is reserved for Phase 4 |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |
 
+[Phase 2 verification, 22 October](apps/server/docs/phase2-review-2026-10-22.md): actual public-Devnet SOL creator-fee collection and current staging Pinata uploads are verified. Physical Phantom mobile acceptance remains pending.
+
 Implemented code on main is **not necessarily deployed to staging**. See the release status below.
 
 ## Repository layout

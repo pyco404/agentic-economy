@@ -15,7 +15,11 @@ test('private HTTPS gateway blocks uninvited access and proxies only after origi
  server.listen(0,'127.0.0.1');await once(server,'listening');const port=server.address().port;
  const request=(path,headers={},body='')=>new Promise((resolve,reject)=>{const req=http.request({hostname:'127.0.0.1',port,path,method:body?'POST':'GET',headers:{host:new URL(origin).host,...headers}},res=>{let data='';res.on('data',x=>data+=x);res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,body:data}));});req.on('error',reject);req.end(body);});
  try{
-  assert.equal((await request('/api/v1/launchpad/capabilities')).status,401);
+  const gate=await request('/api/v1/launchpad/capabilities');
+  assert.equal(gate.status,401);assert.equal(gate.headers['referrer-policy'],'same-origin');
+  for(const origin of [undefined,'null','http://private.example.test','https://private.example.test.attacker.test']){
+   assert.equal((await request('/_verification/access',origin===undefined?{}:{origin},'code='+code)).status,403);
+  }
   assert.equal((await request('/',{host:'attacker.test'})).status,403);
   assert.equal((await request('/_verification/access',{origin:'https://attacker.test'},'code='+code)).status,403);
   assert.equal((await request('/_verification/access',{origin},'code=wrong')).status,403);

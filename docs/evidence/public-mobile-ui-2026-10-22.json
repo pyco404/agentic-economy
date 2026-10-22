@@ -1,0 +1,128 @@
+{
+  "checkedAt": "2026-10-22T17:20:10.214118+00:00",
+  "configurationChanged": false,
+  "databaseMigrations": 0,
+  "deployments": [
+    {
+      "environment": "staging",
+      "service": "agentic-economy",
+      "id": "00d7f7d9-6451-45b5-b3ce-3b4d8013f469",
+      "status": "SUCCESS",
+      "sha": "947866d58dff46b52d20d58687cd7d260a3a263e"
+    },
+    {
+      "environment": "staging",
+      "service": "Postgres",
+      "id": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+      "status": "SUCCESS",
+      "sha": null
+    },
+    {
+      "environment": "staging",
+      "service": "agentic-economy-web",
+      "id": "403ef016-f05e-4003-850b-ded59fe1a76b",
+      "status": "SUCCESS",
+      "sha": "3b369f602e14ecc36332c806b1c11ae9c59b05a4"
+    },
+    {
+      "environment": "production",
+      "service": "Postgres",
+      "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+      "status": "SUCCESS",
+      "sha": null
+    },
+    {
+      "environment": "production",
+      "service": "agentic-economy-web",
+      "id": "8afd89e8-a7e6-4f03-89a4-488e69db98a8",
+      "status": "SUCCESS",
+      "sha": "3b369f602e14ecc36332c806b1c11ae9c59b05a4"
+    },
+    {
+      "environment": "production",
+      "service": "agentic-economy",
+      "id": "04365147-839e-44ec-9a47-0c33bf54db04",
+      "status": "SUCCESS",
+      "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e"
+    }
+  ],
+  "health": [
+    {
+      "host": "api.useaeco.xyz",
+      "path": "/readyz",
+      "status": 200,
+      "ready": true,
+      "launchEnabled": null
+    },
+    {
+      "host": "api.useaeco.xyz",
+      "path": "/api/v1/launchpad/capabilities",
+      "status": 200,
+      "ready": null,
+      "launchEnabled": false
+    },
+    {
+      "host": "api-staging.useaeco.xyz",
+      "path": "/readyz",
+      "status": 200,
+      "ready": true,
+      "launchEnabled": null
+    },
+    {
+      "host": "api-staging.useaeco.xyz",
+      "path": "/api/v1/launchpad/capabilities",
+      "status": 200,
+      "ready": null,
+      "launchEnabled": false
+    }
+  ],
+  "releaseSha": "3b369f602e14ecc36332c806b1c11ae9c59b05a4",
+  "publicFrontendDeployment": "8afd89e8-a7e6-4f03-89a4-488e69db98a8",
+  "productionFrontendDeployRequests": 1,
+  "productionBackendDeployRequests": 0,
+  "unitTestsPassed": 251,
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 2
+  },
+  "build": "passed",
+  "productionMobileBrowser": "passed",
+  "candidateAssetSubstitutionsInFinalPublicCheck": false,
+  "publicViewports": [
+    {
+      "width": 344,
+      "height": 882
+    },
+    {
+      "width": 690,
+      "height": 829
+    },
+    {
+      "width": 820,
+      "height": 1180
+    },
+    {
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "physicalDeviceTest": false,
+  "newBlockchainTransactions": 0,
+  "diagnosticsAbsentFromPublicUI": true,
+  "worldCanvasRetained": true,
+  "before": {
+    "foldedWidth": 344,
+    "menuX": 357.09375,
+    "menuWidth": 44,
+    "walletDisplay": "none"
+  },
+  "after": {
+    "headerControlsWithinViewport": true,
+    "headerAndDrawerTargetsAtLeast44px": true,
+    "secondaryCameraControlsCollapsed": true
+  },
+  "stagingBrowser": "passed",
+  "verifiedAt": "2026-10-22T17:25:28.025213+00:00",
+  "publicWalletSessionEvidence": "public-mobile-release-2026-10-22.json"
+}

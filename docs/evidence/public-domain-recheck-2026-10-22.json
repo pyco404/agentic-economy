@@ -1,0 +1,116 @@
+{
+  "checkedAt": "2026-10-22T16:17:45.370Z",
+  "officialDomain": true,
+  "testRoutingOverrides": false,
+  "physicalPhantom": false,
+  "automatedMessageSigner": true,
+  "blockchainTransactions": 0,
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/launchpad",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/explore",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/communities",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/agent-studio",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/economy",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/treasury",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/roadmap",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/about",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/assets/not-a-real-file.js",
+      "status": 404,
+      "html": false
+    },
+    {
+      "path": "/api/not-a-real-endpoint",
+      "status": 404,
+      "html": false
+    }
+  ],
+  "www": {
+    "status": 308,
+    "location": "https://useaeco.xyz/launchpad?domain-check=1"
+  },
+  "browser": {
+    "worldReady": true,
+    "worldRetainedDuringBackForward": true,
+    "pageErrors": [],
+    "webSocketFrames": 14,
+    "apiOrigins": [
+      "https://api.useaeco.xyz"
+    ],
+    "layouts": [
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 1000,
+        "horizontalOverflow": false
+      },
+      {
+        "name": "tablet",
+        "width": 820,
+        "height": 1180,
+        "horizontalOverflow": false
+      },
+      {
+        "name": "mobile",
+        "width": 390,
+        "height": 844,
+        "horizontalOverflow": false
+      },
+      {
+        "name": "folded-viewport",
+        "width": 344,
+        "height": 882,
+        "horizontalOverflow": false
+      },
+      {
+        "name": "unfolded-viewport",
+        "width": 690,
+        "height": 829,
+        "horizontalOverflow": false
+      }
+    ],
+    "authentication": {
+      "challengeOrigin": "https://useaeco.xyz",
+      "sessionRefresh": 200,
+      "secureHostOnlyHttpOnlyStrictCookie": true
+    },
+    "executionDisabled": true
+  }
+}

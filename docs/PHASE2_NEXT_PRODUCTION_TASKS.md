@@ -2,6 +2,10 @@
 
 The public website may run with execution off before Mainnet launch acceptance is complete. DNS/website deployment does not authorize a transaction, treasury signing or payouts. Physical mobile on-chain acceptance remains deferred at the owner's request; do not restart its old gateway or request another signature.
 
+## Mandatory restricted rollout before Phase 3
+
+Public browsing remains open. Before the official native token, complete one separately approved controlled Mainnet test token using only the official deployer. Verify its signing, fees, metadata, finality and Explore listing. Then separately approve and verify the deployer-only $AECO launch and automatic holder agents. Public token creation opens only after a further explicit owner approval and reviewed removal of the initial backend restriction. [Exact release sequence and backend gate](PRODUCTION_RELEASE_CHECKLIST.md).
+
 ## Mandatory official $AECO launch before Phase 3
 
 The reserved deployer remains `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`. It must never substitute for Platform or Agent Rewards recipients. Current production treasury, SOL-only, 0.05 SOL and 60/40 rules remain unchanged. No official $AECO token has been launched by this deployment and no real transaction is authorized. A [read-only finalized Mainnet checkpoint](evidence/aeco-deployer-readonly-2026-10-22.json) found the reserved deployer balance at 0 lamports and no signatures in the bounded recent-history query. This is not an exhaustive mint/history audit. Any eventual funding and real transaction need separate authorization; no funds were moved.

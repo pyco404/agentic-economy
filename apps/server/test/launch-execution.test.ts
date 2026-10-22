@@ -8,6 +8,7 @@ import type {ChainGateway} from '../src/chain/types.js';
 import type {MockChain} from '../src/chain/mock.js';
 import {OFFICIAL_TREASURIES,LaunchDraft} from '@agentic-economy/shared';
 import {assertLaunchWalletAllowed,launchWalletAllowed} from '../src/services/launch-permission.js';
+import {LaunchpadStore} from '../src/store/launchpad.js';
 import {login,DRAFT,idem} from './helpers.js';
 import {loadConfig} from '../src/config.js';
 const origin='http://localhost:5173',cid='bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m';
@@ -288,6 +289,9 @@ describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)'
   rec.launch.execution!.network='mainnet-beta';await env!.ctx.store.updateLaunch(rec.launch,rec.version);
   await expect(env!.ctx.launches.submit(f.creator.publicKey.toBase58(),p.launch.id,f.signed(p.transaction))).rejects.toMatchObject({code:'forbidden'});
   await expect(env!.ctx.launches.resume(f.creator.publicKey.toBase58(),p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.prepare(f.creator.publicKey.toBase58(),p.launch.draft,{id:f.draft.id,version:f.draft.version,launchId:p.launch.id})).rejects.toMatchObject({code:'forbidden'});
+  const claim=vi.spyOn(LaunchpadStore.prototype,'claim').mockResolvedValue({replayed:true,result:{...p,launch:rec.launch}});
+  try{expect((await f.prepare()).statusCode).toBe(403);}finally{claim.mockRestore();}
   expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
  });
  it('rechecks permission after asynchronous submission prerequisites',async()=>{

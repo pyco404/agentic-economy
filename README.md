@@ -8,9 +8,9 @@ Agentic Economy is a Solana-based ecosystem combining token creation and discove
 
 ![Agentic Economy World view with its isometric city, waterways, railways, and navigation](apps/web/public/gitbut-website-image.png)
 
-**Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
+**Public website: live at https://useaeco.xyz, with financial execution disabled.** Staging remains demo; production is configured for read-only Mainnet access. Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
-The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. [Current Phase 2 status and remaining priorities](apps/server/docs/phase2-sol-only-acceptance.md). Physical Phantom mobile authentication and layouts passed; mobile on-chain acceptance is deferred. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
+The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. [Current Phase 2 status and remaining priorities](docs/PHASE2_STATUS.md). Physical Phantom mobile authentication and layouts passed; mobile on-chain acceptance is deferred. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
 
 ## About the project
 
@@ -58,7 +58,7 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 - **Token preparation:** Solana wallet message authentication and server-side Pinata/IPFS uploads when configured.
 - **Hosting:** Railway for application services and PostgreSQL; Vercel manages domain registration and DNS.
 
-Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine comparison / gated Mainnet readiness](docs/GAMINE_LAUNCHPAD_INTEGRATION.md). Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval.
+Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine comparison / gated Mainnet readiness](docs/GAMINE_LAUNCHPAD_INTEGRATION.md). Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval. Phase 2 also requires the owner-approved official $AECO Mainnet launch through useaeco.xyz and independent mint, supply, metadata, fee-routing, finality and Explore verification. Phase 3 stays blocked until that launch succeeds and Phase 2 is completed. [Production release checklist](docs/PRODUCTION_RELEASE_CHECKLIST.md).
 
 ## What works on main
 

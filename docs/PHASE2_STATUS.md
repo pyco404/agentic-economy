@@ -4,7 +4,9 @@ This is the current checklist; earlier dated reports remain historical evidence.
 
 [Mandatory sequence, parameter approvals and release evidence checklist](PRODUCTION_RELEASE_CHECKLIST.md).
 
-**Current rollout policy:** Public browsing → separately approved official-deployer Mainnet test token → separately approved deployer-only $AECO launch → verified automatic holder Common Agents → separately approved public launching → Phase 3. The fixed deployer is `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`. Mainnet financial gates remain off; no test-token parameters, costs or transaction are authorized. The new backend permission gate must be included in the reviewed production release before activation. No public unlock follows automatically from mint verification.
+**Current rollout policy:** Public browsing → production readiness and disposable Devnet signing rehearsal → separately approved direct deployer-only $AECO launch → verified automatic holder Common Agents → separately approved public launching → Phase 3. The fixed deployer is `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`. Mainnet financial gates remain off; the official $AECO parameters, costs and exact transaction still require final approval. The owner removed the intermediate Mainnet test-token requirement; $AECO must be the first official Mainnet launch. The new backend permission gate must be included in the reviewed production release before activation. No public unlock follows automatically from mint verification.
+
+**Direct native-launch update:** the owner enters all metadata/artwork in the existing Create Coin form and personally selects 1% Developer Buy. Ordinary forms remain 0% by default. The exact planned mint remains fixed. The new operator-bound public-review/local-signature handoff is implemented locally; no production reservation, Mainnet activation or transaction has occurred. Public-Devnet signing/simulation rehearsal uses disposable mints only. [Candidate integration, live release differences and cost blockers](DIRECT_AECO_LAUNCH_REVIEW.md).
 
 | Milestone | Status |
 | --- | --- |

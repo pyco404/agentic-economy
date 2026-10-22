@@ -124,7 +124,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
     <p className="small">Your coin is now live and visible in Explore.</p>
     <dl className="launch-summary"><div><dt>Mint</dt><dd><code className="ui-select-text">{short(launch.mint)}</code></dd></div>
      {launch.devBuyResult&&<div><dt>Developer Buy received</dt><dd>{formatTokens(launch.devBuyResult.tokenAmount)} {launch.draft.symbol} <span className="muted">({Number(launch.devBuyResult.allocationBps)/100}%)</span></dd></div>}
-     <div><dt>Transaction</dt><dd>{launch.execution?.network==='devnet'?<a href={`https://explorer.solana.com/tx/${launch.signature}?cluster=devnet`} target="_blank" rel="noreferrer">Confirmed transaction ↗</a>:<span>Confirmed</span>}</dd></div>
+     <div><dt>Transaction</dt><dd>{launch.execution&&launch.execution.network!=='localnet'?<a href={`https://explorer.solana.com/tx/${launch.signature}${launch.execution.network==='devnet'?'?cluster=devnet':''}`} target="_blank" rel="noreferrer">Confirmed transaction ↗</a>:<span>Confirmed</span>}</dd></div>
     </dl>
     <div className="launch-review-actions"><a className="primary launch-action-link" href={routeUrl('explore',launch.mint)}>View in Explore</a><button className="secondary" onClick={()=>void copyMint()}>Copy mint</button>{executionAllowed&&onNewCoin&&<button className="text-button" onClick={onNewCoin}>Create another coin</button>}</div>
     {copyMessage&&<p className="small" role="status">{copyMessage}</p>}

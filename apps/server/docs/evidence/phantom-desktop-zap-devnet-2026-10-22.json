@@ -1,0 +1,83 @@
+{
+  "checkedAt": "2026-10-22T08:33:26.318289+00:00",
+  "network": "public-devnet",
+  "acceptance": {
+    "wallet": "Phantom desktop",
+    "interactionEvidence": "Owner explicitly reports actual desktop Phantom approval and 20M ZAP displayed in Phantom; chain evidence independently checked. No claim of mobile acceptance."
+  },
+  "launchId": "lch_961413af4f9185e9c2a6cec6",
+  "communityId": "com_b33cucPWE9A9aL",
+  "name": "Zappercoin",
+  "symbol": "ZAP",
+  "mint": "DJbKJVKMFQyM5qnGcydqsPTw7WyR8xRzwgBDfmXp3ZVc",
+  "wallet": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+  "signature": "3AYa4GkW5qhd5bMJF7bFZHbfVSPJr2qx4ahh2bQ5u7LFr6iejVhzXxvjjXszJnii24aTVpfjkwScbpsaqbyzo6mY",
+  "slot": 513277892,
+  "finality": "finalized",
+  "transactionError": null,
+  "walletSigned": true,
+  "tokenSupplyRaw": "1000000000000000",
+  "decimals": 6,
+  "tokensReceivedRaw": "20000000000000",
+  "currentWalletTokensRaw": "20000000000000",
+  "allocationBps": 200,
+  "platformTreasuryAtLaunch": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+  "platformTransfers": [
+    {
+      "destination": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+      "lamports": 50000000,
+      "source": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR"
+    }
+  ],
+  "platformNetIncreaseLamports": "50000000",
+  "networkFeeLamports": "10000",
+  "walletDebitLamports": "70816033",
+  "controlledTestFinality": [
+    {
+      "signature": "5ZC3TLEaS5VJfx8ZBq7tftJpwHbt7XV3smNCFKbspGRoGZNa8zMRUo4sjB16VinC1jxJYYxm6hxLVD78rUnUZmph",
+      "status": {
+        "slot": 513231159,
+        "confirmations": null,
+        "status": {
+          "Ok": null
+        },
+        "err": null,
+        "confirmationStatus": "finalized"
+      }
+    },
+    {
+      "signature": "4dbksmrgciU8HSzjiqSWefMfsntrWXAJqKhqQA7U4hMNgprxs34SBXZxmDBvBVP2YfqnX7GmT432tUYcYjYXqtPX",
+      "status": {
+        "slot": 513232156,
+        "confirmations": null,
+        "status": {
+          "Ok": null
+        },
+        "err": null,
+        "confirmationStatus": "finalized"
+      }
+    }
+  ],
+  "safety": "Read-only reconciliation; no new transaction, wallet signature, payment, migration or configuration change.",
+  "databaseEvidence": {
+    "database": "aeco_launch_execution_20261018_test",
+    "access": "read-only",
+    "launchStatus": "confirmed",
+    "developerBuy": {
+      "allocationBps": "200",
+      "tokenAmountRaw": "20000000000000",
+      "quoteSpentLamports": "5769233"
+    },
+    "platformReceiptCount": 1,
+    "receiptId": "tre_Bk8QENSi5BJYks",
+    "receiptFinality": "finalized",
+    "receiptAmountLamports": "50000000",
+    "communityId": "com_b33cucPWE9A9aL",
+    "history": [
+      "draft",
+      "awaiting_signature",
+      "submitted",
+      "confirmed"
+    ]
+  }
+}

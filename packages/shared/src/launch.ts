@@ -70,6 +70,21 @@ export const LaunchError = z
   .object({ code: z.string(), message: z.string(), at: z.iso.datetime({ offset: true }) })
   .meta({ id: "LaunchError" });
 
+/** Public artifact for a locally held mint signer. No private material belongs in this DTO. */
+export const LocalMintReview = z.object({
+  version:z.literal(1),launchId:z.string().min(1).max(128),network:z.enum(["mainnet-beta","devnet"]),genesisHash:PublicKey,
+  mint:PublicKey,launcherWallet:PublicKey,platformTreasury:PublicKey,agentRewardsTreasury:PublicKey,
+  name:z.string().min(1).max(32),symbol:z.string().min(1).max(13),uri:z.string().min(1).max(200),
+  recentBlockhash:PublicKey,lastValidBlockHeight:z.number().int().positive().safe(),
+  maxTotalDebitLamports:z.string().regex(/^[1-9][0-9]{0,19}$/),messageSha256:z.string().regex(/^[a-f0-9]{64}$/),
+  unsignedTransaction:z.string().min(1).max(1644),
+  lookupTables:z.array(z.object({key:PublicKey,addresses:z.array(PublicKey).max(256)}).strict()).max(4),
+  devBuy:z.object({tokenAmount:z.string().regex(/^[1-9][0-9]{0,19}$/),maxQuoteCost:z.string().regex(/^[1-9][0-9]{0,19}$/)}).strict().optional(),
+  globalAccountBase64:z.string().max(32768).optional(),
+  protocolFeeRecipients:z.object({feeRecipient:PublicKey,buybackFeeRecipient:PublicKey}).strict().optional(),
+}).strict().meta({id:"LocalMintReview"});
+export type LocalMintReview = z.infer<typeof LocalMintReview>;
+
 export const TokenLaunch = z
   .object({
     id: LaunchId,
@@ -87,6 +102,8 @@ export const TokenLaunch = z
       network:z.enum(["devnet","localnet","mainnet-beta"]),quoteAsset:z.enum(["SOL","USDC"]),
       /** USDC only: the quote mint the server verified against the live Pump Global allowlist. Never client-supplied. */
       quoteMint:PublicKey.optional(),
+      /** Immutable public template for the separately authorized local mint signature. */
+      localMintReview:LocalMintReview.optional(),
       platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
       /** Requested Developer Buy: exact token amount (never above 3.5% of supply) and the maximum lamports it may cost. */
       devBuy:z.object({bps:z.number().int().min(1).max(DEV_BUY_MAX_BPS),tokenAmount:AmountString,maxQuoteCost:AmountString}).optional(),

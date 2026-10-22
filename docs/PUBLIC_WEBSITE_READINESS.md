@@ -1,25 +1,25 @@
 # Official website readiness — 22 October 2026
 
-**LIVE, reverified 22 October 2026 at 16:22 UTC:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
+**LIVE, reverified 22 October 2026 at 17:20 UTC:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
 
 ## Actual deployed applications
 
 | Environment/service | Application SHA | Successful Railway deployment |
 | --- | --- | --- |
-| Production frontend | `aa1f53a113dc0438094fddb5b306f382fe98b2fd` | `164d4580-ceb1-42a1-981d-dd4580635fe9` |
+| Production frontend | `3b369f602e14ecc36332c806b1c11ae9c59b05a4` | `8afd89e8-a7e6-4f03-89a4-488e69db98a8` |
 | Production API | `6758f91bd2e8a69c242584133f0e5932b862bf7e` | `04365147-839e-44ec-9a47-0c33bf54db04` |
-| Staging frontend | `84d7b2e8ad32158edfe2bc2919debf2288c02b4a` | `1fc799a3-342a-4a6b-8fac-88d268615264` |
-| Staging API | `84d7b2e8ad32158edfe2bc2919debf2288c02b4a` | `18d1318e-f1f6-4bd4-aea0-0901c14978cf` |
+| Staging frontend | `3b369f602e14ecc36332c806b1c11ae9c59b05a4` | `403ef016-f05e-4003-850b-ded59fe1a76b` |
+| Staging API | `947866d58dff46b52d20d58687cd7d260a3a263e` | `00d7f7d9-6451-45b5-b3ce-3b4d8013f469` |
 
-Both production applications use compatible contract 0.5.2. Fresh read-only Railway queries and running-service checks confirm the production SHAs above, successful deployments, `aeco_production`, and only the four approved migrations 001–004. Production frontend/backend repository deployment triggers are absent. No new deployment, database migration or DNS change was needed for this recheck. Staging's previously verified Common Agent release uses compatible contract 0.6.0; it has not been promoted to production. Staging and public-demo remain untouched.
+Production API remains pinned at contract 0.5.2. The current frontend consumes its compatible responses: actual public-origin browser verification covers the complete world, all routes, API/WSS, authenticated sessions and refresh, with execution disabled. Staging API uses contract 0.6.0. Only the frontend was explicitly promoted for the public mobile UI fix; no production backend, database, DNS or financial setting changed. Automatic production promotion remains off. Documentation commits are not application deployments. [Mobile diagnosis, implementation and verification](PUBLIC_MOBILE_NAVIGATION.md), [current public browser/session acceptance](evidence/public-mobile-release-2026-10-22.json).
 
-[Fresh production deployment/database/domain evidence](evidence/public-production-recheck-2026-10-22.json), [fresh actual-domain browser checks](evidence/public-domain-recheck-2026-10-22.json), [fresh trusted TLS checks](evidence/public-domain-tls-recheck-2026-10-22.json). The production release is intentionally pinned; documentation commits are not application deployments.
+[Current deployment/API health evidence](evidence/public-mobile-ui-2026-10-22.json), [current public-origin browser/session checks](evidence/public-mobile-release-2026-10-22.json), [earlier database/domain isolation checks](evidence/public-production-recheck-2026-10-22.json), [trusted TLS checks](evidence/public-domain-tls-recheck-2026-10-22.json). The production API remains intentionally pinned; documentation commits are not application deployments.
 
 ## Why the domain returned 404, and what changed
 
 The current apex returns HTTP 200 and www redirects with HTTP 308. The earlier 404 is no longer reproducible. Historically, Vercel's automatic apex/wildcard routed to its missing deployment rather than Railway. Previously unverified Railway domain attachments also belonged to public-demo. The approved three attachments now belong to reviewed production. Six scoped records were added: apex custom ALIAS, www/API CNAMEs and three ownership TXT records. The custom ALIAS takes precedence over the preserved Vercel automatic default. All preexisting records, nameservers, staging CNAME/TXT, wildcard and CAA are unchanged. [Exact DNS values, record IDs and rollback](PRODUCTION_DNS_CUTOVER_PROPOSAL.md).
 
-Production uses independent `aeco_production`, not staging or `aeco_public_demo`. Those existing environments/data were not modified. The production API returns health/readiness 200 with PostgreSQL, state view, simulation leadership and indexer lease healthy. MODE is production, with all financial gates explicitly false. Official treasury recipients remain fixed, and no treasury signer/payout worker was introduced.
+Production uses independent `aeco_production`, not staging or `aeco_public_demo`. Their database targets and existing data were preserved. The production API returns health/readiness 200 with PostgreSQL, state view, simulation leadership and indexer lease healthy. MODE is production, with all financial gates explicitly false. Official treasury recipients remain fixed, and no treasury signer/payout worker was introduced.
 
 ## Actual public-domain acceptance
 

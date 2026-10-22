@@ -31,12 +31,12 @@ it('detects an injected Solana provider and forwards exact message bytes without
  const wallet=installedWallets().find(w=>w.name==='Phantom')!;expect(await wallet.connect()).toBe('verified-public-key');const bytes=new TextEncoder().encode('Sign in only');expect(await wallet.sign(bytes)).toBe(bytes);expect(signMessage).toHaveBeenCalledWith(bytes,'utf8');
 });
 
-function phantomRegistration(standardTransaction?:{supportedTransactionVersions:readonly (0|'legacy')[];signTransaction:ReturnType<typeof vi.fn>}){
+function phantomRegistration(standardTransaction?:{supportedTransactionVersions:readonly (0|'legacy')[];signTransaction:ReturnType<typeof vi.fn>},chains=['solana:devnet']){
  const creator=Keypair.generate(),mint=Keypair.generate(),address=creator.publicKey.toBase58();
  const tx=new VersionedTransaction(new TransactionMessage({payerKey:creator.publicKey,recentBlockhash:Keypair.generate().publicKey.toBase58(),instructions:[new TransactionInstruction({programId:SystemProgram.programId,keys:[{pubkey:mint.publicKey,isSigner:true,isWritable:true}],data:Buffer.alloc(0)})]}).compileToV0Message());tx.sign([mint]);
  const provider={publicKey:{toBase58:()=>address},connect:async()=>({publicKey:{toBase58:()=>address}}),signMessage:vi.fn(),signTransaction:vi.fn(async(transaction:VersionedTransaction)=>{transaction.sign([creator]);return transaction;}),disconnect:async()=>{}};
  vi.stubGlobal('window',{phantom:{solana:provider},addEventListener:vi.fn(),dispatchEvent:vi.fn()});
- const account={address,publicKey:creator.publicKey.toBytes(),chains:['solana:devnet'],features:['solana:signMessage']};
+ const account={address,publicKey:creator.publicKey.toBytes(),chains,features:['solana:signMessage']};
  const registered={name:'Phantom',accounts:[account],features:{'standard:connect':{connect:async()=>({accounts:[account]})},'solana:signMessage':{signMessage:vi.fn()},...(standardTransaction?{'solana:signTransaction':standardTransaction}:{})}};
  registry.wallets=[registered];
  return{creator,mint,tx,provider,address};
@@ -65,4 +65,14 @@ it('preserves a received submission rejection separately from a transport interr
  await expect(launchpadRequest('/submit',z.object({}),jsonRequest('POST',{}))).rejects.toMatchObject({name:'ApiResponseError',status:400,message:'Wallet signatures or transaction message do not match the prepared launch'});
  vi.stubGlobal('fetch',vi.fn(async()=>{throw new TypeError('Failed to fetch');}));
  try{await launchpadRequest('/submit',z.object({}));throw Error('Expected request failure');}catch(e){expect(e).not.toBeInstanceOf(ApiResponseError);expect((e as Error).message).toBe('Failed to fetch');}
+});
+
+it('uses the Wallet Standard Mainnet chain identifier without a testnet fallback',async()=>{
+ const signTransaction=vi.fn(async()=>[{signedTransaction:new Uint8Array([1])}]);
+ const f=phantomRegistration({supportedTransactionVersions:[0],signTransaction},['solana:mainnet']);
+ const wallet=installedWallets().find(w=>w.name==='Phantom')!;await wallet.connect();
+ await wallet.signTransaction!(f.tx.serialize(),'mainnet-beta');
+ expect(signTransaction).toHaveBeenCalledWith(expect.objectContaining({chain:'solana:mainnet'}));
+ await expect(wallet.signTransaction!(f.tx.serialize(),'devnet')).rejects.toThrow('selected Solana network');
+ expect(f.provider.signTransaction).not.toHaveBeenCalled();
 });

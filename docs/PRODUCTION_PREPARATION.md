@@ -2,11 +2,11 @@
 
 ## Approved application release deployed
 
-The owner approved production applications and reuse of the existing Agentic Economy backend-only Pinata and replacement Helius credentials. The earlier database-only approval boundary is resolved. Both applications run the exact approved commit `6758f91bd2e8a69c242584133f0e5932b862bf7e`; newer main commits were not silently promoted. Automatic production promotion remains off, with no repository deployment triggers.
+The owner approved production applications and reuse of the existing Agentic Economy backend-only Pinata and replacement Helius credentials. The earlier database-only approval boundary is resolved. The original applications were released at approved commit `6758f91bd2e8a69c242584133f0e5932b862bf7e`. The owner-requested official roadmap update is now published as frontend-only commit `aa1f53a113dc0438094fddb5b306f382fe98b2fd`; the production API remains unchanged at 6758f91. Automatic production promotion remains off, with no repository deployment triggers.
 
 | Service | Successful deployment | Official HTTPS endpoint |
 | --- | --- | --- |
-| Frontend | `ba11a995-8f60-4595-b8b2-010d340e0262` | https://useaeco.xyz |
+| Frontend | `164d4580-ceb1-42a1-981d-dd4580635fe9` | https://useaeco.xyz |
 | API | `04365147-839e-44ec-9a47-0c33bf54db04` | https://api.useaeco.xyz |
 
 Health/readiness return 200, PostgreSQL and simulation are healthy, and contract 0.5.2 is compatible across both services. MODE is production for configuration validation, **financial execution is disabled**: `MAINNET_LAUNCH_APPROVED=false`, `PUMP_LAUNCH_ENABLED=false`, `FEE_ROUTING_VERIFIED=false`. Payouts remain disabled. Official treasury addresses are unchanged; no treasury signer was installed. No blockchain transaction was signed or broadcast.
@@ -42,3 +42,7 @@ Production restoration rehearsal, credential maintenance and external Mainnet tr
 ## Recurring infrastructure costs
 
 No subscription upgrade was made. The additional frontend/API/database consume measured compute, volume and outbound traffic on the existing workspace. Current usage rates: RAM $10/GB/month, CPU $20/vCPU/month, volume $0.15/GB/month, egress $0.05/GB. These are not a fixed monthly quote; actual cost depends on usage. The existing Pro subscription is workspace-wide. [Railway pricing](https://docs.railway.com/pricing/plans).
+
+## Native roadmap publication
+
+[Verified release](evidence/native-aeco-roadmap-release-2026-10-22.json): frontend aa1f53a on staging and production, actual responsive roadmap/retained-world/WSS checks pass with Phase 3 blocked and launchEnabled=false. Eleven content tests and six local responsive browser tests, typecheck, lint and build pass; existing effect-cleanup/bundle warnings remain. No backend deployment, financial activation, token launch, migration, DNS or treasury change was part of this editorial release.

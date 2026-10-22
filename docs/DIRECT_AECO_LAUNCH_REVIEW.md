@@ -4,7 +4,7 @@ Owner decision, 22 October 2026: **$AECO is the first official Mainnet launch. N
 
 ## Owner-operated Create Coin
 
-The owner enters the name, ticker, description, artwork and project links through the existing Create Coin interface at https://useaeco.xyz. The owner selected **1% Developer Buy** and will select it personally in the form. Do not pre-fill metadata, artwork or that selection. Ordinary forms default to 0%, permit 0–3.5%, and restore only the authenticated owner's saved inputs. No separate native-token wizard or developer-authored token draft was created. Ordinary form fields need no separate chat approval; the owner reviews the complete transaction. The separate final Mainnet activation/transaction authorization remains required.
+The owner enters the name, ticker, description, artwork and project links through the existing Create Coin interface at https://useaeco.xyz. The owner chooses **any Developer Buy from 0% to 3.5% inclusive, in 0.01% increments**, personally in the form. The earlier 1% preference is not a requirement or preset. Do not pre-fill metadata, artwork or that selection. All forms, including $AECO, default to 0%, permit 0–3.5%, and restore only the authenticated owner's saved inputs. No separate native-token wizard or developer-authored token draft was created. Ordinary form fields need no separate chat approval; the owner reviews the complete transaction. The separate final Mainnet activation/transaction authorization remains required.
 
 | Role | Public address |
 | --- | --- |
@@ -21,7 +21,7 @@ The current `create_v2` accepts the mint as an independent signer and the user a
 
 A historical finalized Mainnet read found the planned mint account absent at slot 460144627. The owner intentionally has not funded the deployer; that is not a deployment or infrastructure blocker. Do not repeat balance checks or request funding during infrastructure preparation. This is a point-in-time account observation, not a created token or a permanent mint reservation on-chain. All four reviewed external program identities/slots/upgrade authorities match policy. The current Mainnet lookup table is active/frozen and satisfies the existing Developer Buy coverage guard.
 
-At Mainnet Global/fee snapshot slot **460146860**, the same exact integer quote calculation used by the Launchpad gives:
+Historical **1% illustration only**, not a locked selection or current approved quote: at Mainnet Global/fee snapshot slot **460146860**, the same exact integer quote calculation used by the Launchpad gives:
 
 | Item | Observed calculation |
 | --- | --- |
@@ -55,7 +55,7 @@ Developer Buy signing reviews pin allowed protocol recipients so the SDK's rando
 - `aeco_production` is isolated, healthy and matches migrations 001–004; no pending migrations. Treasury settings are unchanged. Mainnet launch/approval/fee-routing gates remain false; no treasury signer or payout service is configured.
 - Website deployment is complete independently of the future token launch. Wallet funding is exclusively the owner's decision. No funding request, repeated balance check, scheduled launch or automatic signing/broadcast belongs to infrastructure preparation.
 - Before eventual execution, finish the short-blockhash expiry/renewal operational procedure and final recovery/security acceptance. No automatic journal release or replacement message exists; do not bypass the reservation. Preparation currently shares the execution-off capability gate, so entering/saving drafts is available while transaction preparation remains locked. Financial activation must not be used merely to test preparation.
-- When the owner decides to launch, they enter their own metadata/artwork, select 1%, review protocol supply/decimals/authorities, recipients, fresh simulation and complete maximum debit, and explicitly approve the exact transaction. Wallet balance is checked then. No current quote is an activation approval.
+- When the owner decides to launch, they enter their own metadata/artwork, choose their allocation, review protocol supply/decimals/authorities, recipients, fresh simulation and complete maximum debit, and explicitly approve the exact transaction. Wallet balance is checked then. No current quote is an activation approval.
 
 The existing holder indexer is prepared for the exact official mint but remains off. After independently finalized official launch/provenance acceptance, activate reviewed mint-specific observation and verify real holder/agent reconciliation. One qualifying wallet produces one persistent Common Agent; 400 wallets sharing the same mint produce 400 agents. No wallet connection/registration/control privileges are inferred. Live Mainnet scan completeness, exclusions and real population reconciliation remain acceptance items.
 

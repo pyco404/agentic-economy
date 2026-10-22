@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-10-22T09:42:51.718Z",
+  "readOnly": true,
+  "configurationChanged": false,
+  "mainnetFinancialExecution": false,
+  "mainnet-beta": {
+    "genesis": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+    "slot": 459988434
+  },
+  "officialTreasuryBalances": [
+    {
+      "address": "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+      "balance": {
+        "context": {
+          "slot": 459988437,
+          "apiVersion": "4.3.0-alpha.2"
+        },
+        "value": 0
+      }
+    },
+    {
+      "address": "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",
+      "balance": {
+        "context": {
+          "slot": 459988439,
+          "apiVersion": "4.3.0-alpha.2"
+        },
+        "value": 0
+      }
+    }
+  ],
+  "devnet": {
+    "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    "slot": 513842905
+  },
+  "exploreCurve": {
+    "slot": 513842905,
+    "complete": false,
+    "progressPct": 3.78,
+    "quoteMint": "So11111111111111111111111111111111111111112"
+  },
+  "holders": {
+    "count": null,
+    "complete": false,
+    "scannedAccounts": 2,
+    "source": "helius_das",
+    "indexedSlot": 513842908
+  },
+  "metadata": {
+    "source": "helius_das",
+    "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+    "name": "AECO Dev Buy 300 Test",
+    "symbol": "ADBT3",
+    "fetchedAt": "2026-10-22T09:43:07.665Z"
+  }
+}

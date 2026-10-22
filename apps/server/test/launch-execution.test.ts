@@ -3,13 +3,14 @@ import {AddressLookupTableAccount,Keypair,VersionedTransaction} from '@solana/we
 import bs58 from 'bs58';
 import sharp from 'sharp';
 import {makeEnv,newWallet,type TestEnv} from './helpers.js';
-import {buildPumpLaunch,pumpLaunchInstructions} from '../src/chain/pump-builder.js';
+import {buildPumpLaunch,pumpLaunchInstructions,buildUnsignedPumpLaunch,unsignedPumpLaunchInstructions} from '../src/chain/pump-builder.js';
 import type {ChainGateway} from '../src/chain/types.js';
 import type {MockChain} from '../src/chain/mock.js';
 import {OFFICIAL_TREASURIES,LaunchDraft} from '@agentic-economy/shared';
 import {assertLaunchWalletAllowed,launchWalletAllowed} from '../src/services/launch-permission.js';
 import {LaunchpadStore} from '../src/store/launchpad.js';
 import {login,DRAFT,idem} from './helpers.js';
+import {PLANNED_AECO_MINT,MAINNET_GENESIS} from '../src/chain/offline-mint.js';
 import {loadConfig} from '../src/config.js';
 const origin='http://localhost:5173',cid='bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m';
 let env:TestEnv|undefined;
@@ -317,11 +318,68 @@ describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)'
   for(const wallet of [undefined,f.creator.publicKey.toBase58(),OFFICIAL_TREASURIES.platform,OFFICIAL_TREASURIES.agentRewards])expect(launchWalletAllowed(cfg,wallet)).toBe(false);
   expect(launchWalletAllowed(cfg,OFFICIAL_TREASURIES.aecoDeployer)).toBe(true);
   expect(()=>assertLaunchWalletAllowed(cfg,OFFICIAL_TREASURIES.aecoDeployer)).not.toThrow();
-  // Public keys suffice for unsigned preparation. No deployer signature or secret is used here.
-  const prepared=await env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT),{id:f.draft.id,version:0,launchId:'lch_deployerpolicy'});
-  expect(prepared.launch.launcherWallet).toBe(OFFICIAL_TREASURIES.aecoDeployer);
+  // Wallet permission alone must not allocate a random first Mainnet mint.
+  await expect(env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT),{id:f.draft.id,version:0,launchId:'lch_deployerpolicy'})).rejects.toMatchObject({code:'feature_disabled'});
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();
   cfg.financialFeaturesEnabled=false;
   await expect(env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT))).rejects.toMatchObject({code:'feature_disabled'});
   expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+});
+
+describe('operator-bound prepared official mint (public keys and mock RPC only)',()=>{
+ async function reserved(){
+  const f=await setup(),cfg=env!.ctx.config;
+  cfg.mode='production';cfg.solana.cluster='mainnet-beta';cfg.treasuries={platform:OFFICIAL_TREASURIES.platform,agentRewards:OFFICIAL_TREASURIES.agentRewards};
+  cfg.pumpLaunch.preparedMintDraftId=f.draft.id;
+  f.chain.getGenesisHash=async()=>MAINNET_GENESIS;
+  f.chain.buildUnsignedLaunchTransaction=vi.fn(async input=>{
+   expect('mintSecretKey' in input).toBe(false);expect(input.mint).toBe(PLANNED_AECO_MINT);
+   const ix=await unsignedPumpLaunchInstructions(input),addresses=[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()];
+   const table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses}});
+   const built=await buildUnsignedPumpLaunch(input,Keypair.generate().publicKey.toBase58(),[table]);
+   return {...built,demo:false,genesisHash:MAINNET_GENESIS,lastValidBlockHeight:100,estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'11597640',mintSigningContext:{lookupTables:[{key:table.key.toBase58(),addresses:addresses.map(a=>a.toBase58())}]}};
+  });
+  const owner=OFFICIAL_TREASURIES.aecoDeployer,draft=LaunchDraft.parse(DRAFT),owned={id:f.draft.id,version:0,launchId:'lch_reservedofficial'};
+  return {...f,cfg,owner,owned,tokenDraft:draft,prepareOfficial:()=>env!.ctx.launches.prepare(owner,draft,owned)};
+ }
+ it('persists the exact public mint without a mint secret and restores the immutable unsigned review',async()=>{
+  const f=await reserved(),p=await f.prepareOfficial();
+  expect(p.launch.mint).toBe(PLANNED_AECO_MINT);expect(p.launch.execution?.localMintReview).toMatchObject({mint:PLANNED_AECO_MINT,launcherWallet:f.owner,network:'mainnet-beta',maxTotalDebitLamports:'61607640'});
+  const tx=VersionedTransaction.deserialize(Buffer.from(p.transaction,'base64'));
+  expect(tx.signatures.every(sig=>sig.every(b=>b===0))).toBe(true);
+  expect((await f.prepareOfficial()).transaction).toBe(p.transaction);
+  expect(await env!.ctx.launches.localMintReview(f.owner,p.launch.id)).toEqual(p.launch.execution!.localMintReview);
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.buildUnsignedLaunchTransaction).toHaveBeenCalledTimes(1);
+  await expect(env!.ctx.launches.localMintReview(f.creator.publicKey.toBase58(),p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.importLocalMintSignature(f.owner,p.launch.id,{launchId:p.launch.id,mint:p.launch.mint,messageSha256:p.launch.execution!.localMintReview!.messageSha256,transaction:p.transaction})).rejects.toMatchObject({code:'bad_request'});
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('never falls back or reallocates the reserved mint across duplicate intents, stale configuration or existing chain accounts',async()=>{
+  const f=await reserved(),p=await f.prepareOfficial();
+  await expect(env!.ctx.launches.prepare(f.owner,f.tokenDraft,{...f.owned,launchId:'lch_second'})).rejects.toThrow();
+  expect((await env!.ctx.store.getLaunch(p.launch.id))?.launch.mint).toBe(PLANNED_AECO_MINT);
+  expect(await env!.ctx.store.getLaunch('lch_second')).toBeNull();
+  f.cfg.pumpLaunch.preparedMintDraftId=crypto.randomUUID();
+  await expect(f.prepareOfficial()).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.localMintReview(f.owner,p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.assertPreparedMintAllowed(f.owner,p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.submit(f.owner,p.launch.id,p.transaction)).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.resume(f.owner,p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  f.cfg.pumpLaunch.preparedMintDraftId=f.owned.id;
+  f.chain.mintAccountExists=vi.fn(async()=>true);
+  await expect(env!.ctx.launches.prepare(f.owner,f.tokenDraft,{...f.owned,launchId:'lch_alreadyexists'})).rejects.toMatchObject({code:'unavailable'});
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('blocks mismatched drafts, disabled financial gates, expired messages and unsigned adapter outages',async()=>{
+  const f=await reserved();
+  await expect(env!.ctx.launches.prepare(f.owner,f.tokenDraft,{...f.owned,id:crypto.randomUUID()})).rejects.toMatchObject({code:'forbidden'});
+  f.cfg.financialFeaturesEnabled=false;
+  await expect(f.prepareOfficial()).rejects.toMatchObject({code:'feature_disabled'});f.cfg.financialFeaturesEnabled=true;
+  const p=await f.prepareOfficial();f.expire();
+  await expect(env!.ctx.launches.importLocalMintSignature(f.owner,p.launch.id,{})).rejects.toMatchObject({code:'conflict'});
+  f.chain.buildUnsignedLaunchTransaction=undefined;
+  await expect(env!.ctx.launches.prepare(f.owner,f.tokenDraft,{...f.owned,launchId:'lch_missingadapter'})).rejects.toMatchObject({code:'unavailable'});
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
  });
 });

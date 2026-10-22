@@ -1,0 +1,165 @@
+{
+  "network": "public-devnet",
+  "checkedAt": "2026-10-22T09:02:45.118Z",
+  "approval": "Owner approved these two transactions only",
+  "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+  "payer": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+  "funding": {
+    "signature": "4S4FsX1TWtPSRhF46CHevoH8NupzqhD5WbByR7EqL8LE6dsaTjaKUYYYQq9qkZahjMkDbzM944XeH2geDU4YGJSP",
+    "amountLamports": "650240",
+    "recipient": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+    "classification": "test rent prefunding, excluded from all revenue"
+  },
+  "distribution": {
+    "signature": "CTppmQatgJYhGdbUqzh8xredAi6jNDHgTmJhjkJZZ9AUx5eXRPnpfjdnPC4GAEnY34KtTPsFAJBtTSqx128jFJS",
+    "slot": 513831116,
+    "finality": "finalized",
+    "eligibleAccruedLamports": "25887",
+    "distributedLamports": "25886",
+    "dustLamports": "1",
+    "vaultBalanceLamports": "650241",
+    "rentReserveLamports": "650240",
+    "payouts": [
+      {
+        "address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+        "bps": 6000,
+        "amount": "15532"
+      },
+      {
+        "address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "bps": 4000,
+        "amount": "10354"
+      }
+    ]
+  },
+  "totalPayerCostLamports": "660240",
+  "networkFeesLamports": "10000",
+  "platformLaunchCharge": "none",
+  "first": {
+    "accepted": true,
+    "inserted": [
+      {
+        "id": "tre_kYXmHxDgJJtQwJ",
+        "seq": 11,
+        "stream": "creator_fee",
+        "account": "agent_rewards",
+        "accountAddress": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+        "assetMint": "So11111111111111111111111111111111111111112",
+        "assetSymbol": "SOL",
+        "decimals": 9,
+        "amount": "15532",
+        "direction": "credit",
+        "signature": "CTppmQatgJYhGdbUqzh8xredAi6jNDHgTmJhjkJZZ9AUx5eXRPnpfjdnPC4GAEnY34KtTPsFAJBtTSqx128jFJS",
+        "instructionIndex": 1,
+        "slot": 513831116,
+        "finality": "finalized",
+        "tokenMint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+        "launchId": "lch_fb08c407f58b519d32a7b0d3",
+        "supersedes": null,
+        "evidence": {
+          "source": "solana_rpc",
+          "version": 1,
+          "network": "devnet",
+          "distributed": "25886",
+          "distributedDust": "1"
+        },
+        "recordedAt": "2026-10-22T09:02:45.047Z"
+      },
+      {
+        "id": "tre_CYHx2SbGa5TB2x",
+        "seq": 12,
+        "stream": "creator_fee",
+        "account": "platform",
+        "accountAddress": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "assetMint": "So11111111111111111111111111111111111111112",
+        "assetSymbol": "SOL",
+        "decimals": 9,
+        "amount": "10354",
+        "direction": "credit",
+        "signature": "CTppmQatgJYhGdbUqzh8xredAi6jNDHgTmJhjkJZZ9AUx5eXRPnpfjdnPC4GAEnY34KtTPsFAJBtTSqx128jFJS",
+        "instructionIndex": 1,
+        "slot": 513831116,
+        "finality": "finalized",
+        "tokenMint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+        "launchId": "lch_fb08c407f58b519d32a7b0d3",
+        "supersedes": null,
+        "evidence": {
+          "source": "solana_rpc",
+          "version": 1,
+          "network": "devnet",
+          "distributed": "25886",
+          "distributedDust": "1"
+        },
+        "recordedAt": "2026-10-22T09:02:45.048Z"
+      }
+    ]
+  },
+  "duplicates": [
+    {
+      "accepted": true,
+      "inserted": []
+    },
+    {
+      "accepted": true,
+      "inserted": []
+    }
+  ],
+  "persisted": [
+    {
+      "id": "tre_kYXmHxDgJJtQwJ",
+      "seq": 0,
+      "slot": 513831116,
+      "amount": "15532",
+      "stream": "creator_fee",
+      "account": "agent_rewards",
+      "decimals": 9,
+      "evidence": {
+        "source": "solana_rpc",
+        "network": "devnet",
+        "version": 1,
+        "distributed": "25886",
+        "distributedDust": "1"
+      },
+      "finality": "finalized",
+      "launchId": "lch_fb08c407f58b519d32a7b0d3",
+      "assetMint": "So11111111111111111111111111111111111111112",
+      "direction": "credit",
+      "signature": "CTppmQatgJYhGdbUqzh8xredAi6jNDHgTmJhjkJZZ9AUx5eXRPnpfjdnPC4GAEnY34KtTPsFAJBtTSqx128jFJS",
+      "tokenMint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+      "recordedAt": "2026-10-22T09:02:45.047Z",
+      "supersedes": null,
+      "assetSymbol": "SOL",
+      "accountAddress": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+      "instructionIndex": 1
+    },
+    {
+      "id": "tre_CYHx2SbGa5TB2x",
+      "seq": 0,
+      "slot": 513831116,
+      "amount": "10354",
+      "stream": "creator_fee",
+      "account": "platform",
+      "decimals": 9,
+      "evidence": {
+        "source": "solana_rpc",
+        "network": "devnet",
+        "version": 1,
+        "distributed": "25886",
+        "distributedDust": "1"
+      },
+      "finality": "finalized",
+      "launchId": "lch_fb08c407f58b519d32a7b0d3",
+      "assetMint": "So11111111111111111111111111111111111111112",
+      "direction": "credit",
+      "signature": "CTppmQatgJYhGdbUqzh8xredAi6jNDHgTmJhjkJZZ9AUx5eXRPnpfjdnPC4GAEnY34KtTPsFAJBtTSqx128jFJS",
+      "tokenMint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+      "recordedAt": "2026-10-22T09:02:45.048Z",
+      "supersedes": null,
+      "assetSymbol": "SOL",
+      "accountAddress": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+      "instructionIndex": 1
+    }
+  ],
+  "reconciliation": "reconciled",
+  "limits": "Existing pre-graduation SOL earned fees only. No new trade or token. Public post-graduation/sweep evidence remains separate. No Mainnet, Railway or production mutation. Runtime accounting was fixed and these original signatures reconciled without another transaction."
+}

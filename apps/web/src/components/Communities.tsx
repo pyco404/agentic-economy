@@ -28,7 +28,7 @@ export function Communities({ api, data, selectedId, onSelect, onExplore, onAgen
   return <div className="discovery communities-discovery">
     <header className="discovery-hero"><div><span className="eyebrow">COMMUNITIES IN ONE WORLD</span>
       <h1 aria-label="Different communities. One world.">Different communities.<br />One world.</h1><p>Every token has an identity and a place in the city. Explore its headquarters, associated simulation agents and verified contributions.</p>
-      <span className="source-pill">{data.mode === "demo" ? "Demo communities · simulated economy" : "Backend-registered communities"}</span></div>
+      <span className="source-pill">{data.mode === "demo" ? "Demo communities · simulated economy" : "Registered communities"}</span></div>
       <div className="discovery-hero-plan" aria-hidden="true"><span /><span /><span /><span /><span /><b>GENESIS<br />A shared place to build.</b></div>
     </header>
     <p className="small muted">Platform updates from Agentic Economy. Each token community retains its own identity and social accounts.</p>

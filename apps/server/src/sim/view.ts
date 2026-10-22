@@ -169,7 +169,13 @@ export function worldStats(mode: DataMode, s: SimState): WorldStats {
     population: s.residents.population,
     activeAgents: agents.filter((a) => a.status === "active").length,
     pausedAgents: agents.filter((a) => a.status === "paused").length,
-    communities: Object.keys(s.communities).length,
+    communities: Object.keys(s.communities).filter(id => !s.syntheticCity?.groups.some(g => g.id === id)).length,
+    ...(s.syntheticCity ? { simulation: { profile: s.syntheticCity.profile, startedTick: s.syntheticCity.startedTick,
+      groups: s.syntheticCity.groups.map(g => {
+        const members=agents.filter(a=>a.communityId===g.id&&a.identity.kind==='house');
+        return {...g,headquartersBuildingId:s.communities[g.id]?.hqBuildingId??null,
+          activeAgents:members.filter(a=>a.status==='active').length,completedServices:members.reduce((n,a)=>n+a.verifiedTasks,0)};
+      }) } } : {}),
     buildings: s.buildingOrder.filter((id) => s.buildings[id]!.status !== "reserved_lot").length,
     creditsInCirculation: circulating(s.ledger),
     goodsProduced: { ...s.stats.produced },

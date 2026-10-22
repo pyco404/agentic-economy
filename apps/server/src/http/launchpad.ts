@@ -37,10 +37,14 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  const wallet=async(req:FastifyRequest)=>(await ctx.auth.authenticate(`Bearer ${token(req)??''}`)).wallet;
  const key=(req:FastifyRequest)=>z.string().regex(/^[A-Za-z0-9_.:-]{8,128}$/).parse(req.headers['idempotency-key']);
  let uploadsInFlight=0;const uploading=new WeakSet<FastifyRequest>();const release=(req:FastifyRequest)=>{if(uploading.delete(req))uploadsInFlight--;};
- app.addHook('onRequestAbort',async(req)=>release(req));
+ let preparationsInFlight=0;const preparing=new WeakSet<FastifyRequest>();
+ const releasePreparation=(req:FastifyRequest)=>{if(preparing.delete(req))preparationsInFlight--;};
+ app.addHook('onResponse',async(req)=>releasePreparation(req));
+ app.addHook('onRequestAbort',async(req)=>{release(req);releasePreparation(req);});
  const hits=new Map<string,{n:number;until:number}>();
  const rate=(req:FastifyRequest,owner:string)=>{const k=`${owner}:${req.routeOptions.url}`,now=Date.now(),r=hits.get(k);if(!r||r.until<now){if(hits.size>10000)for(const [k,v]of hits)if(v.until<now)hits.delete(k);hits.set(k,{n:1,until:now+60000});}else if(++r.n>20)throw new AppError('forbidden','Too many requests. Retry in a minute.');};
- const mutation=async(req:FastifyRequest)=>{csrf(req);const owner=await wallet(req);rate(req,owner);return owner;};
+ // Infrastructure backpressure is global to this API process, never a wallet quota/cooldown.
+ const mutation=async(req:FastifyRequest)=>{csrf(req);const owner=await wallet(req);if(preparationsInFlight>=8)throw new AppError('unavailable','Preparation is busy. Retry the same request shortly.');preparationsInFlight++;preparing.add(req);return owner;};
  // Match the published launch policy: no per-wallet launch count/cooldown.
  // Bound concurrent execution work while retaining CSRF, wallet ownership,
  // exact-message signatures, server-side idempotency and default-off gates.

@@ -4,6 +4,8 @@ This is the current checklist; earlier dated reports remain historical evidence.
 
 [Mandatory sequence, parameter approvals and release evidence checklist](PRODUCTION_RELEASE_CHECKLIST.md).
 
+**Current rollout policy:** Public browsing → separately approved official-deployer Mainnet test token → separately approved deployer-only $AECO launch → verified automatic holder Common Agents → separately approved public launching → Phase 3. The fixed deployer is `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`. Mainnet financial gates remain off; no test-token parameters, costs or transaction are authorized. The new backend permission gate must be included in the reviewed production release before activation. No public unlock follows automatically from mint verification.
+
 | Milestone | Status |
 | --- | --- |
 | Real SOL creator-fee distribution | **VERIFIED ON PUBLIC DEVNET** — 15,532 lamports Agent Rewards, 10,354 Platform, 1 retained dust; funding excluded from income |

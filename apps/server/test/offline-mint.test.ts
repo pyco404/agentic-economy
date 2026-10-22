@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import sdk from '../src/chain/pump-sdk.cjs';
+import { mkdtempSync, rmSync, writeFileSync,readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { withMintReservation } from '../scripts/lib/mint-reservation.js';
@@ -6,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { AddressLookupTableAccount, Keypair, PublicKey, VersionedTransaction } from '@solana/web3.js';
 import { describe, expect, it } from 'vitest';
 import { buildPumpLaunch, buildUnsignedPumpLaunch, unsignedPumpLaunchInstructions, validateSignedPumpLaunch } from '../src/chain/pump-builder.js';
-import { coSignReviewedMint, inspectMintSigningReview, MAINNET_GENESIS, mintMessageHash, type MintSigningReview } from '../src/chain/offline-mint.js';
+import { coSignReviewedMint, inspectMintSigningReview, MAINNET_GENESIS, mintMessageHash, type MintSigningReview, verifyMintSigningArtifact, DEVNET_SIGNING_GENESIS, PLANNED_AECO_MINT } from '../src/chain/offline-mint.js';
 
 // Entirely offline, disposable keys. No official mint keypair or Devnet transaction is used.
 async function fixture(){
@@ -28,6 +29,42 @@ describe('offline reserved mint co-signing',()=>{
   expect(tx.signatures[0]!.every(b=>b===0)).toBe(true);
   tx.sign([f.deployer]);
   await expect(validateSignedPumpLaunch(f.built.transaction,Buffer.from(tx.serialize()).toString('base64'))).resolves.toMatchObject({transaction:Buffer.from(tx.serialize()).toString('base64')});
+ });
+ it('accepts an exact mint-only handoff repeatedly and rejects a different attempt, changed message or payer signature',async()=>{
+  const f=await fixture(),artifact=await coSignReviewedMint(f.review,f.policy,f.review.messageSha256,f.mint.secretKey);
+  await expect(verifyMintSigningArtifact(f.review,f.policy,artifact)).resolves.toEqual(artifact);
+  await expect(verifyMintSigningArtifact(f.review,f.policy,artifact)).resolves.toEqual(artifact);
+  await expect(verifyMintSigningArtifact(f.review,f.policy,{...artifact,launchId:'other'})).rejects.toThrow('attempt');
+  const tx=VersionedTransaction.deserialize(Buffer.from(artifact.transaction,'base64'));
+  tx.sign([f.deployer]);
+  await expect(verifyMintSigningArtifact(f.review,f.policy,{...artifact,transaction:Buffer.from(tx.serialize()).toString('base64')})).rejects.toThrow('before Phantom');
+  tx.signatures[0]!.fill(0);tx.message.recentBlockhash=Keypair.generate().publicKey.toBase58();
+  await expect(verifyMintSigningArtifact(f.review,f.policy,{...artifact,transaction:Buffer.from(tx.serialize()).toString('base64')})).rejects.toThrow('persisted');
+  await expect(verifyMintSigningArtifact(f.review,f.policy,{...artifact,transaction:f.review.unsignedTransaction})).rejects.toThrow('signature');
+ });
+ it('requires an explicit isolated Devnet policy and forbids the official mint in a Devnet rehearsal',async()=>{
+  const f=await fixture(),review={...f.review,network:'devnet',genesisHash:DEVNET_SIGNING_GENESIS};
+  await expect(inspectMintSigningReview(review,f.policy)).rejects.toThrow('network');
+  await expect(inspectMintSigningReview(review,{...f.policy,network:'devnet'})).resolves.toBeDefined();
+  await expect(inspectMintSigningReview({...review,mint:PLANNED_AECO_MINT},{...f.policy,mint:PLANNED_AECO_MINT,network:'devnet'})).rejects.toThrow('official mint');
+  await expect(inspectMintSigningReview({...review,genesisHash:MAINNET_GENESIS},{...f.policy,network:'devnet'})).rejects.toThrow('network');
+ });
+ it('rebuilds a 1% Developer Buy exactly with pinned allowed protocol recipients, rejecting substitutions',async()=>{
+  const f=await fixture(),captured=JSON.parse(readFileSync(new URL('./fixtures/pump-global-devnet.json',import.meta.url),'utf8'));
+  const global=sdk.PUMP_SDK.decodeGlobal({data:Buffer.from(captured.global.dataBase64,'base64')} as never);
+  const devBuy={tokenAmount:BigInt(global.tokenTotalSupply.toString())/100n,maxQuoteCost:1000000000n};
+  const recipients={feeRecipient:global.feeRecipient.toBase58(),buybackFeeRecipient:global.buybackFeeRecipients[0]!.toBase58()};
+  const input={...f.input,devBuy},ix=await unsignedPumpLaunchInstructions(input,global,recipients);
+  const addresses=[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()];
+  const table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses}});
+  const built=await buildUnsignedPumpLaunch(input,f.blockhash,[table],global,recipients),tx=VersionedTransaction.deserialize(Buffer.from(built.transaction,'base64'));
+  const review={...f.review,unsignedTransaction:built.transaction,messageSha256:mintMessageHash(tx),devBuy:{tokenAmount:devBuy.tokenAmount.toString(),maxQuoteCost:devBuy.maxQuoteCost.toString()},globalAccountBase64:captured.global.dataBase64,protocolFeeRecipients:recipients,lookupTables:[{key:table.key.toBase58(),addresses:addresses.map(a=>a.toBase58())}]};
+  for(let n=0;n<4;n++)await expect(inspectMintSigningReview(review,f.policy)).resolves.toBeDefined();
+  const artifact=await coSignReviewedMint(review,f.policy,review.messageSha256,f.mint.secretKey);
+  await expect(verifyMintSigningArtifact(review,f.policy,artifact)).resolves.toEqual(artifact);
+  await expect(inspectMintSigningReview({...review,protocolFeeRecipients:{...recipients,feeRecipient:f.policy.deployer}},f.policy)).rejects.toThrow('protocol fee recipient');
+  await expect(inspectMintSigningReview({...review,protocolFeeRecipients:{...recipients,buybackFeeRecipient:f.policy.deployer}},f.policy)).rejects.toThrow('protocol fee recipient');
+  await expect(inspectMintSigningReview({...review,protocolFeeRecipients:undefined},f.policy)).rejects.toThrow('pinned');
  });
  it('refuses mint/recipient/deployer substitutions and invalid network claims',async()=>{
   const f=await fixture(),other=Keypair.generate().publicKey.toBase58();

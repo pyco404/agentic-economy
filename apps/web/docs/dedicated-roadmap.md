@@ -8,7 +8,7 @@ About's View Roadmap, and About's Explore Our Roadmap all open the same page.
 The timeline distinguishes Phase 1's core staging milestone and ongoing
 stabilization, Phase 2's current development/verification, and planned Phases 3–8.
 Each phase has an always-visible explanation and status, with keyboard-accessible
-expandable milestones. Phase 2 opens by default. No dates or percentages are
+expandable milestones. Phases start collapsed. No dates or percentages are
 invented. Staging preparation, local-validator tests, public-devnet evidence and
 remaining live/mainnet gates are explicitly distinguished.
 
@@ -21,7 +21,11 @@ Both editorial pages remain readable if the dashboard API is unavailable. The
 existing global city stays mounted while navigating, closing and reopening these
 pages. Camera state, geometry build count and completed reveal remain unchanged.
 
-## Verification
+## Mandatory native-token milestone
+
+Phase 2 remains in progress until the official $AECO token launches through the owner-operated production Launchpad on Solana Mainnet and independent verification passes. Phase 3 explicitly displays "Blocked until $AECO launch". Token supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and costs are separately approved before signing; this editorial change approves none of them. TOKEN/SOL is the initial architecture; TOKEN/AECO pairing stays Phase 4. [Production release checklist](../../../docs/PRODUCTION_RELEASE_CHECKLIST.md).
+
+## Historical verification
 
 - Frontend typecheck, lint and production build passed; all 211 unit tests passed
   with two workers. The first parallel run hit an existing geometry-test timeout;

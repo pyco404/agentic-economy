@@ -33,3 +33,22 @@
 @media (min-width: 640px) { .mobile-navigation-panel { left: auto; right: 16px; top: 76px; width: 320px; max-height: calc(100dvh - 92px); } }
 @media (max-width: 850px) { .app .menu-button { display: grid; place-items: center; min-width: 44px; min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .mobile-navigation-panel { animation: none; } }
+
+/* Reserve space for both controls instead of clipping them outside narrow headers. */
+@media (max-width: 850px) {
+  .app .topbar { gap: 8px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+  .app .topbar .brand { flex: 1 1 auto; min-width: 0; min-height: 44px; gap: 6px; font-size: 16px; }
+  .app .topbar .brand-mark { flex: 0 0 32px; width: 32px; height: 36px; }
+  .app .topbar .brand small { font-size: 6px; letter-spacing: 1.5px; }
+  .app .topbar .header-actions { flex: 0 0 auto; gap: 4px; }
+  .app .topbar .header-actions > .project-links,
+  .app .topbar .about-nav-link, .app .topbar .demo-badge { display: none; }
+  .app .topbar .wallet-button, .app .topbar .menu-button {
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 44px; min-width: 44px; width: 44px; height: 44px; min-height: 44px; padding: 0;
+  }
+  .app .topbar .wallet-button span { display: none; }
+  .app .topbar .menu-button { border: 1px solid #d9ded1; border-radius: 6px; background: #f0ebdd; color: #294b39; }
+}
+
+.mobile-navigation-footer .project-links a { min-width: 44px; min-height: 44px; justify-content: center; }

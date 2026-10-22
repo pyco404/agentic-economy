@@ -49,3 +49,13 @@ Read-only unsigned simulation at Devnet quote slot 513848789 succeeded for propo
 Developer Buy includes 71,227 lamports in protocol/creator fees combined; they are not added a second time. Quote price impact is 383 basis points. Simulation reused an existing verified test metadata URI only to estimate costs, not as this proposed coin's final metadata. Final artwork/name/metadata, live configuration and network fees must be revalidated before the owner approves an actual launch. No exact final charge is promised before that review. Creation, optional buy and the single platform transfer remain one atomic transaction. The separate fee-sharing policy is 60/40; this launch does not independently authorize a creator-fee collection transaction.
 
 The owner replaced the previously nominated mobile account. The replacement wallet is valid, has 10 Devnet SOL at the read-only check, and receives the exact-origin Devnet challenge; the superseded wallet returns 403. This proves server restrictions, not a physical-phone connection. Device-side Phantom acceptance remains pending. Gateway and wallet-policy regression tests passed (1 Node test and 2 Vitest tests).
+
+## Mobile invitation correction — 22 October
+
+The owner's physical Phantom browser reported `Invalid verification origin` at the invitation gate, before wallet authentication. Reproduced through actual Chrome HTTPS form navigation: the gate's `Referrer-Policy: no-referrer` serialized the POST Origin as `null`. Earlier HTTP-client checks explicitly supplied Origin, so they did not exercise browser serialization.
+
+Changed only the gate response policy to `same-origin`, preserving its strict exact-Origin check and withholding cross-site referrers. Missing/null, HTTP downgrade and lookalike origins still return 403. No CORS wildcard, forwarded-host trust, signature rule or nonce/replay behavior changed. Proxy-forwarded host/protocol headers remain stripped; authentication uses the fixed configured public HTTPS origin.
+
+A native browser-form regression passes at 344×882 and 690×829. The corrected live tunnel returns 401 anonymously, accepts its fresh invitation, and a real browser request receives a 200 challenge for the replacement wallet with the exact public HTTPS URI and Devnet chain. The superseded wallet returns 403, launchEnabled remains false, and no wallet signature or transaction was requested by automation. Physical Phantom sign-in remains pending the owner's retry. The tunnel is still operator-controlled; the invitation was renewed for 30 minutes and the old code/session invalidated.
+
+Underlying browser behavior: [Fetch Standard — append request Origin header](https://fetch.spec.whatwg.org/#append-a-request-origin-header).

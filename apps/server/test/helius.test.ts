@@ -1,3 +1,5 @@
+import { EventEmitter } from 'node:events';
+import type WebSocket from 'ws';
 import { describe, expect, it, vi } from 'vitest';
 import { Keypair } from '@solana/web3.js';
 import { HeliusReadBudget, HeliusReader, HELIUS_GENESIS } from '../src/chain/helius.js';
@@ -111,3 +113,23 @@ it('keeps launch-critical methods on the original gateway and verifies network b
   vi.spyOn(connection,'getMultipleParsedAccounts').mockResolvedValue({value:[{data:{parsed:{info:{owner:key()}}}},null]});
   expect(await chain.getHolderCount(mint)).toMatchObject({holders:1,exact:false});
  });
+
+it('uses finalized mint-filtered subscriptions only as hints and closes them on abort', async () => {
+  const socket = new EventEmitter() as EventEmitter & { send: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
+  socket.send = vi.fn(); socket.close = vi.fn();
+  const open = vi.fn(() => socket as unknown as WebSocket);
+  const f = setup(() => null); const abort = new AbortController(); const hint = vi.fn(); const mint = key();
+  f.reader.watchTokenAccounts(mint, hint, abort.signal, open);
+  await vi.waitFor(() => expect(open).toHaveBeenCalledOnce());
+  socket.emit('open');
+  const requests = socket.send.mock.calls.map(([raw]) => JSON.parse(raw));
+  expect(requests).toHaveLength(2);
+  for (const request of requests) {
+    expect(request.method).toBe('programSubscribe');
+    expect(request.params[1]).toMatchObject({ commitment: 'finalized', filters: [{ memcmp: { offset: 0, bytes: mint } }] });
+  }
+  socket.emit('message', JSON.stringify({ method: 'programNotification', params: { result: { context: { slot: 9 } } } }));
+  expect(hint).toHaveBeenCalledOnce();
+  socket.emit('message', 'malformed'); expect(hint).toHaveBeenCalledOnce();
+  abort.abort(); expect(socket.close).toHaveBeenCalledOnce();
+});

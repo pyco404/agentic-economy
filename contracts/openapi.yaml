@@ -9637,6 +9637,52 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        simulation:
+          description: Synthetic simulation groups, not launched tokens or AECO holders.
+          type: object
+          properties:
+            profile:
+              type: string
+            startedTick:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            groups:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  headquartersBuildingId:
+                    type:
+                      - string
+                      - "null"
+                  activeAgents:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  completedServices:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                required:
+                  - id
+                  - name
+                  - description
+                  - headquartersBuildingId
+                  - activeAgents
+                  - completedServices
+                additionalProperties: false
+          required:
+            - profile
+            - startedTick
+            - groups
+          additionalProperties: false
         aecoPopulation:
           type: object
           properties:
@@ -9753,6 +9799,50 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        simulation:
+          description: Synthetic simulation groups, not launched tokens or AECO holders.
+          type: object
+          properties:
+            profile:
+              type: string
+            startedTick:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            groups:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  headquartersBuildingId:
+                    type:
+                      - string
+                      - "null"
+                  activeAgents:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  completedServices:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                required:
+                  - id
+                  - name
+                  - description
+                  - headquartersBuildingId
+                  - activeAgents
+                  - completedServices
+          required:
+            - profile
+            - startedTick
+            - groups
         aecoPopulation:
           type: object
           properties:

@@ -218,7 +218,8 @@ export default function App() {
   };
   const exploreCommunity = (id: string) => {
     const c = data?.communities.find(c => c.id === id);
-    const b = c?.headquartersBuildingId ? buildings.find(b => b.id === c.headquartersBuildingId) : undefined;
+    const hq=c?.headquartersBuildingId??data?.stats.simulation?.groups.find(g=>g.id===id)?.headquartersBuildingId;
+    const b = hq ? buildings.find(b => b.id === hq) : undefined;
     if (b && go("world")) focus(b);
   };
   const openCommunity = (id: string) => { if (go("communities")) setCommunityId(id); };
@@ -650,7 +651,7 @@ export default function App() {
                             <i />
                             {api.kind === "demo"
                               ? "Offline fixture activity"
-                              : "City activity"}
+                              : data.stats.simulation ? "Simulated city activity" : "City activity"}
                           </div>
                           <select
                             className="world-filter"
@@ -663,7 +664,7 @@ export default function App() {
                               Production
                             </option>
                             <option value="task.verified">
-                              Verified services
+                              Simulated services
                             </option>
                             <option value="building.placed">
                               Construction / headquarters
@@ -774,7 +775,7 @@ export default function App() {
                       <span>
                         <b>{population.toLocaleString()}</b>
                         <small>
-                          {growth ? "Demo capacity preview" : "Active agents"}
+                          {growth ? "Demo capacity preview" : data.stats.simulation ? "Simulation agents" : "Active agents"}
                           {data.stats.aecoPopulation?.status === "current" && <span> · {data.stats.aecoPopulation.holders.toLocaleString()} $AECO Holders · {data.stats.aecoPopulation.commonAgents.toLocaleString()} Common Agents</span>}
                           {data.stats.aecoPopulation && ["syncing", "stale"].includes(data.stats.aecoPopulation.status) && <span> · Common Agents updating</span>}
                         </small>
@@ -796,8 +797,8 @@ export default function App() {
                     <div className="world-stat">
                       <Blocks size={18} />
                       <span>
-                        <b>{data.stats.communities}</b>
-                        <small>Communities</small>
+                        <b>{data.stats.communities||data.stats.simulation?.groups.length||0}</b>
+                        <small>{!data.stats.communities&&data.stats.simulation?"Simulation groups":"Communities"}</small>
                       </span>
                     </div>
                     <div className="world-stat">
@@ -805,7 +806,7 @@ export default function App() {
                       <span>
                         <b>{data.stats.verifiedTasks.toLocaleString()}</b>
                         <small>
-                          {isDemo ? "Demo services" : "Verified services"}
+                          {isDemo ? "Demo services" : "Simulated services"}
                         </small>
                       </span>
                     </div>

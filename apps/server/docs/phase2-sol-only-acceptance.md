@@ -14,10 +14,10 @@ The earlier controlled 3% and 3.5% public-Devnet launches remain verified; their
 
 Remaining priorities:
 
-1. Actual eligible SOL creator-fee collection and 60/40 reconciliation on public Devnet; accrual alone is insufficient.
+1. **VERIFIED, 22 October:** actual public-Devnet pre-graduation SOL creator-fee collection and 60/40 reconciliation. 25,887 eligible lamports → 15,532 Agent Rewards + 10,354 Platform + 1 retained dust. [Collection/security report](phase2-review-2026-10-22.md). Public post-graduation/sweep coverage remains separate; its supported paths pass local validation.
 2. Physical Phantom mobile acceptance.
 3. Queued Railway deployment and proof that the replacement Helius key is active in the running backend. The prior running/configuration comparison still showed the old runtime key; no completion is inferred here.
-4. Current Pinata integration verification and pending credential rotation, retaining V3 on the Free plan.
+4. **Current staging integration VERIFIED:** real Pinata V3 image/metadata uploads, HTTP 200 retrieval, owned draft persistence/review and duplicate retries. Credential rotation remains pending maintenance on the Free plan.
 5. Final transaction-recovery, security, regression and staging acceptance.
 
 Do not start Phase 3. USDC is outside Phase 2; staging remains demo and Mainnet financial operations stay disabled.
@@ -27,7 +27,7 @@ Do not start Phase 3. USDC is outside Phase 2; staging remains demo and Mainnet 
 - **VERIFIED:** SOL creation and real Phantom desktop signing, including ZAP 2% Developer Buy; see the acceptance evidence above.
 - **VERIFIED:** controlled public-Devnet Developer Buy at 3% and the 3.5% limit, plus real Phantom desktop at 2%; exact token balances and one platform charge. Final failure/recovery regression review remains separate.
 - Durable signed-transaction submission and explicit same-payload recovery after interrupted responses/restarts. No second coin, payment or wallet signature while an attempt remains uncertain.
-- Actual SOL creator-fee accrual, eligible collection and denomination-aware reconciliation against source signatures; public-network transactions require separate approval.
+- **VERIFIED:** actual public-Devnet SOL accrual, approved collection, exact receipts, retained dust, duplicate protection and persistent reconciliation. Public post-graduation/sweep coverage remains a documented limit; local supported-path regressions pass.
 - Verified, timestamped Explore market data and preserved launch provenance, with unavailable states rather than fabricated metrics.
 - Physical Phantom mobile acceptance (emulation alone is insufficient).
 - Final security, compatibility, staging website/API/WebSocket and operational acceptance.

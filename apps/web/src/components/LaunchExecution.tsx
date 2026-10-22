@@ -10,9 +10,9 @@ import {devBuyNeedsAcceptance,formatSol,formatTokens,percentFromBps} from '../ap
 const encoded=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
 const decoded=(value:string)=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
 /** New execution needs enabled review; existing saved attempts also support read-only recovery. */
-export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=false,executionAllowed=true,onBusyChange,onLockChange,onEdit,onConfirmed,onNewCoin}:{draft:SavedLaunchDraft;
+export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=false,executionAllowed=true,preparationAllowed=executionAllowed,onBusyChange,onLockChange,onEdit,onConfirmed,onNewCoin}:{draft:SavedLaunchDraft;
  /** The Developer Buy maximum the creator saw in the form; a higher prepared maximum needs explicit acceptance. */
- reviewedMaxDevBuyCost?:string|null;autoPrepare?:boolean;executionAllowed?:boolean;onBusyChange?:(busy:boolean)=>void;onLockChange?:(locked:boolean)=>void;onEdit?:()=>void;onConfirmed?:(created:boolean)=>void;onNewCoin?:()=>void}){
+ reviewedMaxDevBuyCost?:string|null;autoPrepare?:boolean;executionAllowed?:boolean;preparationAllowed?:boolean;onBusyChange?:(busy:boolean)=>void;onLockChange?:(locked:boolean)=>void;onEdit?:()=>void;onConfirmed?:(created:boolean)=>void;onNewCoin?:()=>void}){
  const session=useWalletSession(),[launch,setLaunch]=useState<TokenLaunch|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[restoring,setRestoring]=useState(true),[submissionUncertain,setSubmissionUncertain]=useState(false),[signingStage,setSigningStage]=useState('');
  const [acceptedMax,setAcceptedMax]=useState<string|null>(null),[canResume,setCanResume]=useState(false);
  const [copyMessage,setCopyMessage]=useState('');
@@ -62,14 +62,19 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  },[launch,submissionUncertain]);
  const run=async(work:()=>Promise<void>)=>{if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await work();}catch(e){if(alive.current)setError(e instanceof Error?e.message:'Launch preparation failed. Retry safely.');}finally{lock.current=false;if(alive.current){setBusy(false);setSigningStage('');}}};
  const prepare=()=>void run(async()=>{
-  if(!executionAllowed)throw new Error('New launch execution is disabled. Check the existing saved attempt.');
+  if(!preparationAllowed)throw new Error('New launch execution is disabled. Check the existing saved attempt.');
   if(!requestKey.current){requestKey.current=crypto.randomUUID();try{localStorage.setItem(scope,JSON.stringify({key:requestKey.current}));}catch{/* Retry key is retained in memory. */}}
   const r=await launchpadRequest(`/api/v1/launchpad/drafts/${draft.id}/launch`,PrepareLaunchResponse,jsonRequest('POST',{version:draft.version},requestKey.current));
   if(r.demoTransaction||!r.launch.execution)throw new Error('Backend did not return a valid safe-network launch');remember(r.launch);
  });
  const prepareRef=useRef(prepare);prepareRef.current=prepare;
- useEffect(()=>{if(executionAllowed&&autoPrepare&&!restoring&&!launch&&!error&&!automatic.current){automatic.current=true;prepareRef.current();}},[executionAllowed,autoPrepare,restoring,launch,error]);
+ useEffect(()=>{if(preparationAllowed&&autoPrepare&&!restoring&&!launch&&!error&&!automatic.current){automatic.current=true;prepareRef.current();}},[preparationAllowed,autoPrepare,restoring,launch,error]);
  const check=()=>void run(async()=>{const id=launch?.id||savedId.current;if(!id)throw new Error('No saved launch attempt was found.');receivedRef.current(await launchpadRequest(`/api/v1/launchpad/launches/${encodeURIComponent(id)}`,LaunchResponse));});
+ const renewMintReview=()=>void run(async()=>{
+  if(!preparationAllowed||!launch?.execution?.localMintReview||submissionUncertain||canResume||launch.signature)throw new Error('Reconcile this saved attempt before renewing its review.');
+  const r=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/mint-review/renew`,PrepareLaunchResponse,jsonRequest('POST',{messageSha256:launch.execution.localMintReview.messageSha256}));
+  setLocalMintSignature(null);setAcceptedMax(null);remember(r.launch);
+ });
  const downloadMintReview=()=>void run(async()=>{
   if(!launch?.execution?.localMintReview)throw new Error('No local mint signing review is available');
   const review=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/mint-review`,LocalMintReview);
@@ -138,9 +143,9 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  return <section className={`launch-execution${confirmed?' launch-result-success':''}`} aria-label="Launch execution">
   <p className="launch-stage-label">{confirmed||pending||interrupted||terminal?'3 · Result':'2 · Review'}</p>
   <h3 aria-live="polite">{confirmed?'Coin created successfully':interrupted?'We lost connection while checking your launch':pending?'Launch in progress':terminal?'This launch attempt did not complete':'Review before wallet approval'}</h3>
-  {!launch?<>{(busy||restoring)&&<p role="status">Preparing your launch transaction…</p>}{executionAllowed&&!busy&&!restoring&&!error&&<button className="secondary wide" onClick={prepare}>Prepare transaction</button>}</>:<>
+  {!launch?<>{(busy||restoring)&&<p role="status">Preparing your launch transaction…</p>}{preparationAllowed&&!busy&&!restoring&&!error&&<button className="secondary wide" onClick={prepare}>Prepare transaction</button>}</>:<>
    {token}
-   {!executionAllowed&&!confirmed&&<p className="small muted">Status checks only. Wallet approval is unavailable in this environment.</p>}
+   {!executionAllowed&&!confirmed&&<p className="small muted">{preparationAllowed?'Review preparation only. Wallet approval remains locked.':'Status checks only. Wallet approval is unavailable in this environment.'}</p>}
    {confirmed?<>
     <p className="small">Your coin is now live and visible in Explore.</p>
     <dl className="launch-summary"><div><dt>Mint</dt><dd><code className="ui-select-text">{short(launch.mint)}</code></dd></div>
@@ -152,7 +157,8 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
    </>:pending||interrupted||terminal?<>
     <p role="status">{interrupted?'Your wallet approval may still have succeeded. Check the launch status before trying again.':pending?'We’re checking your transaction and confirming the result on-chain.':'No completed launch was verified for this attempt. You can prepare a new attempt once its status is resolved.'}</p>
     {launch.status==='recovery_needed'&&<p className="small muted">Your transaction needs an additional verification check. Keep this attempt; do not launch or pay again.</p>}
-    {terminal&&!submissionUncertain&&<p className="small muted">{localReview?'The reserved mint needs a reviewed recovery before a replacement message. Keep this attempt; do not create another mint.':'A new attempt is available. Any network fees from an earlier failed transaction may still apply.'}</p>}
+    {terminal&&!submissionUncertain&&<p className="small muted">{localReview?'Check this attempt before renewing its expired signing review. The mint and previous review stay saved.':'A new attempt is available. Any network fees from an earlier failed transaction may still apply.'}</p>}
+    {localReview&&launch.status==='expired'&&!submissionUncertain&&!canResume&&!launch.signature&&preparationAllowed&&<button className="secondary" disabled={busy} onClick={renewMintReview}>Refresh signing review</button>}
     <div className="launch-review-actions"><button className={safeRetry?'secondary':'primary'} disabled={busy} onClick={check}>Check launch status</button>
      {safeRetry&&<button className="primary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare new attempt</button>}
      {canEdit&&<button className="text-button" onClick={onEdit}>Back to edit</button>}
@@ -168,7 +174,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
     <p className="small muted">{launch.execution?.network==='devnet'?'Devnet test SOL only. ':''}A failed transaction may still incur network fees.</p>
     {launch.status==='awaiting_signature'&&needsAcceptance&&<div className="launch-quote-change" role="alert"><p className="small">{reviewedMaxDevBuyCost===null?'Review the Developer Buy amounts before approving.':`The Developer Buy maximum changed from ${formatSol(reviewedMaxDevBuyCost)} to ${formatSol(dev!.maxQuoteCost)}.`}</p><button className="secondary" onClick={()=>setAcceptedMax(dev!.maxQuoteCost)}>Accept these amounts</button></div>}
     {localReview&&launch.status==='awaiting_signature'&&!submissionUncertain&&<details className="launch-technical"><summary>Prepared mint signing</summary>
-     <p className="small">This reserved mint is signed locally first. Download the public review and use the approved local signing tool. Import only its public signature file. Never select or upload your mint keypair.</p>
+     <p className="small">This reserved mint is signed locally first. Download the public review and use the approved local signing tool. Import only its public signature file. Never select or upload your mint keypair. Renewed reviews require fresh approval of the new hash and the preceding hash shown in the download.</p>
      <button className="secondary" disabled={busy} onClick={downloadMintReview}>Download public review</button>
      <label>Public mint-signature file<input type="file" accept="application/json,.json" disabled={busy||!executionAllowed} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)importMintSignature(file);}}/></label>
      {localMintReady&&<p className="small" role="status">Mint signature verified. Phantom approval is still required.</p>}

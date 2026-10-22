@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { RESOURCES, type AgentPermission, type AgentStrategy, type GridPos, type Profession, type Resource, type TaskKind } from "@agentic-economy/shared";
 import { KIND_SPECS, Rng, deriveSeed, type WorldLayout } from "@agentic-economy/world-spec";
 import { legacyIdentity, takenNames } from "./identity.js";
+import { applyCommonAgents, stepCommonAgent } from "./common-agents.js";
 import { NavGrid } from "./nav.js";
 import { UtilityPlanner, type Planner, type TaskCandidate } from "./planner.js";
 import {
@@ -317,6 +318,15 @@ export class SimEngine {
   private applyCommand(c: SimCommand) {
     const s = this.state;
     switch (c.type) {
+      case "aeco.reconcile": {
+        const slot = s.aecoPopulation?.slot;
+        applyCommonAgents(s, c, this.nav);
+        if (slot !== s.aecoPopulation?.slot) for (const id of s.agentOrder) {
+          const a = s.agents[id]!;
+          if (a.identity.kind === "aeco_observed") this.out.moves.push({ id, cell: { ...a.cell }, activity: a.activity, target: a.target });
+        }
+        return;
+      }
       case "agent.create":
         // Pre-0.3.0 command (replayed from the log): the agent is legacy, keeping its recorded owner.
         this.spawnAgent(c, c.name, c.ownerWallet, legacyIdentity(c.agentId, c.ownerWallet, takenNames(s)));
@@ -715,6 +725,10 @@ export class SimEngine {
   private stepAgent(a: AgentSimState) {
     const s = this.state;
     if (a.status === "paused") return;
+    if (a.identity.kind === "aeco_observed") {
+      if (stepCommonAgent(a, s, this.nav) && s.tick % 4 === Number.parseInt(a.id.slice(-1), 16) % 4) this.out.moves.push({ id: a.id, cell: { ...a.cell }, activity: a.activity, target: a.target });
+      return;
+    }
     const before = { ...a.cell };
     const beforeActivity = a.activity;
 
@@ -1127,6 +1141,7 @@ export class SimEngine {
     }
     for (const id of s.agentOrder) {
       const a = s.agents[id]!;
+      if (a.identity.kind === "aeco_observed") continue; // Phase 2 presence does not join the credit economy.
       const paid = burn(s.ledger, agentAccount(id), AGENT_DAILY_UPKEEP);
       a.perf.creditsSpent += paid;
       a.spentToday = 0;

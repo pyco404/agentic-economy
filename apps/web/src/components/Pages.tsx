@@ -672,7 +672,7 @@ export function Treasury({ data }: { data: Dashboard }) {
                     <td>
                       {formatAmount(e.amount, e.decimals)} {e.assetSymbol}
                     </td>
-                    <td>{e.finality}<details><summary>Receipt evidence</summary><span>{data.mode==='demo'||e.evidence?.source==='mock_chain'?'Simulated demo evidence':e.stream==='creator_fee'&&!e.evidence?'Legacy receipt · audit required':'On-chain receipt'}</span><br/><code>{e.signature}</code><br/>Instruction {e.instructionIndex} · slot {e.slot} · {e.evidence?.network??data.mode}<br/><code>{e.accountAddress}</code>{e.evidence&&<><br/>Distribution: {formatAmount(e.evidence.distributed,e.decimals)} {e.assetSymbol} · retained dust: {e.evidence.distributedDust} base units</>}{e.supersedes&&<><br/>Supersedes: {e.supersedes}</>}</details></td>
+                    <td>{e.finality}<details><summary>Receipt evidence</summary><span>{data.mode==='demo'||e.evidence?.source==='mock_chain'?'Simulated demo evidence':e.stream==='creator_fee'&&!e.evidence?'Legacy receipt · audit required':'On-chain receipt'}</span><br/><code>{e.signature}</code><br/>Instruction {e.instructionIndex} · slot {e.slot} · {e.evidence?.network??data.mode}<br/><code>{e.accountAddress}</code>{e.evidence&&<><br/>Distribution: {formatAmount(e.evidence.distributed,e.decimals)} {e.assetSymbol} · retained dust: {e.evidence.distributedDust===null?'not determined':`${e.evidence.distributedDust} base units`}</>}{e.supersedes&&<><br/>Supersedes: {e.supersedes}</>}</details></td>
                   </tr>
                 ))}
               </tbody>

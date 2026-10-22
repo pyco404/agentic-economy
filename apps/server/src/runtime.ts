@@ -165,7 +165,7 @@ export class CityRuntime {
 
   agentSummaries() {
     const s = this.state;
-    return s.agentOrder.map((id) => toAgentSummary(s, s.agents[id]!));
+    return s.agentOrder.filter(id => s.agents[id]!.identity.kind !== "aeco_observed" || s.agents[id]!.status === "active").map((id) => toAgentSummary(s, s.agents[id]!));
   }
 
   chunkVersionList() {

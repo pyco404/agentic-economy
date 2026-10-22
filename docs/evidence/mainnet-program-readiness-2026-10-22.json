@@ -1,0 +1,47 @@
+{
+  "network": "mainnet-beta",
+  "readOnly": true,
+  "officialMint": "ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco",
+  "officialMintUnused": true,
+  "walletBalanceChecked": false,
+  "slot": 460171542,
+  "programs": [
+    {
+      "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "reviewedSlot": "458921440",
+      "observedSlot": "458921440",
+      "matchesReviewedIdentity": true
+    },
+    {
+      "program": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+      "reviewedSlot": "456132171",
+      "observedSlot": "456132171",
+      "matchesReviewedIdentity": true
+    },
+    {
+      "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+      "reviewedSlot": "458921517",
+      "observedSlot": "458921517",
+      "matchesReviewedIdentity": true
+    },
+    {
+      "program": "MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e",
+      "reviewedSlot": "452655053",
+      "observedSlot": "452655053",
+      "matchesReviewedIdentity": true
+    }
+  ],
+  "allProgramsMatchReviewed": true,
+  "lookupTable": {
+    "address": "33wnSGm8hPBd9omoa252NAY8JX5PWJngkTNJgzdvdEZr",
+    "valid": true,
+    "active": true,
+    "frozen": true,
+    "entries": 42,
+    "containsPlatform": false,
+    "containsAgentRewards": false
+  },
+  "transactionsSigned": 0,
+  "transactionsBroadcast": 0,
+  "checkedAt": "2026-10-22T20:30:24.491239+00:00"
+}

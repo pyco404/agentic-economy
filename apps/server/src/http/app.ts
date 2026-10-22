@@ -95,7 +95,11 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
         let sessionExpiresAt = "";
         if (def.auth) ({ wallet, sessionExpiresAt } = await ctx.auth.authenticate(req.headers.authorization));
         // Reauthorize before idempotent replay; old preparation receipts never grant Mainnet access.
-        if (name === "prepareLaunch") assertLaunchWalletAllowed(ctx.config, wallet);
+        if (name === "prepareLaunch") {
+          assertLaunchWalletAllowed(ctx.config, wallet);
+          if(ctx.config.solana.cluster==="mainnet-beta")
+            throw new AppError("forbidden","The official prepared mint requires the wallet-owned draft flow");
+        }
         const params = def.params ? def.params.parse(req.params) : {};
         const query = def.query ? def.query.parse(req.query) : {};
         const body = def.body ? def.body.parse(req.body ?? {}) : undefined;

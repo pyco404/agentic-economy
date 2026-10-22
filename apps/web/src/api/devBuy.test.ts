@@ -1,3 +1,4 @@
+import { DraftFields } from './shared';
 import { describe, expect, it } from 'vitest';
 import { bpsFromPercent, devBuyNeedsAcceptance, formatSol, formatTokens, formatUnits, percentFromBps } from './devBuy';
 
@@ -6,6 +7,14 @@ describe('Developer Buy input and formatting', () => {
     expect([bpsFromPercent('0'), bpsFromPercent('1'), bpsFromPercent('3.5'), bpsFromPercent('3.50'), bpsFromPercent('0.01'), bpsFromPercent(' 2.3 ')]).toEqual([0, 100, 350, 350, 1, 230]);
     for (const bad of ['3.51', '4', '-1', '1.234', 'abc', '', '1e2', '0x1']) expect(bpsFromPercent(bad), bad).toBeNull();
     expect([percentFromBps(350), percentFromBps(300), percentFromBps(1), percentFromBps(0)]).toEqual(['3.5', '3', '0.01', '0']);
+  });
+  it('accepts exactly the same 351 basis-point choices as the shared backend draft schema', () => {
+    expect(DraftFields.parse({}).devBuyBps).toBe(0);
+    for (let bps=0; bps<=350; bps++) {
+      expect(bpsFromPercent(percentFromBps(bps))).toBe(bps);
+      expect(DraftFields.parse({devBuyBps:bps}).devBuyBps).toBe(bps);
+    }
+    for (const bps of [-1,351,0.5,Number.NaN]) expect(DraftFields.safeParse({devBuyBps:bps}).success).toBe(false);
   });
   it('formats base units exactly, without floating point', () => {
     expect(formatTokens('35000000000000')).toBe('35,000,000');

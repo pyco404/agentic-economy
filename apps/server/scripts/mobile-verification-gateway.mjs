@@ -17,7 +17,9 @@ export function createMobileGateway({origin,accessCode,gatewayToken,dist,backend
  if(!Number.isInteger(backendPort)||backendPort<1024||backendPort>65535)throw Error('Invalid loopback API port');
  const started=now(),session=randomBytes(32).toString('hex');let failures=0,windowEnd=started+60_000;
  const permitted=req=>now()-started<lifetimeMs&&req.headers.host===url.host&&equal((req.headers.cookie??'').split(';').map(s=>s.trim()).find(s=>s.startsWith(cookieName+'='))?.slice(cookieName.length+1),session);
- const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'"};
+ // Native form POSTs serialize Origin as null under no-referrer. Preserve the same-origin
+ // origin while withholding referrers from other sites; never accept null/missing Origin.
+ const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'"};
  const send=(res,status,body)=>{res.writeHead(status,{...headers,'Content-Type':'text/html; charset=utf-8'});res.end(body);};
  const forwardHeaders=req=>{
   const h={...req.headers,host:'127.0.0.1:'+backendPort,'x-aeco-verification-gateway':gatewayToken};

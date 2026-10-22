@@ -1,7 +1,7 @@
 {
   "items": [
     {
-      "id": "tre_6gkTx5cANGjE7k",
+      "id": "tre_UAFjF1F29acTTR",
       "seq": 78,
       "stream": "creator_fee",
       "account": "platform",
@@ -11,17 +11,24 @@
       "decimals": 9,
       "amount": "1200001",
       "direction": "credit",
-      "signature": "2J8RwesN8BRJTiLwzHfxfe8TnsNykyu8zUYXBArFJFwQVdbSWe18hzt2jouxxAHP58FE1TcQP7s2XMePmqC1dLmS",
+      "signature": "UUr5S8MN43nEywBFVBkSvvDtgTZwXBXunKRvKmBoCQA5bP6BaGRtFDPnmgdTUsMz1VpFX2U9b2YQMNLZfbApJ2r",
       "instructionIndex": 0,
       "slot": 1021,
       "finality": "finalized",
-      "tokenMint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-      "launchId": "lch_Aq2F1vC6CLgKLA",
+      "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+      "launchId": "lch_U4eVzb75sBUGGY",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.748Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "3000001",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.473Z"
     },
     {
-      "id": "tre_PjvPtKbAoerBMM",
+      "id": "tre_QKZ0bdE5LAbhSu",
       "seq": 77,
       "stream": "creator_fee",
       "account": "agent_rewards",
@@ -31,17 +38,24 @@
       "decimals": 9,
       "amount": "1800000",
       "direction": "credit",
-      "signature": "2J8RwesN8BRJTiLwzHfxfe8TnsNykyu8zUYXBArFJFwQVdbSWe18hzt2jouxxAHP58FE1TcQP7s2XMePmqC1dLmS",
+      "signature": "UUr5S8MN43nEywBFVBkSvvDtgTZwXBXunKRvKmBoCQA5bP6BaGRtFDPnmgdTUsMz1VpFX2U9b2YQMNLZfbApJ2r",
       "instructionIndex": 0,
       "slot": 1021,
       "finality": "finalized",
-      "tokenMint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-      "launchId": "lch_Aq2F1vC6CLgKLA",
+      "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+      "launchId": "lch_U4eVzb75sBUGGY",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.748Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "3000001",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.473Z"
     },
     {
-      "id": "tre_wfMKCc17fXZmKK",
+      "id": "tre_KkF9h6Lr26XF4B",
       "seq": 76,
       "stream": "creator_fee",
       "account": "platform",
@@ -51,17 +65,24 @@
       "decimals": 9,
       "amount": "4938272",
       "direction": "credit",
-      "signature": "4EvVq5ndXFP3t2ZMmhgK55py5Wx1Trssx4mUM8nuCQMy2y3UFcf3b9uHy12uDP3STWNRTmmZr4jvZ9J7ZqASC52x",
+      "signature": "2GL6DmEme7gSPU4V5dfgNqCrCpwR3Yv7bAZyHhCVjosC3XgKjZe71B4fj4amdFXUAbYgeCnLzFzboSvzyj2fKE5w",
       "instructionIndex": 0,
       "slot": 1019,
       "finality": "finalized",
-      "tokenMint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-      "launchId": "lch_Aq2F1vC6CLgKLA",
+      "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+      "launchId": "lch_U4eVzb75sBUGGY",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.746Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "12345678",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.469Z"
     },
     {
-      "id": "tre_EQY4JgHbMZwZ4X",
+      "id": "tre_T2uPf2hbo0V4cG",
       "seq": 75,
       "stream": "creator_fee",
       "account": "agent_rewards",
@@ -71,17 +92,24 @@
       "decimals": 9,
       "amount": "7407406",
       "direction": "credit",
-      "signature": "4EvVq5ndXFP3t2ZMmhgK55py5Wx1Trssx4mUM8nuCQMy2y3UFcf3b9uHy12uDP3STWNRTmmZr4jvZ9J7ZqASC52x",
+      "signature": "2GL6DmEme7gSPU4V5dfgNqCrCpwR3Yv7bAZyHhCVjosC3XgKjZe71B4fj4amdFXUAbYgeCnLzFzboSvzyj2fKE5w",
       "instructionIndex": 0,
       "slot": 1019,
       "finality": "finalized",
-      "tokenMint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-      "launchId": "lch_Aq2F1vC6CLgKLA",
+      "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+      "launchId": "lch_U4eVzb75sBUGGY",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.746Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "12345678",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.469Z"
     },
     {
-      "id": "tre_Vx2PvUHxcL75o3",
+      "id": "tre_qQGwZby6XLtLP4",
       "seq": 57,
       "stream": "launch_fee",
       "account": "platform",
@@ -91,17 +119,24 @@
       "decimals": 9,
       "amount": "50000000",
       "direction": "credit",
-      "signature": "2suJY8x6GMCZSHMpY6NYEeMfjZbKvcTZomvC2UpLgvDizjRyiN5yerkqNVBbmpAWigKNUf28apVzjBquVy7ZfxKL",
+      "signature": "2wHRr9Fe9GV3fzJeMKHuPnKBGuAWgRMKrAboHZZPb8yFZTK9mi45zRHDpitRNabhsufRkUVJ31wYd3uoMwAsBxhk",
       "instructionIndex": 0,
       "slot": 1017,
       "finality": "finalized",
-      "tokenMint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-      "launchId": "lch_Aq2F1vC6CLgKLA",
+      "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+      "launchId": "lch_U4eVzb75sBUGGY",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.725Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "50000000",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.349Z"
     },
     {
-      "id": "tre_MQRCcLjiJ5HRRt",
+      "id": "tre_66kdG6VZGhxyDg",
       "seq": 55,
       "stream": "creator_fee",
       "account": "platform",
@@ -111,17 +146,24 @@
       "decimals": 9,
       "amount": "1200001",
       "direction": "credit",
-      "signature": "3ScRTo1faeWLLxzi6LMWreF7tEi9vTvLKYCPk5oJxzbsQE624t1Kzb6QDUyK29thCYg5rREry2nnpYhcenixPFHa",
+      "signature": "36sE5txVSnorR6eDwYGs7coA8KC5Md9M7H8B6PhNe29JLqRvahnbjZHYFL74vwc3tzBQmyXkoschTUfnHTvBQuiH",
       "instructionIndex": 0,
       "slot": 1014,
       "finality": "finalized",
-      "tokenMint": "ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-      "launchId": "lch_9HzWrgUxqiqacb",
+      "tokenMint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+      "launchId": "lch_impAgbYJ0dgiyD",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.722Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "3000001",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.287Z"
     },
     {
-      "id": "tre_2H4S6xvDT94eLx",
+      "id": "tre_h8vEP3YLZfd28E",
       "seq": 54,
       "stream": "creator_fee",
       "account": "agent_rewards",
@@ -131,17 +173,24 @@
       "decimals": 9,
       "amount": "1800000",
       "direction": "credit",
-      "signature": "3ScRTo1faeWLLxzi6LMWreF7tEi9vTvLKYCPk5oJxzbsQE624t1Kzb6QDUyK29thCYg5rREry2nnpYhcenixPFHa",
+      "signature": "36sE5txVSnorR6eDwYGs7coA8KC5Md9M7H8B6PhNe29JLqRvahnbjZHYFL74vwc3tzBQmyXkoschTUfnHTvBQuiH",
       "instructionIndex": 0,
       "slot": 1014,
       "finality": "finalized",
-      "tokenMint": "ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-      "launchId": "lch_9HzWrgUxqiqacb",
+      "tokenMint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+      "launchId": "lch_impAgbYJ0dgiyD",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.722Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "3000001",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.287Z"
     },
     {
-      "id": "tre_fVfVxijK6G65ar",
+      "id": "tre_cuHKQQZmjN5GCs",
       "seq": 53,
       "stream": "creator_fee",
       "account": "platform",
@@ -151,17 +200,24 @@
       "decimals": 9,
       "amount": "4938272",
       "direction": "credit",
-      "signature": "4chKY18afG35Gvgw1S2DppUcoRni8p1JLT9Z8murEx9XXmM2ZkyUzUXWrsp39sD6ZzUKszDSBEQVUSivPvmCA3mz",
+      "signature": "4mzGCLboTY5w3UJVRSVgXn1Vvegoc4NuTAkhcgKcBT9vBUnfEq4tLaAJDFt89CPNrLddsC5Yt7Q893Y8xBHmAbWQ",
       "instructionIndex": 0,
       "slot": 1012,
       "finality": "finalized",
-      "tokenMint": "ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-      "launchId": "lch_9HzWrgUxqiqacb",
+      "tokenMint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+      "launchId": "lch_impAgbYJ0dgiyD",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.721Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "12345678",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.263Z"
     },
     {
-      "id": "tre_TM4NrH8Sf8zaxV",
+      "id": "tre_bANWSZh21QvRzC",
       "seq": 52,
       "stream": "creator_fee",
       "account": "agent_rewards",
@@ -171,17 +227,24 @@
       "decimals": 9,
       "amount": "7407406",
       "direction": "credit",
-      "signature": "4chKY18afG35Gvgw1S2DppUcoRni8p1JLT9Z8murEx9XXmM2ZkyUzUXWrsp39sD6ZzUKszDSBEQVUSivPvmCA3mz",
+      "signature": "4mzGCLboTY5w3UJVRSVgXn1Vvegoc4NuTAkhcgKcBT9vBUnfEq4tLaAJDFt89CPNrLddsC5Yt7Q893Y8xBHmAbWQ",
       "instructionIndex": 0,
       "slot": 1012,
       "finality": "finalized",
-      "tokenMint": "ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-      "launchId": "lch_9HzWrgUxqiqacb",
+      "tokenMint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+      "launchId": "lch_impAgbYJ0dgiyD",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.721Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "12345678",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.263Z"
     },
     {
-      "id": "tre_NGXiB06hfwbr4t",
+      "id": "tre_GHCbHvo2vpUJYU",
       "seq": 29,
       "stream": "launch_fee",
       "account": "platform",
@@ -191,17 +254,24 @@
       "decimals": 9,
       "amount": "50000000",
       "direction": "credit",
-      "signature": "41kAQZ9LFtSx8sQ8137Qj6NFpfFsvjvnT23B3D2btGUicxgYuzTGg9R4UpDMiDdBGHV5QXQjv3Pfsjyh36ccSWHF",
+      "signature": "tR2DFPWMRSpcimCdixQbtUSJdBV2YW9ofU33FxSLnQ94fS2CewJXvjPUFQC2j7jDW2pBihPJXBNSCLStVHxC1UW",
       "instructionIndex": 0,
       "slot": 1010,
       "finality": "finalized",
-      "tokenMint": "ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-      "launchId": "lch_9HzWrgUxqiqacb",
+      "tokenMint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+      "launchId": "lch_impAgbYJ0dgiyD",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.703Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "50000000",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.084Z"
     },
     {
-      "id": "tre_seEyBLDz5vU6c0",
+      "id": "tre_6max8E2TbXYvQW",
       "seq": 27,
       "stream": "creator_fee",
       "account": "platform",
@@ -211,17 +281,24 @@
       "decimals": 9,
       "amount": "1200001",
       "direction": "credit",
-      "signature": "5Ex8JfwVQj9Bd9dgrW4F9aMfA7MpMnXLCPeqafBnKGc9pKgfBYLDVzi6f6UgHq6bhSMXHc5FTVCD5TK3dxKib3BX",
+      "signature": "2mXfFoja2G2kWUdYFWEbCUpBqUc5MyZkVXAbvStgA68PbLWsNheCj59re9ohsVdspMuFSdAu2WvtMnRcdKeuUVoH",
       "instructionIndex": 0,
       "slot": 1007,
       "finality": "finalized",
-      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-      "launchId": "lch_MTMneC1hCMa2cK",
+      "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+      "launchId": "lch_UD3BcMkSsGRhXm",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.699Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "3000001",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.002Z"
     },
     {
-      "id": "tre_skAfCARtC06GQ1",
+      "id": "tre_b9AmUBStAMGZWs",
       "seq": 26,
       "stream": "creator_fee",
       "account": "agent_rewards",
@@ -231,17 +308,24 @@
       "decimals": 9,
       "amount": "1800000",
       "direction": "credit",
-      "signature": "5Ex8JfwVQj9Bd9dgrW4F9aMfA7MpMnXLCPeqafBnKGc9pKgfBYLDVzi6f6UgHq6bhSMXHc5FTVCD5TK3dxKib3BX",
+      "signature": "2mXfFoja2G2kWUdYFWEbCUpBqUc5MyZkVXAbvStgA68PbLWsNheCj59re9ohsVdspMuFSdAu2WvtMnRcdKeuUVoH",
       "instructionIndex": 0,
       "slot": 1007,
       "finality": "finalized",
-      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-      "launchId": "lch_MTMneC1hCMa2cK",
+      "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+      "launchId": "lch_UD3BcMkSsGRhXm",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.699Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "3000001",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:21.002Z"
     },
     {
-      "id": "tre_z6v17W4aA29GAi",
+      "id": "tre_fWAbUVNLQoRvT6",
       "seq": 25,
       "stream": "creator_fee",
       "account": "platform",
@@ -251,17 +335,24 @@
       "decimals": 9,
       "amount": "4938272",
       "direction": "credit",
-      "signature": "219Z7Wt2rSDZAn7d1BWeUjbKbw2D5eyozE1d8aCTWgjGnckMaAqwL2DddqLKnzsZ15vne7RRZQ5tK9QErarzAHMV",
+      "signature": "3BzNzfw68jEZk8CUH3zjFaf8xFTvAJfpUcPYVupz5BdBXV4CGUWTaoe447udYQNqEtqNUm1aBQv2s9zfqEXyZtxW",
       "instructionIndex": 0,
       "slot": 1005,
       "finality": "finalized",
-      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-      "launchId": "lch_MTMneC1hCMa2cK",
+      "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+      "launchId": "lch_UD3BcMkSsGRhXm",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.698Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "12345678",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:20.968Z"
     },
     {
-      "id": "tre_FX6ieMZboNgHJQ",
+      "id": "tre_6UQu07R4tk7nCT",
       "seq": 24,
       "stream": "creator_fee",
       "account": "agent_rewards",
@@ -271,17 +362,24 @@
       "decimals": 9,
       "amount": "7407406",
       "direction": "credit",
-      "signature": "219Z7Wt2rSDZAn7d1BWeUjbKbw2D5eyozE1d8aCTWgjGnckMaAqwL2DddqLKnzsZ15vne7RRZQ5tK9QErarzAHMV",
+      "signature": "3BzNzfw68jEZk8CUH3zjFaf8xFTvAJfpUcPYVupz5BdBXV4CGUWTaoe447udYQNqEtqNUm1aBQv2s9zfqEXyZtxW",
       "instructionIndex": 0,
       "slot": 1005,
       "finality": "finalized",
-      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-      "launchId": "lch_MTMneC1hCMa2cK",
+      "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+      "launchId": "lch_UD3BcMkSsGRhXm",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.698Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "12345678",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:20.968Z"
     },
     {
-      "id": "tre_S9y9LAXL9wfmVX",
+      "id": "tre_3zvH7WmyriqMnT",
       "seq": 2,
       "stream": "launch_fee",
       "account": "platform",
@@ -291,14 +389,21 @@
       "decimals": 9,
       "amount": "50000000",
       "direction": "credit",
-      "signature": "5L8CU8MfHLCLFNYmzXfJ2nUSEtYz3yREvbWZ6z6STJqJNqDwcnbq9bPQ7azGMD6ctJowtg1cuJSfFtRmkRrB5GNQ",
+      "signature": "5jMxeGgXSdrxR38ZAz9cFrUnj1GwshFJwKXsUye6a3gH9hGsFGrqcfNZQFPiUhjcLZ6ryGxAWHBAEkYrqUWwLW6m",
       "instructionIndex": 0,
       "slot": 1003,
       "finality": "finalized",
-      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-      "launchId": "lch_MTMneC1hCMa2cK",
+      "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+      "launchId": "lch_UD3BcMkSsGRhXm",
       "supersedes": null,
-      "recordedAt": "2026-10-16T05:47:03.624Z"
+      "evidence": {
+        "source": "mock_chain",
+        "version": 1,
+        "network": "demo",
+        "distributed": "50000000",
+        "distributedDust": "0"
+      },
+      "recordedAt": "2026-10-22T09:05:20.489Z"
     }
   ],
   "nextCursor": null,

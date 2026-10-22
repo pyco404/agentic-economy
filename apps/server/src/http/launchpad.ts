@@ -82,7 +82,7 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  app.post(path+'/launch',async(req)=>{
   const owner=await executionOwner(req),body=version.parse(req.body),id=idOf(req),requestKey=key(req);
   if(!ctx.config.pumpLaunch.enabled)throw new AppError('feature_disabled','Safe-network launches are disabled');
-  return execution(()=>service.operation(owner,requestKey,'launch',{id,version:body.version},async()=>{
+  const result=await execution(()=>service.operation(owner,requestKey,'launch',{id,version:body.version},async()=>{
    const review=await service.review(owner,id),d=review.draft;
    if(d.version!==body.version)throw new AppError('conflict','Draft changed. Review it again before launching.');
    if(!review.readyForNextMilestone||!d.image||!d.metadata)throw new AppError('bad_request','Save and prepare the token logo and metadata before launching');
@@ -92,10 +92,14 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
    const launchId='lch_'+createHash('sha256').update(`${owner}:${requestKey}`).digest('hex').slice(0,24);
    return ctx.launches.prepare(owner,{name:d.fields.name,symbol:d.fields.symbol,description:d.fields.description,metadataUri:d.metadata.ipfsUri,imageUri:d.image.gatewayUrl,website:d.fields.website,twitter:d.fields.twitter,telegram:d.fields.telegram},{id,version:d.version,launchId,devBuyBps:d.fields.devBuyBps},quote);
   }));
+  await ctx.launches.assertPreparedMintAllowed(owner,result.launch.id);
+  return result;
  });
  const launchPath='/api/v1/launchpad/launches/:launchId';
  const launchId=(req:FastifyRequest)=>z.object({launchId:z.string().regex(/^lch_[A-Za-z0-9]+$/)}).parse(req.params).launchId;
  app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),id=launchId(req);return{launch:TokenLaunch.parse(await ctx.launches.refresh(owner,id)),recovery:await ctx.launches.recovery(owner,id)};});
+ app.get(launchPath+'/mint-review',async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.launches.localMintReview(await wallet(req),launchId(req));});
+ app.post(launchPath+'/mint-signature',async(req)=>{const owner=await executionOwner(req);return execution(()=>ctx.launches.importLocalMintSignature(owner,launchId(req),req.body));});
  app.post(launchPath+'/submit',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644)}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.submit(owner,launchId(req),body.transaction)))};});
  app.post(launchPath+'/resume',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644).optional()}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.resume(owner,launchId(req),body.transaction)))};});
  // The parser is scoped to image/octet-stream uploads. Authenticate before buffering any body.

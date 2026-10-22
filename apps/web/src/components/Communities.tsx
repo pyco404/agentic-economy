@@ -32,6 +32,15 @@ export function Communities({ api, data, selectedId, onSelect, onExplore, onAgen
       <div className="discovery-hero-plan" aria-hidden="true"><span /><span /><span /><span /><span /><b>GENESIS<br />A shared place to build.</b></div>
     </header>
     <p className="small muted">Platform updates from Agentic Economy. Each token community retains its own identity and social accounts.</p>
+    {!!data.stats.simulation?.groups.length&&<section aria-label="City simulation groups">
+      <div className="surface"><h2>Life in the city</h2><p className="small muted">Synthetic simulation groups keep the city working. They are not launched tokens or $AECO holder agents. Services and City Credits are simulated.</p></div>
+      <div className="discovery-grid">{data.stats.simulation.groups.map(g=><article className="discovery-card community-card" key={g.id}>
+        <div className="discovery-card-body"><span className="source-pill">Simulation group</span><h3>{g.name}</h3><p>{g.description}</p>
+          <p className="small">{g.activeAgents} simulation agents · {g.completedServices.toLocaleString()} simulated services</p>
+          <button className="secondary" disabled={!g.headquartersBuildingId} onClick={()=>onExplore(g.id)}>View headquarters</button>
+          <div className="compact-list">{data.agents.filter(a=>a.communityId===g.id&&a.identity.kind==='house').map(a=><button key={a.id} onClick={()=>onAgent(a.id)}><span>{displayAgentName(a)}</span><small>{a.profession.replaceAll('_',' ')} · {a.state}</small></button>)}</div>
+        </div></article>)}</div>
+    </section>}
     <div className="discovery-summary"><div><b>{number(data.communities.length)}</b><span>Registered communities</span></div>
       <div><b>{number(data.communities.reduce((n, c) => n + c.stats.activeAgents, 0))}</b><span>Active simulation agents</span></div>
       <div><b>{number(data.communities.reduce((n, c) => n + c.stats.verifiedTasks, 0))}</b><span>Verified useful services</span></div>

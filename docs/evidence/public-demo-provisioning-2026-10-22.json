@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-22T11:42:25.040639+00:00",
+  "environment": "57d15012-9025-449b-809d-44d3176494af",
+  "database": "aeco_public_demo",
+  "isolatedVolume": "fa6bc734-284f-4de7-883c-88b5eb6c03ee",
+  "databaseDeployment": "7638dd7c-bf24-4618-9a36-c0a2203ba179",
+  "databaseIdentityVerified": true,
+  "initialPublicTables": 0,
+  "approvedMigrationNames": [
+    "001",
+    "002",
+    "003",
+    "004"
+  ],
+  "migrationsExecutedAtThisCheckpoint": false,
+  "applicationCommit": "a2e1847455a4f4154d97b0e64dcf61cb36b94737",
+  "backendDeployment": "4f59ca17-cb44-4896-9b44-b0b54d748a12",
+  "frontendDeployment": "a1cf31be-1a7b-4036-84c1-cde189d5e0bd",
+  "MODE": "demo",
+  "launchesEnabled": false,
+  "PinataConfigured": false,
+  "HeliusConfigured": false,
+  "productionModified": false,
+  "dnsChanged": false,
+  "triggers": {
+    "productionBackend": {
+      "edges": []
+    },
+    "productionFrontend": {
+      "edges": []
+    },
+    "publicBackend": {
+      "edges": []
+    },
+    "publicFrontend": {
+      "edges": []
+    },
+    "stagingBackend": {
+      "edges": [
+        {
+          "node": {
+            "branch": "main"
+          }
+        }
+      ]
+    },
+    "stagingFrontend": {
+      "edges": [
+        {
+          "node": {
+            "branch": "main"
+          }
+        }
+      ]
+    }
+  }
+}

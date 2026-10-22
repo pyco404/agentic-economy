@@ -19,7 +19,7 @@ The owner-supplied name is **Agentic Economy**, ticker **AECO**, pair **AECO/SOL
 
 The current `create_v2` accepts the mint as an independent signer and the user as transaction payer/signer; it does not require a newly generated server key. Token-2022 and six decimals are protocol constraints, not free-form Launchpad settings. The current Mainnet Global reports supply **1,000,000,000 tokens** (`1000000000000000` base units). These observations need owner acceptance in the final launch review, not a silent tokenomics choice. [Official protocol account/instruction documentation](https://github.com/pump-fun/pump-public-docs/blob/main/docs/instructions/COIN_CREATION.md).
 
-Finalized Mainnet reads found the planned mint account absent and the deployer balance **0 lamports**, slot 460144627. This is a point-in-time account observation, not a created token or a permanent mint reservation on-chain. All four reviewed external program identities/slots/upgrade authorities match policy. The current Mainnet lookup table is active/frozen and satisfies the existing Developer Buy coverage guard.
+A historical finalized Mainnet read found the planned mint account absent at slot 460144627. The owner intentionally has not funded the deployer; that is not a deployment or infrastructure blocker. Do not repeat balance checks or request funding during infrastructure preparation. This is a point-in-time account observation, not a created token or a permanent mint reservation on-chain. All four reviewed external program identities/slots/upgrade authorities match policy. The current Mainnet lookup table is active/frozen and satisfies the existing Developer Buy coverage guard.
 
 At Mainnet Global/fee snapshot slot **460146860**, the same exact integer quote calculation used by the Launchpad gives:
 
@@ -32,13 +32,13 @@ At Mainnet Global/fee snapshot slot **460146860**, the same exact integer quote 
 | Network fee and rent | Must be measured from the actual owner-entered metadata transaction |
 | Final expected/maximum wallet debit | **Not established or approved** |
 
-These are **Mainnet** quote observations, not the much lower Devnet test prices. The buy cap excludes the platform charge, rent and network fee. No displayed total omits those costs. Do not fund, sign or activate from this estimate. Refresh Global/fee state, programs/table/mint absence and funded-payer simulation for the actual pinned metadata before presenting a final debit.
+These are **Mainnet** quote observations, not the much lower Devnet test prices. The buy cap excludes the platform charge, rent and network fee. No displayed total omits those costs. Do not fund, sign or activate from this estimate. When the owner initiates the actual launch review, refresh Global/fee state, programs/table/mint absence, simulation and complete costs for the actual pinned metadata. Check wallet balance only at that owner-authorized launch stage.
 
 Capacity construction using the exact public mint/deployer/treasuries and a clearly marked, unpinned placeholder metadata URI fit in 1,184 bytes. This is not the final transaction or a successful Mainnet simulation. The actual metadata URI and fee recipients must pass again. Neither a placeholder nor a public snapshot is saved to the owner's form.
 
 The existing atomic transaction includes the platform transfer, creation, 60/40 creator-fee sharing configuration and optional exact-token Developer Buy. Eligible creator fees route 60% Rewards / 40% Platform / 0% Launcher. This is construction verification; no Mainnet sharing configuration, receipt or collected income exists yet for the uncreated mint. Protocol fees and rent are separate.
 
-## Signing rehearsal and candidate implementation
+## Signing rehearsal and deployed integration
 
 The existing review screen now supports an operator-bound reserved draft and export/import of **public** signing artifacts. The optional backend `PUMP_PREPARED_MINT_DRAFT_ID` binds only the owner's existing draft UUID. It does not populate inputs, contain a key or activate execution. No live binding was set. Initial Mainnet preparation refuses a missing binding instead of allocating a random official mint. The normal non-Mainnet reusable flow retains random mint generation.
 
@@ -48,14 +48,14 @@ A disposable mint rehearsal against **actual public-Devnet simulation** passed w
 
 Developer Buy signing reviews pin allowed protocol recipients so the SDK's random selection cannot change reconstruction bytes. A changed attempt, mint, message, treasury, network, signature or operator draft binding fails closed. The unique mint row/local journal block a different attempt or automatic replacement. Expired reserved attempts do not offer automatic re-creation. [Operator procedure and remaining expiry limits](AECO_LOCAL_MINT_SIGNING.md).
 
-## Live release and remaining blockers
+## Production release and separate launch-time gates
 
-- Public HTTPS browsing and the approved frontend remain healthy. Production frontend release: `d5d3d7cb56db6e0baff4a5fa4605a1a9caa6522b`. Fresh desktop/folded/unfolded/tablet browser navigation and persistent-world checks passed. The new local-signing UI is a candidate change, not yet a verified live production feature.
-- Production API still actively serves `6758f91bd2e8a69c242584133f0e5932b862bf7e`. Its attempted gate update `2d6818776f41bfe58eac301a6e0932b77fcff9c3` failed during Railway BUILD_IMAGE, with no actionable cause beyond the generic image failure and builder-start log. Staging's earlier `7be7be4` attempt failed similarly. Do not claim the new deployer gate or handoff is live until an actual compatible release passes health, authenticated denial and browser checks. No duplicate retry of these failed deployment IDs was requested.
-- `aeco_production` is isolated, healthy and matches migrations 001–004; there are no pending migrations. No database or treasury setting changed. Mainnet launch/approval/fee-routing gates remain false; no treasury signer or payout service is configured.
-- Complete funded-payer simulation with the owner's actual metadata and UI-selected 1%. The zero-balance deployer prevents a successful final simulation/quote now. No funding transaction is authorized by this task.
-- Finish the short-blockhash expiry/renewal operational procedure and final recovery/security acceptance before execution. No automatic journal release or replacement message is implemented; do not bypass the reservation. Record independent security-review limitations.
-- Obtain explicit final approval of protocol supply/decimals/authorities, metadata, 1% amount, exact transaction, recipients and total maximum debit **before making execution possible**. This document is not that approval.
+- Production frontend and API are both **SUCCESS at `5fa0507167695df96d57cecd332a45e9422209b2`**. Frontend deployment `2de54da5-8ac0-472e-85b0-db56533be625`; API deployment `4a7f0533-98db-4e93-a47d-f0bcad9b237d`. Staging runs the same application SHA. The public domain serves the new bundle; no DNS change or duplicate build was required.
+- Live authenticated ordinary-wallet requests receive 403 for legacy preparation, browser preparation/metadata, submission, resume and local mint-signature import. This verifies the deployed access gate without a blockchain signature or transaction.
+- `aeco_production` is isolated, healthy and matches migrations 001–004; no pending migrations. Treasury settings are unchanged. Mainnet launch/approval/fee-routing gates remain false; no treasury signer or payout service is configured.
+- Website deployment is complete independently of the future token launch. Wallet funding is exclusively the owner's decision. No funding request, repeated balance check, scheduled launch or automatic signing/broadcast belongs to infrastructure preparation.
+- Before eventual execution, finish the short-blockhash expiry/renewal operational procedure and final recovery/security acceptance. No automatic journal release or replacement message exists; do not bypass the reservation. Preparation currently shares the execution-off capability gate, so entering/saving drafts is available while transaction preparation remains locked. Financial activation must not be used merely to test preparation.
+- When the owner decides to launch, they enter their own metadata/artwork, select 1%, review protocol supply/decimals/authorities, recipients, fresh simulation and complete maximum debit, and explicitly approve the exact transaction. Wallet balance is checked then. No current quote is an activation approval.
 
 The existing holder indexer is prepared for the exact official mint but remains off. After independently finalized official launch/provenance acceptance, activate reviewed mint-specific observation and verify real holder/agent reconciliation. One qualifying wallet produces one persistent Common Agent; 400 wallets sharing the same mint produce 400 agents. No wallet connection/registration/control privileges are inferred. Live Mainnet scan completeness, exclusions and real population reconciliation remain acceptance items.
 

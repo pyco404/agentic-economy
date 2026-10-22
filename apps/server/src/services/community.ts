@@ -209,7 +209,7 @@ export class AgentService {
   async update(wallet: string, id: string, req: PatchAgentRequest, requestKey: string | null = null) {
     const a = this.reader.state.agents[id];
     if (!a) throw new AppError("not_found", `agent ${id} not found`);
-    if (a.ownerWallet === null) throw new AppError("forbidden", "house agents have no owner and cannot be changed by a wallet");
+    if (a.ownerWallet === null) throw new AppError("forbidden", "agents without verified owner control cannot be changed by a wallet");
     if (a.ownerWallet !== wallet) throw new AppError("forbidden", "only the agent's owner wallet can change it");
     if (req.strategy) this.strategy(a.strategy, req.strategy);
     await this.bus.submit({ type: "agent.update", agentId: id, status: req.status, strategy: req.strategy }, requestKey ? `agent.update:${wallet}:${requestKey}` : null);

@@ -18,4 +18,13 @@ All 251 frontend unit tests pass with bounded workers. Typecheck and production 
 
 The browser regression checks folded 344×882, unfolded 690×829, tablet 820×1180 and desktop 1440×1000, header hit targets, drawer links, keyboard Escape/focus restoration, collapsible controls, absent diagnostics, all relevant routes, Back/Forward and retention of the same canvas. Screenshots are local test artifacts. Run `public-mobile.spec.ts` with `PUBLIC_UI_VERIFY=1` against the built/public site; `PUBLIC_UI_CANDIDATE` optionally supplies local frontend bytes while the real production API/WSS remain unchanged.
 
-Only the frontend is eligible for this public UI release. Production API remains pinned to `6758f91`, with Mainnet launching, broadcasting and financial execution disabled. Automatic production promotion must remain off. No migration or backend deployment is part of this change. Actual deployed SHA and post-deployment results are recorded separately after verification.
+Only the frontend is eligible for this public UI release. Production API remains pinned to `6758f91`, with Mainnet launching, broadcasting and financial execution disabled. Automatic production promotion must remain off. No migration or backend deployment is part of this change. Production frontend `3b369f602e14ecc36332c806b1c11ae9c59b05a4` is deployed successfully as `8afd89e8-a7e6-4f03-89a4-488e69db98a8`. The actual public-origin and staging browser regressions pass with no local asset substitutions. Message-only automated wallet authentication/session restoration, API/WSS and all nine route/redirect checks pass; Create Coin stays disabled. These results do not claim a new physical Phantom test. [Release/health/UI evidence](evidence/public-mobile-ui-2026-10-22.json), [actual public wallet/session and route evidence](evidence/public-mobile-release-2026-10-22.json).
+
+
+Repeat the public check from the repository root (uses the deployed website; starts no local server/database):
+
+```bash
+PUBLIC_UI_VERIFY=1 pnpm --filter @agentic-economy/web exec playwright test --config ../../tools/browser/public-mobile.config.ts
+```
+
+Set `PUBLIC_UI_URL=https://staging.useaeco.xyz` for the same staging check. Viewport emulation does not claim physical Phantom transaction acceptance.

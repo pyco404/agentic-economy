@@ -113,9 +113,11 @@ https://useaeco.xyz is live. One pinned frontend configuration release at 6758f9
 
 Domain routing is no longer a blocker. Mainnet activation remains separately unapproved; backup restore/security/recovery acceptance, Pinata maintenance and deferred mobile on-chain acceptance retain their distinct statuses. [Official $AECO and automatic Common Agent audit/next steps](PHASE2_NEXT_PRODUCTION_TASKS.md). Automatic Common Agent creation is not currently implemented: confirmed launches register communities/HQs, while token-linked activation is manual and demo-only with one-per-wallet/mint uniqueness. No agent-policy/schema change was made during cutover. Phase 3 has not started.
 
-## Common Agent product decision
+## Corrected agent identity model
 
-The owner selected **one Common Agent per confirmed token**, allowing multiple agents for multiple tokens launched by one wallet. The former wallet-unique schema is now a compatibility gap, not the intended product policy. [Review-only migration and implementation plan](COMMON_AGENT_PER_TOKEN_PLAN.md) is prepared outside the automatic migration directory. No migration beyond 004, new agent provisioning feature or Mainnet activation was applied. Existing identities and records remain unchanged.
+The owner reaffirmed **one agent identity per token and at most one activated token-linked agent per verified wallet**. Unlimited launches remain permitted. Additional launches must not reuse an existing token's agent or grant automatic control. The previous proposal to drop activation-wallet uniqueness is withdrawn. The actual gap is independent unactivated per-token identity provisioning; current activation combines identity creation and control. [Corrected audit and additive review-only candidate](COMMON_AGENT_PER_TOKEN_PLAN.md). No migration beyond 004 or new provisioning behavior has been applied.
+
+Automatic official-$AECO holder Common Agents use their own network/mint/wallet mapping, with 400 qualifying wallets producing 400 distinct Common Agents for the same mint. They do not consume token-linked activation rights or acquire control automatically. This is separate from the missing per-token identity registry and remains subject to official-mint production acceptance.
 
 ## Mandatory native-token roadmap — published and verified
 

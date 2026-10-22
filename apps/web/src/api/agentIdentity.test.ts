@@ -78,3 +78,12 @@ describe("public launch activity branding", () => {
       expect(displayActivity({type:"launch.confirmed",agentId:null,summary},[])).toBe(summary);
   });
 });
+
+it('labels an automatically observed Common Agent without granting authenticated ownership', () => {
+  const wallet = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+  const identity = agentIdentity({ id: 'agt_common0001', name: 'Common Agent', identity: {
+    kind: 'aeco_observed', wallet, tokenMint: wallet, network: 'devnet', balanceRaw: '1000000', decimals: 6, observedSlot: 12,
+  } });
+  expect(identity.displayName).toBe('7xKX...gAsU');
+  expect(identity.owner).toBeNull(); expect(identity.kind).toBe('aeco_observed');
+});

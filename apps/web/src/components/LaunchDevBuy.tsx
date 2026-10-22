@@ -11,19 +11,21 @@ export function LaunchDevBuy({ bps, onChange, availability, quoteAsset, symbol, 
   quote: DevBuyQuote | null; loading: boolean; error: string; disabled?: boolean; onValidityChange?: (valid: boolean) => void;
 }) {
   const [text, setText] = useState(percentFromBps(bps));
+  const [expanded, setExpanded] = useState(false);
   useEffect(() => { if (bpsFromPercent(text) !== bps) setText(percentFromBps(bps)); }, [bps]); // eslint-disable-line react-hooks/exhaustive-deps
-  const solPair = quoteAsset === 'SOL', available = availability?.status === 'available' && solPair, on = bps > 0;
+  const solPair = quoteAsset === 'SOL', available = availability?.status === 'available' && solPair, on = expanded || bps > 0;
   const reason = !solPair ? 'Developer Buy is available for SOL pairs only.' : availability?.status === 'unavailable' ? availability.reason ?? 'Developer Buy is unavailable on this network.' : null;
   const invalid = on && bpsFromPercent(text) === null;
   useEffect(() => { onValidityChange?.(!invalid); }, [invalid, onValidityChange]);
+  const activeQuote = !invalid && quote?.status === 'available' && quote.bps === bps ? quote : null;
   const set = (value: string) => { setText(value); const next = bpsFromPercent(value); if (next !== null) onChange(next); };
   return <fieldset className="launch-dev-buy" aria-describedby="dev-buy-help" disabled={disabled}>
     <legend>Developer Buy <span className="launch-dev-buy-optional">Optional</span></legend>
     <p id="dev-buy-help" className="small muted">Optional. Buy part of your own token during launch, up to {DEV_BUY_MAX_BPS / 100}% of supply.</p>
     <label className="launch-dev-buy-toggle">
       <input type="checkbox" role="switch" checked={on} disabled={!available && !on} aria-describedby={reason ? 'dev-buy-reason' : undefined}
-        onChange={(e) => { const next = e.target.checked ? 100 : 0; setText(percentFromBps(next)); onChange(next); }}/>
-      <span>{on ? 'Developer Buy on' : 'Developer Buy off'}</span>
+        onChange={(e) => { setExpanded(e.target.checked); if (!e.target.checked) { setText('0'); onChange(0); } }}/>
+      <span>{on ? bps > 0 ? 'Developer Buy on' : 'Choose your allocation' : 'Developer Buy off'}</span>
     </label>
     {reason && <p id="dev-buy-reason" className="small launch-dev-buy-reason" role="note">{reason}{on && ' Turn it off to continue.'}</p>}
     {on && <div className="launch-dev-buy-amount">
@@ -36,14 +38,19 @@ export function LaunchDevBuy({ bps, onChange, availability, quoteAsset, symbol, 
         </p>
       </div>
       <dl className="fee-list launch-dev-buy-estimate" aria-live="polite" aria-busy={loading}>
-        {quote?.status === 'available' ? <>
-          <div><dt>Tokens received</dt><dd>{formatTokens(quote.tokenAmount)} {symbol.trim() || 'tokens'}</dd></div>
-          <div><dt>Estimated cost</dt><dd>{formatSol(quote.estimatedQuoteCost)}</dd></div>
-          <div><dt>Maximum cost</dt><dd>{formatSol(quote.maxQuoteCost)}</dd></div>
-          <div><dt>Price impact</dt><dd>{(quote.priceImpactBps / 100).toFixed(2)}%</dd></div>
+        {bps === 0 && !invalid ? <>
+          <div><dt>Tokens received</dt><dd>0 {symbol.trim() || 'tokens'}</dd></div>
+          <div><dt>Estimated cost</dt><dd>0 SOL</dd></div>
+          <div><dt>Maximum cost</dt><dd>0 SOL</dd></div>
+          <div><dt>Price impact</dt><dd>0%</dd></div>
+        </> : activeQuote ? <>
+          <div><dt>Tokens received</dt><dd>{formatTokens(activeQuote.tokenAmount)} {symbol.trim() || 'tokens'}</dd></div>
+          <div><dt>Estimated cost</dt><dd>{formatSol(activeQuote.estimatedQuoteCost)}</dd></div>
+          <div><dt>Maximum cost</dt><dd>{formatSol(activeQuote.maxQuoteCost)}</dd></div>
+          <div><dt>Price impact</dt><dd>{(activeQuote.priceImpactBps / 100).toFixed(2)}%</dd></div>
         </> : <div><dt>Estimate</dt><dd>{loading ? 'Calculating…' : error || (quote?.status === 'unavailable' ? quote.reason : 'Shown when Developer Buy is available')}</dd></div>}
       </dl>
-      <details className="small muted"><summary>How Developer Buy works</summary><p>Exactly this many tokens are bought, or the whole transaction fails. Final costs are shown before wallet approval. The limit applies to this launch only.</p>{quote?.status==='available'&&<p>Estimated cost includes {formatSol(quote.pumpFees)} in protocol fees.</p>}</details>
+      <details className="small muted"><summary>How Developer Buy works</summary><p>Exactly this many tokens are bought, or the whole transaction fails. Final costs are shown before wallet approval. The limit applies to this launch only.</p>{activeQuote&&<p>Estimated cost includes {formatSol(activeQuote.pumpFees)} in protocol fees.</p>}</details>
     </div>}
   </fieldset>;
 }

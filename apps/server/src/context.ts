@@ -1,3 +1,5 @@
+import { readAecoHolders } from "./chain/aeco-holders.js";
+import { CommonAgentIndexer, isOfficialAecoLaunch } from "./services/common-agents.js";
 import { HeliusReader, HeliusReadBudget } from './chain/helius.js';
 import { heliusMarketChain } from './chain/helius-market.js';
 import {SignedLaunchStore} from './store/signed-launch.js';
@@ -37,6 +39,7 @@ export interface AppContext {
   indexer: IndexerWorker | null;
   /** Present when AUTH_PRUNE_ENABLED=true on a process that serves the API. */
   authPruner: AuthPruner | null;
+  commonAgentIndexer: CommonAgentIndexer | null;
   /** Mutated by the WebSocket gateway. */
   wsStats: { connections: number };
   close(): Promise<void>;
@@ -109,6 +112,18 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
       )
     : null;
 
+  const commonAgentIndexer = config.aecoCommonAgents.enabled && runsIndexer && marketReader
+    ? new CommonAgentIndexer(coord, async signal => {
+        const community = await store.getCommunityByMint(config.aecoCommonAgents.mint!);
+        if (config.mode === 'production') {
+          const launch = community && (await store.getLaunch(community.launchId))?.launch;
+          if (!isOfficialAecoLaunch(community, launch))
+            throw new Error('Official AECO platform launch has not been verified');
+        }
+        const observed = await readAecoHolders(marketReader, config.aecoCommonAgents.mint!, new Set([...config.aecoCommonAgents.excludedWallets, config.treasuries.platform, config.treasuries.agentRewards]), signal);
+        return { ...observed, ...(community ? { communityId: community.id } : {}) };
+      }, logger, runtime.sim?.holder ?? `common:${process.pid}`, (hint, signal) => marketReader.watchTokenAccounts(config.aecoCommonAgents.mint!, hint, signal))
+    : null;
   const authPruner = config.auth.prune.enabled && (config.role === "api" || config.role === "all") ? new AuthPruner(store, config.auth.prune, logger) : null;
 
   return {
@@ -126,9 +141,11 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     agents,
     indexer,
     authPruner,
+    commonAgentIndexer,
     wsStats: { connections: 0 },
     async close() {
       clearInterval(recoveryPruner);await pruning;
+      await commonAgentIndexer?.stop();
       await indexer?.stop();
       await authPruner?.stop();
       await runtime.stop();

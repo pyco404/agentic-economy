@@ -1,0 +1,18 @@
+{
+  "network": "isolated-localnet",
+  "genesis": "7ASTpBQoMVsmyJ7Tiymg111RAocEBwzdE7A6C8XZj9wW",
+  "officialDocsCommit": "639b87fb45c3adeffa6f7c4a1bf0cb85e392bf22",
+  "sdk": "4.1.0",
+  "creator": "DLQb4rybxPaHCwBT7ivQsk5yFCS2gx4wVxVySc7ncjQG",
+  "mint": "2cL8mCyksDcTZGxavhx1fNRW6SnCLtURdVjGSd3KapWq",
+  "platformTreasury": "GLPWLcczSwqXpZ3eLiFuDk3UHTiyb3oGVBau7t6eMuf2",
+  "agentTreasury": "ESj1YwvbPNpDmYpQuDSvUMcNVnMaZvkoNTqQug92p7qq",
+  "metadata": "test-only HTTPS placeholder; not a real Pinata receipt",
+  "simulation": {
+    "err": null,
+    "unitsConsumed": 272780
+  },
+  "signature": "e1GFiXUKE2bGeyeue9h86iRtkqkJmJZRfoeQ1sW6JpTyxj4q8tLSKakuCH4oZsyafzoMoUpivs84zmUqM3ekrg2",
+  "result": "failed",
+  "error": "Signature e1GFiXUKE2bGeyeue9h86iRtkqkJmJZRfoeQ1sW6JpTyxj4q8tLSKakuCH4oZsyafzoMoUpivs84zmUqM3ekrg2 has expired: block height exceeded."
+}

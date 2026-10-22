@@ -1,0 +1,111 @@
+{
+  "checkedAt": "2026-10-22T12:22:54.907Z",
+  "environment": "public-demo",
+  "commit": "a2e1847455a4f4154d97b0e64dcf61cb36b94737",
+  "preDns": true,
+  "limitation": "Official DNS unchanged. Browser requests test-routed to Railway review domains. This is not custom-domain certificate or real Phantom acceptance.",
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/launchpad",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/explore",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/communities",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/agent-studio",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/economy",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/treasury",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/roadmap",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/about",
+      "status": 200,
+      "html": true
+    },
+    {
+      "path": "/assets/not-a-real-file.js",
+      "status": 404,
+      "html": false
+    },
+    {
+      "path": "/api/not-a-real-endpoint",
+      "status": 404,
+      "html": false
+    }
+  ],
+  "browser": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1000,
+      "startup": "ready",
+      "tokenForm": true,
+      "persistentCanvas": true,
+      "webSocketMessages": 125,
+      "pageErrors": [],
+      "horizontalOverflow": false
+    },
+    {
+      "name": "folded-layout",
+      "width": 344,
+      "height": 882,
+      "startup": "ready",
+      "tokenForm": true,
+      "persistentCanvas": true,
+      "webSocketMessages": 86,
+      "pageErrors": [],
+      "horizontalOverflow": false
+    },
+    {
+      "name": "unfolded-layout",
+      "width": 690,
+      "height": 829,
+      "startup": "ready",
+      "tokenForm": true,
+      "persistentCanvas": true,
+      "webSocketMessages": 117,
+      "pageErrors": [],
+      "horizontalOverflow": false
+    }
+  ],
+  "auth": {
+    "automatedSigner": true,
+    "realPhantom": false,
+    "origin": "https://useaeco.xyz",
+    "challenge": 200,
+    "signIn": 200,
+    "secureHostOnlyHttpOnlyCookie": true,
+    "sessionRestored": 200,
+    "replayRejected": 401,
+    "untrustedOriginRejected": 403,
+    "logout": 200
+  }
+}

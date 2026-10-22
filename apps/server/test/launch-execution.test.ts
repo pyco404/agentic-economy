@@ -209,3 +209,23 @@ it('reports the operator broadcast gate before recording a misleading submitted 
  f.chain.assertLaunchSubmissionAllowed=async()=>{throw Error('disabled');};expect((await env!.app.inject('/api/v1/launchpad/capabilities')).json().launchEnabled).toBe(false);expect((await f.call('GET',`/api/v1/launchpad/drafts/${f.draft.id}/review`)).json().launchEnabled).toBe(false);const response=await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)});
  expect(response.statusCode).toBe(503);expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch).toMatchObject({status:'awaiting_signature',signature:null});expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
 });
+
+it('keeps Mainnet provenance private until finalized and recovers one receipt without a second submission (mock RPC)',async()=>{
+ const f=await setup(),genesis='5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
+ const build=vi.mocked(f.chain.buildLaunchTransaction).getMockImplementation()!,observe=vi.mocked(f.chain.getTransaction).getMockImplementation()!;
+ let commitment:'confirmed'|'finalized'='confirmed';
+ vi.mocked(f.chain.buildLaunchTransaction).mockImplementation(async input=>({...await build(input),genesisHash:genesis}));
+ vi.mocked(f.chain.getTransaction).mockImplementation(async signature=>{const tx=await observe(signature);return tx?{...tx,genesisHash:genesis,commitment}:null;});
+ f.chain.getGenesisHash=async()=>genesis;
+ env!.ctx.config.mode='production';env!.ctx.config.solana.cluster='mainnet-beta';env!.ctx.config.launchRegistrationCommitment='finalized';
+ env!.ctx.config.treasuries={platform:'HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2',agentRewards:'GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi'};
+ const first=await f.prepare();expect(first.statusCode).toBe(200);const p=first.json();expect(p.launch.execution.network).toBe('mainnet-beta');
+ const signed=f.signed(p.transaction),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+ await f.call('POST',url+'/submit',{transaction:signed});f.setLanded();
+ expect((await f.call('GET',url)).json().launch.status).toBe('submitted');expect((await env!.app.inject(`/api/v1/launches/${p.launch.id}`)).statusCode).toBe(404);
+ commitment='finalized';expect((await f.call('GET',url)).json().launch.status).toBe('confirmed');
+ expect((await env!.app.inject(`/api/v1/launches/${p.launch.id}`)).statusCode).toBe(200);
+ const community=(await env!.ctx.store.allCommunities()).find(c=>c.launchId===p.launch.id);expect(community?.provenance?.network).toBe('mainnet-beta');
+ await f.call('POST',url+'/submit',{transaction:signed});expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
+ const receipts=(await env!.ctx.store.allTreasuryEntries()).filter(e=>e.launchId===p.launch.id);expect(receipts).toHaveLength(1);expect(receipts[0]!.amount).toBe('50000000');
+});

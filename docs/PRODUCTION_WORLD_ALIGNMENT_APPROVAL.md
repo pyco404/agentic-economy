@@ -1,6 +1,6 @@
 # Approved staging world → production: scoped data-change proposal
 
-**Status: OWNER APPROVED; EXECUTION PENDING.** The owner’s brief section5 requires showing the precise production data change and obtaining approval before execution. The owner explicitly approved the world-only transition and production release in chat. No Mainnet or schema activation is authorized.
+**Status: OWNER APPROVED; PRODUCTION TRANSITION APPLIED AND ACTUAL-DOMAIN VERIFICATION PASSED.** The owner’s brief section5 requires showing the precise production data change and obtaining approval before execution. The owner explicitly approved the world-only transition and production release in chat. No Mainnet or schema activation is authorized.
 
 ## Verified cause
 
@@ -48,7 +48,7 @@ The private production archive `aeco_production_20261022T201442Z.dump` (SHA-256 
 
 In that copy, the operation preserved protected-table fingerprints, rejected an active writer and missing approval, rolled back a failed checkpoint, and made an exact second application a no-op. The actual production-mode application served readiness/world APIs, moved all nine agents and completed46new simulated services. Database/application restart preserved all nine identities, three groups and service count. Treasury/launch/token-community rows remainedzero.
 
-Fresh actual-browser local rehearsal matches live staging exactly for all16canonical static chunks (SHA-256 `f781139d505afb3ad50db38fb780f30b2d03f432e0c71cf0bea23f74d2a4c4b3`), lake connector/crossings, both railway reports, complete landmass and scenery/support-district composition. It observed all nine agents moving in184WebSocket movement frames, with no page errors. Folded344 and unfolded690 navigation and synthetic-group cards passed. Production itself has not yet been corrected.
+Fresh actual-browser local rehearsal matches live staging exactly for all16canonical static chunks (SHA-256 `f781139d505afb3ad50db38fb780f30b2d03f432e0c71cf0bea23f74d2a4c4b3`), lake connector/crossings, both railway reports, complete landmass and scenery/support-district composition. It observed all nine agents moving in184WebSocket movement frames, with no page errors. Folded344 and unfolded690 navigation and synthetic-group cards passed. This rehearsal preceded the separately approved production transition; see the execution record below.
 
 Backend295tests passed/23environment-dependent skips; frontend255passed; builds/typecheck/lint passed. [Audit](evidence/world-consistency-audit-2026-10-22.json), [rehearsal and exact rendered geometry comparisons](evidence/world-consistency-rehearsal-2026-10-22.json). Full-resolution screenshots are in ignored `apps/web/artifacts/world-consistency-20261022/`; `proposed-local-*` files are explicitly rehearsals, not production screenshots.
 
@@ -57,3 +57,18 @@ After approval: take a fresh private production backup/checkpoint, briefly pause
 If a precondition changes or deployment verification fails, stop with the private backup and old-world checkpoint preserved; do not wipe data, disable safeguards or improvise another world. Production release authorization never authorizes a financial transaction.
 
 Final targeted verification: 20 passed / 5 environment-dependent skips, including the old-worker/new-seed recovery rejection. Production-mode browser rehearsal observed all nine agents moving, with no runtime errors or public debug labels.
+
+## Approved production execution
+
+The owner approved the world-only transition and production release in chat. The guarded transaction advanced production from tick56360 to56362, installed `world_bp71r8`, and preserved fingerprints of all twelve protected tables, including both drafts. A fresh private PostgreSQL custom backup and durable old-world checkpoint were retained. No SQL migration, staging-data import, treasury change, secret change or financial activation occurred.
+
+Production frontend/API application release: `a9dc15584ea3ff4d83c4a2bb608e44809b67c99e`.
+
+- Frontend: `323069f4-0509-4672-a345-b4197d20c0dc`.
+- API: `70a4ec19-b292-4810-9aee-aef5d46d58e0`.
+- Database remains `aeco_production`, schema001–004 with matching checksums.
+- Actual production world APIs confirm all16static terrain/building chunks equal the captured staging reference, nine simulation agents and three explicitly synthetic groups. Real token communities, launch rows and treasury entries remainzero. New simulated services accrue through actual engine work.
+- Actual runtime preserves official treasuries, backend-only Pinata/Helius keys and all financial-off flags. Both Helius network connectivity checks passed; no provider keys occur in fetched frontend entry assets. Pinata credential rotation remainspending.
+- Staging remains on `5fa0507167695df96d57cecd332a45e9422209b2`; public-demo resources were not modified.
+
+Actual production/staging browser comparison passed for the lake connector, both railways, landmass, scenery composition and nine moving agents. Official-origin session refresh, all routes, Back/Forward with persistent canvas, native WSS, five responsive viewports and absent public debug labels passed. See [production verification](evidence/world-consistency-production-2026-10-22.json).

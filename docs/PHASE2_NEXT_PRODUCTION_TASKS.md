@@ -21,3 +21,7 @@ Required regression coverage: finalized verified launch only; no creation for pe
 ## Financial activation gates
 
 Complete actual isolated backup restoration, final recovery/security/operational review and remaining release regressions. Keep Pinata rotation tracked as pending maintenance without requiring an upgrade. Record independent-review limitations honestly. Obtain separate Mainnet activation approval, then separately authorize any controlled real transaction. Do not enable payouts or begin Phase 3 as part of website availability.
+
+## Updated automatic Common Agent scope
+
+Phase 2 additionally requires automatic one-per-$AECO-holder Common Agents, basic movement and reconciled public counts after the official mint is launched and verified. No login or manual activation is needed. Phase 3 expands those same identities. [Implementation and remaining acceptance](AECO_COMMON_AGENTS.md). The earlier one-per-token proposal concerns a distinct future token-linked policy and does not authorize changing current launcher identity constraints.

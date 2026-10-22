@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.5.2
+  version: 0.6.0
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -1474,6 +1474,75 @@ components:
         - items
         - nextCursor
         - mode
+    AecoObservedIdentity:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: aeco_observed
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        tokenMint:
+          $ref: "#/components/schemas/PublicKey"
+        network:
+          type: string
+          enum:
+            - devnet
+            - mainnet-beta
+        balanceRaw:
+          type: string
+          pattern: ^\d+$
+        decimals:
+          type: integer
+          minimum: 0
+          maximum: 255
+        observedSlot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - kind
+        - wallet
+        - tokenMint
+        - network
+        - balanceRaw
+        - decimals
+        - observedSlot
+      additionalProperties: false
+    AecoObservedIdentityInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          const: aeco_observed
+        wallet:
+          $ref: "#/components/schemas/PublicKey"
+        tokenMint:
+          $ref: "#/components/schemas/PublicKey"
+        network:
+          type: string
+          enum:
+            - devnet
+            - mainnet-beta
+        balanceRaw:
+          type: string
+          pattern: ^\d+$
+        decimals:
+          type: integer
+          minimum: 0
+          maximum: 255
+        observedSlot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - kind
+        - wallet
+        - tokenMint
+        - network
+        - balanceRaw
+        - decimals
+        - observedSlot
     Agent:
       type: object
       properties:
@@ -2006,12 +2075,14 @@ components:
         - $ref: "#/components/schemas/HouseIdentity"
         - $ref: "#/components/schemas/TokenLinkedIdentity"
         - $ref: "#/components/schemas/LegacyIdentity"
+        - $ref: "#/components/schemas/AecoObservedIdentity"
     AgentKind:
       type: string
       enum:
         - house
         - token_linked
         - legacy
+        - aeco_observed
     AgentMove:
       type: object
       properties:
@@ -9412,6 +9483,54 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        aecoPopulation:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - disabled
+                - syncing
+                - current
+                - stale
+            mint:
+              type:
+                - string
+                - "null"
+            network:
+              anyOf:
+                - type: string
+                  enum:
+                    - devnet
+                    - mainnet-beta
+                - type: "null"
+            holders:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            commonAgents:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            indexedSlot:
+              anyOf:
+                - type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                - type: "null"
+            checkedAt:
+              type:
+                - string
+                - "null"
+          required:
+            - status
+            - mint
+            - network
+            - holders
+            - commonAgents
+            - indexedSlot
+            - checkedAt
+          additionalProperties: false
         pausedAgents:
           type: integer
           minimum: -9007199254740991
@@ -9480,6 +9599,53 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        aecoPopulation:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - disabled
+                - syncing
+                - current
+                - stale
+            mint:
+              type:
+                - string
+                - "null"
+            network:
+              anyOf:
+                - type: string
+                  enum:
+                    - devnet
+                    - mainnet-beta
+                - type: "null"
+            holders:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            commonAgents:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            indexedSlot:
+              anyOf:
+                - type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                - type: "null"
+            checkedAt:
+              type:
+                - string
+                - "null"
+          required:
+            - status
+            - mint
+            - network
+            - holders
+            - commonAgents
+            - indexedSlot
+            - checkedAt
         pausedAgents:
           type: integer
           minimum: -9007199254740991

@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-22T15:11:49.594323+00:00",
+  "applicationCommit": "aa1f53a113dc0438094fddb5b306f382fe98b2fd",
+  "frontendOnly": true,
+  "productionNativeTokenLaunch": "NOT APPROVED / NOT SUBMITTED",
+  "financialExecution": false,
+  "migrationsAddedOrApplied": 0,
+  "productionParameterOrSecretChanges": false,
+  "deployRequests": {
+    "staging": "one automatic push-triggered release",
+    "production": "one frontend-only publication release"
+  },
+  "releases": {
+    "staging": [
+      {
+        "service": "agentic-economy",
+        "id": "96e853df-bd74-4738-a6d6-58348ef41859",
+        "status": "SUCCESS",
+        "sha": "ac7fc18af4ad050489463894abd81fd6569006ab"
+      },
+      {
+        "service": "Postgres",
+        "id": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+        "status": "SUCCESS",
+        "sha": null
+      },
+      {
+        "service": "agentic-economy-web",
+        "id": "0b72282d-a73d-44e1-8e03-082bb4391cdb",
+        "status": "SUCCESS",
+        "sha": "aa1f53a113dc0438094fddb5b306f382fe98b2fd"
+      }
+    ],
+    "production": [
+      {
+        "service": "Postgres",
+        "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+        "status": "SUCCESS",
+        "sha": null
+      },
+      {
+        "service": "agentic-economy-web",
+        "id": "164d4580-ceb1-42a1-981d-dd4580635fe9",
+        "status": "SUCCESS",
+        "sha": "aa1f53a113dc0438094fddb5b306f382fe98b2fd"
+      },
+      {
+        "service": "agentic-economy",
+        "id": "04365147-839e-44ec-9a47-0c33bf54db04",
+        "status": "SUCCESS",
+        "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e"
+      }
+    ]
+  },
+  "stagingBrowserEvidence": "native-aeco-roadmap-live-staging-2026-10-22.json",
+  "productionBrowserEvidence": "native-aeco-roadmap-live-production-2026-10-22.json"
+}

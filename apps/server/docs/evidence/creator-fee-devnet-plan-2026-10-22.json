@@ -1,0 +1,137 @@
+{
+  "checkedAt": "2026-10-22T08:46:57.079Z",
+  "network": "public-devnet",
+  "readOnly": true,
+  "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+  "payer": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+  "routing": {
+    "tokenTotalSupply": "1000000000000000",
+    "sharingConfig": {
+      "address": "AnfE7cMRR3NtHkVRgEND5h6wsRF3SrunzEevCN6F8Eg4",
+      "version": 2,
+      "status": "Active",
+      "mint": "4PMot5KMVbwR1XE4waWGVoWhax3wXcAUv6E9xapPdy8p",
+      "admin": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+      "adminRevoked": true,
+      "shareholders": [
+        {
+          "address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+          "shareBps": 6000
+        },
+        {
+          "address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+          "shareBps": 4000
+        }
+      ]
+    },
+    "bondingCurveCreator": "AnfE7cMRR3NtHkVRgEND5h6wsRF3SrunzEevCN6F8Eg4",
+    "bondingCurveComplete": false,
+    "bondingCurveQuoteMint": "So11111111111111111111111111111111111111112"
+  },
+  "minimum": {
+    "minimumRequired": "1733974",
+    "distributableFees": "25887",
+    "canDistribute": false,
+    "isGraduated": false,
+    "feesQuoteMint": "So11111111111111111111111111111111111111112"
+  },
+  "prefundingScenario": {
+    "purpose": "Prefund the empty dedicated rewards test account to rent exemption; not creator-fee income. Then distribute already accrued creator fees in a separate transaction.",
+    "rentFundingLamports": 650240,
+    "estimatedSeparateTransactionFeesLamports": 10000,
+    "combinedSimulationOnly": true,
+    "error": null,
+    "accountChanges": [
+      {
+        "address": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+        "deltaLamports": -655240
+      },
+      {
+        "address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+        "deltaLamports": 665772
+      },
+      {
+        "address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "deltaLamports": 10354
+      },
+      {
+        "address": "DiQkQiT5ygEDqP6gMMv7veyHRQJHsPymgFNtzpG8FmWN",
+        "deltaLamports": -25886
+      }
+    ],
+    "logs": [
+      "Program 11111111111111111111111111111111 invoke [1]",
+      "Program 11111111111111111111111111111111 success",
+      "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+      "Program ComputeBudget111111111111111111111111111111 success",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P invoke [1]",
+      "Program log: Instruction: DistributeCreatorFees",
+      "Program 11111111111111111111111111111111 invoke [2]",
+      "Program 11111111111111111111111111111111 success",
+      "Program 11111111111111111111111111111111 invoke [2]",
+      "Program 11111111111111111111111111111111 success",
+      "Program data: pTeBcASzyiiAzdlqAAAAADJNXdhe39elrvjrRgn19pLBFFWjpVHCxnWC9Hg2DRzFVyyRY18cXdV0ZNpqUTk7+pcZhCCfvd95jzqAz+mBBY+Ra4qH/7d7O9t/FOisB4FuFtoOAfK9XpRZr7pxRkDHhS7CyDha7DrIHhfnCorRGrWiZQ37PqoMNeYA5iHRgyayAgAAALRMkqYBbA1dGW6PoeW19xGLVS6DPYo2SbN+tyGll+yccBfn8OvbPYqGyoiy5YB6PXSUNMlV4Zj/cNwat+rUOMSMNaAPHmUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P invoke [2]",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P consumed 2170 of 473564 compute units",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P consumed 28924 of 499700 compute units",
+      "Program return: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P gM3ZagAAAAAyTV3YXt/Xpa7460YJ9faSwRRVo6VRwsZ1gvR4Ng0cxVcskWNfHF3VdGTaalE5O/qXGYQgn73feY86gM/pgQWPkWuKh/+3ezvbfxTorAeBbhbaDgHyvV6UWa+6cUZAx4Uuwsg4Wuw6yB4X5wqK0Rq1omUN+z6qDDXmAOYh0YMmsgIAAAC0TJKmAWwNXRluj6HltfcRi1Uugz2KNkmzfrchpZfsnHAX5/Dr2z2KhsqIsuWAej10lDTJVeGY/3DcGrfq1DjEjDWgDx5lAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success"
+    ]
+  },
+  "isGraduated": false,
+  "sweepCount": 0,
+  "packetBytes": 484,
+  "networkFeeLamports": 5000,
+  "instructions": [
+    {
+      "program": "ComputeBudget111111111111111111111111111111",
+      "discriminatorHex": "0220a10700"
+    },
+    {
+      "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "discriminatorHex": "a572670079cef751"
+    }
+  ],
+  "simulation": {
+    "error": null,
+    "unitsConsumed": 18719,
+    "accountChanges": [
+      {
+        "address": "49Y2BZrtXmkKPTphcsx5riMDX4s4uqwC6yDmrprYaX3F",
+        "beforeLamports": 102136569,
+        "afterLamports": 102131569,
+        "deltaLamports": -5000
+      },
+      {
+        "address": "D8p7CytykA5Q7vSDGGoCJC6mNyLKXVwiEXLboih2ZHJs",
+        "beforeLamports": 0,
+        "afterLamports": 0,
+        "deltaLamports": 0
+      },
+      {
+        "address": "GcQFWipjZvpuk2sdJAZ4BwyTMdWTDmfjxWSdw4bTVzvp",
+        "beforeLamports": 250000000,
+        "afterLamports": 250000000,
+        "deltaLamports": 0
+      },
+      {
+        "address": "DiQkQiT5ygEDqP6gMMv7veyHRQJHsPymgFNtzpG8FmWN",
+        "beforeLamports": 676127,
+        "afterLamports": 676127,
+        "deltaLamports": 0
+      }
+    ],
+    "logs": [
+      "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+      "Program ComputeBudget111111111111111111111111111111 success",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P invoke [1]",
+      "Program log: Instruction: DistributeCreatorFees",
+      "Program log: Insufficient fees for distribution. Minimum vault balance needed: 1733974 lamports. Use get_minimum_distributable_fee instruction to check the minimum distributable amount.",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P consumed 18569 of 499850 compute units",
+      "Program return: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P f83ZagAAAAAyTV3YXt/Xpa7460YJ9faSwRRVo6VRwsZ1gvR4Ng0cxVcskWNfHF3VdGTaalE5O/qXGYQgn73feY86gM/pgQWPkWuKh/+3ezvbfxTorAeBbhbaDgHyvV6UWa+6cUZAx4Uuwsg4Wuw6yB4X5wqK0Rq1omUN+z6qDDXmAOYh0YMmsgIAAAC0TJKmAWwNXRluj6HltfcRi1Uugz2KNkmzfrchpZfsnHAX5/Dr2z2KhsqIsuWAej10lDTJVeGY/3DcGrfq1DjEjDWgDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success"
+    ]
+  },
+  "approval": "No transaction submitted. Any distribution requires separate explicit owner approval after reviewing this plan. No new buy is authorized."
+}

@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-10-22T14:23:30.325466+00:00",
+  "results": [
+    {
+      "url": "https://api.useaeco.xyz/api/v1/launchpad/capabilities",
+      "status": 200,
+      "body": {
+        "version": 1,
+        "authentication": "cookie",
+        "uploads": true,
+        "maxBytes": 5000000,
+        "maxPixels": 16000000,
+        "storage": "postgres",
+        "launchEnabled": false,
+        "quotes": {
+          "SOL": "draft",
+          "USDC": "planned",
+          "AECO": "future"
+        },
+        "devBuy": {
+          "status": "unavailable",
+          "maxBps": 350,
+          "quoteAssets": [
+            "SOL"
+          ],
+          "reason": "Developer Buy is available only where coin creation is enabled on a verified test network"
+        }
+      }
+    },
+    {
+      "url": "https://api.useaeco.xyz/api/v1/launchpad/drafts",
+      "status": 401
+    },
+    {
+      "url": "https://api.useaeco.xyz/.env",
+      "status": 404
+    },
+    {
+      "url": "https://api.useaeco.xyz/.git/config",
+      "status": 404
+    },
+    {
+      "url": "https://api.useaeco.xyz/admin",
+      "status": 404
+    }
+  ],
+  "requestsReadOnly": true
+}

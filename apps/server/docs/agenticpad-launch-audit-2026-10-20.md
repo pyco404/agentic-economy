@@ -1,5 +1,7 @@
 # AgenticPad launch audit and targeted reuse
 
+> Status correction, 22 October 2026: **Phantom desktop Developer Buy VERIFIED** — Zappercoin ($ZAP), 2%, exactly 20,000,000 tokens. Finalized Devnet transaction and database receipt independently checked. Physical mobile remains unverified. Older pending-desktop wording below is historical and superseded; no repeat desktop transaction is requested. [Acceptance evidence](phantom-desktop-developer-buy-2026-10-22.md) · [Current Phase 2 priorities](phase2-sol-only-acceptance.md). USDC is outside current scope.
+
 20 October 2026. Reference repository: `/home/pikoo/Desktop/Oxude`; frontend project `web/` is named `agenticpad-web`. Oxude was read-only throughout: no installation, source change, database change, deployment, secret import or push. Its tests used a temporary config and cache directory outside Oxude.
 
 ## HOME reconciliation comes first

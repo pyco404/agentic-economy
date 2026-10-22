@@ -1,5 +1,7 @@
 # Phase 2 acceptance status — 22 October 2026
 
+**Current deployment decision:** production is the only permanent Railway environment. Routine tested changes go directly from local/isolated Devnet verification and production builds to explicit production releases and live checks; staging promotion is not required. Legacy data/resources remain pending backup/restore checks and explicit deletion approval. [Dependency audit and retirement plan](RAILWAY_SINGLE_PRODUCTION.md).
+
 This is the current checklist; earlier dated reports remain historical evidence. **Phase 2 cannot close, and Phase 3 cannot begin, until the owner launches the official $AECO token through https://useaeco.xyz on Solana Mainnet, independent on-chain verification passes, ownership indexing creates one persistent Common Agent per qualifying wallet, and the moving city population reconciles.** Production readiness and separate Mainnet activation/transaction approvals come first. The owner-supplied planned mint is `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco`; keypair preparation does not authorize execution. Other launch parameters and the transaction remain unapproved. [Fixed-mint preparation](OFFICIAL_AECO_LAUNCH_PLAN.md).
 
 [Mandatory sequence, parameter approvals and release evidence checklist](PRODUCTION_RELEASE_CHECKLIST.md).

@@ -11,6 +11,10 @@ The owner approved production applications and reuse of the existing Agentic Eco
 
 Health/readiness return 200, PostgreSQL and simulation are healthy, and contract 0.5.2 is compatible across both services. MODE is production for configuration validation, **financial execution is disabled**: `MAINNET_LAUNCH_APPROVED=false`, `PUMP_LAUNCH_ENABLED=false`, `FEE_ROUTING_VERIFIED=false`. Payouts remain disabled. Official treasury addresses are unchanged; no treasury signer was installed. No blockchain transaction was signed or broadcast.
 
+## Mandatory Phase 2 completion gate
+
+[Production release checklist](PRODUCTION_RELEASE_CHECKLIST.md): public readiness → security/readiness acceptance → separate owner approval and public TOKEN/SOL activation → owner-initiated official $AECO launch through useaeco.xyz on Mainnet → independent mint, approved supply/decimals, metadata, fee routing, finalized transaction and Explore verification → Phase 2 completion → Phase 3. The dedicated deployer is `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`, not either treasury. Supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and transaction costs require separate final approval. No official $AECO transaction is authorized or submitted. TOKEN/AECO pairing remains a later feature.
+
 ## Database and migration boundary
 
 `aeco_production` uses independent volume `7d78e336-4efc-4935-9a54-04caa6f7afeb` and its own generated private credential. Zero public tables were verified before applying approved 001–004 atomically. The deployed pre-start guard requires exactly those four filenames and published checksums before running migration validation; no additional migration was applied. Read-only post-release checks find zero launches and zero treasury entries. Staging and public-demo data remain untouched.

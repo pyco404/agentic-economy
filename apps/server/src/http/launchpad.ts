@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { DEV_BUY_MAX_BPS, DevBuyQuote, NewLaunchDraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, launchpadPaths } from '@agentic-economy/shared';
+import { DEV_BUY_MAX_BPS, OFFICIAL_TREASURIES, DevBuyQuote, NewLaunchDraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, launchpadPaths } from '@agentic-economy/shared';
 import { ChainFeatureUnavailable } from '../chain/types.js';
 import type { AppContext } from '../context.js';
 import { hashToken } from '../services/auth.js';
-import { assertLaunchWalletAllowed, launchWalletAllowed } from '../services/launch-permission.js';
+import { assertLaunchWalletAllowed, launchWalletAllowed, preparedMintPreparationAllowed } from '../services/launch-permission.js';
 import { LaunchpadService } from '../services/launchpad.js';
 import { LaunchpadStore } from '../store/launchpad.js';
 import { PostgresStore } from '../store/postgres.js';
@@ -15,16 +15,16 @@ const idOf=(req:FastifyRequest)=>z.object({id:z.string().uuid()}).parse(req.para
 /** Cookie-only browser API. Explicit Origin on all mutations provides CSRF protection across allowed sibling origins. */
 export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  const executionEnabled=async()=>{if(!ctx.config.pumpLaunch.enabled)return false;try{await ctx.chain.assertLaunchSubmissionAllowed?.();return true;}catch{return false;}};
- const devBuySupport=async()=>{
-  if(ctx.config.mode==='demo'||!await executionEnabled()||!ctx.chain.devBuySupport)return{available:false,reason:'Developer Buy is available only where coin creation is enabled on a verified test network'};
-  try{return await ctx.chain.devBuySupport();}catch{return{available:false,reason:'Developer Buy availability could not be checked. Try again shortly.'};}
+ const devBuySupport=async(preparationOnly=false)=>{
+  if(ctx.config.mode==='demo'||(!preparationOnly&&!await executionEnabled())||!ctx.chain.devBuySupport)return{available:false,reason:'Developer Buy is available only where coin creation is enabled on a verified test network'};
+  try{return await ctx.chain.devBuySupport(preparationOnly);}catch{return{available:false,reason:'Developer Buy availability could not be checked. Try again shortly.'};}
  };
  // Network-dependent readiness, checked before any upload: the selected pair and an optional Developer Buy.
  const readiness=async(f:{quoteAsset:'SOL'|'USDC';devBuyBps:number})=>{
   const out:{field:'quoteAsset'|'devBuyBps';code:string;message:string}[]=[];
   if(f.devBuyBps>0){
    if(f.quoteAsset!=='SOL')out.push({field:'devBuyBps',code:'dev_buy_unavailable',message:'Developer Buy is available for SOL pairs only.'});
-   else{const s=await devBuySupport();if(!s.available)out.push({field:'devBuyBps',code:'dev_buy_unavailable',message:s.reason??'Developer Buy is unavailable on this network.'});}
+   else{const s=await devBuySupport(preparedMintPreparationAllowed(ctx.config,OFFICIAL_TREASURIES.aecoDeployer));if(!s.available)out.push({field:'devBuyBps',code:'dev_buy_unavailable',message:s.reason??'Developer Buy is unavailable on this network.'});}
   }
   return out;
  };
@@ -52,13 +52,14 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  let executionsInFlight=0;
  const executionOwner=async(req:FastifyRequest)=>{csrf(req);const owner=await wallet(req);assertLaunchWalletAllowed(ctx.config,owner);return owner;};
  const execution=async<T>(work:()=>Promise<T>)=>{if(executionsInFlight>=4)throw new AppError('unavailable','Launch processing is busy. Retry the same attempt shortly.');executionsInFlight++;try{return await work();}finally{executionsInFlight--;}};
- app.get(launchpadPaths.capabilities,async(req,reply)=>{reply.header('Cache-Control','no-store');let owner:string|undefined;if(token(req)){try{owner=await wallet(req);}catch{/* Anonymous capabilities never confer launch permission. */}}const permitted=launchWalletAllowed(ctx.config,owner);const dev=permitted?await devBuySupport():{available:false,reason:'Public coin creation is not open yet.'};return{version:1,authentication:'cookie',uploads:permitted&&!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:permitted&&await executionEnabled(),quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
+ app.get(launchpadPaths.capabilities,async(req,reply)=>{reply.header('Cache-Control','no-store');let owner:string|undefined;if(token(req)){try{owner=await wallet(req);}catch{/* Anonymous capabilities never confer launch permission. */}}const permitted=launchWalletAllowed(ctx.config,owner);const preparationEnabled=preparedMintPreparationAllowed(ctx.config,owner);const dev=permitted?await devBuySupport(preparationEnabled):{available:false,reason:'Public coin creation is not open yet.'};return{version:1,authentication:'cookie',uploads:permitted&&!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:permitted&&await executionEnabled(),preparationEnabled:preparationEnabled||(permitted&&await executionEnabled()),quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
   devBuy:{status:dev.available?'available':'unavailable',maxBps:DEV_BUY_MAX_BPS,quoteAssets:['SOL'],reason:dev.reason}};});
  // Public estimate for the form; the transaction itself is re-quoted and simulated at preparation.
  app.get(launchpadPaths.devBuyQuote,async(req,reply)=>{
   reply.header('Cache-Control','no-store');rate(req,req.ip);
   const {bps}=z.object({bps:z.coerce.number().int().min(0).max(DEV_BUY_MAX_BPS)}).strict().parse(req.query);
-  const support=await devBuySupport();
+  let owner:string|undefined;try{owner=await wallet(req);}catch{/* Anonymous price checks never grant preparation rights. */}
+  const support=await devBuySupport(preparedMintPreparationAllowed(ctx.config,owner));
   if(!support.available||!ctx.chain.quoteDevBuy)return DevBuyQuote.parse({status:'unavailable',bps,reason:support.reason??'Developer Buy is unavailable on this network'});
   const cached=quoteCache.get(bps);if(cached&&Date.now()-cached.at<15_000)return cached.value;
   let q;try{q=await ctx.chain.quoteDevBuy(bps);}catch(e){return DevBuyQuote.parse({status:'unavailable',bps,reason:e instanceof ChainFeatureUnavailable?e.message:'Developer Buy pricing is temporarily unavailable.'});}
@@ -77,11 +78,11 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  app.delete(path,async(req,reply)=>{const owner=await mutation(req,reply),body=version.parse(req.body);await service.store.remove(owner,idOf(req),body.version);return{ok:true};});
  app.delete(path+'/logo',async(req,reply)=>{const owner=await mutation(req,reply),body=version.parse(req.body);const draft=await service.store.get(owner,idOf(req));const next={...draft,image:null,metadata:null,version:draft.version+1,updatedAt:new Date().toISOString()};await service.store.save(next,body.version);return next;});
  app.post(path+'/metadata',async(req,reply)=>{const owner=await mutation(req,reply);assertLaunchWalletAllowed(ctx.config,owner);const body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
- app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),review=await service.review(owner,idOf(req));const quoteEnabled=launchWalletAllowed(ctx.config,owner)&&review.draft.fields.quoteAsset==='SOL'&&await executionEnabled();return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
+ app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),review=await service.review(owner,idOf(req));const quoteEnabled=launchWalletAllowed(ctx.config,owner)&&review.draft.fields.quoteAsset==='SOL'&&await executionEnabled();return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone,preparationEnabled:(quoteEnabled||preparedMintPreparationAllowed(ctx.config,owner,idOf(req)))&&review.readyForNextMilestone};});
  // Execution consumes only a server-owned, latest-version draft and its pinned assets.
  app.post(path+'/launch',async(req)=>{
   const owner=await executionOwner(req),body=version.parse(req.body),id=idOf(req),requestKey=key(req);
-  if(!ctx.config.pumpLaunch.enabled)throw new AppError('feature_disabled','Safe-network launches are disabled');
+  if(!ctx.config.pumpLaunch.enabled&&!preparedMintPreparationAllowed(ctx.config,owner,id))throw new AppError('feature_disabled','Safe-network launches are disabled');
   const result=await execution(()=>service.operation(owner,requestKey,'launch',{id,version:body.version},async()=>{
    const review=await service.review(owner,id),d=review.draft;
    if(d.version!==body.version)throw new AppError('conflict','Draft changed. Review it again before launching.');
@@ -99,6 +100,7 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  const launchId=(req:FastifyRequest)=>z.object({launchId:z.string().regex(/^lch_[A-Za-z0-9]+$/)}).parse(req.params).launchId;
  app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),id=launchId(req);return{launch:TokenLaunch.parse(await ctx.launches.refresh(owner,id)),recovery:await ctx.launches.recovery(owner,id)};});
  app.get(launchPath+'/mint-review',async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.launches.localMintReview(await wallet(req),launchId(req));});
+ app.post(launchPath+'/mint-review/renew',async(req)=>{const owner=await executionOwner(req),body=z.object({messageSha256:z.string().regex(/^[a-f0-9]{64}$/)}).strict().parse(req.body);return execution(()=>ctx.launches.renewLocalMintReview(owner,launchId(req),body.messageSha256));});
  app.post(launchPath+'/mint-signature',async(req)=>{const owner=await executionOwner(req);return execution(()=>ctx.launches.importLocalMintSignature(owner,launchId(req),req.body));});
  app.post(launchPath+'/submit',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644)}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.submit(owner,launchId(req),body.transaction)))};});
  app.post(launchPath+'/resume',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644).optional()}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.resume(owner,launchId(req),body.transaction)))};});

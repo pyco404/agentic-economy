@@ -1,5 +1,7 @@
 # Phase 2 — final blockchain verification audit
 
+> Status correction, 22 October 2026: **Phantom desktop Developer Buy VERIFIED** — Zappercoin ($ZAP), 2%, exactly 20,000,000 tokens. Finalized Devnet transaction and database receipt independently checked. Physical mobile remains unverified. Older pending-desktop wording below is historical and superseded; no repeat desktop transaction is requested. [Acceptance evidence](phantom-desktop-developer-buy-2026-10-22.md) · [Current Phase 2 priorities](phase2-sol-only-acceptance.md). USDC is outside current scope.
+
 18 October 2026. **Actual public-devnet SOL and USDC creation passed. This is not
 approval or a declaration of readiness for production financial execution.**
 The website, world, camera and economic simulation have not been redesigned.

@@ -5,6 +5,7 @@ import { DEV_BUY_MAX_BPS, DevBuyQuote, NewLaunchDraftFields, SavedLaunchDraft, V
 import { ChainFeatureUnavailable } from '../chain/types.js';
 import type { AppContext } from '../context.js';
 import { hashToken } from '../services/auth.js';
+import { assertLaunchWalletAllowed, launchWalletAllowed } from '../services/launch-permission.js';
 import { LaunchpadService } from '../services/launchpad.js';
 import { LaunchpadStore } from '../store/launchpad.js';
 import { PostgresStore } from '../store/postgres.js';
@@ -49,9 +50,9 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  // Bound concurrent execution work while retaining CSRF, wallet ownership,
  // exact-message signatures, server-side idempotency and default-off gates.
  let executionsInFlight=0;
- const executionOwner=async(req:FastifyRequest)=>{csrf(req);return wallet(req);};
+ const executionOwner=async(req:FastifyRequest)=>{csrf(req);const owner=await wallet(req);assertLaunchWalletAllowed(ctx.config,owner);return owner;};
  const execution=async<T>(work:()=>Promise<T>)=>{if(executionsInFlight>=4)throw new AppError('unavailable','Launch processing is busy. Retry the same attempt shortly.');executionsInFlight++;try{return await work();}finally{executionsInFlight--;}};
- app.get(launchpadPaths.capabilities,async()=>{const dev=await devBuySupport();return{version:1,authentication:'cookie',uploads:!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:await executionEnabled(),quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
+ app.get(launchpadPaths.capabilities,async(req,reply)=>{reply.header('Cache-Control','no-store');let owner:string|undefined;if(token(req)){try{owner=await wallet(req);}catch{/* Anonymous capabilities never confer launch permission. */}}const permitted=launchWalletAllowed(ctx.config,owner);const dev=permitted?await devBuySupport():{available:false,reason:'Public coin creation is not open yet.'};return{version:1,authentication:'cookie',uploads:permitted&&!!ctx.config.pinata.jwt,maxBytes:ctx.config.pinata.maxBytes,maxPixels:ctx.config.pinata.maxPixels,storage:ctx.store.kind,launchEnabled:permitted&&await executionEnabled(),quotes:{SOL:'draft',USDC:'planned',AECO:'future'},
   devBuy:{status:dev.available?'available':'unavailable',maxBps:DEV_BUY_MAX_BPS,quoteAssets:['SOL'],reason:dev.reason}};});
  // Public estimate for the form; the transaction itself is re-quoted and simulated at preparation.
  app.get(launchpadPaths.devBuyQuote,async(req,reply)=>{
@@ -75,8 +76,8 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  app.patch(path,async(req,reply)=>{const owner=await mutation(req,reply),body=z.object({version:version.shape.version,fields:NewLaunchDraftFields}).strict().parse(req.body);return service.update(owner,idOf(req),body.version,body.fields);});
  app.delete(path,async(req,reply)=>{const owner=await mutation(req,reply),body=version.parse(req.body);await service.store.remove(owner,idOf(req),body.version);return{ok:true};});
  app.delete(path+'/logo',async(req,reply)=>{const owner=await mutation(req,reply),body=version.parse(req.body);const draft=await service.store.get(owner,idOf(req));const next={...draft,image:null,metadata:null,version:draft.version+1,updatedAt:new Date().toISOString()};await service.store.save(next,body.version);return next;});
- app.post(path+'/metadata',async(req,reply)=>{const owner=await mutation(req,reply),body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
- app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const review=await service.review(await wallet(req),idOf(req));const quoteEnabled=review.draft.fields.quoteAsset==='SOL'&&await executionEnabled();return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
+ app.post(path+'/metadata',async(req,reply)=>{const owner=await mutation(req,reply);assertLaunchWalletAllowed(ctx.config,owner);const body=version.parse(req.body);return SavedLaunchDraft.parse(await service.metadata(owner,idOf(req),body.version,key(req)));});
+ app.get(path+'/review',async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),review=await service.review(owner,idOf(req));const quoteEnabled=launchWalletAllowed(ctx.config,owner)&&review.draft.fields.quoteAsset==='SOL'&&await executionEnabled();return {...review,launchEnabled:quoteEnabled&&review.readyForNextMilestone};});
  // Execution consumes only a server-owned, latest-version draft and its pinned assets.
  app.post(path+'/launch',async(req)=>{
   const owner=await executionOwner(req),body=version.parse(req.body),id=idOf(req),requestKey=key(req);
@@ -100,7 +101,7 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  // The parser is scoped to image/octet-stream uploads. Authenticate before buffering any body.
  app.addContentTypeParser('application/octet-stream',{parseAs:'buffer',bodyLimit:ctx.config.pinata.maxBytes},(_req,body,done)=>done(null,body));
  app.route({method:'POST',url:path+'/logo',bodyLimit:ctx.config.pinata.maxBytes,
-  onRequest:async(req,reply)=>{await mutation(req,reply);if(uploadsInFlight>=2)throw new AppError('unavailable','Uploads are busy. Retry shortly.');uploadsInFlight++;uploading.add(req);},
+  onRequest:async(req,reply)=>{const owner=await mutation(req,reply);assertLaunchWalletAllowed(ctx.config,owner);if(uploadsInFlight>=2)throw new AppError('unavailable','Uploads are busy. Retry shortly.');uploadsInFlight++;uploading.add(req);},
   onResponse:async(req)=>release(req),
   handler:async(req)=>{const owner=await wallet(req),query=version.parse({version:Number((req.query as {version?:string}).version)});if(!Buffer.isBuffer(req.body))throw new AppError('bad_request','Send a binary image');return SavedLaunchDraft.parse(await service.image(owner,idOf(req),query.version,key(req),req.body));}});
 }

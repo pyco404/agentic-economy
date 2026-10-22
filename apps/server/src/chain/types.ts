@@ -103,7 +103,7 @@ export interface ChainGateway {
   /** Throws ChainFeatureUnavailable unless `mint` is an initialized six-decimal SPL mint in Pump's live Global quote allowlist. */
   verifyQuoteMint?(mint: string): Promise<void>;
   /** Developer Buy support on this network (lookup-table coverage and packet capacity); reason when unavailable. */
-  devBuySupport?(): Promise<{ available: boolean; reason: string | null }>;
+  devBuySupport?(preparationOnly?:boolean): Promise<{ available: boolean; reason: string | null }>;
   /** Quote an exact Developer Buy of `bps` basis points of total supply for a new SOL curve. */
   quoteDevBuy?(bps: number): Promise<DevBuyChainQuote>;
   /** Authoritative bonding-curve state read at `slot`; null when the curve account does not exist. */

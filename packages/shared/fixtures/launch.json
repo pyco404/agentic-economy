@@ -1,6 +1,6 @@
 {
   "launch": {
-    "id": "lch_Aq2F1vC6CLgKLA",
+    "id": "lch_U4eVzb75sBUGGY",
     "mode": "demo",
     "status": "confirmed",
     "launcherWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
@@ -14,14 +14,15 @@
       "twitter": null,
       "telegram": null
     },
-    "mint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-    "feeSharingConfig": "bfVqq819NdX58EKsDCB8bDYcKTfk3AN7io9HRLW78bY",
+    "mint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+    "feeSharingConfig": "3wnvrFav8XENWqp95i7P6AqYnJbWk2fQ7o8uQYDBtQpA",
     "fees": {
       "platformLaunchFeeLamports": "50000000",
       "platformTreasury": "3PttrU4AutC7CTu2rtiFe32YUHwh5jLMZ9E5xphoeqTN",
       "estimatedNetworkFeesLamports": "50000",
       "estimatedAccountRentLamports": "16500000",
       "launcherCreatorFeeBps": 0,
+      "developerBuy": null,
       "creatorFeeSplit": {
         "agentRewardsTreasury": "29kQNUTZsUdx7RokWtRCpbxunJmHjjsBMabioDrGMtvb",
         "agentRewardsBps": 6000,
@@ -37,25 +38,25 @@
         "DEMO MODE: no real transaction is created and no SOL moves."
       ]
     },
-    "signature": "2suJY8x6GMCZSHMpY6NYEeMfjZbKvcTZomvC2UpLgvDizjRyiN5yerkqNVBbmpAWigKNUf28apVzjBquVy7ZfxKL",
+    "signature": "2wHRr9Fe9GV3fzJeMKHuPnKBGuAWgRMKrAboHZZPb8yFZTK9mi45zRHDpitRNabhsufRkUVJ31wYd3uoMwAsBxhk",
     "slot": 1017,
-    "communityId": "com_qCF54payr7sLyM",
+    "communityId": "com_YR2K11xE1fVAHB",
     "errors": [],
     "history": [
       {
         "status": "draft",
-        "at": "2026-10-16T05:47:03.723Z"
+        "at": "2026-10-22T09:05:21.322Z"
       },
       {
         "status": "awaiting_signature",
-        "at": "2026-10-16T05:47:03.723Z"
+        "at": "2026-10-22T09:05:21.322Z"
       },
       {
         "status": "confirmed",
-        "at": "2026-10-16T05:47:03.725Z"
+        "at": "2026-10-22T09:05:21.349Z"
       }
     ],
-    "createdAt": "2026-10-16T05:47:03.723Z",
-    "updatedAt": "2026-10-16T05:47:03.725Z"
+    "createdAt": "2026-10-22T09:05:21.322Z",
+    "updatedAt": "2026-10-22T09:05:21.349Z"
   }
 }

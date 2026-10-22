@@ -9,7 +9,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
-| Application staging release | **DEPLOYED AND VERIFIED:** backend/frontend **6758f91**, contract 0.5.2; actual HTTPS, API/database, WSS, clean routes, persistent world and responsive browser checks pass; financial execution off |
+| Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **6758f91**, compatible contract 0.5.2; fresh HTTPS/API/database checks pass. Prior matched 6758f91 release passed WSS, clean routes, persistent world and responsive browser checks. New capacity/header live acceptance remains pending; financial execution off |
 
 ## Historical restricted mobile preparation — stopped
 
@@ -93,3 +93,9 @@ When preparation capacity is exhausted, the request is rejected before its opera
 Regression coverage includes 105 intentional same-content drafts by one wallet, sequential saves past the former timed limit, default/lower/higher concurrent capacity shared across wallets, explicit retryable overload responses, unauthorized/invalid-origin rejection while busy, slot release after validation errors and successful requests, and same-key retry/replay returning one saved draft. Existing launch/recovery regressions continue to verify one submission and one platform-charge receipt per attempt. No Mainnet execution was enabled.
 
 Capacity follow-up release: application commit `ac7fc18` passed 246 backend tests (23 explicit integration skips), typecheck, lint and production build. Staging backend deployment `96e853df-bd74-4738-a6d6-58348ef41859` is now observed **SUCCESS**; the old evidence file records its earlier queued checkpoint. New live capacity/header verification remains pending, not claimed complete. The staging frontend remains at 6758f91, compatible contract 0.5.2, MODE=demo and execution off. No duplicate release was requested. [Sanitized capacity release checkpoint](evidence/launchpad-capacity-release-2026-10-22.json).
+
+## Live deployment recheck — 22 October 2026
+
+[Fresh read-only Railway and HTTP evidence](evidence/deployment-readiness-recheck-2026-10-22.json): staging backend ac7fc18, staging frontend 6758f91, production frontend/API 6758f91 and both PostgreSQL services are SUCCESS. Both APIs return health/readiness 200 with PostgreSQL healthy and compatible contract 0.5.2; financial features are disabled. Production targets aeco_production and has no repository deployment triggers. No builds, configuration changes or migrations were requested. Later main commits are documentation; production remains deliberately pinned to its approved application SHA.
+
+Official root/www/API still return Vercel DEPLOYMENT_NOT_FOUND (404). Production has no official custom-domain attachments, and its frontend still targets the temporary API/WSS host. This is a separate domain-cutover approval gate, not a queued-build blocker. See the [scoped proposal](PRODUCTION_DNS_CUTOVER_PROPOSAL.md). Remaining production acceptance includes real-domain HTTPS/session/WSS checks, an actual isolated backup restoration rehearsal, final security/recovery review and separately approved financial activation. Pinata rotation remains pending maintenance, and physical mobile on-chain acceptance remains DEFERRED.

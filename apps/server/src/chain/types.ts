@@ -71,7 +71,9 @@ export interface DevBuyChainQuote {
 }
 
 export interface BuiltLaunchTransaction {
-  /** Base64 serialized transaction (partially signed by the mint). */
+  /** Public context returned only for the owner-local mint signing handoff. */
+  mintSigningContext?: {lookupTables:Array<{key:string;addresses:string[]}>;globalAccountBase64?:string;protocolFeeRecipients?:{feeRecipient:string;buybackFeeRecipient:string}};
+  /** Base64 serialized transaction (partially signed by the mint, or unsigned for a local mint). */
   transaction: string;
   lastValidBlockHeight: number | null;
   demo: boolean;
@@ -96,6 +98,8 @@ export interface ChainGateway {
   getFeeRoutingState(mint: string): Promise<FeeRoutingState>;
   getTokenBalance(owner: string, mint: string): Promise<TokenBalance>;
   buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction>;
+  /** Same guarded/simulated construction, without receiving or generating a mint secret. */
+  buildUnsignedLaunchTransaction?(input: Omit<BuildLaunchInput,"mintSecretKey">): Promise<BuiltLaunchTransaction>;
   /** Throws ChainFeatureUnavailable unless `mint` is an initialized six-decimal SPL mint in Pump's live Global quote allowlist. */
   verifyQuoteMint?(mint: string): Promise<void>;
   /** Developer Buy support on this network (lookup-table coverage and packet capacity); reason when unavailable. */

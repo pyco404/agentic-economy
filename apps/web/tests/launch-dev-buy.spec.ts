@@ -45,6 +45,13 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await expect(toggle).not.toBeChecked(); await expect(group).toContainText('Developer Buy off');
     await toggle.check();
     const percent = group.getByRole('textbox', { name: 'Share of total supply', exact: true });
+    await expect(percent).toHaveValue('0');
+    await expect(group).toContainText('0 MOSS');
+    await expect(group.getByText('0 SOL', {exact:true})).toHaveCount(2);
+    await percent.fill('0.01');
+    await expect(group).toContainText('100,000 MOSS');
+    await percent.fill('2.75');
+    await expect(group).toContainText('27,500,000 MOSS');
     await percent.fill('3.5');
     await expect(group).toContainText('35,000,000 MOSS');
     await expect(group).toContainText('0.010242053 SOL'); await expect(group).toContainText('0.010344474 SOL'); await expect(group).toContainText('6.85%');
@@ -57,7 +64,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await percent.fill('1'); await expect(group).toContainText('10,000,000 MOSS');
     await toggle.uncheck(); await expect(group).toContainText('Developer Buy off');
     await expect(page.getByRole('region', { name: 'Live token preview' })).not.toContainText('Developer Buy');
-    await toggle.check(); await percent.fill('3.5');
+    await toggle.check(); await expect(percent).toHaveValue('0');
+    await percent.fill('0'); await expect(percent).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Live token preview' })).not.toContainText('Developer Buy');
+    await percent.fill('3.5');
 
     if (viewport.width <= 820) {
       const close = page.getByRole('button', { name: 'Close page and view city', exact: true });

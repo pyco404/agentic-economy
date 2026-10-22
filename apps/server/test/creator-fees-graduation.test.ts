@@ -20,13 +20,13 @@ const CONSOLIDATE='8b348655e4e56cf1';
 describe('creator fees across graduation',()=>{
  it('verifies a distribution after the curve completes but before migration',()=>{
   const f=load('complete-unmigrated'),v=verifiedCreatorDistribution(f.tx,f.platform,f.agent);
-  expect(v).toMatchObject({quote:WRAPPED_SOL_MINT,total:2_550_160n,dust:0n,consolidated:0n});
+  expect(v).toMatchObject({quote:WRAPPED_SOL_MINT,total:2_550_160n,dust:null,consolidated:0n});
   expect(v.payouts.map(p=>p.amount).sort()).toEqual([1_020_064n,1_530_096n]);
  });
 
  it('verifies the post-graduation consolidation + distribution: pool fees reach the treasuries exactly 60/40',()=>{
   const f=load('graduated'),v=verifiedCreatorDistribution(f.tx,f.platform,f.agent);
-  expect(v).toMatchObject({quote:WRAPPED_SOL_MINT,symbol:'SOL',total:14_814_815n,dust:0n,consolidated:14_814_815n});
+  expect(v).toMatchObject({quote:WRAPPED_SOL_MINT,symbol:'SOL',total:14_814_815n,dust:null,consolidated:14_814_815n});
   expect(v.payouts).toEqual(expect.arrayContaining([
    expect.objectContaining({address:f.agent,bps:6000,amount:8_888_889n}),
    expect.objectContaining({address:f.platform,bps:4000,amount:5_925_926n}),

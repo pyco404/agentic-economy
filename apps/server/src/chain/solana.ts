@@ -1,3 +1,4 @@
+import {MAINNET_GENESIS,assertReviewedMainnetPrograms} from "./mainnet-policy.js";
 import bs58 from "bs58";
 import { isDeepStrictEqual } from "node:util";
 import { AddressLookupTableProgram, Connection, Keypair, PublicKey, VersionedTransaction, type ConnectionConfig, type AddressLookupTableAccount, type VersionedTransactionResponse } from "@solana/web3.js";
@@ -16,11 +17,17 @@ export class SolanaRpcChain implements ChainGateway {
   readonly source = "solana_rpc" as const;
   private readonly conn: Connection;
 
-  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet"}, readOptions?: Pick<ConnectionConfig,"fetch">) {
+  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet";mainnetApproved?:boolean}, readOptions?: Pick<ConnectionConfig,"fetch">) {
     this.conn = new Connection(rpcUrl, {commitment:"confirmed", ...readOptions});
   }
 
   getGenesisHash(){return this.conn.getGenesisHash();}
+  async assertLaunchSubmissionAllowed(){
+    if(this.launchOptions?.cluster==="mainnet-beta"){
+      if(!this.launchOptions.mainnetApproved)throw new ChainFeatureUnavailable("mainnet_approval_required","Mainnet activation requires separate owner approval");
+      await this.launchGenesis();await this.launchTable();
+    }
+  }
   async getSignatureStatus(signature:string){const status=(await this.conn.getSignatureStatuses([signature],{searchTransactionHistory:true})).value[0];return status?{slot:status.slot,confirmationStatus:status.confirmationStatus??null,err:status.err}:null;}
   async verifyMarketPool(pool:string,mint:string,quoteMint:string){
     const a=await this.conn.getAccountInfo(new PublicKey(pool),'confirmed');
@@ -93,6 +100,11 @@ export class SolanaRpcChain implements ChainGateway {
     const genesis=await this.conn.getGenesisHash();
     // A configured URL or MODE label alone never authorizes a mainnet write.
     const expected=this.launchOptions.cluster==="devnet"?"EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG":this.launchOptions.cluster==="localnet"&&["localhost","127.0.0.1","[::1]"].includes(new URL(this.conn.rpcEndpoint).hostname)?this.launchOptions.localGenesisHash:null;
+    if(this.launchOptions.cluster==="mainnet-beta"&&this.launchOptions.mainnetApproved){
+      if(genesis!==MAINNET_GENESIS)throw new ChainFeatureUnavailable("unsafe_launch_network","Approved Mainnet RPC genesis mismatch");
+      try{await assertReviewedMainnetPrograms(this.conn);}catch{throw new ChainFeatureUnavailable("mainnet_protocol_changed","Mainnet program review is stale or unavailable; launches are blocked");}
+      return genesis;
+    }
     if(!expected||genesis!==expected||genesis==="5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d")throw new ChainFeatureUnavailable("unsafe_launch_network","RPC genesis does not match the configured safe testing network");
     return genesis;
   }
@@ -179,6 +191,7 @@ export class SolanaRpcChain implements ChainGateway {
     if (!info || !info.owner.equals(AddressLookupTableProgram.programId)) throw new ChainFeatureUnavailable("invalid_lookup_table", "Launch lookup table has an invalid owner or is missing");
     const table = (await this.conn.getAddressLookupTable(address)).value;
     if (!table || !table.isActive()) throw new ChainFeatureUnavailable("invalid_lookup_table", "Launch lookup table is inactive");
+    if(this.launchOptions?.cluster==="mainnet-beta"&&table.state.authority)throw new ChainFeatureUnavailable("invalid_lookup_table","Mainnet launches require a frozen public lookup table");
     return table;
   }
 
@@ -228,6 +241,7 @@ export class SolanaRpcChain implements ChainGateway {
   }
 
   async buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction> {
+    if(this.launchOptions?.cluster==="mainnet-beta"){const {OFFICIAL_TREASURIES}=await import("@agentic-economy/shared");if(input.platformTreasury!==OFFICIAL_TREASURIES.platform||input.agentRewardsTreasury!==OFFICIAL_TREASURIES.agentRewards||input.quoteAsset==="USDC")throw new ChainFeatureUnavailable("invalid_mainnet_launch","Mainnet launches require official treasuries and SOL");}
     const genesisHash=await this.launchGenesis();
     if(input.quoteAsset==="USDC")await this.verifyQuoteMint(input.quoteMint??"");
     const table=await this.launchTable();

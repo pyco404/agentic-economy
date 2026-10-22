@@ -2,6 +2,8 @@
 
 **Mandatory owner decision:** the official native $AECO token must launch through Agentic Economy's own production Launchpad on Solana Mainnet before Phase 2 closes and Phase 3 begins. Public website availability, test tokens and simulations cannot satisfy this gate. This checklist is not permission to activate execution, deploy $AECO, fund wallets or make payments.
 
+**Official planned mint:** `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco`. Preserve this exact address; do not generate a replacement. Keypair preparation does not prove a launched token or authorize execution. [Fixed-mint preparation and signing-integration prerequisite](OFFICIAL_AECO_LAUNCH_PLAN.md).
+
 ## Required sequence
 
 1. **Public website / restricted Launchpad — VERIFIED BROWSING; EXECUTION OFF.** Everyone may browse https://useaeco.xyz, Launchpad and Explore. Ordinary wallets cannot create Mainnet coins. The reviewed backend gate must be present in the production release before any execution is enabled. Website/DNS approval never authorizes financial activation.
@@ -24,6 +26,7 @@ This policy is a wallet-access gate, not transaction approval and not a per-wall
 
 | Parameter | Current approval status |
 | --- | --- |
+| Mint address | Owner-supplied planned vanity mint: `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco`; fixed for preparation, not yet independently verified on-chain |
 | Supply | Not finalized or approved |
 | Decimals | Not finalized or approved |
 | Tokenomics, allocations and applicable controls | Not finalized or approved |
@@ -36,7 +39,7 @@ Verify that the protocol's actual supply/decimal constraints support the approve
 
 Preserve the existing separate 0.05 SOL platform charge and eligible human-launch creator-fee split of 60% Agent Rewards / 40% Platform / 0% Launcher. Approval must show that charge, network fee, account rent, any approved Developer Buy/protocol costs, slippage ceiling and maximum total debit without double-counting. Re-simulate and seek new approval if material parameters, recipients or cost bounds change.
 
-TOKEN/AECO pairing remains a later Phase 4 feature; creating the AECO token against SOL does not activate AECO quote pairs.
+TOKEN/AECO pairing planning references `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco` and remains a later Phase 4 feature; creating the AECO token against SOL does not activate AECO quote pairs.
 
 ## Wallet and recipient integrity
 
@@ -57,11 +60,11 @@ The deployer is never a substitute fee recipient. Do not request private keys/re
 - [ ] Open the official token detail page in Explore, verify its mint/signature/metadata and confirmed platform provenance. Show unavailable market fields honestly; do not invent price, volume or income.
 - [ ] Attach evidence and explicitly accept the official launch before marking Phase 2 completed or unblocking Phase 3.
 
-No authoritative $AECO mint, supply, metadata URI, finalized launch signature or launch date is recorded yet. Populate these only from the approved real launch. [Remaining production tasks](PHASE2_NEXT_PRODUCTION_TASKS.md), [current status](PHASE2_STATUS.md), [per-token Common Agent plan](COMMON_AGENT_PER_TOKEN_PLAN.md).
+The official **planned** mint is `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco`. Its on-chain creation, supply, metadata URI, finalized launch signature and launch date remain unverified; populate those only from the approved real launch. Verify that the prepared-mint signing integration uses this exact address rather than the general random-mint allocation path. [Remaining production tasks](PHASE2_NEXT_PRODUCTION_TASKS.md), [current status](PHASE2_STATUS.md), [per-token Common Agent plan](COMMON_AGENT_PER_TOKEN_PLAN.md).
 
 ## Automatic Common Agents — mandatory Phase 2 release gate
 
-- [ ] Separately authorize and verify the official $AECO launch before configuring its real mint. No placeholder mint or feature flag grants Mainnet launch approval.
+- [ ] Separately authorize and verify the official $AECO launch using `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco` before assigning live `AECO_MINT` or marking it verified. Its recorded planned identity does not grant launch or indexer activation approval.
 - [ ] Enable read-only indexing only after reviewed mint/network verification and provider capacity checks.
 - [ ] Reconcile finalized token accounts by owner and exclude reliably identified non-user recipients.
 - [ ] Verify one persistent Common Agent per positive-balance qualifying $AECO wallet, without login, registration, activation or site visit.

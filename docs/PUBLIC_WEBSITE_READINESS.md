@@ -6,12 +6,12 @@
 
 | Environment/service | Application SHA | Successful Railway deployment |
 | --- | --- | --- |
-| Production frontend | `6758f91bd2e8a69c242584133f0e5932b862bf7e` | `ba11a995-8f60-4595-b8b2-010d340e0262` |
+| Production frontend | `aa1f53a113dc0438094fddb5b306f382fe98b2fd` | `164d4580-ceb1-42a1-981d-dd4580635fe9` |
 | Production API | `6758f91bd2e8a69c242584133f0e5932b862bf7e` | `04365147-839e-44ec-9a47-0c33bf54db04` |
-| Staging frontend | `6758f91bd2e8a69c242584133f0e5932b862bf7e` | `1fe31f55-7270-4c81-a32c-8f9b5cd08054` |
+| Staging frontend | `aa1f53a113dc0438094fddb5b306f382fe98b2fd` | `0b72282d-a73d-44e1-8e03-082bb4391cdb` |
 | Staging API | `ac7fc18af4ad050489463894abd81fd6569006ab` | `96e853df-bd74-4738-a6d6-58348ef41859` |
 
-Both production applications use compatible contract 0.5.2. One necessary frontend configuration build compiled the official API/WSS URLs; no backend/staging redeployment or migration was requested. Newer documentation commits do not constitute newer deployed application code. Production stays on its explicitly approved application SHA with automatic promotion off. [Current Railway/HTTP evidence](evidence/production-public-release-2026-10-22.json).
+Both production applications use compatible contract 0.5.2. The domain cutover used one frontend configuration build for the official API/WSS URLs; the subsequent native-roadmap publication used one source release per frontend. Backend/database releases and schema were unchanged. Newer documentation commits do not constitute newer deployed application code. The subsequent frontend-only native-roadmap release aa1f53a is now verified live on staging and production; the production API remains at 6758f91. Automatic production promotion remains off. [Current deployment and native-roadmap browser evidence](evidence/native-aeco-roadmap-release-2026-10-22.json).
 
 ## Why the domain returned 404, and what changed
 
@@ -28,6 +28,10 @@ Production uses independent `aeco_production`, not staging or `aeco_public_demo`
 - Capabilities report `launchEnabled=false`, Developer Buy unavailable. Unauthenticated drafts return 401; environment/Git/admin paths return 404. No blockchain transaction, upload, payment or payout was initiated for this domain acceptance.
 
 [TLS evidence](evidence/public-domain-tls-2026-10-22.json), [actual public browser evidence](evidence/public-domain-browser-2026-10-22.json), [public API boundaries](evidence/public-api-boundaries-2026-10-22.json), [backend/provider isolation](evidence/production-runtime-security-2026-10-22.json).
+
+## Mandatory official native-token milestone
+
+The live roadmap requires an owner-initiated official $AECO TOKEN/SOL launch on Solana Mainnet through useaeco.xyz, after separate readiness, activation, parameter and transaction-cost approvals. Independent mint/supply/metadata/fee-routing/finality/Explore verification is mandatory before Phase 2 closes or Phase 3 starts. No $AECO transaction has been authorized or submitted. [Release checklist](PRODUCTION_RELEASE_CHECKLIST.md), [actual native-roadmap release and browser checks](evidence/native-aeco-roadmap-release-2026-10-22.json).
 
 ## Remaining Phase 2 work
 

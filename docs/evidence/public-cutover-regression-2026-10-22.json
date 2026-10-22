@@ -1,0 +1,15 @@
+{
+  "scope": "Local main regression checks alongside production domain configuration cutover; no application source changes",
+  "passed": 21,
+  "files": {
+    "identity.test.ts": 8,
+    "mainnet-activation.test.ts": 3,
+    "signed-launch.test.ts": 2,
+    "launch-finality.test.ts": 4,
+    "launch-sol-policy.test.ts": 4
+  },
+  "frontendBuild": "Railway pinned 6758f91 production build and Caddy validation passed",
+  "existingWarning": "Frontend bundle exceeds 500 kB warning",
+  "blockchainTransactions": 0,
+  "mainnetActivation": false
+}

@@ -5,7 +5,7 @@ import type {ObservedTransaction} from '../src/chain/types.js';
 const fixture=()=>JSON.parse(readFileSync(new URL('./fixtures/pump-distribution-swept-local.json',import.meta.url),'utf8'),(_k,v)=>v&&typeof v==='object'&&'$bigint'in v?BigInt(v.$bigint):v) as {tx:ObservedTransaction;platform:string;agent:string};
 it('verifies captured v3 creator sweep + distribution and excludes rent from fee income',()=>{
  const f=fixture(),v=verifiedCreatorDistribution(f.tx,f.platform,f.agent);
- expect(v).toMatchObject({symbol:'SOL',total:2_550_160n,swept:2_550_161n,dust:0n});expect(v.payouts.map(p=>p.amount)).toEqual([1_530_096n,1_020_064n]);
+ expect(v).toMatchObject({symbol:'SOL',total:2_550_160n,swept:2_550_161n,dust:null});expect(v.payouts.map(p=>p.amount)).toEqual([1_530_096n,1_020_064n]);
 });
 it('rejects altered sweep destination, protocol buckets, spoofed event authority and unknown instructions',()=>{
  const f=fixture();f.tx.instructions[1]!.accounts[9]=f.agent;expect(()=>verifiedCreatorDistribution(f.tx,f.platform,f.agent)).toThrow(/sweep accounts/);

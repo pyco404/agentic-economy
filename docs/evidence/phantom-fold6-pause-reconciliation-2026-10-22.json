@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-10-22T11:16:42.311459+00:00",
+  "network": "public-devnet",
+  "wallet": "Aziw8URxK23irkF6VZQrq28HoyyMagxA66jpotBPiiYe",
+  "balanceLamports": {
+    "context": {
+      "apiVersion": "4.4.0-beta.1",
+      "slot": 513866413
+    },
+    "value": 10000000000
+  },
+  "history": [
+    {
+      "blockTime": 1792663510,
+      "confirmationStatus": "finalized",
+      "err": null,
+      "memo": null,
+      "signature": "35UoS9AU5yFCbJPiaeZb1fLQFEbbzWKBziZ6eXud3q8SfFftAseJkMhiXThEEn8nyLSuwkmQraUeouFWaL78Z1xc",
+      "slot": 513848451,
+      "transactionIndex": 11
+    },
+    {
+      "blockTime": 1773226762,
+      "confirmationStatus": "finalized",
+      "err": null,
+      "memo": null,
+      "signature": "d5SqYfMbrkeGCLeixBLv1YSFZ4G4m5YnNBX2QvUaAYaoqVhf5CDt7Ko5GVp4146ZSoFYuTt5uGoFXHyxb5FkUhP",
+      "slot": 447722247,
+      "transactionIndex": 19
+    }
+  ],
+  "latestTransaction": {
+    "signature": "35UoS9AU5yFCbJPiaeZb1fLQFEbbzWKBziZ6eXud3q8SfFftAseJkMhiXThEEn8nyLSuwkmQraUeouFWaL78Z1xc",
+    "blockTime": 1792663510,
+    "walletDeltaLamports": 5000000000,
+    "feePayer": "dev2JBjyB5CshoGsiJCwzdmJYiEUwAXMdqDR7txoFBJ",
+    "networkFeeLamports": 5495,
+    "instructions": [
+      {
+        "parsed": {
+          "info": {
+            "destination": "Aziw8URxK23irkF6VZQrq28HoyyMagxA66jpotBPiiYe",
+            "lamports": 5000000000,
+            "source": "dev2JBjyB5CshoGsiJCwzdmJYiEUwAXMdqDR7txoFBJ"
+          },
+          "type": "transfer"
+        },
+        "program": "system",
+        "programId": "11111111111111111111111111111111",
+        "stackHeight": 1
+      },
+      {
+        "accounts": [],
+        "data": "3QCwqmHZ4mdq",
+        "programId": "ComputeBudget111111111111111111111111111111",
+        "stackHeight": 1
+      },
+      {
+        "accounts": [],
+        "data": "LCQ37u",
+        "programId": "ComputeBudget111111111111111111111111111111",
+        "stackHeight": 1
+      }
+    ]
+  },
+  "savedLaunchRecords": 0,
+  "approvalJournalReachedMintPreparation": false,
+  "draftsPreserved": [
+    "bd9a5516-a735-401e-a112-758d7c6aff35",
+    "bb009350-184a-461c-a0d5-9633b4d0f315"
+  ],
+  "state": "mobile-on-chain-DEFERRED",
+  "conclusion": "No recorded FOLD6 launch or application submission; no confirmed FOLD6 charge. Wallet history has no transaction after the prior funding receipt. Timeout cause not established; no retry performed."
+}

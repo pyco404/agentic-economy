@@ -34,7 +34,7 @@ Read-only Railway backup inventory on 22 October 2026:
 | staging | 2, dated 18 and 22 October | 0 | No |
 | public-demo | 0 | 0 | No |
 
-Production also has a previously recorded local baseline dump; its archive listing was validated, but it is not proof of a current backup or successful restoration. Do not treat any listed volume backup as a verified restorable export. Environment/volume deletion may also destroy attached backups.
+The original baseline is superseded by a fresh private PostgreSQL 18.6 archive containing both production drafts, restored into an isolated matching-version database and verified after restart. [Actual restoration evidence](evidence/production-backup-restoration-2026-10-22.json). This is a local recovery archive, not scheduled/offsite backup coverage. Legacy environment backups/restores are still required before their deletion. Do not treat any listed volume backup as a verified restorable export. Environment/volume deletion may also destroy attached backups.
 
 Before requesting scoped legacy deletions:
 
@@ -60,7 +60,7 @@ Re-inspected Gamine's `web/lib/launchpad-server.ts`, `web/lib/pump-transaction.t
 
 Gamine keeps its special vanity key in a server secret and automatically releases expired reservations. Those pieces cannot be copied: the owner forbids uploading/accessing the official key and Agentic Economy must preserve ambiguous attempts. The existing local mint-signature handoff is deployed and disposable Devnet signing/simulation plus mocked browser recovery passed. The official private key has not been opened.
 
-Production backend/frontend `5fa0507` are already live; no further backend deployment is waiting. Mainnet transaction preparation still shares the execution-disabled capability gate, and reserved-mint short-blockhash renewal remains fail-closed. Finish that existing preparation/recovery path and final security acceptance before execution. Verify a current production backup and isolated restore before financial activation. These are launch-readiness work, not reasons to retain staging or request wallet funding.
+The current readiness release completes explicit reserved-mint expiry renewal and separates bound unsigned preparation from execution authority. Production backup restoration and restart passed. Consult the current acceptance report for the exact deployed frontend/backend SHA and checks. These do not authorize Mainnet signing/broadcast or legacy resource deletion; no wallet funding is required during infrastructure work.
 
 When the owner decides to launch, they enter their own details/artwork, choose any 0–3.5% Developer Buy (0.01% increments, default 0%), review refreshed actual costs, decide when to fund and personally approve/sign. Bind only their existing approved draft to the exact official mint. Balance checks happen at that launch-time authorization stage. No intermediate Mainnet test token, automatic native launch, public launch unlock or Phase 3 is authorized.
 

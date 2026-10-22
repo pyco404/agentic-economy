@@ -1,3 +1,4 @@
+import { visibleAgentSubset } from "./agentVisibility";
 import { WorldReadiness, type WorldPhase } from "./worldReadiness";
 import { bridgeSurface } from "./bridgeSurface";
 import { graphReport } from "./navigation";
@@ -408,6 +409,11 @@ export const City = forwardRef<CityHandle, CityProps>(
       pulses.count = 0;
       scene.add(pulses);
       let displayAgentIds: string[] = [];
+      let renderAgents: AgentVisual[] = [];
+      let lastAgentSelection = 0;
+      let roster: AgentVisual[] | undefined;
+      let liveAgents = new Map<string, AgentVisual>();
+      let activeAgentIds = new Set<string>();
       const cargoGeometry = new THREE.BoxGeometry(0.4, 0.35, 0.4),
         cargoMaterial = new THREE.MeshLambertMaterial({ color: "#bdab87" }),
         cargo = new THREE.InstancedMesh(cargoGeometry, cargoMaterial, 512);
@@ -898,14 +904,25 @@ export const City = forwardRef<CityHandle, CityProps>(
             });
         }
         const agentData = p.agents ?? [];
-        const activeAgentIds = new Set(agentData.map((a) => a.id));
+        if (roster !== agentData) {
+          liveAgents = new Map(agentData.map(a => [a.id, a]));
+          activeAgentIds = new Set(liveAgents.keys());
+          roster = agentData;
+        }
         const labelAgents: LabelAgent[] = [];
         const importantAgents = new Set(p.importantAgentIds);
         displayAgentIds = [];
         let count = 0,
           cargoCount = 0;
-        for (let i = 0; i < Math.min(512, agentData.length); i++) {
-          const a = agentData[i]!;
+        if (performance.now() - lastAgentSelection > 250 || !renderAgents.length) {
+          renderAgents = visibleAgentSubset(agentData.filter(a => a.identity?.kind !== "aeco_observed" || !a.paused),
+            a => frustum.containsPoint(new THREE.Vector3(a.x, 1, a.z)),
+            { x: controls.target.x, z: controls.target.z }, p.selectedAgentId);
+          lastAgentSelection = performance.now();
+        }
+        for (const candidate of renderAgents) {
+          const a = liveAgents.get(candidate.id);
+          if (!a || (a.identity?.kind === "aeco_observed" && a.paused)) continue;
           let x = a.x,
             z = a.z;
           if (p.demo) {
@@ -1102,6 +1119,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         container.dataset.triangles = String(renderer.info.render.triangles);
         container.dataset.frameMs = String(frameSeconds * 1000);
         container.dataset.frameNumber = String(renderFrame++);
+        container.dataset.renderedAgents = String(count);
         container.dataset.renderedAgent = displayAgentIds[0]
           ? `${displayAgentIds[0]}:${agentPositions.get(displayAgentIds[0])?.toArray().join(":")}`
           : "";

@@ -28,7 +28,7 @@ export const aboutStatus = [
     "Final SOL launch, security and staging acceptance; mainnet financial enablement requires separate approval",
   ] },
   { id: "planned", title: "Planned for future phases", note: "Not live entitlements or promises of returns.", items: [
-    "Holder-access Common Agents and funded, performance-based $AECO rewards",
+    "Automatic $AECO Common Agents with basic activity in Phase 2; advanced economic capabilities and funded, performance-based $AECO rewards in later phases",
     "Optional TOKEN/AECO trading pairs in Phase 4",
     "Super Agents, AECO-lock rentals and a rental marketplace",
     "Controlled autonomous finance and agent-run services and businesses",

@@ -1,0 +1,12 @@
+{
+  "address": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+  "network": "mainnet-beta",
+  "balanceLamports": "0",
+  "slot": 460069511,
+  "recentSignatures": [],
+  "historyLimit": 5,
+  "transactionsSigned": 0,
+  "transactionsBroadcast": 0,
+  "checkedAt": "2026-10-22T14:29:30.740537+00:00",
+  "scope": "Read-only pre-launch balance/recent-history checkpoint; not a full mint/history audit or transaction authorization"
+}

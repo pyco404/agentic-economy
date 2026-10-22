@@ -21,7 +21,7 @@ import {
 const MIGRATIONS_DIR = fileURLToPath(new URL("./migrations/", import.meta.url));
 
 /** Advisory lock keys (one database per world). */
-export const LOCK_KEYS = { migrate: 4_242_000, sim: 4_242_001, indexer: 4_242_002 } as const;
+export const LOCK_KEYS = { migrate: 4_242_000, sim: 4_242_001, indexer: 4_242_002, "aeco-common-agents": 4_242_003 } as const;
 
 export class MigrationIntegrityError extends Error {}
 

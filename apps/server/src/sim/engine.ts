@@ -218,6 +218,7 @@ export class SimEngine {
     layout: WorldLayout,
     private readonly planner: Planner = new UtilityPlanner(),
   ) {
+    if(state.worldSeed!==layout.seed)throw new Error('Simulation snapshot seed does not match this process layout; await the matching release');
     this.nav = new NavGrid(layout.width, layout.height, layout.terrain);
     this.rng = new Rng(state.rngState);
   }

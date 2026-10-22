@@ -232,6 +232,8 @@ export function Studio({
   onAgent: (id: string) => void;
   onRefresh: () => void;
 }) {
+  const [agentsPage, setAgentsPage] = useState(0);
+  const agentPage = Math.min(agentsPage, Math.max(0, Math.ceil(data.agents.length / 50) - 1));
   const draftKey = `studio:${api.kind}:`;
   const [name, setName, nameSaved] = useDraftField<string>(draftKey + "name", ""),
     [community, setCommunity, communitySaved] = useDraftField<string>(draftKey + "community", data.communities[0]?.id ?? ""),
@@ -428,7 +430,7 @@ export function Studio({
             <span className="tag">{data.agents.length}</span>
           </div>
           <div className="agent-list">
-            {data.agents.map((a) => (
+            {data.agents.slice(agentPage * 50, (agentPage + 1) * 50).map((a) => (
               <button
                 key={a.id}
                 className="agent-row"
@@ -437,7 +439,7 @@ export function Studio({
                 <span className="avatar">{a.name.slice(0, 1)}</span>
                 <span>
                   <b>{displayAgentName(a)}</b>
-                  <small>{data.identitySource === "backend" ? `${a.name} · ` : ""}{readable(a.profession)} · {a.identity.kind === "token_linked" ? "Token-linked agent" : a.identity.kind === "house" ? "Simulation citizen" : "Legacy simulation agent"}</small><small>{workDescription(a)}</small>
+                  <small>{data.identitySource === "backend" ? `${a.name} · ` : ""}{readable(a.profession)} · {a.identity.kind === "aeco_observed" ? "Common Agent" : a.identity.kind === "token_linked" ? "Token-linked agent" : a.identity.kind === "house" ? "Simulation citizen" : "Legacy simulation agent"}</small><small>{workDescription(a)}</small>
                 </span>
                 <span
                   className={`status ${a.status === "paused" ? "paused" : ""}`}
@@ -448,9 +450,14 @@ export function Studio({
               </button>
             ))}
           </div>
+          {data.agents.length > 50 && <div className="form-row" aria-label="Agent list pagination">
+            <button type="button" className="secondary" disabled={agentPage === 0} onClick={() => setAgentsPage(agentPage - 1)}>Previous agents</button>
+            <span className="small">{agentPage * 50 + 1}–{Math.min((agentPage + 1) * 50, data.agents.length)} of {data.agents.length}</span>
+            <button type="button" className="secondary" disabled={(agentPage + 1) * 50 >= data.agents.length} onClick={() => setAgentsPage(agentPage + 1)}>Next agents</button>
+          </div>}
           {!data.agents.length && (
             <div className="empty">
-              No agents yet. Activate the first worker.
+              No active agents available yet.
             </div>
           )}
           <Notice>
@@ -805,8 +812,14 @@ export function AgentPanel({
           <dl className="detail-list">
             <div><dt>Canonical ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>
             <div><dt>Given name</dt><dd>{agent.name}</dd></div>
-            <div><dt>Identity type</dt><dd>{agentIdentity(agent).kind === "unclassified" ? "Unclassified legacy agent" : readable(agentIdentity(agent).kind)}</dd></div>
-            <div><dt>Verified activating wallet</dt><dd className="agent-identity-value" data-testid="agent-owner">{agentIdentity(agent).owner ?? "Unavailable · no verified activation record"}</dd></div>
+            <div><dt>Identity type</dt><dd>{agent.identity.kind === "aeco_observed" ? "Common Agent" : agentIdentity(agent).kind === "unclassified" ? "Unclassified legacy agent" : readable(agentIdentity(agent).kind)}</dd></div>
+            {agent.identity.kind === "aeco_observed" && <>
+              <div><dt>Public wallet</dt><dd title={agent.identity.wallet}>{agent.identity.wallet.slice(0, 6)}…{agent.identity.wallet.slice(-6)}</dd></div>
+              <div><dt>Observed $AECO balance (base units)</dt><dd>{agent.identity.balanceRaw}</dd></div>
+              <div><dt>Finalized observation</dt><dd>Slot {agent.identity.observedSlot} · {agent.identity.network}</dd></div>
+              <div><dt>Access</dt><dd className="small muted">Public ownership observation. No wallet control or reward entitlement is granted.</dd></div>
+            </>}
+            {agent.identity.kind !== "aeco_observed" && <div><dt>Verified activating wallet</dt><dd className="agent-identity-value" data-testid="agent-owner">{agentIdentity(agent).owner ?? "Unavailable · no verified activation record"}</dd></div>}
             <div><dt>Current activity</dt><dd>{workDescription(displayed??agent)}</dd></div>
             <div>
               <dt>City Credits</dt>
@@ -833,7 +846,7 @@ export function AgentPanel({
               </dd>
             </div>
           </dl>
-          <button
+          {agent.identity.kind !== "aeco_observed" && <button
             className="secondary wide"
             disabled={busy || api.kind === "http"}
             onClick={toggle}
@@ -844,8 +857,8 @@ export function AgentPanel({
               <Play size={15} />
             )}{" "}
             {agent.status === "active" ? "Pause agent" : "Resume agent"}
-          </button>
-          {api.kind === "http" && (
+          </button>}
+          {api.kind === "http" && agent.identity.kind !== "aeco_observed" && (
             <p className="small muted">
               Read-only until wallet sign-in is connected. Backend ownership
               checks protect agent controls.

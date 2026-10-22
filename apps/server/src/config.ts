@@ -7,7 +7,7 @@ import { OFFICIAL_TREASURIES, PublicKey } from "@agentic-economy/shared";
  * Runtime configuration. Modes:
  * - demo:       mock chain, seeded demo communities/agents, fixtures. Everything labelled Demo Mode.
  * - devnet:     Solana devnet RPC for verification/eligibility. Requires Postgres.
- * - production: mainnet reads only. Requires Postgres; financial execution stays hard-disabled.
+ * - production: mainnet reads; launches require separate explicit approval and all execution gates.
  */
 export const ROLES = ["all", "api", "sim", "indexer"] as const;
 export type Role = (typeof ROLES)[number];
@@ -61,6 +61,8 @@ const Env = z.object({
   CORS_ORIGINS: z.string().default("http://localhost:5173,http://127.0.0.1:5173"),
   /** Must be set to "true" explicitly, and only after the devnet test plan in docs passes. */
   FEE_ROUTING_VERIFIED: z.enum(["true", "false"]).default("false"),
+  /** Separate owner-approved Mainnet activation; never set by normal demo/staging deployment. */
+  MAINNET_LAUNCH_APPROVED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_LOOKUP_TABLE: PublicKey.optional(),
   /** Legacy compatibility setting; ignored by the current SOL-only launch policy. */
@@ -116,6 +118,11 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (e.MODE === "production" && e.LAUNCH_REGISTRATION_COMMITMENT === "confirmed")
     throw new Error("MODE=production registers launches only at finalized commitment");
   const feeRoutingVerified = e.FEE_ROUTING_VERIFIED === "true";
+  const mainnetApproved = e.MODE === "production" && e.MAINNET_LAUNCH_APPROVED === "true";
+  if (e.MAINNET_LAUNCH_APPROVED === "true" && e.MODE !== "production") throw new Error("Mainnet approval cannot be used outside production");
+  if (mainnetApproved && (e.SOLANA_CLUSTER !== "mainnet-beta" || !e.PUMP_LAUNCH_LOOKUP_TABLE || !feeRoutingVerified || e.PUMP_LAUNCH_ENABLED !== "true" || !(["https://useaeco.xyz","https://www.useaeco.xyz"].includes(e.AUTH_URI)) || e.CORS_ORIGINS.split(",").some(origin=>!["https://useaeco.xyz","https://www.useaeco.xyz"].includes(origin.trim()))))
+    throw new Error("Approved Mainnet launching requires Mainnet RPC configuration, lookup table, verified routing, HTTPS and explicit launch enablement");
+
   return {
     mode: e.MODE,
     role: e.ROLE as Role,
@@ -158,16 +165,16 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     },
     corsOrigins: e.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
     feeRoutingVerified,
-    pumpLaunch: {enabled:e.MODE==="devnet"&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null,
+    pumpLaunch: {enabled:(e.MODE==="devnet"||mainnetApproved)&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",mainnetApproved,lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null,
       usdcEnabled:false, // Product policy: preserve legacy implementation, never enable new USDC launches.
       // The quote mint is fixed per network, never client-supplied; prepare re-checks it against the live Pump Global allowlist.
       usdcMint:USDC_QUOTE_MINTS[e.SOLANA_CLUSTER]},
     /**
-     * Real execution is restricted to verified devnet. Mainnet stays hard-disabled
-     * even if a deployment accidentally sets FEE_ROUTING_VERIFIED=true.
+     * Mainnet requires its separate owner-approval gate as well as all existing gates.
+     * Setting FEE_ROUTING_VERIFIED alone never enables Mainnet.
      * Demo mode uses the mock chain and never touches money.
      */
-    financialFeaturesEnabled: e.MODE === "devnet" && feeRoutingVerified,
+    financialFeaturesEnabled: (e.MODE === "devnet" || mainnetApproved) && feeRoutingVerified,
     pinata: {jwt:e.PINATA_JWT??null,gateway:e.IPFS_GATEWAY,maxBytes:e.LOGO_MAX_BYTES,maxPixels:e.LOGO_MAX_PIXELS},
     logLevel: e.LOG_LEVEL,
   };

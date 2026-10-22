@@ -1,8 +1,10 @@
+import { MAINNET_GENESIS, PLANNED_AECO_MINT, inspectMintSigningReview, mintMessageHash, verifyMintSigningArtifact } from "../chain/offline-mint.js";
 import { assertLaunchWalletAllowed, launchWalletAllowed } from "./launch-permission.js";
 import {SignedLaunchStore} from "../store/signed-launch.js";
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
+  OFFICIAL_TREASURIES,
   DEV_BUY_MAX_BPS,
   LAUNCH_FEE_LAMPORTS,
   PLATFORM_TREASURY_CREATOR_FEE_BPS,
@@ -99,10 +101,13 @@ export class LaunchService {
     assertLaunchWalletAllowed(this.config, wallet);
     this.assertEnabled();
     if(this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
+    if(this.config.solana.cluster==="mainnet-beta" && !this.config.pumpLaunch.preparedMintDraftId)
+      throw new AppError("feature_disabled","The official mint must be bound to its wallet-owned draft before Mainnet preparation");
     if(!currentQuoteAllowed(quote))throw new AppError("feature_disabled","Only SOL is supported for new launches");
     if(owned){const existing=await this.store.getLaunch(owned.launchId);if(existing){
       const l=existing.launch;if(l.launcherWallet!==wallet||l.execution?.draftId!==owned.id||l.execution.draftVersion!==owned.version)throw new AppError("conflict","Launch attempt does not match this draft");
       assertLaunchWalletAllowed(this.config, wallet, l.mode === "production" ? "mainnet-beta" : l.execution.network);
+      this.assertLocalMintBinding(l);
       return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
     }}
     if(Buffer.byteLength(draft.name)>32||Buffer.byteLength(draft.symbol)>13||Buffer.byteLength(draft.metadataUri)>200)throw new AppError("bad_request","Token name, symbol or metadata URI exceeds protocol byte limits");
@@ -123,14 +128,19 @@ export class LaunchService {
       if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount)throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
     }
     assertLaunchWalletAllowed(this.config, wallet);
-    const mintKp = Keypair.generate();
-    const mint = mintKp.publicKey.toBase58();
+    const reserved = !!this.config.pumpLaunch.preparedMintDraftId && this.config.solana.cluster === "mainnet-beta";
+    if(reserved && (wallet!==OFFICIAL_TREASURIES.aecoDeployer || owned?.id!==this.config.pumpLaunch.preparedMintDraftId))
+      throw new AppError("forbidden","Only the operator-bound official draft may use this Mainnet launch release");
+    if(reserved && (!this.chain.buildUnsignedLaunchTransaction || !this.chain.mintAccountExists || await this.chain.mintAccountExists(PLANNED_AECO_MINT)))
+      throw new AppError("unavailable","The reserved mint cannot be prepared. Reconcile its existing state; do not substitute another mint.");
+    // The official branch never generates or receives its private mint key.
+    const mintKp = reserved ? null : Keypair.generate();
+    const mint = reserved ? PLANNED_AECO_MINT : mintKp!.publicKey.toBase58();
     let built;
     try {
-      built = await this.chain.buildLaunchTransaction({
+      const input = {
         launcherWallet: wallet,
         mint,
-        mintSecretKey: mintKp.secretKey,
         name: draft.name,
         symbol: draft.symbol,
         uri: draft.metadataUri,
@@ -138,7 +148,8 @@ export class LaunchService {
         agentRewardsTreasury: this.config.treasuries.agentRewards,
         ...(quote.asset === "USDC" ? { quoteAsset: "USDC" as const, quoteMint: quote.mint } : {}),
         ...(devQuote ? { devBuy: { tokenAmount: devQuote.tokenAmount, maxQuoteCost: devQuote.maxQuoteCost } } : {}),
-      });
+      };
+      built = reserved ? await this.chain.buildUnsignedLaunchTransaction!(input) : await this.chain.buildLaunchTransaction({...input,mintSecretKey:mintKp!.secretKey});
     } catch (e) {
       if (e instanceof ChainFeatureUnavailable) throw new AppError("feature_disabled", e.message, { code: e.code });
       throw new AppError("unavailable","Launch preparation is temporarily unavailable. Retry with the same attempt; nothing has been submitted.");
@@ -171,8 +182,69 @@ export class LaunchService {
     };
     if(owned&&!launch.execution)throw new AppError("feature_disabled","Chain adapter did not return a safe-network launch preparation");
     assertLaunchWalletAllowed(this.config, wallet, launch.execution?.network);
+    if(reserved){
+      if(!launch.execution || built.genesisHash!==MAINNET_GENESIS || !built.mintSigningContext || !built.estimatedNetworkFeesLamports || !built.estimatedAccountRentLamports)
+        throw new AppError("unavailable","The reserved mint requires a complete Mainnet simulation and public signing review");
+      const tx=VersionedTransaction.deserialize(Buffer.from(built.transaction,"base64"));
+      const maximum=LAUNCH_FEE_LAMPORTS+BigInt(built.estimatedNetworkFeesLamports)+BigInt(built.estimatedAccountRentLamports)+(devQuote?.maxQuoteCost??0n);
+      launch.execution.localMintReview={version:1,launchId:launch.id,network:"mainnet-beta",genesisHash:MAINNET_GENESIS,
+        mint,launcherWallet:wallet,platformTreasury:this.config.treasuries.platform,agentRewardsTreasury:this.config.treasuries.agentRewards,
+        name:draft.name,symbol:draft.symbol,uri:draft.metadataUri,recentBlockhash:tx.message.recentBlockhash,
+        lastValidBlockHeight:launch.execution.lastValidBlockHeight,maxTotalDebitLamports:maximum.toString(),
+        messageSha256:mintMessageHash(tx),unsignedTransaction:built.transaction,...built.mintSigningContext,
+        ...(devQuote?{devBuy:{tokenAmount:devQuote.tokenAmount.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString()}}:{})};
+      await inspectMintSigningReview(launch.execution.localMintReview,this.localMintPolicy());
+      this.assertLocalMintBinding(launch);
+    }
     await this.store.createLaunch(launch);
     return { launch, transaction: built.transaction, demoTransaction: built.demo, lastValidBlockHeight: built.lastValidBlockHeight };
+  }
+
+  private localMintPolicy(){return {mint:PLANNED_AECO_MINT,deployer:OFFICIAL_TREASURIES.aecoDeployer,
+    platform:OFFICIAL_TREASURIES.platform,rewards:OFFICIAL_TREASURIES.agentRewards};}
+
+  /** Configuration changes cannot turn a saved ordinary intent into the official one. */
+  private assertLocalMintBinding(l:TokenLaunch){
+    const review=l.execution?.localMintReview;
+    if(review && (l.mint!==PLANNED_AECO_MINT || l.launcherWallet!==OFFICIAL_TREASURIES.aecoDeployer || l.execution?.network!=="mainnet-beta" ||
+      l.execution.draftId!==this.config.pumpLaunch.preparedMintDraftId))
+      throw new AppError("forbidden","The official mint reservation changed. Keep this attempt for read-only reconciliation.");
+    if((l.mode==="production"||l.execution?.network==="mainnet-beta") && (!this.config.pumpLaunch.preparedMintDraftId||!review))
+      throw new AppError("forbidden","This saved attempt is outside the official mint reservation");
+  }
+
+  async assertPreparedMintAllowed(wallet:string,id:string){
+    assertLaunchWalletAllowed(this.config,wallet);
+    const record=await this.store.getLaunch(id);
+    if(!record || record.launch.launcherWallet!==wallet)throw new AppError("not_found","Launch not found");
+    this.assertLocalMintBinding(record.launch);
+  }
+
+  async localMintReview(wallet:string,id:string){
+    assertLaunchWalletAllowed(this.config,wallet);
+    const record=await this.store.getLaunch(id),l=record?.launch;
+    if(!l || l.launcherWallet!==wallet)throw new AppError("not_found","Launch not found");
+    this.assertLocalMintBinding(l);
+    if(!l.execution?.localMintReview)throw new AppError("bad_request","This launch uses the normal mint signer");
+    return l.execution.localMintReview;
+  }
+
+  /** Public signature import only. Original unsigned bytes remain immutable in durable storage. */
+  async importLocalMintSignature(wallet:string,id:string,artifact:unknown){
+    this.assertEnabled();
+    if(!this.config.pumpLaunch.enabled)throw new AppError("feature_disabled","Launch execution remains disabled");
+    const review=await this.localMintReview(wallet,id),record=(await this.store.getLaunch(id))!;
+    if(record.launch.status!=="awaiting_signature" || record.launch.signature || await this.submissions.get(wallet,id))
+      throw new AppError("conflict","This saved attempt must be reconciled before another signature");
+    await this.assertPreparedNetwork(record.launch);
+    if(!this.chain.getFinalizedBlockHeight || await this.chain.getFinalizedBlockHeight()>review.lastValidBlockHeight)
+      throw new AppError("conflict","This message expired. Reconcile the reserved attempt; do not replace its mint or message.");
+    await this.assertExpiredMintAbsent(record.launch);
+    let checked;
+    try{checked=await verifyMintSigningArtifact(review,this.localMintPolicy(),artifact);}
+    catch{throw new AppError("bad_request","The public mint signature does not match this saved attempt");}
+    this.assertLocalMintBinding(record.launch);
+    return {transaction:checked.transaction,messageSha256:checked.messageSha256};
   }
 
   /** Bind recovery reads to the network persisted with the prepared message.
@@ -204,6 +276,7 @@ export class LaunchService {
     const l=record.launch;if(l.launcherWallet!==wallet)throw new AppError("forbidden","Only the creator can submit this launch");
     assertLaunchWalletAllowed(this.config, wallet, l.mode === "production" ? "mainnet-beta" : l.execution?.network);
     if(!l.execution)throw new AppError("bad_request","Launch has no stored execution preparation");
+    this.assertLocalMintBinding(l);
     const {validateSignedPumpLaunch}=await import("../chain/pump-builder.js");
     let checked;try{checked=await validateSignedPumpLaunch(l.execution.transaction,signed);}catch{throw new AppError("bad_request","Wallet signatures or transaction message do not match the prepared launch");}
     if(l.signature&&l.signature!==checked.signature)throw new AppError("conflict","Another signature is bound to this launch");
@@ -221,11 +294,13 @@ export class LaunchService {
     }
     try{await this.chain.assertLaunchSubmissionAllowed?.();}catch(e){this.diagnose({stage:'submission_blocked',launchId:id,signature:checked.signature,code:e instanceof ChainFeatureUnavailable?e.code:'operator_gate'});throw new AppError('feature_disabled',e instanceof ChainFeatureUnavailable?e.message:'Launch submission is disabled by this verification environment');}
     assertLaunchWalletAllowed(this.config, wallet, l.execution.network);
+    this.assertLocalMintBinding(l);
     this.diagnose({stage:'persisting_signed_payload',launchId:id,signature:checked.signature});
     await this.submissions.put({wallet,launchId:id,mint:l.mint,genesisHash:l.execution.genesisHash,signature:checked.signature,transaction:signed});
     const pending={...this.transition(l,"submitted"),signature:checked.signature};
     try{await this.store.updateLaunch(pending,record.version);}catch(e){if(e instanceof ConflictError){const latest=(await this.store.getLaunch(id))!.launch;if(latest.signature!==checked.signature)throw new AppError("conflict","Another launch submission won the race");return latest;}throw e;}
     assertLaunchWalletAllowed(this.config, wallet, l.execution.network);
+    this.assertLocalMintBinding(l);
     this.diagnose({stage:'rpc_broadcast',launchId:id,signature:checked.signature});
     try{const returned=await this.chain.submitLaunchTransaction(signed);if(returned!==checked.signature)throw new Error("RPC signature mismatch");}catch{this.diagnose({stage:"rpc_submission_uncertain",launchId:id,signature:checked.signature});throw new AppError("unavailable","Submission is uncertain. Check this launch again; retry only the same signed transaction.");}
     this.diagnose({stage:"rpc_acknowledged",launchId:id,signature:checked.signature});
@@ -238,6 +313,7 @@ export class LaunchService {
     const record=await this.store.getLaunch(id);
     if(!record||record.launch.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
     assertLaunchWalletAllowed(this.config, wallet, record.launch.mode === 'production' ? 'mainnet-beta' : record.launch.execution?.network);
+    this.assertLocalMintBinding(record.launch);
     const reconciled=await this.refresh(wallet,id);
     if(['confirmed','failed','expired'].includes(reconciled.status))return reconciled;
     const receipt=await this.submissions.get(wallet,id);
@@ -249,7 +325,8 @@ export class LaunchService {
   async recovery(wallet:string,id:string){
     const record=await this.store.getLaunch(id);if(!record||record.launch.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
     const receipt=await this.submissions.get(wallet,id);if(!receipt)return undefined;
-    return {signature:receipt.signature,canResume:launchWalletAllowed(this.config,wallet,record.launch.mode === "production" ? "mainnet-beta" : record.launch.execution?.network)&&!!receipt.transaction&&this.config.pumpLaunch.enabled&&!['confirmed','failed','expired'].includes(record.launch.status)};
+    let mintAllowed=true;try{this.assertLocalMintBinding(record.launch);}catch{mintAllowed=false;}
+    return {signature:receipt.signature,canResume:mintAllowed&&launchWalletAllowed(this.config,wallet,record.launch.mode === "production" ? "mainnet-beta" : record.launch.execution?.network)&&!!receipt.transaction&&this.config.pumpLaunch.enabled&&!['confirmed','failed','expired'].includes(record.launch.status)};
   }
   async refresh(wallet:string,id:string){
     const initial=await this.store.getLaunch(id);if(!initial)throw new AppError("not_found","Launch not found");const l=initial.launch;if(l.launcherWallet!==wallet)throw new AppError("forbidden","Only the creator can inspect this preparation");

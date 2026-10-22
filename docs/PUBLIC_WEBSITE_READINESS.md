@@ -1,6 +1,6 @@
 # Official website readiness — 22 October 2026
 
-**LIVE:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
+**LIVE, reverified 22 October 2026 at 16:22 UTC:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
 
 ## Actual deployed applications
 
@@ -8,14 +8,16 @@
 | --- | --- | --- |
 | Production frontend | `aa1f53a113dc0438094fddb5b306f382fe98b2fd` | `164d4580-ceb1-42a1-981d-dd4580635fe9` |
 | Production API | `6758f91bd2e8a69c242584133f0e5932b862bf7e` | `04365147-839e-44ec-9a47-0c33bf54db04` |
-| Staging frontend | `aa1f53a113dc0438094fddb5b306f382fe98b2fd` | `0b72282d-a73d-44e1-8e03-082bb4391cdb` |
-| Staging API | `ac7fc18af4ad050489463894abd81fd6569006ab` | `96e853df-bd74-4738-a6d6-58348ef41859` |
+| Staging frontend | `84d7b2e8ad32158edfe2bc2919debf2288c02b4a` | `1fc799a3-342a-4a6b-8fac-88d268615264` |
+| Staging API | `84d7b2e8ad32158edfe2bc2919debf2288c02b4a` | `18d1318e-f1f6-4bd4-aea0-0901c14978cf` |
 
-Both production applications use compatible contract 0.5.2. The domain cutover used one frontend configuration build for the official API/WSS URLs; the subsequent native-roadmap publication used one source release per frontend. Backend/database releases and schema were unchanged. Newer documentation commits do not constitute newer deployed application code. The subsequent frontend-only native-roadmap release aa1f53a is now verified live on staging and production; the production API remains at 6758f91. Automatic production promotion remains off. [Current deployment and native-roadmap browser evidence](evidence/native-aeco-roadmap-release-2026-10-22.json).
+Both production applications use compatible contract 0.5.2. Fresh read-only Railway queries and running-service checks confirm the production SHAs above, successful deployments, `aeco_production`, and only the four approved migrations 001–004. Production frontend/backend repository deployment triggers are absent. No new deployment, database migration or DNS change was needed for this recheck. Staging's previously verified Common Agent release uses compatible contract 0.6.0; it has not been promoted to production. Staging and public-demo remain untouched.
+
+[Fresh production deployment/database/domain evidence](evidence/public-production-recheck-2026-10-22.json), [fresh actual-domain browser checks](evidence/public-domain-recheck-2026-10-22.json), [fresh trusted TLS checks](evidence/public-domain-tls-recheck-2026-10-22.json). The production release is intentionally pinned; documentation commits are not application deployments.
 
 ## Why the domain returned 404, and what changed
 
-Vercel's automatic apex/wildcard routed to its missing deployment rather than Railway. Previously unverified Railway domain attachments also belonged to public-demo. The approved three attachments now belong to reviewed production. Six scoped records were added: apex custom ALIAS, www/API CNAMEs and three ownership TXT records. The custom ALIAS takes precedence over the preserved Vercel automatic default. All preexisting records, nameservers, staging CNAME/TXT, wildcard and CAA are unchanged. [Exact DNS values, record IDs and rollback](PRODUCTION_DNS_CUTOVER_PROPOSAL.md).
+The current apex returns HTTP 200 and www redirects with HTTP 308. The earlier 404 is no longer reproducible. Historically, Vercel's automatic apex/wildcard routed to its missing deployment rather than Railway. Previously unverified Railway domain attachments also belonged to public-demo. The approved three attachments now belong to reviewed production. Six scoped records were added: apex custom ALIAS, www/API CNAMEs and three ownership TXT records. The custom ALIAS takes precedence over the preserved Vercel automatic default. All preexisting records, nameservers, staging CNAME/TXT, wildcard and CAA are unchanged. [Exact DNS values, record IDs and rollback](PRODUCTION_DNS_CUTOVER_PROPOSAL.md).
 
 Production uses independent `aeco_production`, not staging or `aeco_public_demo`. Those existing environments/data were not modified. The production API returns health/readiness 200 with PostgreSQL, state view, simulation leadership and indexer lease healthy. MODE is production, with all financial gates explicitly false. Official treasury recipients remain fixed, and no treasury signer/payout worker was introduced.
 
@@ -37,7 +39,7 @@ The live roadmap requires an owner-initiated official $AECO TOKEN/SOL launch on 
 
 Public website availability is complete. Mainnet activation remains separately gated by backup restoration rehearsal, final security/recovery/operations review and explicit owner approval. Pinata rotation remains pending maintenance. Physical mobile on-chain acceptance is DEFERRED; preserve evidence and do not request a new mobile launch. The historical desktop Developer Buy and public-Devnet creator-fee acceptance remain completed.
 
-The [official $AECO and automatic Common Agent plan](PHASE2_NEXT_PRODUCTION_TASKS.md) records the reserved deployer and the existing manual/demo-only agent activation limitation. Automatic production agent creation is not claimed implemented. Production currently has no verified launched token, so no new production launch indexing or creator-fee income is claimed. Do not start Phase 3 or activate transactions as part of website routing.
+The [official $AECO plan](PHASE2_NEXT_PRODUCTION_TASKS.md) records the reserved deployer. [Automatic Common Agent implementation](AECO_COMMON_AGENTS.md) is tested and deployed to staging with indexing disabled; it is not enabled in production. Real holder indexing remains gated on a separately approved and independently verified official mint. Production currently has no verified launched token, so no new production launch indexing or creator-fee income is claimed. Do not start Phase 3 or activate transactions as part of website routing.
 
 ## Preserved historical checkpoints
 

@@ -110,3 +110,16 @@ describe("authoritative world reconciliation", () => {
     expect(reset.worldChunks).toEqual([]);
   });
 });
+
+it('upserts new publicly observed Common Agents and removes full exits from the live roster', () => {
+  const data = demoDashboard();
+  const wallet = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+  const agent = { ...data.agents[0]!, id: 'agt_common0001', ownerWallet: null, identity: {
+    kind: 'aeco_observed' as const, wallet, tokenMint: wallet, network: 'devnet' as const, balanceRaw: '10', decimals: 6, observedSlot: 100,
+  } };
+  const event: ServerEvent = { v: 1, type: 'agent.moved', seq: 101, tick: data.stats.tick + 1, ts: new Date().toISOString(), data: { moves: [{ id: agent.id, agent, pos: agent.pos, state: 'moving', target: null, speed: 2 }] } };
+  const added = applyServerEvent(data, event);
+  expect(added.agents.find(a => a.id === agent.id)?.identity.kind).toBe('aeco_observed');
+  const exited = applyServerEvent(added, { ...event, seq: 102, tick: event.tick + 1, data: { moves: [{ ...event.data.moves[0]!, state: 'paused' }] } });
+  expect(exited.agents.some(a => a.id === agent.id)).toBe(false);
+});

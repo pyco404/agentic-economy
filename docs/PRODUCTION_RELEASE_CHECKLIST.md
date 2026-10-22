@@ -1,5 +1,7 @@
 # Phase 2 production release and official $AECO launch checklist
 
+**Deployment policy:** one permanent Railway `production` environment (frontend, backend/API, isolated PostgreSQL). Local tests/isolated Devnet verification → production build → explicit tested-commit production deployment → live verification. Staging promotion is not required. Migrations, secrets and financial activation are separate; legacy environments remain preserved pending verified retirement requirements and explicit deletion approval. [Release workflow](../infra/railway/README.md), [retirement audit](RAILWAY_SINGLE_PRODUCTION.md).
+
 **Mandatory owner decision:** the official native $AECO token must launch through Agentic Economy's own production Launchpad on Solana Mainnet before Phase 2 closes and Phase 3 begins. Public website availability, test tokens and simulations cannot satisfy this gate. This checklist is not permission to activate execution, deploy $AECO, fund wallets or make payments. Website deployment is independent of token launch. The owner intentionally has not funded the deployer; do not request funding or check its balance during infrastructure preparation. Perform the final balance check only when the owner prepares to authorize the actual launch.
 
 **Official planned mint:** `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco`. Preserve this exact address; do not generate a replacement. Keypair preparation does not prove a launched token or authorize execution. [Fixed-mint preparation and signing-integration prerequisite](OFFICIAL_AECO_LAUNCH_PLAN.md).

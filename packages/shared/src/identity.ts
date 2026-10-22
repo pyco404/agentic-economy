@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AgentId, CommunityId, Id, LaunchId, PublicKey } from "./primitives.js";
 
 /**
- * Agent identity (contract 0.3.0). Three classifications that are never inferred from each other:
+ * Agent identity (contract 0.3.0). Internal provenance classifications, never inferred from each other:
  *
  * - `house`: created by the city (demo house creation). No wallet, ever — authenticating a request does
  *   not make the caller an owner. Named `<Word>_<NNN>` (e.g. `Fern_108`).
@@ -10,6 +10,8 @@ import { AgentId, CommunityId, Id, LaunchId, PublicKey } from "./primitives.js";
  *   Economy. Exactly one per token mint and one per activating wallet, enforced by database uniqueness.
  *   Holding or buying a token never creates one. Consequence: a wallet may launch several tokens, but can
  *   activate an agent for only one of them.
+ * - `aeco_observed`: an automatic Common Agent from finalized public $AECO holdings.
+ *   Separate wallet/mint mapping; no authenticated owner controls or economic entitlements.
  * - `legacy`: every agent created before 0.3.0. Keeps its ID, history and owner controls; it is not an
  *   activation and is never converted into one.
  */
@@ -22,7 +24,7 @@ export const SyntheticName = z
   .regex(/^[A-Z][a-z]{1,15}_[0-9]{3,6}$/, "must look like Fern_108")
   .meta({ id: "SyntheticName", description: "Persisted, globally unique, house-generated agent name (e.g. Fern_108)." });
 
-export const AgentKind = z.enum(["house", "token_linked", "legacy"]).meta({ id: "AgentKind" });
+export const AgentKind = z.enum(["house", "token_linked", "legacy", "aeco_observed"]).meta({ id: "AgentKind" });
 export type AgentKind = z.infer<typeof AgentKind>;
 
 export const HouseIdentity = z
@@ -51,8 +53,15 @@ export const LegacyIdentity = z
   })
   .meta({ id: "LegacyIdentity" });
 
+/** Public chain observation only: never authenticated owner control or reward eligibility. */
+export const AecoObservedIdentity = z.object({
+  kind: z.literal("aeco_observed"), wallet: PublicKey, tokenMint: PublicKey,
+  network: z.enum(["devnet", "mainnet-beta"]), balanceRaw: z.string().regex(/^\d+$/),
+  decimals: z.number().int().min(0).max(255), observedSlot: z.number().int().nonnegative(),
+}).meta({ id: "AecoObservedIdentity" });
+
 export const AgentIdentity = z
-  .discriminatedUnion("kind", [HouseIdentity, TokenLinkedIdentity, LegacyIdentity])
+  .discriminatedUnion("kind", [HouseIdentity, TokenLinkedIdentity, LegacyIdentity, AecoObservedIdentity])
   .meta({ id: "AgentIdentity" });
 export type AgentIdentity = z.infer<typeof AgentIdentity>;
 

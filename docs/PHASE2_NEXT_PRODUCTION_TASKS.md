@@ -31,3 +31,7 @@ Complete actual isolated backup restoration, final recovery/security/operational
 ## Updated automatic Common Agent scope
 
 Phase 2 additionally requires automatic one-per-$AECO-holder Common Agents, basic movement and reconciled public counts after the official mint is launched and verified. No login or manual activation is needed. Phase 3 expands those same identities. [Implementation and remaining acceptance](AECO_COMMON_AGENTS.md). Token-linked identity provisioning remains separate from holder appearance and must preserve one verified token-linked activation per wallet.
+
+## Prepared-mint and controlled-test checkpoint
+
+Public-only construction and local mint co-signing are prepared; the official private key was never opened. [Operator workflow, remaining production handoff and recovery gates](AECO_LOCAL_MINT_SIGNING.md). [Controlled Mainnet test proposal, packet verification and cost blockers](CONTROLLED_MAINNET_TEST_PREPARATION.md). The deployer currently has zero Mainnet SOL; no final transaction cost or signing request is approved. Program metadata matches the reviewed policy, and the representative no-buy construction fits the existing frozen table. Keep financial execution and public launching off.

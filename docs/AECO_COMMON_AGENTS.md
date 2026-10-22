@@ -10,7 +10,7 @@ Positive balance is the basic Phase 2 appearance criterion. The future proposed 
 
 Identity is a domain-separated hash of network, mint and wallet. It is preserved in the existing simulation snapshot and applied-command journal, including inactive identities. The internal `aeco_observed` discriminator records **provenance**, not another public agent class. Display names use the shortened public wallet; canonical IDs and full provenance remain unambiguous. Merely observing ownership never grants an authenticated ownership relationship.
 
-Existing launcher-linked activations, legacy identities, house agents and uniqueness constraints remain unchanged. The earlier [one-per-token plan](COMMON_AGENT_PER_TOKEN_PLAN.md) addresses a distinct future token-linked policy, not the native holder mapping. Phase 3 expands the same Common Agent identities with separately reviewed behavior, eligibility, owner controls and economic services. Super Agents remain a separate future category.
+Existing launcher-linked activations, legacy identities, house agents and uniqueness constraints remain unchanged. The [corrected token-identity plan](COMMON_AGENT_PER_TOKEN_PLAN.md) requires one identity per token while retaining at most one verified token-linked activation per wallet. Independent unactivated token identity provisioning remains missing; it is separate from the native holder mapping. Phase 3 expands the same Common Agent identities with separately reviewed behavior, eligibility, owner controls and economic services. Super Agents remain a separate future category.
 
 ## Gamine reuse audit (read-only)
 

@@ -16,3 +16,10 @@ export function assertLaunchWalletAllowed(config: AppConfig, wallet: string, pre
   if (!launchWalletAllowed(config, wallet, preparedNetwork))
     throw new AppError("forbidden", "Mainnet coin creation is currently restricted to the official deployer. Public launching is not open yet.");
 }
+
+/** Read-only construction of the operator-bound official draft, never authority to sign or broadcast. */
+export function preparedMintPreparationAllowed(config:AppConfig,wallet?:string,draftId?:string):boolean{
+  return config.mode==='production'&&config.solana.cluster==='mainnet-beta'&&wallet===OFFICIAL_TREASURIES.aecoDeployer&&
+    !!config.pumpLaunch.preparedMintDraftId&&(!draftId||draftId===config.pumpLaunch.preparedMintDraftId)&&
+    config.treasuries.platform===OFFICIAL_TREASURIES.platform&&config.treasuries.agentRewards===OFFICIAL_TREASURIES.agentRewards;
+}

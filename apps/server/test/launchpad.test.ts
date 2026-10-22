@@ -28,9 +28,9 @@ describe('owned launch drafts and trusted media',()=>{
   expect((await request('PATCH',`/api/v1/launchpad/drafts/${d.id}`,u.cookie,{version:0,fields:{name:'Usdc',quoteAsset:'USDC'}})).statusCode).toBe(400);
   expect((await env.app.inject('/api/v1/launchpad/capabilities')).json().quotes.USDC).toBe('planned');
   expect((await request('GET',`/api/v1/launchpad/drafts/${d.id}/review`,u.cookie)).json().launchEnabled).toBe(false);});
- it('enforces replica-safe operation leases, request fingerprints and upload quotas',async()=>{const store=new LaunchpadStore();expect(await store.claim('wallet','key','image','hash')).toEqual({replayed:false});await expect(store.claim('wallet','key','image','hash')).rejects.toThrow('in progress');await expect(store.claim('wallet','key','image','different')).rejects.toThrow('different content');await store.finish('wallet','key','image',{cid});expect(await store.claim('wallet','key','image','hash')).toMatchObject({replayed:true,result:{cid}});for(let i=1;i<20;i++)await store.claim('wallet',`key${i}`,'image','hash');await expect(store.claim('wallet','over','image','hash')).rejects.toThrow('quota');});
+ it('enforces replica-safe operation leases, request fingerprints without daily preparation quotas',async()=>{const store=new LaunchpadStore();expect(await store.claim('wallet','key','image','hash')).toEqual({replayed:false});await expect(store.claim('wallet','key','image','hash')).rejects.toThrow('in progress');await expect(store.claim('wallet','key','image','different')).rejects.toThrow('different content');await store.finish('wallet','key','image',{cid});expect(await store.claim('wallet','key','image','hash')).toMatchObject({replayed:true,result:{cid}});for(const kind of ['create','image','metadata'])for(let i=0;i<105;i++)expect(await store.claim('wallet',`${kind}-${i}`,kind,'same-content')).toEqual({replayed:false});});
 });
-it('supports JPEG/WebP, rejects excessive dimensions, validates metadata and enforces HTTP mutation limits',async()=>{
+it('supports JPEG/WebP, rejects excessive dimensions, validates metadata and permits sequential saves without a timed cooldown',async()=>{
  const calls=pinata(),u=await login(),d=await create(u.cookie);
  for(const [n,format]of ['jpeg','webp'].entries()){
   const image=await sharp({create:{width:8,height:9,channels:3,background:'#aacccc'}}).toFormat(format as 'jpeg'|'webp').toBuffer();
@@ -38,7 +38,7 @@ it('supports JPEG/WebP, rejects excessive dimensions, validates metadata and enf
  }
  const large=await sharp({create:{width:5000,height:4000,channels:3,background:'#ffffff'}}).png().toBuffer();expect((await upload(u.cookie,d.id,2,large,'oversized-pixels')).statusCode).toBe(400);
  const blank=await create(u.cookie,'blank-fields-key');expect((await request('POST',`/api/v1/launchpad/drafts/${blank.id}/metadata`,u.cookie,{version:0},'no-logo-metadata')).statusCode).toBe(400);
- let limited=0;for(let n=0;n<24;n++){const r=await request('PATCH',`/api/v1/launchpad/drafts/${d.id}`,u.cookie,{version:2,fields:{name:'Moss',symbol:'MOSS'}});if(r.statusCode===403)limited++;}expect(limited).toBeGreaterThan(0);expect(calls).toHaveLength(2);
+ for(let n=0;n<24;n++){const r=await request('PATCH',`/api/v1/launchpad/drafts/${d.id}`,u.cookie,{version:2+n,fields:{name:'Moss',symbol:'MOSS'}});expect(r.statusCode).toBe(200);}expect(calls).toHaveLength(2);
 });
 it('keeps durable operations unavailable without credentials and rejects other owners for logo, metadata and delete',async()=>{
  await env.close();env=await makeEnv();const a=await login(),b=await login(),d=await create(a.cookie);
@@ -57,4 +57,22 @@ it('pins protocol-readable metadata with the current social links and HTTPS imag
  expect(metadata).toEqual({...fields,image:`https://gateway.pinata.cloud/ipfs/${cid}`,showName:true,createdOn:'http://localhost:5173'});
  expect(result.json().image.ipfsUri).toBe(`ipfs://${cid}`);
  expect(result.json().metadata.ipfsUri).toBe(`ipfs://${cid}`);
+});
+
+
+it('bounds preparation concurrency across wallets and releases capacity after success and validation errors',async()=>{
+ const a=await login(),b=await login();let release!:()=>void;
+ const gate=new Promise<void>(resolve=>{release=resolve;});
+ const original=LaunchpadStore.prototype.create;
+ const held=vi.spyOn(LaunchpadStore.prototype,'create').mockImplementation(async function(this:LaunchpadStore,draft){await gate;return original.call(this,draft);});
+ const pending=Array.from({length:8},(_,i)=>request('POST','/api/v1/launchpad/drafts',a.cookie,{name:'Concurrent',symbol:'SAME'},`concurrent-${i}`).then(r=>r));
+ try{
+  await vi.waitFor(()=>expect(held).toHaveBeenCalledTimes(8));
+  expect((await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'Other wallet'},'concurrent-other')).statusCode).toBe(503);
+ }finally{release();}
+ try{
+  expect((await Promise.all(pending)).map(r=>r.statusCode)).toEqual(Array(8).fill(200));
+  for(let i=0;i<10;i++)expect((await request('POST','/api/v1/launchpad/drafts',b.cookie,{quoteAsset:'AECO'},`invalid-fields-${i}`)).statusCode).toBe(400);
+  expect((await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'After release'},'concurrent-other')).statusCode).toBe(200);
+ }finally{held.mockRestore();}
 });

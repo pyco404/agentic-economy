@@ -82,6 +82,9 @@ export const LocalMintReview = z.object({
   devBuy:z.object({tokenAmount:z.string().regex(/^[1-9][0-9]{0,19}$/),maxQuoteCost:z.string().regex(/^[1-9][0-9]{0,19}$/)}).strict().optional(),
   globalAccountBase64:z.string().max(32768).optional(),
   protocolFeeRecipients:z.object({feeRecipient:PublicKey,buybackFeeRecipient:PublicKey}).strict().optional(),
+  /** Server-verified expiry of the preceding message; never permission to sign/broadcast automatically. */
+  renewal:z.object({previousMessageSha256:z.string().regex(/^[a-f0-9]{64}$/),previousLastValidBlockHeight:z.number().int().positive().safe(),
+    finalizedBlockHeight:z.number().int().positive().safe(),checkedAt:z.iso.datetime()}).strict().optional(),
 }).strict().meta({id:"LocalMintReview"});
 export type LocalMintReview = z.infer<typeof LocalMintReview>;
 
@@ -104,6 +107,8 @@ export const TokenLaunch = z
       quoteMint:PublicKey.optional(),
       /** Immutable public template for the separately authorized local mint signature. */
       localMintReview:LocalMintReview.optional(),
+      /** Immutable prior public reviews retained when the same reserved attempt is explicitly renewed. */
+      localMintReviewHistory:z.array(LocalMintReview).optional(),
       platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
       /** Requested Developer Buy: exact token amount (never above 3.5% of supply) and the maximum lamports it may cost. */
       devBuy:z.object({bps:z.number().int().min(1).max(DEV_BUY_MAX_BPS),tokenAmount:AmountString,maxQuoteCost:AmountString}).optional(),

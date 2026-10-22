@@ -49,10 +49,10 @@ describe('offline reserved mint co-signing',()=>{
   await expect(inspectMintSigningReview({...review,mint:PLANNED_AECO_MINT},{...f.policy,mint:PLANNED_AECO_MINT,network:'devnet'})).rejects.toThrow('official mint');
   await expect(inspectMintSigningReview({...review,genesisHash:MAINNET_GENESIS},{...f.policy,network:'devnet'})).rejects.toThrow('network');
  });
- it('rebuilds a 1% Developer Buy exactly with pinned allowed protocol recipients, rejecting substitutions',async()=>{
+ it.each([1,37,100,275,350])('rebuilds an independently selected %i bps Developer Buy with the same mint-signing workflow',async(bps)=>{
   const f=await fixture(),captured=JSON.parse(readFileSync(new URL('./fixtures/pump-global-devnet.json',import.meta.url),'utf8'));
   const global=sdk.PUMP_SDK.decodeGlobal({data:Buffer.from(captured.global.dataBase64,'base64')} as never);
-  const devBuy={tokenAmount:BigInt(global.tokenTotalSupply.toString())/100n,maxQuoteCost:1000000000n};
+  const devBuy={tokenAmount:BigInt(global.tokenTotalSupply.toString())*BigInt(bps)/10000n,maxQuoteCost:1000000000n};
   const recipients={feeRecipient:global.feeRecipient.toBase58(),buybackFeeRecipient:global.buybackFeeRecipients[0]!.toBase58()};
   const input={...f.input,devBuy},ix=await unsignedPumpLaunchInstructions(input,global,recipients);
   const addresses=[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()];

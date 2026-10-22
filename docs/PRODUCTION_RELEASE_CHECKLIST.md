@@ -9,7 +9,7 @@
 3. **Public TOKEN/SOL activation — NOT APPROVED.** Present the go/no-go, obtain explicit owner approval and only then enable the reviewed production release. Keep payouts and treasury custody disabled; public-launch activation is not blanket transaction or payout permission.
 4. **Official $AECO launch — NOT APPROVED / NOT LAUNCHED.** Separately approve every parameter and cost below. The owner initiates the real transaction on https://useaeco.xyz and personally reviews/signs it using the dedicated deployer. Never silently deploy it, replace the owner’s wallet approval with an automated signer, substitute a simulated token or initiate it from a separate prototype.
 5. **Independent $AECO verification — PENDING.** Reconcile authoritative Mainnet evidence, persisted production records and actual Explore listing as specified below. A wallet popup or green deployment is insufficient.
-6. **Phase 2 completion — BLOCKED.** Close only after the verified official launch succeeds and the other Phase 2 acceptance criteria pass. Preserve any unresolved/deferred criteria explicitly; do not silently waive them.
+6. **Phase 2 completion — BLOCKED.** Close only after the verified official launch succeeds, its qualifying holder wallets have automatically indexed persistent Common Agents moving in the field, holder/agent counts reconcile, and the other Phase 2 acceptance criteria pass. Preserve any unresolved/deferred criteria explicitly; do not silently waive them.
 7. **Phase 3 — BLOCKED.** Begin only after steps 1–6, including independently verified official $AECO success.
 
 ## Separate parameter approval before any launch
@@ -50,3 +50,16 @@ The deployer is never a substitute fee recipient. Do not request private keys/re
 - [ ] Attach evidence and explicitly accept the official launch before marking Phase 2 completed or unblocking Phase 3.
 
 No authoritative $AECO mint, supply, metadata URI, finalized launch signature or launch date is recorded yet. Populate these only from the approved real launch. [Remaining production tasks](PHASE2_NEXT_PRODUCTION_TASKS.md), [current status](PHASE2_STATUS.md), [per-token Common Agent plan](COMMON_AGENT_PER_TOKEN_PLAN.md).
+
+## Automatic Common Agents — mandatory Phase 2 release gate
+
+- [ ] Separately authorize and verify the official $AECO launch before configuring its real mint. No placeholder mint or feature flag grants Mainnet launch approval.
+- [ ] Enable read-only indexing only after reviewed mint/network verification and provider capacity checks.
+- [ ] Reconcile finalized token accounts by owner and exclude reliably identified non-user recipients.
+- [ ] Verify one persistent Common Agent per positive-balance qualifying $AECO wallet, without login, registration, activation or site visit.
+- [ ] Verify partial sales, transfers, full exits, re-entry, restart and interrupted reconciliation preserve identities.
+- [ ] Verify public movement, agent selection and accurate holder/Common Agent counts against the real mint.
+- [ ] Confirm no wallet controls, economic permissions or real payouts follow from discovered ownership.
+- [ ] Confirm all earlier Phase 2 security/Launchpad release gates; only then close Phase 2. Phase 3 expands the same identities with separately authorized advanced/economic capabilities.
+
+Implementation, Gamine reuse audit, fixture evidence and operational limits: [Automatic Common Agents](AECO_COMMON_AGENTS.md).

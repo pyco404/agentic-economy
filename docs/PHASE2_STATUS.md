@@ -13,7 +13,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
 | Official $AECO Mainnet launch | **REQUIRED / NOT LAUNCHED:** owner-initiated production TOKEN/SOL launch and independent mint/supply/metadata/fee-routing/finality/Explore verification are mandatory before Phase 2 completion and Phase 3 |
 | Public website | **LIVE AND VERIFIED:** https://useaeco.xyz; www redirect, valid apex/www/API TLS, official API/WSS, actual-origin automated auth/session refresh and responsive browser checks pass; transactions remain off |
-| Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **6758f91**, compatible contract 0.5.2; fresh HTTPS/API/database checks pass. Prior matched 6758f91 release passed WSS, clean routes, persistent world and responsive browser checks. New capacity/header live acceptance remains pending; financial execution off |
+| Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **aa1f53a**, compatible contract 0.5.2; native-token roadmap gate, responsive browser, WSS, persistent world and API health checks pass. New capacity/header live acceptance remains pending; financial execution off |
 
 ## Historical restricted mobile preparation — stopped
 
@@ -113,3 +113,9 @@ Domain routing is no longer a blocker. Mainnet activation remains separately una
 ## Common Agent product decision
 
 The owner selected **one Common Agent per confirmed token**, allowing multiple agents for multiple tokens launched by one wallet. The former wallet-unique schema is now a compatibility gap, not the intended product policy. [Review-only migration and implementation plan](COMMON_AGENT_PER_TOKEN_PLAN.md) is prepared outside the automatic migration directory. No migration beyond 004, new agent provisioning feature or Mainnet activation was applied. Existing identities and records remain unchanged.
+
+## Mandatory native-token roadmap — published and verified
+
+The owner requires the official $AECO Mainnet launch through useaeco.xyz before Phase 2 completion or Phase 3. Supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and all transaction costs require separate final approval. The owner must initiate/sign through the production website; a mock, test-network launch or automated owner signer cannot satisfy the gate. Independent verification must establish mint/supply/metadata, fee routing, finalized signature and Explore provenance. [Production release checklist](PRODUCTION_RELEASE_CHECKLIST.md).
+
+Frontend application commit aa1f53a is SUCCESS on staging (`0b72282d-a73d-44e1-8e03-082bb4391cdb`) and production (`164d4580-ceb1-42a1-981d-dd4580635fe9`). Actual staging and public roadmap browsers verify Phase 2's required native milestone and Phase 3's blocked status, four responsive viewports, retained city, native WSS and disabled execution. Backend/database deployments and financial configuration remain unchanged; no token transaction, migration or DNS change was made. [Release evidence](evidence/native-aeco-roadmap-release-2026-10-22.json). The official $AECO token remains NOT LAUNCHED; Phase 2 remains incomplete.

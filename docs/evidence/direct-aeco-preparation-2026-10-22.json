@@ -2,7 +2,6 @@
   "checkedAt": "2026-10-22T19:44:05.449780+00:00",
   "scope": "production website release and direct official AECO signing preparation; no launch execution",
   "ownerEntersAllTokenContent": true,
-  "ownerSelectedDevBuyBps": 100,
   "ordinaryDraftDefaultBps": 0,
   "mainnetTransactionsSigned": 0,
   "transactionsBroadcast": 0,
@@ -620,7 +619,7 @@
   "remainingGates": [
     "short-blockhash expiry/renewal operational procedure and final security/recovery acceptance",
     "transaction preparation remains locked behind execution-off capability; do not enable execution merely for preparation testing",
-    "after owner decides to launch: their metadata, UI-selected 1%, refreshed simulation, complete costs and final balance check",
+    "after owner decides to launch: their metadata, user-selected 0\u20133.5% allocation, refreshed simulation, complete costs and final balance check",
     "explicit final parameters and specific Mainnet transaction/activation approval",
     "after finalized launch: official mint holder-indexer activation and live population reconciliation",
     "separate public launching approval; physical mobile on-chain acceptance remains deferred"
@@ -638,5 +637,14 @@
     "balanceCheckedDuringThisDeploymentVerification": false,
     "nextBalanceCheck": "Only when the owner prepares to authorize the actual launch",
     "automaticOrScheduledLaunch": false
+  },
+  "previousOwnerPreferenceDevBuyBps": 100,
+  "previousPreferenceIsNotARequirement": true,
+  "developerBuySelection": {
+    "defaultBps": 0,
+    "maximumBps": 350,
+    "stepBps": 1,
+    "chosenAtLaunchByUser": true,
+    "officialMintHasSpecialAllocationRestriction": false
   }
 }

@@ -197,10 +197,10 @@ export class SimWorker {
     // This publishes a read model only; the engine remains the sole economic writer.
     const changed = new Set(out.moves.map((m) => m.id));
     const visible = state.agentOrder.map((id) => state.agents[id]!).filter((a) => changed.has(a.id) || a.taskId !== null);
-    if (visible.length)
+    for (let offset = 0; offset < visible.length; offset += 128)
       drafts.push(
-        streamDraft(`sim:${tick}:moved`, "agent.moved", tick, {
-          moves: visible.map((a) => ({ id: a.id, pos: cellCenter(a.cell), state: a.status === "paused" ? "paused" as const : a.activity, target: a.target, speed: AGENT_SPEED, agent: toAgentSummary(state, a) })),
+        streamDraft(`sim:${tick}:moved:${offset}`, "agent.moved", tick, {
+          moves: visible.slice(offset, offset + 128).map((a) => ({ id: a.id, pos: cellCenter(a.cell), state: a.status === "paused" ? "paused" as const : a.activity, target: a.target, speed: AGENT_SPEED, agent: toAgentSummary(state, a) })),
         }),
       );
     for (const a of out.actions) drafts.push(streamDraft(`sim:action:${a.id}`, "agent.action", tick, { action: a }));

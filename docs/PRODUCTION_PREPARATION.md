@@ -4,10 +4,10 @@
 
 The owner approved production applications and reuse of the existing Agentic Economy backend-only Pinata and replacement Helius credentials. The earlier database-only approval boundary is resolved. Both applications run the exact approved commit `6758f91bd2e8a69c242584133f0e5932b862bf7e`; newer main commits were not silently promoted. Automatic production promotion remains off, with no repository deployment triggers.
 
-| Service | Successful deployment | HTTPS review endpoint |
+| Service | Successful deployment | Official HTTPS endpoint |
 | --- | --- | --- |
-| Frontend | `493dc99c-f3d2-454c-87fb-ff8cf297ce65` | https://agentic-economy-web-production.up.railway.app |
-| API | `04365147-839e-44ec-9a47-0c33bf54db04` | https://agentic-economy-production.up.railway.app |
+| Frontend | `ba11a995-8f60-4595-b8b2-010d340e0262` | https://useaeco.xyz |
+| API | `04365147-839e-44ec-9a47-0c33bf54db04` | https://api.useaeco.xyz |
 
 Health/readiness return 200, PostgreSQL and simulation are healthy, and contract 0.5.2 is compatible across both services. MODE is production for configuration validation, **financial execution is disabled**: `MAINNET_LAUNCH_APPROVED=false`, `PUMP_LAUNCH_ENABLED=false`, `FEE_ROUTING_VERIFIED=false`. Payouts remain disabled. Official treasury addresses are unchanged; no treasury signer was installed. No blockchain transaction was signed or broadcast.
 
@@ -27,13 +27,13 @@ A 52,616-byte private baseline archive is outside the active worktree in a Git-i
 
 [API/uploads](evidence/production-api-preflight-2026-10-22.json), [execution guards](evidence/production-execution-guards-2026-10-22.json), [browser checks](evidence/production-browser-preflight-2026-10-22.json), [runtime/provider checks](evidence/production-runtime-security-2026-10-22.json), [bounded log sample](evidence/production-log-sample-2026-10-22.json).
 
-## Review-host limitation and remaining gates
+## Official-domain cutover and remaining gates
 
-The two `up.railway.app` review hosts are separate browser sites. Signature verification succeeds, but the browser correctly withholds the Strict session cookie across them, yielding session 401. Origin validation and cookie security have not been weakened. These review endpoints are suitable for visual/API review, **not completed wallet-browser acceptance**.
+The separately approved [official-domain cutover](PRODUCTION_DNS_CUTOVER_PROPOSAL.md) is applied. All three real public certificates validate, root loads Agentic Economy, www redirects to root, and the frontend uses the official API/WSS targets. [Actual public release](evidence/production-public-release-2026-10-22.json), [TLS](evidence/public-domain-tls-2026-10-22.json), [public API boundaries](evidence/public-api-boundaries-2026-10-22.json). Six scoped records were added, all previous records preserved, no nameserver change. One frontend configuration build was necessary; no duplicate/backend deployment or migration was requested.
 
-A clearly instrumented pre-DNS rehearsal of `useaeco.xyz` plus `api.useaeco.xyz` passed authentication/session refresh, layouts and WebSockets. It overrides test routing/API base and does not establish real DNS, custom certificates or actual Phantom acceptance. The frontend must switch from its temporary API/WSS URLs to the official API origin during the separately approved cutover. [Concrete cutover proposal](PRODUCTION_DNS_CUTOVER_PROPOSAL.md).
+The earlier two-host Railway preview had a Strict-cookie cross-site limitation. The official frontend/API are now same-site; [Actual public-domain browser acceptance](evidence/public-domain-browser-2026-10-22.json) now passes with an automated unfunded message signer and no test routing overrides: exact-origin challenge, secure cookie, refresh session 200, official API/WSS, persistent world and five responsive viewports. It is not a new physical Phantom test. Cookie/origin protection was not weakened.
 
-Root/www DNS is unchanged. Production restoration rehearsal, real-origin HTTPS/authentication, credential maintenance and external Mainnet transaction/security review remain open. Physical mobile on-chain acceptance is **DEFERRED**; do not request another mobile signature. Phase 2 is not fully accepted and Phase 3 has not begun.
+Production restoration rehearsal, credential maintenance and external Mainnet transaction/security review remain open. Physical mobile on-chain acceptance is **DEFERRED**; do not request another mobile signature. Phase 2 is not fully accepted and Phase 3 has not begun. [Official $AECO and automatic Common Agent next steps](PHASE2_NEXT_PRODUCTION_TASKS.md) distinguish preparation from authorized execution.
 
 ## Recurring infrastructure costs
 

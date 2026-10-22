@@ -1,3 +1,4 @@
+import { commonPopulation } from "../services/common-agents.js";
 import type { RouteName } from "@agentic-economy/shared";
 import type { AppContext } from "../context.js";
 import { economySummary, marketQuotes, toTask, worldStats } from "../sim/view.js";
@@ -33,7 +34,7 @@ export function registerHandlers(ctx: AppContext, register: Register) {
     return { mode, chunks };
   });
 
-  register("worldStats", async () => worldStats(mode, state()));
+  register("worldStats", async () => ({ ...worldStats(mode, state()), aecoPopulation: commonPopulation(config, state()) }));
   register("worldAgents", async () => ({ mode, tick: runtime.tick, agents: runtime.agentSummaries() }));
 
   register("tokenMarket",async({params})=>ctx.tokenMarket.snapshot(params.mint));

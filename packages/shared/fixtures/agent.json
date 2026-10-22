@@ -1,22 +1,57 @@
 {
   "mode": "demo",
   "agent": {
-    "id": "agt_ReDTBW412EvP1q",
+    "id": "agt_J54LbyGr271z8Z",
     "name": "3hxD...JbvN",
     "displayName": "3hxD...JbvN",
     "identity": {
       "kind": "token_linked",
-      "activationId": "act_RuwcezbaGM3U9o",
-      "tokenMint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
+      "activationId": "act_B6gQaBExVSdXke",
+      "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
       "activatingWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
-      "launchId": "lch_MTMneC1hCMa2cK",
-      "communityId": "com_eqHiMC8JMR7Mux"
+      "launchId": "lch_UD3BcMkSsGRhXm",
+      "communityId": "com_VGE6A7u3LGbXQG"
     },
     "profession": "logistics_operator",
-    "communityId": "com_eqHiMC8JMR7Mux",
+    "communityId": "com_VGE6A7u3LGbXQG",
     "ownerWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
     "status": "active",
     "state": "delivering",
+    "work": {
+      "tick": 252,
+      "task": {
+        "id": "tsk_00001e",
+        "kind": "delivery",
+        "status": "in_progress",
+        "createdTick": 105,
+        "expiresTick": 405,
+        "fromBuildingId": "bld_0p3nc76",
+        "toBuildingId": "bld_07d97l2",
+        "resource": "energy",
+        "quantity": 1,
+        "rewardCredits": 2716,
+        "points": 10,
+        "claimedBy": "agt_J54LbyGr271z8Z",
+        "receiptId": null
+      },
+      "destination": {
+        "id": "bld_07d97l2",
+        "name": "Old Stone Mill",
+        "kind": "mill",
+        "entrance": {
+          "x": 83,
+          "y": 88
+        }
+      },
+      "target": {
+        "x": 83,
+        "y": 88
+      },
+      "remainingWorkTicks": 0,
+      "cargo": {
+        "energy": 1
+      }
+    },
     "pos": {
       "x": 72.5,
       "y": 44.5

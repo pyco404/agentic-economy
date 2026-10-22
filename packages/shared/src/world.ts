@@ -183,6 +183,12 @@ export const WorldStats = z
     tick: z.number().int(),
     population: z.number().int().describe("Simulated residents (demand sink)."),
     activeAgents: z.number().int(),
+    simulation: z.object({
+      profile: z.string(), startedTick: z.number().int().nonnegative(),
+      groups: z.array(z.object({ id: z.string(), name: z.string(), description: z.string(),
+        headquartersBuildingId: z.string().nullable(), activeAgents: z.number().int().nonnegative(),
+        completedServices: z.number().int().nonnegative() })),
+    }).optional().describe("Synthetic simulation groups, not launched tokens or AECO holders."),
     aecoPopulation: z.object({
       status: z.enum(["disabled", "syncing", "current", "stale"]),
       mint: z.string().nullable(), network: z.enum(["devnet", "mainnet-beta"]).nullable(),

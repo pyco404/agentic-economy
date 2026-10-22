@@ -10,10 +10,10 @@ Physical mobile on-chain acceptance is **DEFERRED at the owner's request**. Its 
 
 | Service | Actual deployed main SHA | Railway deployment |
 | --- | --- | --- |
-| Frontend | 9f1d3bcfb7483431a23fe48cd10f920a244d1ea1 | dda4ab34-a7a0-4368-a79e-3731d0fdcf22 |
-| Backend | a2e1847455a4f4154d97b0e64dcf61cb36b94737 | 51a03a50-5526-47bf-9ede-ae34f25b76cc |
+| Frontend | 6758f91bd2e8a69c242584133f0e5932b862bf7e | 1fe31f55-7270-4c81-a32c-8f9b5cd08054 |
+| Backend | 6758f91bd2e8a69c242584133f0e5932b862bf7e | 7b0f47f1-226b-42e7-a29c-f2ea063303b3 |
 
-The frontend correctly skipped server-only a2e1847; both implement compatible contract 0.5.1. Root documentation commits are outside application build watches. Health/readiness return 200 with PostgreSQL healthy, MODE=demo and financialFeaturesEnabled=false. Capabilities report launchEnabled=false and Developer Buy unavailable. A real browser reached complete-world startup READY and rendered Explore and the latest Launchpad without page errors; WSS delivered world.snapshot.
+Both application services now implement contract 0.5.2 and run the same verified main application commit 6758f91. Root documentation commits are outside application build watches. Health/readiness return 200 with PostgreSQL healthy, MODE=demo and financialFeaturesEnabled=false. Capabilities report launchEnabled=false and Developer Buy unavailable. A real browser reached complete-world startup READY and rendered Explore and the latest Launchpad without page errors; WSS delivered world.snapshot.
 
 The older backend 365ab41 attempt failed before compilation with repeated `failed to fetch snapshot`. The newer queued release subsequently succeeded without a manual redeploy. [Railway status](https://status.railway.com/) continues to report delayed queues and build errors.
 
@@ -27,7 +27,7 @@ Changing Mainnet flags cannot solve this routing issue and is not authorized. Do
 
 The owner's earlier approval covers separate frontend/API/PostgreSQL and existing migrations 001–004 only on its fresh database. Environment: `57d15012-9025-449b-809d-44d3176494af`.
 
-- Separate instances of the existing three project services; no staging data or credentials cloned. Public application auto-deployment is disabled; reviewed releases require deliberate promotion. Production still has zero service instances/triggers. Staging remains main-driven.
+- Separate instances of the existing three project services; no staging data or credentials cloned. Public application auto-deployment is disabled; reviewed releases require deliberate promotion. Production now has its separately approved database only, with zero repository deployment triggers. Staging remains main-driven.
 - Fresh database `aeco_public_demo`, independent generated credential, private Postgres URL and new volume `fa6bc734-284f-4de7-883c-88b5eb6c03ee` at `/var/lib/postgresql/data`.
 - Successful database deployment: `7638dd7c-bf24-4618-9a36-c0a2203ba179`. Read-only identity check returned aeco_public_demo and zero public tables before application deployment.
 - The initial volume attachment automatically started a deployment; the explicit initial start overlapped it. Both failed during MIGRATE_VOLUMES before PostgreSQL ran. After confirming no active deployment and volume READY, one controlled retry succeeded. No existing database was moved or reset.
@@ -59,6 +59,12 @@ Preserve staging/api-staging CNAME/TXT, CAA and unrelated wildcard records. Exis
 
 ## Production release gate
 
-[Prepared production configuration](../infra/railway/env/production-readonly.env.example) and [Gamine integration/security findings](GAMINE_LAUNCHPAD_INTEGRATION.md). Fresh aeco_production schema approval has been requested; production remains empty and no migration or trigger change has been made. Official treasury addresses are fixed in the prepared configuration, all financial activation flags false. Public-demo is retained as an isolated reviewed demo, not promoted as real launch storage. Root/www remain Vercel 404 until the separately reviewed production cutover.
+[Prepared production configuration](../infra/railway/env/production-readonly.env.example) and [Gamine integration/security findings](GAMINE_LAUNCHPAD_INTEGRATION.md). Fresh aeco_production schema approval was granted: the new isolated volume/database is healthy, initially empty, and migrated through approved 004 with matching checksums. No application has been deployed and no repository trigger changed; automatic review requires direct approval for the additional production application/endpoints/provider-key action. Official treasury addresses are fixed in the prepared configuration, all financial activation flags false. Public-demo is retained as an isolated reviewed demo, not promoted as real launch storage. Root/www remain Vercel 404 until the separately reviewed production cutover.
 
 Public-demo [pre-DNS browser/API evidence](evidence/public-demo-preflight-2026-10-22.json): desktop 1440×1000, folded 344×882 and unfolded 690×829 reach complete-world READY, display Launchpad, receive WebSocket updates, and have no page errors or horizontal overflow. All nine clean routes return 200; nonexistent assets/API remain 404. An automated disposable signer verifies exact useaeco.xyz challenge, secure host-only session, refresh/session read, replay rejection and logout. Browser requests were explicitly routed to Railway review hosts for this test; official DNS/certificates and physical Phantom on the official domain are still unverified. No user transaction was requested.
+
+## New staging application — live verification complete
+
+Main commit `6758f91bd2e8a69c242584133f0e5932b862bf7e` contains the tested 0.5.2 Gamine/Mainnet preparation and approved quota replacement. Its single automatic staging backend deployment `7b0f47f1-226b-42e7-a29c-f2ea063303b3` and frontend deployment `1fe31f55-7270-4c81-a32c-8f9b5cd08054` both completed successfully. Actual staging browser checks pass on desktop/folded/unfolded viewports: complete-world READY, Launchpad, navigation Back/Forward with the same canvas, no page errors/overflow and 129 WSS frames. API/database readiness and MODE=demo/financialFeaturesEnabled=false pass. Railway's status page reports continuing provider queue delays and requests no duplicate submissions. [Actual live browser/API evidence](evidence/staging-gamine-release-2026-10-22.json) confirms the release; no duplicate deployment was triggered. [Release checkpoint](evidence/phase2-gamine-release-2026-10-22.json).
+
+[Production database completion, next approval and recurring costs](PRODUCTION_PREPARATION.md). The official root/www remain unchanged Vercel 404; production app deployment and DNS cutover are not yet authorized.

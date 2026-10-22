@@ -30,6 +30,9 @@ export async function inspectMintSigningReview(value: unknown, policy: MintSigni
   if (network === 'devnet' && review.mint === PLANNED_AECO_MINT) throw new Error('The official mint is forbidden in Devnet rehearsals');
   if (review.mint !== policy.mint || review.launcherWallet !== policy.deployer || review.platformTreasury !== policy.platform || review.agentRewardsTreasury !== policy.rewards)
     throw new Error('Mint, deployer or treasury differs from the fixed signing policy');
+  if(review.renewal && (review.renewal.previousMessageSha256===review.messageSha256 ||
+    review.renewal.finalizedBlockHeight<=review.renewal.previousLastValidBlockHeight || review.lastValidBlockHeight<=review.renewal.finalizedBlockHeight))
+    throw new Error('Renewed review lacks a valid preceding expiry and fresh signing window');
   const bytes = Buffer.from(review.unsignedTransaction, 'base64');
   if (bytes.length > 1232 || bytes.toString('base64') !== review.unsignedTransaction) throw new Error('Invalid transaction encoding');
   const transaction = VersionedTransaction.deserialize(bytes);

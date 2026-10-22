@@ -271,3 +271,5 @@ After verifying production remains isolated and the complete series passes valid
 - **Port already in use:** identify the existing process before replacing it; if using different ports, update frontend API/WebSocket addresses and backend authentication/CORS origins together.
 
 Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Market availability and verified receipts are never simulated as live data; earned creator-fee settlement and production financial enablement remain gated.
+
+Current Phase 2 completion checklist: [verified milestones and remaining gates](docs/PHASE2_STATUS.md). Physical Phantom mobile remains pending; desktop Developer Buy and public-Devnet SOL creator-fee collection are complete.

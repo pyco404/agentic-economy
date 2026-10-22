@@ -151,7 +151,7 @@ export class LaunchService {
         // The simulated spend (exact for this transaction) replaces the formula estimate when available.
         developerBuy:devQuote?{bps:devBuyBps,quoteAsset:"SOL" as const,totalSupply:devQuote.totalSupply.toString(),tokenAmount:devQuote.tokenAmount.toString(),
           estimatedQuoteCost:built.devBuy?.quoteSpent??devQuote.estimatedQuoteCost.toString(),pumpFees:devQuote.pumpFees.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString(),priceImpactBps:devQuote.priceImpactBps}:null},
-      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster as "devnet"|"localnet",quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const,
+      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster,quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const,
         ...(devQuote?{devBuy:{bps:devBuyBps,tokenAmount:devQuote.tokenAmount.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString()}}:{})}}:{}),
       signature: null,
       slot: null,

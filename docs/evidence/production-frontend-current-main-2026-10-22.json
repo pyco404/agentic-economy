@@ -1,0 +1,468 @@
+{
+  "recordedAt": "2026-10-22T17:49:53.472115+00:00",
+  "scope": "Production frontend release only; no application source redesign",
+  "initialAudit": {
+    "remoteMain": "d5d3d7cb56db6e0baff4a5fa4605a1a9caa6522b",
+    "lastFrontendPathCommit": "83945fb54b72bce1c21f25a2e8ac80aba0f0af9a",
+    "productionFrontend": {
+      "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+      "deploymentId": "8afd89e8-a7e6-4f03-89a4-488e69db98a8",
+      "status": "SUCCESS",
+      "sha": "3b369f602e14ecc36332c806b1c11ae9c59b05a4",
+      "active": [
+        {
+          "id": "8afd89e8-a7e6-4f03-89a4-488e69db98a8",
+          "status": "SUCCESS"
+        }
+      ]
+    },
+    "frontendBuild": {
+      "source": {
+        "branch": "main",
+        "repo": "pyco404/agentic-economy"
+      },
+      "build": {
+        "buildEnvironment": "V3",
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "apps/web/Dockerfile"
+      },
+      "deploy": {
+        "healthcheckPath": "/healthz",
+        "healthcheckTimeout": 120,
+        "ipv6EgressEnabled": false,
+        "multiRegionConfig": {
+          "sfo": {
+            "numReplicas": 1
+          }
+        },
+        "restartPolicyMaxRetries": 5,
+        "runtime": "V2",
+        "useLegacyStacker": false
+      }
+    },
+    "frontendVariables": {
+      "VITE_API_URL": "https://api.useaeco.xyz",
+      "VITE_WS_URL": "wss://api.useaeco.xyz/api/v1/ws",
+      "VITE_APP_ENV": null,
+      "VITE_SHOW_DIAGNOSTICS": null,
+      "VITE_PUBLIC_DIAGNOSTICS": null
+    },
+    "backendVariables": {
+      "MODE": "production",
+      "SOLANA_CLUSTER": "mainnet-beta",
+      "PUMP_LAUNCH_ENABLED": "false",
+      "MAINNET_LAUNCH_APPROVED": "false",
+      "FEE_ROUTING_VERIFIED": "false",
+      "AUTH_DOMAIN": "useaeco.xyz",
+      "AUTH_URI": "https://useaeco.xyz",
+      "CORS_ORIGINS": "https://useaeco.xyz,https://www.useaeco.xyz,https://agentic-economy-web-production.up.railway.app"
+    },
+    "databaseName": "aeco_production",
+    "frontendSecretsAbsent": true,
+    "officialCustomDomains": [
+      {
+        "domain": "useaeco.xyz",
+        "status": {
+          "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+          "verified": true
+        }
+      },
+      {
+        "domain": "www.useaeco.xyz",
+        "status": {
+          "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+          "verified": true
+        }
+      }
+    ],
+    "publicAndProductionServiceAssetsIdentical": true,
+    "mainBuildAndPublicAssetsByteIdenticalBeforeRelease": true,
+    "stagingAndProductionJavaScriptIdenticalAfterAPIHostnameNormalization": true,
+    "reportedOldUIReproduced": false,
+    "clientSideCauseEstablished": false
+  },
+  "release": {
+    "requestedAt": "2026-10-22T17:42:27.989866+00:00",
+    "sha": "d5d3d7cb56db6e0baff4a5fa4605a1a9caa6522b",
+    "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+    "environment": "production",
+    "frontendDeploymentsRequested": 1,
+    "backendDeploymentsRequested": 0,
+    "configurationChanges": 0,
+    "migrations": 0,
+    "purpose": "Owner-requested current-main frontend pin; application assets already match reviewed public release",
+    "previousDeploymentId": "8afd89e8-a7e6-4f03-89a4-488e69db98a8",
+    "result": {
+      "serviceInstanceDeploy": true
+    }
+  },
+  "finalSnapshot": {
+    "checkedAt": "2026-10-22T17:46:37.806452+00:00",
+    "deployments": {
+      "production": [
+        {
+          "service": "Postgres",
+          "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+          "deploymentId": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy-web",
+          "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+          "deploymentId": "aa08fe70-8248-4d9b-b5f9-f70b7d780b10",
+          "status": "SUCCESS",
+          "sha": "d5d3d7cb56db6e0baff4a5fa4605a1a9caa6522b",
+          "active": [
+            {
+              "id": "aa08fe70-8248-4d9b-b5f9-f70b7d780b10",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy",
+          "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+          "deploymentId": "04365147-839e-44ec-9a47-0c33bf54db04",
+          "status": "SUCCESS",
+          "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e",
+          "active": [
+            {
+              "id": "04365147-839e-44ec-9a47-0c33bf54db04",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ],
+      "publicDemo": [
+        {
+          "service": "agentic-economy-web",
+          "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+          "deploymentId": "a1cf31be-1a7b-4036-84c1-cde189d5e0bd",
+          "status": "SUCCESS",
+          "sha": "a2e1847455a4f4154d97b0e64dcf61cb36b94737",
+          "active": [
+            {
+              "id": "a1cf31be-1a7b-4036-84c1-cde189d5e0bd",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy",
+          "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+          "deploymentId": "4f59ca17-cb44-4896-9b44-b0b54d748a12",
+          "status": "SUCCESS",
+          "sha": "a2e1847455a4f4154d97b0e64dcf61cb36b94737",
+          "active": [
+            {
+              "id": "4f59ca17-cb44-4896-9b44-b0b54d748a12",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "Postgres",
+          "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+          "deploymentId": "7638dd7c-bf24-4618-9a36-c0a2203ba179",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "7638dd7c-bf24-4618-9a36-c0a2203ba179",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ],
+      "staging": [
+        {
+          "service": "agentic-economy",
+          "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+          "deploymentId": "c519cb39-a41b-47a0-8159-5d19d2c07a64",
+          "status": "SUCCESS",
+          "sha": "d5d3d7cb56db6e0baff4a5fa4605a1a9caa6522b",
+          "active": [
+            {
+              "id": "c519cb39-a41b-47a0-8159-5d19d2c07a64",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "Postgres",
+          "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+          "deploymentId": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy-web",
+          "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+          "deploymentId": "403ef016-f05e-4003-850b-ded59fe1a76b",
+          "status": "SUCCESS",
+          "sha": "3b369f602e14ecc36332c806b1c11ae9c59b05a4",
+          "active": [
+            {
+              "id": "403ef016-f05e-4003-850b-ded59fe1a76b",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ]
+    },
+    "http": [
+      {
+        "url": "https://useaeco.xyz/",
+        "status": 200,
+        "finalUrl": "https://useaeco.xyz/",
+        "cacheControl": "no-cache",
+        "assets": [
+          "/assets/index-C9cXK8IG.js",
+          "/assets/index-CZDLadOS.css"
+        ],
+        "assetHashes": {
+          "/assets/index-C9cXK8IG.js": "a78ab134b7076d90a40fcf219670dddeb777d56af898325a9336df20fb653ea6",
+          "/assets/index-CZDLadOS.css": "6f0d8a2fe84016ae4578af7dd511f34431f6b1aa87476cbaa3ba8ed8b4c73797"
+        }
+      },
+      {
+        "url": "https://www.useaeco.xyz/launchpad?release-check=1",
+        "status": 200,
+        "finalUrl": "https://useaeco.xyz/launchpad?release-check=1",
+        "cacheControl": "no-cache",
+        "assets": [
+          "/assets/index-C9cXK8IG.js",
+          "/assets/index-CZDLadOS.css"
+        ]
+      },
+      {
+        "url": "https://api.useaeco.xyz/readyz",
+        "status": 200,
+        "finalUrl": "https://api.useaeco.xyz/readyz",
+        "cacheControl": null,
+        "ready": true,
+        "launchEnabled": null
+      },
+      {
+        "url": "https://api.useaeco.xyz/api/v1/launchpad/capabilities",
+        "status": 200,
+        "finalUrl": "https://api.useaeco.xyz/api/v1/launchpad/capabilities",
+        "cacheControl": null,
+        "ready": null,
+        "launchEnabled": false
+      },
+      {
+        "url": "https://staging.useaeco.xyz/",
+        "status": 200,
+        "finalUrl": "https://staging.useaeco.xyz/",
+        "cacheControl": "no-cache",
+        "assets": [
+          "/assets/index-BvCZFCNO.js",
+          "/assets/index-CZDLadOS.css"
+        ]
+      },
+      {
+        "url": "https://api-staging.useaeco.xyz/readyz",
+        "status": 200,
+        "finalUrl": "https://api-staging.useaeco.xyz/readyz",
+        "cacheControl": null,
+        "ready": true,
+        "launchEnabled": null
+      },
+      {
+        "url": "https://api-staging.useaeco.xyz/api/v1/launchpad/capabilities",
+        "status": 200,
+        "finalUrl": "https://api-staging.useaeco.xyz/api/v1/launchpad/capabilities",
+        "cacheControl": "no-store",
+        "ready": null,
+        "launchEnabled": false
+      }
+    ]
+  },
+  "browser": {
+    "checkedAt": "2026-10-22T17:46:08.905Z",
+    "officialDomain": true,
+    "testRoutingOverrides": false,
+    "physicalPhantom": false,
+    "automatedMessageSigner": true,
+    "blockchainTransactions": 0,
+    "routes": [
+      {
+        "path": "/",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/launchpad",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/explore",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/communities",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/agent-studio",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/economy",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/treasury",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/roadmap",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/about",
+        "status": 200,
+        "html": true
+      },
+      {
+        "path": "/assets/not-a-real-file.js",
+        "status": 404,
+        "html": false
+      },
+      {
+        "path": "/api/not-a-real-endpoint",
+        "status": 404,
+        "html": false
+      }
+    ],
+    "www": {
+      "status": 308,
+      "location": "https://useaeco.xyz/launchpad?domain-check=1"
+    },
+    "renderedRoutes": [
+      {
+        "path": "/launchpad",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/explore",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/communities",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/agent-studio",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/economy",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/treasury",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/roadmap",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/about",
+        "diagnosticsAbsent": true
+      },
+      {
+        "path": "/",
+        "diagnosticsAbsent": true
+      }
+    ],
+    "cache": {
+      "serviceWorkerRegistrations": 0,
+      "cacheStorageEntries": []
+    },
+    "browser": {
+      "worldReady": true,
+      "worldRetainedDuringBackForward": true,
+      "pageErrors": [],
+      "webSocketFrames": 40,
+      "apiOrigins": [
+        "https://api.useaeco.xyz"
+      ],
+      "layouts": [
+        {
+          "name": "desktop",
+          "width": 1440,
+          "height": 1000,
+          "horizontalOverflow": false
+        },
+        {
+          "name": "tablet",
+          "width": 820,
+          "height": 1180,
+          "horizontalOverflow": false
+        },
+        {
+          "name": "mobile",
+          "width": 390,
+          "height": 844,
+          "horizontalOverflow": false
+        },
+        {
+          "name": "folded-viewport",
+          "width": 344,
+          "height": 882,
+          "horizontalOverflow": false
+        },
+        {
+          "name": "unfolded-viewport",
+          "width": 690,
+          "height": 829,
+          "horizontalOverflow": false
+        }
+      ],
+      "authentication": {
+        "challengeOrigin": "https://useaeco.xyz",
+        "sessionRefresh": 200,
+        "secureHostOnlyHttpOnlyStrictCookie": true
+      },
+      "executionDisabled": true
+    }
+  },
+  "checks": {
+    "navigationAndWalletUnitTestsPassed": 14,
+    "publicResponsiveBrowserBeforeRelease": "passed",
+    "publicResponsiveBrowserAfterRelease": "passed",
+    "frontendTypecheckAndBuild": "passed",
+    "frontendLint": {
+      "errors": 0,
+      "preExistingWarnings": 2
+    },
+    "codeChanges": 0,
+    "dnsChanges": 0,
+    "databaseMigrations": 0,
+    "backendDeploymentRequests": 0,
+    "financialConfigurationChanges": 0
+  }
+}

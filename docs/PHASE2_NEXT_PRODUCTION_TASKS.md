@@ -2,9 +2,11 @@
 
 The public website may run with execution off before Mainnet launch acceptance is complete. DNS/website deployment does not authorize a transaction, treasury signing or payouts. Physical mobile on-chain acceptance remains deferred at the owner's request; do not restart its old gateway or request another signature.
 
-## Official $AECO preparation
+## Mandatory official $AECO launch before Phase 3
 
 The reserved deployer remains `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`. It must never substitute for Platform or Agent Rewards recipients. Current production treasury, SOL-only, 0.05 SOL and 60/40 rules remain unchanged. No official $AECO token has been launched by this deployment and no real transaction is authorized. A [read-only finalized Mainnet checkpoint](evidence/aeco-deployer-readonly-2026-10-22.json) found the reserved deployer balance at 0 lamports and no signatures in the bounded recent-history query. This is not an exhaustive mint/history audit. Any eventual funding and real transaction need separate authorization; no funds were moved.
+
+Phase 2 completes only after this real Mainnet launch is initiated and approved by the owner through useaeco.xyz and independently verified. Phase 3 is blocked until then. [Mandatory production release sequence](PRODUCTION_RELEASE_CHECKLIST.md). Supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and all transaction costs remain separately unapproved; existing protocol defaults are not owner approval. TOKEN/AECO pairing stays Phase 4.
 
 Before preparing its signing request, reconcile any existing official launch record, confirm the owner-approved token details/artwork/links and Developer Buy choice, re-attest live program/lookup-table and treasury configuration, produce an unsigned simulated transaction and exact maximum debit, then obtain separate transaction/activation approval. Do not invent a mint, copy a Gamine secret, fund a wallet, or silently create an official draft. Keep signature collection and broadcasting disabled until that approval.
 

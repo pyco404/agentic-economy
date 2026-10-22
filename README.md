@@ -10,7 +10,7 @@ Agentic Economy is a Solana-based ecosystem combining token creation and discove
 
 **Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
-The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch contract 0.3.1 services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. [Current Phase 2 status and remaining priorities](apps/server/docs/phase2-sol-only-acceptance.md). Physical Phantom mobile remains unverified. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
+The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. [Current Phase 2 status and remaining priorities](apps/server/docs/phase2-sol-only-acceptance.md). Physical Phantom mobile authentication and layouts passed; mobile on-chain acceptance is deferred. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
 
 ## About the project
 
@@ -58,6 +58,8 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 - **Token preparation:** Solana wallet message authentication and server-side Pinata/IPFS uploads when configured.
 - **Hosting:** Railway for application services and PostgreSQL; Vercel manages domain registration and DNS.
 
+Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine comparison / gated Mainnet readiness](docs/GAMINE_LAUNCHPAD_INTEGRATION.md). Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval.
+
 ## What works on main
 
 | Area | Implemented | Limits |
@@ -69,7 +71,7 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 | Trading pairs | TOKEN/SOL only; optional Developer Buy of 0–3.5% paid in SOL | USDC launch code is retained but disabled and outside Phase 2; TOKEN/AECO is reserved for Phase 4 |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |
 
-[Phase 2 verification, 22 October](apps/server/docs/phase2-review-2026-10-22.md): actual public-Devnet SOL creator-fee collection and current staging Pinata uploads are verified. The replacement Helius key is now [verified active on staging](docs/security/HELIUS_ROTATION.md). Physical Phantom mobile acceptance remains pending.
+[Phase 2 verification, 22 October](apps/server/docs/phase2-review-2026-10-22.md): actual public-Devnet SOL creator-fee collection and current staging Pinata uploads are verified. The replacement Helius key is now [verified active on staging](docs/security/HELIUS_ROTATION.md). Physical Phantom mobile authentication, image preview, folded/unfolded layouts and session restoration passed; mobile on-chain acceptance is deferred at the owner’s request.
 
 Implemented code on main is **not necessarily deployed to staging**. See the release status below.
 
@@ -239,7 +241,7 @@ It requires Chromium/Chrome (default `/usr/bin/google-chrome`, configurable with
 | `api.useaeco.xyz` | Production API, subject to separate production approval |
 | `api-staging.useaeco.xyz` | Staging API; WebSocket path `/api/v1/ws` |
 
-**Last verified 19 October 2026:** both staging services deploy compatible contract 0.3.1 releases from `main`. Wallet-owned drafts, real Pinata integration and desktop Phantom authentication are verified. The Create Coin workflow is verified with real services on public devnet; demo staging keeps launches and financial operations disabled. Production has no deployment triggers. Verify actual deployed SHAs for each release; this is not production approval.
+**Last verified 19 October 2026:** both staging services deploy compatible contract 0.5.1 releases from `main`. Wallet-owned drafts, real Pinata integration and desktop Phantom authentication are verified. The Create Coin workflow is verified with real services on public devnet; demo staging keeps launches and financial operations disabled. Production has no deployment triggers. Verify actual deployed SHAs for each release; this is not production approval.
 
 Migration 003 was applied to staging only after the approved backup/restore rehearsal and identity audit; migrations 001–004 are now represented in the compatible release. The 18 October release at `dd17c4f` retained existing agents and draft records. Older transition notes describe earlier blockers as historical checkpoints. No new migration is needed for the website content and preview update.
 
@@ -272,6 +274,6 @@ After verifying production remains isolated and the complete series passes valid
 
 Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Market availability and verified receipts are never simulated as live data; earned creator-fee settlement and production financial enablement remain gated.
 
-Current Phase 2 completion checklist: [verified milestones and remaining gates](docs/PHASE2_STATUS.md). Physical Phantom mobile remains pending; desktop Developer Buy and public-Devnet SOL creator-fee collection are complete.
+Current Phase 2 completion checklist: [verified milestones and remaining gates](docs/PHASE2_STATUS.md). Physical Phantom mobile on-chain acceptance is deferred; authentication/layout checks passed. Desktop Developer Buy and public-Devnet SOL creator-fee collection are complete.
 
 Official-domain and deployment readiness: [current public-demo rollout and gates](docs/PUBLIC_WEBSITE_READINESS.md). Physical mobile on-chain acceptance is deferred at the owner’s request; temporary mobile services are stopped.

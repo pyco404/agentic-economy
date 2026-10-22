@@ -66,6 +66,17 @@ describe('offline reserved mint co-signing',()=>{
   await expect(inspectMintSigningReview({...review,protocolFeeRecipients:{...recipients,buybackFeeRecipient:f.policy.deployer}},f.policy)).rejects.toThrow('protocol fee recipient');
   await expect(inspectMintSigningReview({...review,protocolFeeRecipients:undefined},f.policy)).rejects.toThrow('pinned');
  });
+ it('requires a fresh approved hash after renewal and rejects the preceding public signature',async()=>{
+  const f=await fixture(),oldArtifact=await coSignReviewedMint(f.review,f.policy,f.review.messageSha256,f.mint.secretKey);
+  const blockhash=Keypair.generate().publicKey.toBase58(),built=await buildUnsignedPumpLaunch(f.input,blockhash,[f.table]);
+  const next={...f.review,recentBlockhash:blockhash,unsignedTransaction:built.transaction,messageSha256:mintMessageHash(VersionedTransaction.deserialize(Buffer.from(built.transaction,'base64'))),lastValidBlockHeight:250,
+    renewal:{previousMessageSha256:f.review.messageSha256,previousLastValidBlockHeight:100,finalizedBlockHeight:101,checkedAt:new Date().toISOString()}};
+  await expect(coSignReviewedMint(next,f.policy,f.review.messageSha256,f.mint.secretKey)).rejects.toThrow('hash');
+  await expect(verifyMintSigningArtifact(next,f.policy,oldArtifact)).rejects.toThrow('attempt');
+  const fresh=await coSignReviewedMint(next,f.policy,next.messageSha256,f.mint.secretKey);
+  await expect(verifyMintSigningArtifact(next,f.policy,fresh)).resolves.toEqual(fresh);
+  await expect(inspectMintSigningReview({...next,renewal:{...next.renewal,finalizedBlockHeight:100}},f.policy)).rejects.toThrow('expiry');
+ });
  it('refuses mint/recipient/deployer substitutions and invalid network claims',async()=>{
   const f=await fixture(),other=Keypair.generate().publicKey.toBase58();
   for(const patch of [{mint:other},{launcherWallet:other},{platformTreasury:other},{agentRewardsTreasury:other},{network:'devnet'},{genesisHash:other}])
@@ -105,6 +116,21 @@ describe('offline reserved mint co-signing',()=>{
    await expect(withMintReservation(dir,{...reservation,launchId:'different'},async()=>{calls++;})).rejects.toThrow('reserved');
    await expect(withMintReservation(dir,{...reservation,messageSha256:'b'.repeat(64)},async()=>{calls++;})).rejects.toThrow('reserved');
    expect(calls).toBe(2);
+  }finally{rmSync(dir,{recursive:true,force:true});}
+ });
+ it('appends explicitly linked renewals without changing the original reservation or allowing forks/stale replays',async()=>{
+  const dir=mkdtempSync(join(tmpdir(),'aeco-mint-renewal-test-'));
+  const first={launchId:'fixture',mint:Keypair.generate().publicKey.toBase58(),messageSha256:'a'.repeat(64)};
+  const next={...first,messageSha256:'b'.repeat(64),previousMessageSha256:first.messageSha256};
+  try{
+   await withMintReservation(dir,first,async()=>undefined);const original=readFileSync(join(dir,first.mint+'.json'),'utf8');
+   await withMintReservation(dir,next,async()=>undefined);await withMintReservation(dir,next,async()=>undefined);
+   expect(readFileSync(join(dir,first.mint+'.json'),'utf8')).toBe(original);
+   expect(readFileSync(join(dir,first.mint+'.renewals.jsonl'),'utf8').trim().split('\n')).toHaveLength(1);
+   await expect(withMintReservation(dir,first,async()=>undefined)).rejects.toThrow('reserved');
+   await expect(withMintReservation(dir,{...next,messageSha256:'c'.repeat(64)},async()=>undefined)).rejects.toThrow('reserved');
+   await withMintReservation(dir,{...next,messageSha256:'c'.repeat(64),previousMessageSha256:next.messageSha256},async()=>undefined);
+   expect(readFileSync(join(dir,first.mint+'.renewals.jsonl'),'utf8').trim().split('\n')).toHaveLength(2);
   }finally{rmSync(dir,{recursive:true,force:true});}
  });
  it('blocks concurrent signers and keeps an unsuccessful signing attempt reserved',async()=>{

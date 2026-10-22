@@ -1,5 +1,6 @@
 /** Explicit operator-started verification server; never imported by the deployment entrypoint. */
 import pg from 'pg';
+import {installMobileLaunchScope} from './mobile-launch-scope.js';
 import {readdir,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {mobileVerificationPolicy,restrictMobileVerification} from './mobile-verification-policy.js';
@@ -40,6 +41,22 @@ ctx.chain.submitLaunchTransaction=async transaction=>{
  if(!broadcastsApproved)throw new ChainFeatureUnavailable('verification_approval_required','Devnet wallet transaction approval is still pending. Nothing was broadcast.');
  return submit(transaction);
 };
-const app=await buildApp(ctx);restrictMobileVerification(app,policy,ctx.auth.authenticate.bind(ctx.auth));await app.listen({host:'127.0.0.1',port:8797});ctx.runtime.start();
+let mobileScope:{draftId:string}|undefined;
+if(policy.mobile&&broadcastsApproved){
+ const scope=process.env.AECO_MOBILE_APPROVAL_JOURNAL;
+ if(!scope||policy.wallet!=='Aziw8URxK23irkF6VZQrq28HoyyMagxA66jpotBPiiYe')throw Error('Specific durable mobile launch approval required');
+ mobileScope=await installMobileLaunchScope(ctx,scope);
+}
+const app=await buildApp(ctx);
+if(mobileScope){const draftId=mobileScope.draftId;app.addHook('preValidation',async(req,reply)=>{
+ if(['POST','PATCH','DELETE'].includes(req.method)&&req.url.startsWith('/api/v1/launchpad/drafts')){
+  const id=(req.params as {id?:string}).id;
+  if(id!==draftId||req.method==='DELETE')return reply.code(403).send({error:{code:'forbidden',message:'Only the separate approved FOLD6 draft may be changed during this test.'}});
+  if(req.method==='PATCH'){const f=(req.body as {fields?:{name?:string;symbol?:string;quoteAsset?:string;devBuyBps?:number}}).fields;
+   if(f?.name!=='Fold6 Mobile Test'||f.symbol!=='FOLD6'||f.quoteAsset!=='SOL'||f.devBuyBps!==200)return reply.code(403).send({error:{code:'forbidden',message:'The approved test requires FOLD6, SOL and exactly 2% Developer Buy.'}});
+  }
+ }
+});}
+restrictMobileVerification(app,policy,ctx.auth.authenticate.bind(ctx.auth));await app.listen({host:'127.0.0.1',port:8797});ctx.runtime.start();
 console.log(JSON.stringify({verification:'public-devnet only',url:origin+'/launchpad',walletBroadcastsApproved:broadcastsApproved,developerBuy:await ctx.chain.devBuySupport?.(),database:'aeco_launch_execution_20261018_test',platformTreasury:platform,agentTreasury:agent,launchCharge:'0.05 DEVNET SOL',rpc}));
 let closing=false;const stop=async()=>{if(closing)return;closing=true;await app.close();await ctx.close();process.exit(0);};process.on('SIGINT',()=>void stop());process.on('SIGTERM',()=>void stop());

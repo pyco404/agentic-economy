@@ -1,5 +1,7 @@
 # Gamine reuse and Phase 2 release readiness — 22 October 2026
 
+**Current 22 October decision:** use one permanent production environment, not a staging-promotion pipeline. Backend/frontend `5fa0507` are live. Gamine transaction/signature/recovery patterns have been re-inspected and reused where compatible; retain our working V3 uploads, 0.05 SOL, 60/40 and owner-local vanity key. The earlier deployment checkpoints below are historical. [Current comparison and release/retirement audit](RAILWAY_SINGLE_PRODUCTION.md).
+
 Mainnet activation is **NO-GO** pending the production gates below. No Mainnet transaction was submitted, no funds moved, and Gamine was not modified. Mobile on-chain acceptance stays deferred. Mainnet public launching belongs to Phase 2; do not start Phase 3.
 
 ## What the reference actually proves

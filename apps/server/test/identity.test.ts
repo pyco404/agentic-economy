@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ActivateAgentResponse, AgentResponse, MyActivationResponse } from "@agentic-economy/shared";
+import { commonAgentId } from "../src/sim/common-agents.js";
 import { DEFAULT_STRATEGY } from "../src/sim/engine.js";
 import { idem, launch, login, makeEnv, type TestEnv } from "./helpers.js";
 
@@ -52,15 +53,52 @@ describe("token-linked activation", () => {
     expect(paused.json().agent.status).toBe("paused");
   });
 
-  it("allows one token-linked agent per wallet: a wallet that launched two tokens can activate only one", async () => {
-    const { launcher, communityId: first } = await launched();
-    const { communityId: second } = await launched(launcher); // launching more tokens is not limited
+  it("allows unlimited distinct launches while restricting token-linked activation to one per wallet", async () => {
+    const { launcher, communityId: first, mint: firstMint } = await launched();
+    const { communityId: second, mint: secondMint } = await launched(launcher); // launching more tokens is not limited
     const ok = await activate(launcher, first);
     expect(ok.statusCode).toBe(201);
     const again = await activate(launcher, second);
     expect(again.statusCode).toBe(409);
     expect(again.json().error.code).toBe("wallet_already_activated");
     expect(again.json().error.details).toMatchObject({ activationId: ok.json().activation.id, agentId: ok.json().agent.id, communityId: first, status: "active" });
+    expect(second).not.toBe(first);
+    expect(secondMint).not.toBe(firstMint);
+    const mine = MyActivationResponse.parse((await env.app.inject({ method: "GET", url: "/api/v1/me/activation", headers: launcher.auth })).json());
+    expect(mine.activation).toMatchObject({ agentId: ok.json().agent.id, communityId: first, tokenMint: firstMint });
+    expect(env.ctx.runtime.agentSummaries().filter(a => a.identity.kind === "token_linked" && a.ownerWallet === launcher.wallet)).toHaveLength(1);
+    // A wallet conflict is a rejection, never a successful reassignment to the second token.
+    expect(again.json().agent).toBeUndefined();
+  });
+
+  it("keeps token activation rights separate from an automatic Common Agent for the same wallet", async () => {
+    const { launcher, communityId, mint } = await launched();
+    const result = await activate(launcher, communityId);
+    expect(result.statusCode).toBe(201);
+    const original = ActivateAgentResponse.parse(result.json());
+    // The same mint may have multiple distinct holder identities; activation is a separate mapping.
+    const other = await login(env.app);
+    const observation = { type: "aeco.reconcile" as const, network: "devnet" as const, mint,
+      slot: 100, decimals: 6, checkedAt: new Date().toISOString(),
+      holders: [launcher, other].map(user => ({ wallet: user.wallet, balanceRaw: "1000000" })) };
+    await env.ctx.coord.enqueueCommand(observation, "test:holder-activation-separation");
+    await env.ctx.runtime.tickOnce();
+    await env.ctx.coord.enqueueCommand({ ...observation, slot: 101 }, "test:repeat-holder-purchase");
+    await env.ctx.runtime.tickOnce();
+    const ids = [launcher, other].map(user => commonAgentId("devnet", mint, user.wallet));
+    expect(new Set([...ids, original.agent.id]).size).toBe(3);
+    const agents = env.ctx.runtime.agentSummaries();
+    expect(agents.filter(a => a.identity.kind === "aeco_observed")).toHaveLength(2);
+    for (const id of ids) {
+      expect(agents.find(a => a.id === id)).toMatchObject({ ownerWallet: null, identity: { kind: "aeco_observed", tokenMint: mint } });
+      const denied = await env.app.inject({ method: "PATCH", url: `/api/v1/agents/${id}`, headers: launcher.auth, payload: { status: "paused" } });
+      expect(denied.statusCode).toBe(403);
+    }
+    const mine = MyActivationResponse.parse((await env.app.inject({ method: "GET", url: "/api/v1/me/activation", headers: launcher.auth })).json());
+    expect(mine.activation?.id).toBe(original.activation.id);
+    expect(mine.agent?.id).toBe(original.agent.id);
+    expect(mine.agent?.identity).toEqual(original.agent.identity);
+    expect((await activate(launcher, communityId)).json().error.code).toBe("wallet_already_activated");
   });
 
   it("returns the original activation for a retried request and never creates a second agent", async () => {

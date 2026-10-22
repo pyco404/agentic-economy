@@ -21,6 +21,8 @@ export interface SimState {
   /** 2 since contract 0.3.0 (agent identity). v1 snapshots are upgraded on load: see `sim/identity.ts`. */
   version: 2;
   worldSeed: string;
+  /** Operator-installed synthetic city groups; never token registrations or observed holders. */
+  syntheticCity?: { profile: string; startedTick: number; groups: Array<{ id: string; name: string; description: string }> };
   /** Last complete finalized holder snapshot, persisted in the existing fenced snapshot/journal. */
   aecoPopulation?: { mint: string; network: "devnet" | "mainnet-beta"; slot: number; checkedAt: string; decimals: number; holders: number };
   tick: number;

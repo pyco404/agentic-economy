@@ -43,6 +43,11 @@ const Env = z.object({
   PLATFORM_TREASURY: PublicKey.optional(),
   AGENT_REWARDS_TREASURY: PublicKey.optional(),
   /** Raw base units (6 decimals for Pump coins). Default 1,000 tokens. */
+  AECO_COMMON_AGENTS_ENABLED: z.enum(["true", "false"]).default("false"),
+  AECO_MINT: PublicKey.optional(),
+  AECO_MINT_VERIFIED: z.enum(["true", "false"]).default("false"),
+  AECO_RECONCILE_INTERVAL_MS: z.coerce.number().int().min(60_000).default(1_800_000),
+  AECO_EXCLUDED_WALLETS: z.string().default(""),
   HOLDER_MIN_BALANCE_RAW: z.string().regex(/^\d+$/).default("1000000000"),
   ELIGIBILITY_CACHE_SECONDS: z.coerce.number().int().min(0).default(60),
   /** Demo house agents: per signed-in wallet, and across the whole city. */
@@ -125,7 +130,11 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (mainnetApproved && (e.SOLANA_CLUSTER !== "mainnet-beta" || !e.PUMP_LAUNCH_LOOKUP_TABLE || !feeRoutingVerified || e.PUMP_LAUNCH_ENABLED !== "true" || !(["https://useaeco.xyz","https://www.useaeco.xyz"].includes(e.AUTH_URI)) || e.CORS_ORIGINS.split(",").some(origin=>!["https://useaeco.xyz","https://www.useaeco.xyz"].includes(origin.trim()))))
     throw new Error("Approved Mainnet launching requires Mainnet RPC configuration, lookup table, verified routing, HTTPS and explicit launch enablement");
 
+  if (e.AECO_COMMON_AGENTS_ENABLED === "true" && (!e.AECO_MINT || e.AECO_MINT_VERIFIED !== "true" || !e.HELIUS_API_KEY || demo || e.SOLANA_CLUSTER === "localnet" || (e.MODE === "production") !== (e.SOLANA_CLUSTER === "mainnet-beta")))
+    throw new Error("Automatic Common Agents require a verified mint, matching network and backend Helius reads; no financial execution is enabled");
+  const aecoExcluded = e.AECO_EXCLUDED_WALLETS.split(",").map(x => x.trim()).filter(Boolean).map(x => PublicKey.parse(x));
   return {
+    aecoCommonAgents: { enabled: e.AECO_COMMON_AGENTS_ENABLED === "true", mint: e.AECO_MINT ?? null, intervalMs: e.AECO_RECONCILE_INTERVAL_MS, excludedWallets: aecoExcluded },
     mode: e.MODE,
     role: e.ROLE as Role,
     launchRegistrationCommitment: e.LAUNCH_REGISTRATION_COMMITMENT ?? (e.MODE === "production" ? "finalized" : "confirmed"),

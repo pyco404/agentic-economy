@@ -9,7 +9,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
-| Latest application staging release | **DEPLOYED AND VERIFIED** — backend a2e1847 / frontend 9f1d3bc, compatible contract 0.5.1; browser, API/database, WSS and demo restrictions pass |
+| Application staging release | **DEPLOYED AND VERIFIED:** backend/frontend **6758f91**, contract 0.5.2; actual HTTPS, API/database, WSS, clean routes, persistent world and responsive browser checks pass; financial execution off |
 
 ## Historical restricted mobile preparation — stopped
 
@@ -76,6 +76,10 @@ Current priority: public website readiness and an isolated production release wi
 
 [Actual-code comparison and release gates](GAMINE_LAUNCHPAD_INTEGRATION.md). Gamine was inspected read-only, including a finalized historical Mainnet creation. Its frozen public lookup table works with Agentic Economy’s existing SDK, official treasuries, 0.05 SOL charge and locked 60/40 sharing in unsigned Mainnet simulations at 0%, 2% and 3.5% Developer Buy. These are simulations, not Agentic Economy Mainnet launches.
 
-A separate default-false `MAINNET_LAUNCH_APPROVED` gate, live genesis/program deployment checks and Mainnet wallet/recovery bindings are implemented. Neither Railway execution configuration nor treasury custody changed. Mainnet public launching remains Phase 2 scope, pending production readiness and separate activation approval. Public-demo frontend/backend have now completed their existing queued deployments at a2e1847; approved schema 001–004 and health are verified. Production database setup/schema approval, real-domain routing/HTTPS, production credentials/restore verification and final release acceptance remain open.
+A separate default-false `MAINNET_LAUNCH_APPROVED` gate, live genesis/program deployment checks and Mainnet wallet/recovery bindings are implemented. Neither Railway execution configuration nor treasury custody changed. Mainnet public launching remains Phase 2 scope, pending production readiness and separate activation approval. Public-demo frontend/backend have now completed their existing queued deployments at a2e1847; approved schema 001–004 and health are verified. The owner subsequently approved a fresh production database: aeco_production is provisioned, verified initially empty, and migrated through 004 with exact checksum verification. Production API/frontend deployment and provider-key reuse need direct approval after automatic review rejected them as outside the database-only scope. Real-domain routing/HTTPS, production credentials/restore verification and final release acceptance remain open.
 
 The owner explicitly approved replacing per-wallet daily preparation quotas and timed mutation cooldowns with eight concurrent authenticated preparation requests per API process. Ownership, CSRF, authentication throttles, two-upload/four-execution concurrency, operation leases, exact signatures and idempotency remain. There is no per-wallet launch-count gate.
+
+[Exact candidate deployments and final test checkpoint](evidence/phase2-gamine-release-2026-10-22.json). Root documentation commits may follow the application SHA without triggering a new build. No duplicate deployment was requested.
+
+Production [database evidence](evidence/production-database-2026-10-22.json) and [specific deployment approval boundary/costs](PRODUCTION_PREPARATION.md). Actual staging [release browser evidence](evidence/staging-gamine-release-2026-10-22.json). The new staging release is verified, not merely green in Railway.

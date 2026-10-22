@@ -7,13 +7,12 @@ import { routeUrl, type Page } from "../navigation/routes";
 interface Props {
   items: readonly { id: Page; label: string; icon: LucideIcon }[];
   active: Page | null;
-  modeLabel: string;
   onNavigate: (page: Page) => boolean;
   onClose: () => void;
 }
 
 /** Oxude-style floating page menu, using the existing routes and guarded navigation. */
-export function MobileNavigation({ items, active, modeLabel, onNavigate, onClose }: Props) {
+export function MobileNavigation({ items, active, onNavigate, onClose }: Props) {
   const dialog = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
@@ -50,7 +49,7 @@ export function MobileNavigation({ items, active, modeLabel, onNavigate, onClose
           <span>Agentic <b>Economy</b><small>A WORLD THAT WORKS</small></span></div>
         <button type="button" className="mobile-navigation-close" aria-label="Close navigation" onClick={onClose}><X size={20} /></button>
       </header>
-      <div className="mobile-navigation-intro"><span>Explore the economy</span><span className="mobile-navigation-mode"><i aria-hidden="true" />{modeLabel}</span></div>
+      <div className="mobile-navigation-intro">Explore Agentic Economy</div>
       <nav className="mobile-navigation-pages" aria-label="Main navigation">
         {items.map(({ id, label, icon: Icon }) => <a key={id} href={routeUrl(id)} aria-current={active === id ? "page" : undefined}
           onClick={(event) => {

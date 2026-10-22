@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-10-22T09:13:26.907Z",
+  "environment": "Railway staging",
+  "authentication": "generated ephemeral message signer, not physical Phantom",
+  "financialExecution": "not requested",
+  "wallet": "63513i5baXUTCrUDwTwSencmtzd6BhwssYHg3mjgyCRZ",
+  "image": {
+    "cid": "bafkreia2vff6cvoqo3inojearpqs7aaf7ndi6x27i7uk6fbti3o6n6lhu4",
+    "ipfsUri": "ipfs://bafkreia2vff6cvoqo3inojearpqs7aaf7ndi6x27i7uk6fbti3o6n6lhu4",
+    "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreia2vff6cvoqo3inojearpqs7aaf7ndi6x27i7uk6fbti3o6n6lhu4",
+    "uploadId": "774f3fc9-2e3d-4202-99cf-e80366b864fe",
+    "status": "verified",
+    "mime": "image/png",
+    "width": 16,
+    "height": 16
+  },
+  "duplicateImageRequestReusedResult": true,
+  "metadata": {
+    "cid": "bafkreifesmtlqyc2a36plt6gbti6xg2pckd2iiifeelxqlvrp6dzb2qd5u",
+    "ipfsUri": "ipfs://bafkreifesmtlqyc2a36plt6gbti6xg2pckd2iiifeelxqlvrp6dzb2qd5u",
+    "gatewayUrl": "https://gateway.pinata.cloud/ipfs/bafkreifesmtlqyc2a36plt6gbti6xg2pckd2iiifeelxqlvrp6dzb2qd5u"
+  },
+  "draftPersistenceVerified": true,
+  "reviewVerified": true,
+  "duplicateMetadataRequestReusedResult": true,
+  "metadataGatewayStatus": 200,
+  "metadataArtworkReferenceVerified": true,
+  "imageGatewayStatus": 200,
+  "result": "Actual staging image and metadata upload confirmed; gateway statuses reported separately",
+  "testDraftCleanup": "Only this newly created test draft deleted"
+}

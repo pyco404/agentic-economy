@@ -14,13 +14,13 @@ Phase 2 completes only after this real Mainnet launch is initiated and approved 
 
 Before preparing its signing request, reconcile any existing official launch record, confirm the owner-approved token details/artwork/links and Developer Buy choice, re-attest live program/lookup-table and treasury configuration, produce an unsigned simulated transaction and exact maximum debit, then obtain separate transaction/activation approval. Do not invent a mint, copy a Gamine secret, fund a wallet, or silently create an official draft. Keep signature collection and broadcasting disabled until that approval.
 
-## Automatic Common Agent audit
+## Agent identity and activation audit
 
-Current code has durable, idempotent confirmed-launch community registration and headquarters placement (`services/launch.ts`, `sim/engine.ts`). This is **not automatic Common Agent creation**. `AgentService.activate` in `services/community.ts` is an explicit launcher-owned operation, currently disabled outside demo. Migration 003 enforces one token-linked agent per mint and one per activating wallet; launching additional tokens is unlimited.
+Confirmed launches durably register communities/HQs but do not yet reserve a separate unactivated token-agent identity. Current `AgentService.activate` combines identity creation with verified activation and remains demo-only. The correct rule is **one distinct agent identity per token, at most one activated token-linked agent per wallet**. Unlimited launches must never reuse the first token's identity or automatically grant control.
 
-The owner has now chosen **one Common Agent per confirmed token**, including multiple tokens by one wallet. The previous one-agent-per-wallet constraint must therefore change under a separately approved schema migration; no such migration is authorized or applied. [Concrete implementation/schema/rollout plan](COMMON_AGENT_PER_TOKEN_PLAN.md). Preserve existing agents and names, reuse atomic identity reservation and durable commands, and reconcile provisioning without retrying a coin or charging again. No agent receives signing authority or payout custody.
+Migration 003's `UNIQUE(activating_wallet)` is correctly scoped to activations and must remain. The earlier proposal to remove it is withdrawn. The smallest candidate adds a separate per-token identity registry, preserves existing activated IDs and binds activation to that token's identity. [Corrected audit, Gamine reuse and review-only schema candidate](COMMON_AGENT_PER_TOKEN_PLAN.md). No migration is applied or authorized; backup restoration, copied-data rehearsal and compatible application changes precede separate approval.
 
-Required regression coverage: finalized verified launch only; no creation for pending/failed/recovery-needed launches; exact creator ownership; duplicate/replayed/concurrent confirmation; restart recovery; existing activation; multiple launches by one wallet; and consistent Explore/community linkage. Any schema change needs separate migration approval. This document is an audit and next-step plan, not a claim that automatic production agents are implemented.
+Automatic $AECO Common Agents are a different network/mint/holder-wallet mapping, already durable in the simulation journal/snapshots. They bypass activation reservations intentionally and grant no owner controls. Four hundred holders of one mint produce four hundred identities, including holders who already have a token-linked activation. Existing Gamine-compatible deduplication is reused without importing Gamine's different activation policy.
 
 ## Financial activation gates
 
@@ -28,4 +28,4 @@ Complete actual isolated backup restoration, final recovery/security/operational
 
 ## Updated automatic Common Agent scope
 
-Phase 2 additionally requires automatic one-per-$AECO-holder Common Agents, basic movement and reconciled public counts after the official mint is launched and verified. No login or manual activation is needed. Phase 3 expands those same identities. [Implementation and remaining acceptance](AECO_COMMON_AGENTS.md). The earlier one-per-token proposal concerns a distinct future token-linked policy and does not authorize changing current launcher identity constraints.
+Phase 2 additionally requires automatic one-per-$AECO-holder Common Agents, basic movement and reconciled public counts after the official mint is launched and verified. No login or manual activation is needed. Phase 3 expands those same identities. [Implementation and remaining acceptance](AECO_COMMON_AGENTS.md). Token-linked identity provisioning remains separate from holder appearance and must preserve one verified token-linked activation per wallet.

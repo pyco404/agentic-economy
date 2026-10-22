@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "phase": "write",
+      "syntheticOnly": true,
+      "renewedReviewSaved": true,
+      "staleConcurrentWriteRejected": true,
+      "duplicateReceiptBlocked": true,
+      "broadcasts": 0
+    },
+    {
+      "phase": "verify",
+      "restartPreservedReviewAndHistory": true,
+      "signedPayloadAndSignaturePreserved": true,
+      "receiptCount": 1,
+      "actualProductionWrites": 0,
+      "broadcasts": 0
+    }
+  ],
+  "clusterStopped": true,
+  "originalBackupPreserved": true,
+  "productionAndOtherDatabasesTouched": false
+}

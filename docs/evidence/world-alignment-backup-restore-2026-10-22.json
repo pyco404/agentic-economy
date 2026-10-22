@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-10-22T21:22:56.863352+00:00",
+  "archiveBasename": "aeco_production_pre_world_20261022T211242Z.dump",
+  "archiveSha256": "9d70da38cea4c392375ee13fc72b08bcb050eb9bb66d728b3e892fe7d64905c9",
+  "archivePermissionsPrivate": true,
+  "targetDatabase": "aeco_world_rollback_20261022_test",
+  "targetInitiallyEmpty": true,
+  "clusterDirectory": "/tmp/aeco-world-rollback.1m50k9tf",
+  "tcpDisabled": true,
+  "productionWrites": 0,
+  "migrationsApplied": [],
+  "restoreSucceeded": true,
+  "allTwelveProtectedTablesMatchPretransition": true,
+  "drafts": {
+    "count": 2,
+    "hash": "a58b73f7472ddae3bf9d99368ac7d200"
+  },
+  "restoredWorld": {
+    "worldId": "world_nondzj",
+    "seed": "aeco-production-genesis",
+    "generatorVersion": 1,
+    "latestSnapshotSeed": "aeco-production-genesis",
+    "schemaMigrations": 4
+  },
+  "restartPersistenceVerified": true,
+  "liveProductionRollbackPerformed": false,
+  "scope": "Exact pre-transition archive restored only into a fresh disposable local database; no production rollback or second alignment.",
+  "rollbackCaveat": "A live rollback must stop the writer and pair restored world seed/snapshot with matching backend WORLD_SEED. Recheck and preserve all post-cutover business writes before considering any production database restore; separate live restore approval is required.",
+  "isolatedClusterStopped": true,
+  "engineRecovery": {
+    "target": "aeco_world_rollback_20261022_test",
+    "seed": "aeco-production-genesis",
+    "snapshotHashVerified": true,
+    "restoredSnapshotResumedInMemory": true,
+    "databaseWrites": 0
+  }
+}

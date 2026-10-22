@@ -21,6 +21,8 @@ export interface SimState {
   /** 2 since contract 0.3.0 (agent identity). v1 snapshots are upgraded on load: see `sim/identity.ts`. */
   version: 2;
   worldSeed: string;
+  /** Last complete finalized holder snapshot, persisted in the existing fenced snapshot/journal. */
+  aecoPopulation?: { mint: string; network: "devnet" | "mainnet-beta"; slot: number; checkedAt: string; decimals: number; holders: number };
   tick: number;
   rngState: number;
   counters: { action: number; task: number; lot: number; receipt: number; event: number };
@@ -217,7 +219,14 @@ export interface TickOutput {
 }
 
 /** Inputs applied at the start of a tick. Persisted (command log) so state can be replayed deterministically. */
+export interface AecoSnapshot {
+  /** Existing verified native token community when available; never creates a synthetic launch. */
+  communityId?: string;
+  mint: string; network: "devnet" | "mainnet-beta"; slot: number; checkedAt: string; decimals: number;
+  holders: Array<{ wallet: string; balanceRaw: string }>;
+}
 export type SimCommand =
+  | ({ type: "aeco.reconcile" } & AecoSnapshot)
   | {
       /** Pre-0.3.0 holder activation. No longer issued; still replayed from the log (creates a legacy agent). */
       type: "agent.create";

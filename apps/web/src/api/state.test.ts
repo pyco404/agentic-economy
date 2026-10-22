@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { demoDashboard, worldChunkToVisual } from "./adapter";
 import { applyServerEvent, mergeDashboard } from "./state";
 import type { ServerEvent, WorldChunk } from "./shared";
+const fixtureWorld=demoDashboard().bootstrap;
 const snapshot = (
   agents: ReturnType<typeof demoDashboard>["agents"],
   tick: number,
@@ -14,8 +15,8 @@ const snapshot = (
   ts: new Date().toISOString(),
   data: {
     mode: "demo",
-    worldId: "genesis-demo",
-    seed: "42",
+    worldId: fixtureWorld.worldId,
+    seed: fixtureWorld.seed,
     reason: "subscription_changed",
     subscribedChunks: chunks,
     agents,
@@ -24,6 +25,17 @@ const snapshot = (
   },
 });
 describe("authoritative world reconciliation", () => {
+  it('keeps the old complete world until a foreign-seed snapshot is replaced by a complete HTTP world',()=>{
+    const d=demoDashboard(),event=snapshot([],500,null);
+    if(event.type!=='world.snapshot')throw Error('fixture');event.data.worldId='world_approved';event.data.seed='approved-seed';
+    expect(applyServerEvent(d,event)).toBe(d);
+    const incoming={...d,bootstrap:{...d.bootstrap,worldId:event.data.worldId,seed:event.data.seed},activities:[]};
+    expect(mergeDashboard(d,incoming)).toBe(incoming);
+  });
+  it('does not replay old-world activity into an explicitly aligned simulation',()=>{
+    const d=demoDashboard();d.stats.simulation={profile:'fixture',startedTick:100,groups:[]};
+    const event=snapshot([],99,null);expect(applyServerEvent(d,event)).toBe(d);
+  });
   it("keeps offscreen agents in global lists when a region snapshot arrives", () => {
     const d = demoDashboard(),
       a = d.agents[0]!;

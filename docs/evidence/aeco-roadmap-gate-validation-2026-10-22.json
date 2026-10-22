@@ -1,0 +1,20 @@
+{
+  "scope": "Editorial roadmap and release-checklist update only",
+  "contentTestsPassed": 11,
+  "roadmapBrowserTestsPassed": 6,
+  "browserWidths": [
+    320,
+    768,
+    1024,
+    1440,
+    390
+  ],
+  "worldPersistenceChecksPassed": true,
+  "typecheck": "passed",
+  "lint": "passed with two existing effect-cleanup warnings",
+  "build": "passed with existing bundle-size warning",
+  "tokenParametersApproved": false,
+  "mainnetActivation": false,
+  "transactionsSubmitted": 0,
+  "migrationsAdded": 0
+}

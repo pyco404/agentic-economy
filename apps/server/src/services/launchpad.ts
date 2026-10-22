@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import sharp from 'sharp';
-import { DraftImage, DraftReview, IpfsAsset, SavedLaunchDraft, tokenFieldIssues, type DraftFields as Fields } from '@agentic-economy/shared';
+import { DraftImage, DraftReview, IpfsAsset, SavedLaunchDraft, PrepareLaunchResponse, tokenFieldIssues, type DraftFields as Fields } from '@agentic-economy/shared';
 import type { AppConfig } from '../config.js';
 import type { LaunchpadStore } from '../store/launchpad.js';
 import { assertLaunchWalletAllowed } from './launch-permission.js';
@@ -27,7 +27,21 @@ export class LaunchpadService {
  async launchIssues(fields:Fields){return [...tokenFieldIssues(fields,true),...(fields.quoteAsset==='SOL'?[]:[{field:'quoteAsset' as const,code:'quote_unavailable',message:'Only SOL is supported for new launches.'}]),...await this.readiness(fields)];}
  /** Gate before anything is sent to Pinata: invalid details never consume IPFS storage. */
  private async assertLaunchReady(fields:Fields){const issues=await this.launchIssues(fields);if(issues.length)throw new AppError('bad_request',issues[0]!.message,{issues});}
- async operation<T>(wallet:string,key:string,kind:string,content:unknown,work:()=>Promise<T>):Promise<T>{if(['launch','image','metadata'].includes(kind))assertLaunchWalletAllowed(this.config,wallet);const claim=await this.store.claim(wallet,key,kind,digest(content));if(claim.replayed)return claim.result as T;try{const out=await work();await this.store.finish(wallet,key,kind,out);return out;}catch(e){await this.store.finish(wallet,key,kind,null,true);throw e;}}
+ async operation<T>(wallet:string,key:string,kind:string,content:unknown,work:()=>Promise<T>):Promise<T>{
+  const authorize=(result?:unknown)=>{
+   if(!['launch','image','metadata'].includes(kind))return;
+   assertLaunchWalletAllowed(this.config,wallet);
+   if(kind==='launch'&&result!==undefined){
+    const {launch}=PrepareLaunchResponse.parse(result);
+    assertLaunchWalletAllowed(this.config,wallet,launch.mode==='production'?'mainnet-beta':launch.execution?.network);
+   }
+  };
+  authorize();
+  const claim=await this.store.claim(wallet,key,kind,digest(content));
+  if(claim.replayed){authorize(claim.result);return claim.result as T;}
+  try{const out=await work();authorize(out);await this.store.finish(wallet,key,kind,out);return out;}
+  catch(e){await this.store.finish(wallet,key,kind,null,true);throw e;}
+ }
  create(wallet:string,key:string,fields:Fields){return this.operation(wallet,key,'create',fields,async()=>{
   // Deterministic operation identity also survives a crash between insertion and receipt persistence.
   const h=digest(`${wallet}:${key}`),id=`${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`;

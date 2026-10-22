@@ -11,10 +11,10 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
-| Automatic $AECO Common Agents | **IMPLEMENTED / FIXTURES VERIFIED, RELEASE PENDING:** default-off finalized ownership indexing, durable identities, basic navigation and public population; real-mint acceptance awaits the separately approved official launch. Phase 3 expands these same identities. See [implementation and acceptance](AECO_COMMON_AGENTS.md) |
+| Automatic $AECO Common Agents | **IMPLEMENTED / STAGING DEPLOYED; REAL-MINT ACTIVATION PENDING:** 400/10,000-identity fixtures, isolated PostgreSQL restart/re-entry, Devnet holder reads and subscription reconnection verified. Default-off finalized indexing, durable identities, basic navigation and public population await the separately approved official mint for real AECO acceptance. Phase 3 expands these same identities. See [implementation and acceptance](AECO_COMMON_AGENTS.md) |
 | Official $AECO Mainnet launch | **REQUIRED / NOT LAUNCHED:** owner-initiated production TOKEN/SOL launch and independent mint/supply/metadata/fee-routing/finality/Explore verification are mandatory before Phase 2 completion and Phase 3 |
 | Public website | **LIVE AND VERIFIED:** https://useaeco.xyz; www redirect, valid apex/www/API TLS, official API/WSS, actual-origin automated auth/session refresh and responsive browser checks pass; transactions remain off |
-| Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **aa1f53a**, compatible contract 0.5.2; native-token roadmap gate, responsive browser, WSS, persistent world and API health checks pass. New capacity/header live acceptance remains pending; financial execution off |
+| Application staging release | **DEPLOYED AND BROWSER VERIFIED:** backend and frontend **84d7b2e**, contract **0.6.0**. Actual HTTPS/API/readiness/WebSocket, clean navigation, desktop/tablet/mobile and persistent world checks pass. Automatic native indexing stays disabled (`mint=null`); financial execution remains off. [Release and verification evidence](evidence/aeco-common-agents-2026-10-22.json) |
 
 ## Historical restricted mobile preparation — stopped
 

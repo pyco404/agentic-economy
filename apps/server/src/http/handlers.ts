@@ -43,7 +43,10 @@ export function registerHandlers(ctx: AppContext, register: Register) {
 
   /* ---------------- economy ---------------- */
 
-  register("activities", async ({ query }) => ({ mode, ...(await ctx.store.listEvents(query.cursor ?? null, query.limit)) }));
+  register("activities", async ({ query }) => {
+    const page=await ctx.store.listEvents(query.cursor??null,query.limit),boundary=state().syntheticCity?.startedTick;
+    return {mode,...page,items:boundary===undefined?page.items:page.items.filter(e=>e.tick>=boundary)};
+  });
 
   register("markets", async () => {
     const s = state();

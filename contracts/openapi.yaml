@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.5.1
+  version: 0.5.2
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -3407,6 +3407,7 @@ components:
               enum:
                 - devnet
                 - localnet
+                - mainnet-beta
             quoteAsset:
               type: string
               enum:
@@ -3542,6 +3543,7 @@ components:
               enum:
                 - devnet
                 - localnet
+                - mainnet-beta
             quoteAsset:
               type: string
               enum:
@@ -7004,6 +7006,7 @@ components:
               enum:
                 - devnet
                 - localnet
+                - mainnet-beta
             quoteAsset:
               type: string
               enum:
@@ -7166,6 +7169,7 @@ components:
               enum:
                 - devnet
                 - localnet
+                - mainnet-beta
             quoteAsset:
               type: string
               enum:

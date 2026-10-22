@@ -83,3 +83,11 @@ The owner explicitly approved replacing per-wallet daily preparation quotas and 
 [Exact candidate deployments and final test checkpoint](evidence/phase2-gamine-release-2026-10-22.json). Root documentation commits may follow the application SHA without triggering a new build. No duplicate deployment was requested.
 
 Production [database evidence](evidence/production-database-2026-10-22.json) and [specific deployment approval boundary/costs](PRODUCTION_PREPARATION.md). Actual staging [release browser evidence](evidence/staging-gamine-release-2026-10-22.json). The new staging release is verified, not merely green in Railway.
+
+## Configurable preparation capacity
+
+`LAUNCHPAD_PREPARATION_CONCURRENCY` defaults to **8** and accepts an integer from 1–256. It is shared by every authenticated wallet in each API process, not a per-wallet daily, lifetime or launch-count limit. Additional API replicas have their own configured capacity; this is not a distributed fleet-wide semaphore. Adjust it with measured resource capacity. Existing two-upload/four-execution limits stay independent and unchanged.
+
+When preparation capacity is exhausted, the request is rejected before its operation starts with HTTP **503**, `Retry-After: 1`, and `error.details = {retryable: true, retryAfterSeconds: 1}`. The message asks the caller to retry the same request. The header is a backoff hint, not an enforced wallet cooldown. Reuse the same idempotency key and payload for a retry; an intentional new launch uses a new key. Signed launches must recover the existing attempt/signature rather than start another coin. Authentication/IP protections, CSRF, ownership, optimistic versions, validation, media safeguards, operation leases and transaction idempotency remain enforced.
+
+Regression coverage includes 105 intentional same-content drafts by one wallet, sequential saves past the former timed limit, default/lower/higher concurrent capacity shared across wallets, explicit retryable overload responses, unauthorized/invalid-origin rejection while busy, slot release after validation errors and successful requests, and same-key retry/replay returning one saved draft. Existing launch/recovery regressions continue to verify one submission and one platform-charge receipt per attempt. No Mainnet execution was enabled.

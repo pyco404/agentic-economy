@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-22T15:10:09.909Z",
+  "environment": "production",
+  "base": "https://useaeco.xyz",
+  "api": "https://api.useaeco.xyz",
+  "transactionRequests": 0,
+  "launchEnabled": false,
+  "layouts": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1000,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "tablet",
+      "width": 820,
+      "height": 1180,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "folded",
+      "width": 344,
+      "height": 882,
+      "horizontalOverflow": false
+    }
+  ],
+  "phase2NativeLaunchRequired": true,
+  "phase3Blocked": true,
+  "worldRetainedDuringNavigation": true,
+  "apiHealth": "passed",
+  "webSocketFrames": 7,
+  "pageErrors": []
+}

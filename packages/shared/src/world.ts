@@ -183,6 +183,12 @@ export const WorldStats = z
     tick: z.number().int(),
     population: z.number().int().describe("Simulated residents (demand sink)."),
     activeAgents: z.number().int(),
+    aecoPopulation: z.object({
+      status: z.enum(["disabled", "syncing", "current", "stale"]),
+      mint: z.string().nullable(), network: z.enum(["devnet", "mainnet-beta"]).nullable(),
+      holders: z.number().int().nonnegative(), commonAgents: z.number().int().nonnegative(),
+      indexedSlot: z.number().int().nonnegative().nullable(), checkedAt: z.string().nullable(),
+    }).optional(),
     pausedAgents: z.number().int(),
     communities: z.number().int(),
     buildings: z.number().int(),

@@ -1,5 +1,7 @@
 # Phase 2 (Token Launchpad): completion record, 19 October 2026
 
+> Status correction, 22 October 2026: **Phantom desktop Developer Buy VERIFIED** — Zappercoin ($ZAP), 2%, exactly 20,000,000 tokens. Finalized Devnet transaction and database receipt independently checked. Physical mobile remains unverified. Older pending-desktop wording below is historical and superseded; no repeat desktop transaction is requested. [Acceptance evidence](phantom-desktop-developer-buy-2026-10-22.md) · [Current Phase 2 priorities](phase2-sol-only-acceptance.md). USDC is outside current scope.
+
 > Superseded scope, 20 October 2026: Phase 2 new launches are TOKEN/SOL only. USDC launch and USDC-specific fee acceptance are deferred, not completion blockers. Historical evidence below is retained for audit; instructions to enable USDC are obsolete and must not be executed. See [current acceptance scope](phase2-sol-only-acceptance.md).
 
 

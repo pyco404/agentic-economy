@@ -1,0 +1,142 @@
+{
+  "network": "isolated-localnet (devnet programs/config cloned)",
+  "genesis": "7ASTpBQoMVsmyJ7Tiymg111RAocEBwzdE7A6C8XZj9wW",
+  "financialScope": "local validator lamports only",
+  "steps": [
+    {
+      "name": "launched",
+      "mint": "5K3Nmsy1eGWkDbzPGXZgDH6i4PKXQv6DvvfWvEHzrUpP",
+      "sharingConfig": {
+        "address": "D2k9C3yADyWBwtseDadCcCVkmuBQmoSkZbwpuKRHvDnR",
+        "version": 2,
+        "status": "Active",
+        "mint": "5K3Nmsy1eGWkDbzPGXZgDH6i4PKXQv6DvvfWvEHzrUpP",
+        "admin": "8xTJhjBKyTpoKJDY4Lzo5eHYXRjHPU3etDrNGkVSqRM4",
+        "adminRevoked": true,
+        "shareholders": [
+          {
+            "address": "GHWSn3uARJW1mNoUCx4VCp48oqYvWZzhbS2fvPw5iq4u",
+            "shareBps": 6000
+          },
+          {
+            "address": "GF67eLfMCZ5MJmeRq4ufxUWxQ6ZemndTeDDfxTyT6Zyo",
+            "shareBps": 4000
+          }
+        ]
+      }
+    },
+    {
+      "name": "buy",
+      "signature": "6V2mBiVbQH3eTETahQEBmyC9xF3gaank472CT3YjjQjWj59sU7bskr2F83HQcTMsHNSBtRjHYu9RRXseRdovg78",
+      "tokens": "793100000000000",
+      "solAmount": "860679262"
+    },
+    {
+      "name": "curve_complete",
+      "curve": {
+        "slot": 2050,
+        "complete": true,
+        "progressPct": 100,
+        "quoteMint": "So11111111111111111111111111111111111111112"
+      }
+    },
+    {
+      "name": "distribution_complete-unmigrated",
+      "isGraduated": false,
+      "sweepCount": 0,
+      "instructions": [
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P:a572670079cef751"
+      ],
+      "minimum": {
+        "minimumRequired": "0d9800",
+        "distributableFees": "26e991",
+        "canDistribute": true,
+        "isGraduated": false,
+        "feesQuoteMint": "So11111111111111111111111111111111111111112"
+      },
+      "signature": "NRyjLo5Z5js13ibXnyDiLnWfmFkr4R4ZH7iFqbcutcVtSYguGpNH2dZBWYuvKPCcdYVNhCLRFUATbPiKtbWokmC",
+      "error": null,
+      "recipientDeltas": {
+        "agent": 1530096,
+        "platform": 1020064
+      },
+      "verifier": {
+        "accepted": true,
+        "total": "2550160",
+        "dust": null,
+        "payouts": [
+          {
+            "address": "GHWSn3uARJW1mNoUCx4VCp48oqYvWZzhbS2fvPw5iq4u",
+            "bps": 6000,
+            "amount": "1530096"
+          },
+          {
+            "address": "GF67eLfMCZ5MJmeRq4ufxUWxQ6ZemndTeDDfxTyT6Zyo",
+            "bps": 4000,
+            "amount": "1020064"
+          }
+        ]
+      }
+    },
+    {
+      "name": "migrate",
+      "signature": "3rjTP5jayFcNikHp3wzPMzT9mi3vkwQZdvTUU2uAeFNaQnqbJu5UNqJaKVp7BUVgCfQ2urdtuu1LKJUXGmVcjiGZ",
+      "error": null
+    },
+    {
+      "name": "pool_buy",
+      "signature": "2AVAbdKWgpuXPECK1wiuqt4oag8Coqgck8piKvves43wmw3d1SrmSHUvj8TKR5FpyoL8xhAwooomeP3qbRURxqUo",
+      "error": null,
+      "notCloned": [],
+      "pool": "Egd5hBnikUbMJaGCqvNNKYNLHjBHNF12Vy3ZZEcMswgC",
+      "poolCreatorFees": null
+    },
+    {
+      "name": "distribution_graduated",
+      "isGraduated": true,
+      "sweepCount": 0,
+      "instructions": [
+        "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA:8b348655e4e56cf1",
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P:a572670079cef751"
+      ],
+      "minimum": {
+        "minimumRequired": "0d9800",
+        "distributableFees": "e20e60",
+        "canDistribute": true,
+        "isGraduated": true,
+        "feesQuoteMint": "So11111111111111111111111111111111111111112"
+      },
+      "signature": "2fNgTBRmttnyf5yZaK4eWZrXiiuoxfyDqB2Ffqrcs3xnyqBDPodGBE1yTX25jFiag1gwxMfnKAUNRw9denuVeKCx",
+      "error": null,
+      "recipientDeltas": {
+        "agent": 8888889,
+        "platform": 5925926
+      },
+      "verifier": {
+        "accepted": true,
+        "total": "14814815",
+        "dust": null,
+        "payouts": [
+          {
+            "address": "GHWSn3uARJW1mNoUCx4VCp48oqYvWZzhbS2fvPw5iq4u",
+            "bps": 6000,
+            "amount": "8888889"
+          },
+          {
+            "address": "GF67eLfMCZ5MJmeRq4ufxUWxQ6ZemndTeDDfxTyT6Zyo",
+            "bps": 4000,
+            "amount": "5925926"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "preGraduationDistributed": true,
+    "preGraduationAccepted": true,
+    "migrated": true,
+    "postGraduationDistributed": true,
+    "postGraduationAccepted": true
+  },
+  "result": "completed"
+}

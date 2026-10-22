@@ -1,3 +1,8 @@
+/** HISTORICAL TEMPLATE — DO NOT APPLY.
+ * The owner now requires one production environment and explicit tested-commit releases.
+ * This preserved staging/split example contains obsolete branches/origins and automatic migration setup.
+ * Current workflow: infra/railway/README.md. No new environment or live configuration is created here.
+ */
 /**
  * Agentic Economy — Railway Infrastructure as Code (replaces deprecated railway.json / railway.toml).
  *

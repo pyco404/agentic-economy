@@ -15,6 +15,7 @@ await app.listen({ host: config.host, port: config.port });
 if (config.simAutostart) ctx.runtime.start();
 ctx.indexer?.start(config.indexerIntervalMs);
 ctx.authPruner?.start();
+ctx.commonAgentIndexer?.start(config.aecoCommonAgents.intervalMs);
 app.log.info(
   { mode: config.mode, role: config.role, store: ctx.store.kind, chain: ctx.chain.source, simLeader: ctx.runtime.sim?.isLeader ?? null, financialFeaturesEnabled: config.financialFeaturesEnabled },
   "Agentic Economy process started",

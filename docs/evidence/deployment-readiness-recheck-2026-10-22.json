@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-22T13:50:47.432221+00:00",
+  "checkedAt": "2026-10-22T13:55:10.029448+00:00",
   "deploymentsTriggered": 0,
   "configurationChanges": 0,
   "environments": {
@@ -210,15 +210,15 @@
         "mode": "demo",
         "role": "all",
         "contractVersion": "0.5.2",
-        "tick": 1314141,
+        "tick": 1314594,
         "simRunning": true,
         "store": "postgres",
         "financialFeaturesEnabled": false,
         "simLeader": {
           "localLeader": true,
           "epoch": 35,
-          "lastTick": 1314141,
-          "heartbeatAgeMs": 131
+          "lastTick": 1314594,
+          "heartbeatAgeMs": 470
         }
       }
     },
@@ -238,7 +238,7 @@
           {
             "name": "state_view",
             "ok": true,
-            "detail": "tick 1314141"
+            "detail": "tick 1314594"
           },
           {
             "name": "sim_leadership",
@@ -257,15 +257,15 @@
         "mode": "production",
         "role": "all",
         "contractVersion": "0.5.2",
-        "tick": 3610,
+        "tick": 4063,
         "simRunning": true,
         "store": "postgres",
         "financialFeaturesEnabled": false,
         "simLeader": {
           "localLeader": true,
           "epoch": 1,
-          "lastTick": 3609,
-          "heartbeatAgeMs": 508
+          "lastTick": 4063,
+          "heartbeatAgeMs": 63
         }
       }
     },
@@ -285,7 +285,7 @@
           {
             "name": "state_view",
             "ok": true,
-            "detail": "tick 3610"
+            "detail": "tick 4063"
           },
           {
             "name": "sim_leadership",
@@ -315,17 +315,17 @@
     {
       "url": "https://useaeco.xyz/",
       "status": 404,
-      "bodyPreview": "The deployment could not be found on Vercel.\n\nDEPLOYMENT_NOT_FOUND\n\nfra1::2wvps-1792677128213-2a9b4c19542b\n"
+      "bodyPreview": "The deployment could not be found on Vercel.\n\nDEPLOYMENT_NOT_FOUND\n\nfra1::ss9x8-1792677354871-cea21a244dc2\n"
     },
     {
       "url": "https://www.useaeco.xyz/",
       "status": 404,
-      "bodyPreview": "The deployment could not be found on Vercel.\n\nDEPLOYMENT_NOT_FOUND\n\nfra1::6d46c-1792677128062-65e4b465dbae\n"
+      "bodyPreview": "The deployment could not be found on Vercel.\n\nDEPLOYMENT_NOT_FOUND\n\nfra1::np4xd-1792677355062-84c0ebbc8aad\n"
     },
     {
       "url": "https://api.useaeco.xyz/healthz",
       "status": 404,
-      "bodyPreview": "The deployment could not be found on Vercel.\n\nDEPLOYMENT_NOT_FOUND\n\nfra1::j87kp-1792677128299-a2eba6036d28\n"
+      "bodyPreview": "The deployment could not be found on Vercel.\n\nDEPLOYMENT_NOT_FOUND\n\nfra1::rkwhk-1792677355070-4118b8c8b6e7\n"
     }
   ]
 }

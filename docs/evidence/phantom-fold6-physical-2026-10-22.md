@@ -58,3 +58,7 @@ A separate owned draft `bb009350-184a-461c-a0d5-9633b4d0f315` was created with F
 Only the isolated manual API uses the new single-test scope. It checks exact wallet, draft, token, SOL, allocation, treasury recipients, current simulated network/rent/buy amounts and the 0.071 total ceiling. A private durable journal binds a single launch ID, mint and message; signing/submission cannot authorize another message or coin. Exact signed-payload recovery remains available. If preparation fails after a mint is reserved, operator reconciliation is required rather than silently generating a replacement. Other draft mutations and deletion are blocked during this test, protecting MobileCoin.
 
 Four scope/wallet regression tests, backend typecheck, lint and build passed. No Mainnet, Railway financial settings or schema changes are included. The normal server entrypoint never imports this manual verification tool. Physical on-chain acceptance remains pending until the owner signs and independent finalized evidence is recorded.
+
+## Owner pause supersedes transaction approval
+
+The owner paused all remaining mobile on-chain testing. Status: **DEFERRED**, not failed or complete. The mobile API/gateway/tunnel are stopped and the private approval journal revoked. Preserve both drafts and all prior evidence. Only read-only reconciliation was performed; see [final read-only evidence](phantom-fold6-pause-reconciliation-2026-10-22.json). No further invitations, transactions or test requests are authorized until the owner resumes after official-domain readiness.

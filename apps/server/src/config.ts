@@ -70,6 +70,8 @@ const Env = z.object({
   /** Commitment a launch needs before its community is registered (immutable). Production always requires finalized. */
   LAUNCH_REGISTRATION_COMMITMENT: z.enum(["confirmed", "finalized"]).optional(),
   PUMP_LOCAL_GENESIS_HASH: PublicKey.optional(),
+  /** Shared across authenticated preparation requests in each API process, never a wallet quota. */
+  LAUNCHPAD_PREPARATION_CONCURRENCY: z.coerce.number().int().min(1).max(256).default(8),
   PINATA_JWT: z.string().optional(),
   IPFS_GATEWAY: z.string().url().default("https://gateway.pinata.cloud"),
   LOGO_MAX_BYTES: z.coerce.number().int().min(1024).max(5_000_000).default(5_000_000),
@@ -175,6 +177,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
      * Demo mode uses the mock chain and never touches money.
      */
     financialFeaturesEnabled: (e.MODE === "devnet" || mainnetApproved) && feeRoutingVerified,
+    launchpadPreparationConcurrency: e.LAUNCHPAD_PREPARATION_CONCURRENCY,
     pinata: {jwt:e.PINATA_JWT??null,gateway:e.IPFS_GATEWAY,maxBytes:e.LOGO_MAX_BYTES,maxPixels:e.LOGO_MAX_PIXELS},
     logLevel: e.LOG_LEVEL,
   };

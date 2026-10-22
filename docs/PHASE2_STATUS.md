@@ -6,10 +6,10 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | --- | --- |
 | Real SOL creator-fee distribution | **VERIFIED ON PUBLIC DEVNET** — 15,532 lamports Agent Rewards, 10,354 Platform, 1 retained dust; funding excluded from income |
 | Desktop Phantom Developer Buy | **COMPLETED** — ZAP 2%, 20,000,000 tokens; controlled 3%/3.5% tests separately verified |
-| Physical Phantom mobile | **PARTIALLY VERIFIED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; mobile on-chain acceptance PENDING |
+| Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
-| Latest application staging release | **QUEUED** — 365ab4124b8a3fb2c904b59598029f9252b0f791 for both services; observed 22 October, no duplicate deployment requested |
+| Latest application staging release | **DEPLOYED AND VERIFIED** — backend a2e1847 / frontend 9f1d3bc, compatible contract 0.5.1; browser, API/database, WSS and demo restrictions pass |
 
 ## Restricted mobile preparation
 
@@ -26,7 +26,7 @@ Normal development, Railway staging and public demo restrictions are unchanged. 
 ## Remaining gates
 
 - Physical Phantom mobile connection, authentication, refresh/recovery and separately approved Devnet launch, tested folded and unfolded.
-- Observe the existing Railway release finish, then verify actual deployed SHAs, website/API/WebSocket and demo restrictions.
+- **COMPLETED:** existing Railway releases finished; actual SHAs, website/API/database/WebSocket and demo restrictions verified.
 - Pinata credential rotation maintenance, without requiring a subscription upgrade.
 - Final security/recovery/regression and staging acceptance. Public post-graduation creator-fee coverage remains distinct from completed pre-graduation collection and local supported-path tests.
 
@@ -63,3 +63,11 @@ Underlying browser behavior: [Fetch Standard — append request Origin header](h
 ## Physical mobile results received
 
 All seven owner-reported physical checks passed on the Samsung Galaxy Z Fold6, plus local phone-image selection/preview. [Physical acceptance and screenshot record](evidence/phantom-fold6-physical-2026-10-22.md). This completes mobile authentication/layout acceptance, not mobile token creation or Developer Buy. Keep broadcasting blocked pending the specific FOLD6 transaction approval.
+
+## Owner pause — 22 October 2026
+
+Remaining physical mobile on-chain acceptance is **DEFERRED**, neither failed nor complete. All seven physical connection/authentication/layout/session checks and phone-image preview remain completed. No further mobile test requests, invitation codes, signing requests, retries or transaction submissions are authorized. Resume only after the official website is ready and the owner separately authorizes a fresh isolated Devnet configuration.
+
+The dedicated mobile API (8797), gateway (5190) and associated ngrok tunnel were stopped. The prior approval journal is revoked while its history is preserved. MobileCoin and FOLD6 drafts remain unchanged with no uploaded image/metadata, saved launch, prepared mint or signed submission. [Read-only Devnet reconciliation](evidence/phantom-fold6-pause-reconciliation-2026-10-22.json) shows 10 Devnet SOL and no new wallet transaction after earlier funding; no FOLD6 charge was found. The exact browser timeout cause is not established and no retry was performed.
+
+Current priority: Railway deployment recovery and an isolated public-demo release for useaeco.xyz. Phase 2 is not fully accepted; do not start Phase 3 or enable Mainnet financial execution.

@@ -1,7 +1,7 @@
 import { waitForApplicationReady } from "./startup";
 import { expect, test } from "@playwright/test";
 
-for (const width of [390, 820]) test(`floating navigation keeps the live world intact at ${width}px`, async ({ page }) => {
+for (const width of [344, 390, 690, 820]) test(`floating navigation keeps the live world intact at ${width}px`, async ({ page }) => {
   test.setTimeout(300000);
   await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
   const sockets: string[] = [], errors: string[] = [];
@@ -15,6 +15,13 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   const original = JSON.parse((await city.getAttribute("data-camera"))!);
   const toggle = page.getByRole("button", { name: "Toggle navigation" });
   const dialog = page.getByRole("dialog", { name: "Navigation", exact: true });
+  for (const control of [toggle, page.locator('.topbar .wallet-button')]) {
+    await expect(control).toBeVisible();
+    const rect=(await control.boundingBox())!;
+    expect(rect.width).toBeGreaterThanOrEqual(44);expect(rect.height).toBeGreaterThanOrEqual(44);
+    expect(rect.x).toBeGreaterThanOrEqual(0);expect(rect.x+rect.width).toBeLessThanOrEqual(width);
+  }
+
   await toggle.press("Enter");
   await expect(dialog).toBeVisible(); await expect(dialog).toHaveAttribute("aria-modal", "true");
   await expect(page.locator(".app")).toHaveAttribute("inert", "");
@@ -22,8 +29,8 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
   const links = dialog.locator(".mobile-navigation-pages a"), boxes = await links.evaluateAll((nodes) => nodes.map((node) => {
     const rect = node.getBoundingClientRect(); return { y: rect.y, x: rect.x, height: rect.height, width: rect.width };
   }));
-  expect(boxes).toHaveLength(7);
-  await expect(links).toHaveText(["Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Roadmap"]);
+  expect(boxes).toHaveLength(8);
+  await expect(links).toHaveText(["World", "Launch", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Roadmap"]);
   for (let i = 0; i < boxes.length; i++) {
     expect(boxes[i]!.height).toBeGreaterThanOrEqual(44);
     expect(boxes[i]!.width).toBeGreaterThan(220);
@@ -50,7 +57,7 @@ for (const width of [390, 820]) test(`floating navigation keeps the live world i
     await page.getByRole("button", { name: "Close page and view city", exact: true }).press("Enter");
   }
   await toggle.press("Enter");
-  await expect(dialog.locator('[aria-current="page"]')).toHaveCount(0);
+  await expect(dialog.getByRole("link", {name:"World",exact:true})).toHaveAttribute("aria-current","page");
   await dialog.getByRole("link", { name: "About the world" }).press("Enter");
   await expect(page.locator("#about-title")).toBeVisible();
   await page.getByRole("button", { name: "Close page and view city", exact: true }).press("Enter");

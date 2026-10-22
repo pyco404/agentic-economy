@@ -15,9 +15,10 @@ export const devBuyTokenAccount=(owner:string,mint:string)=>PublicKey.findProgra
  * callers must verify its live Global allowlist and token-program ownership before execution.
  */
 export type PublicLaunchInput = Omit<BuildLaunchInput, 'mintSecretKey'>;
+export type ProtocolFeeRecipients = {feeRecipient:string;buybackFeeRecipient:string};
 
 /** Public-key-only construction for operator-local mint signing. Never reads or generates a key. */
-export async function unsignedPumpLaunchInstructions(input:PublicLaunchInput,global?:unknown){
+export async function unsignedPumpLaunchInstructions(input:PublicLaunchInput,global?:unknown,recipients?:ProtocolFeeRecipients){
  if(input.quoteAsset!==undefined&&!['SOL','USDC'].includes(input.quoteAsset))throw new Error('Unsupported quote asset');
  if(input.quoteAsset==='USDC'&&!input.quoteMint)throw new Error('USDC launches require the configured quote mint');
  const quoteMint=input.quoteAsset==='USDC'?new PublicKey(input.quoteMint!):nativeMint;
@@ -57,6 +58,15 @@ export async function unsignedPumpLaunchInstructions(input:PublicLaunchInput,glo
  // mayhem flag, and prepends the idempotent Token-2022 account creation. slippage 0: max_sol_cost = maxQuoteCost.
  const buy:TransactionInstruction[]=await PUMP_SDK.buyInstructions({global:g as never,bondingCurveAccountInfo:null as never,bondingCurve:{creator:new PublicKey(sharingConfigPda(input.mint)),isMayhemMode:false} as never,
   associatedUserAccountInfo:null,mint:mint,user,amount:new BN(tokenAmount.toString()) as never,solAmount:new BN(maxQuoteCost.toString()) as never,slippage:0,tokenProgram:token2022});
+ // Local signing must rebuild byte-for-byte. SDK defaults randomly choose fee recipients;
+ // pin only protocol-allowed public recipients, without changing fee amounts or human shares.
+ if(recipients){
+  const live=global as {feeRecipient:PublicKey;feeRecipients:PublicKey[];buybackFeeRecipients:PublicKey[]};
+  const allowed=(keys:PublicKey[],value:string)=>value!==SystemProgram.programId.toBase58()&&keys.some(k=>k.toBase58()===value);
+  if(!allowed([live.feeRecipient,...live.feeRecipients],recipients.feeRecipient)||!allowed(live.buybackFeeRecipients??[],recipients.buybackFeeRecipient))throw new Error('Unrecognized protocol fee recipient');
+  buy[1]=await PUMP_SDK.getBuyInstructionRaw({user,mint,creator:new PublicKey(sharingConfigPda(input.mint)),amount:new BN(tokenAmount.toString()) as never,solAmount:new BN(maxQuoteCost.toString()) as never,
+   tokenProgram:token2022,feeRecipient:new PublicKey(recipients.feeRecipient),buybackFeeRecipient:new PublicKey(recipients.buybackFeeRecipient)});
+ }
  if(buy.length!==2||!buy[0]!.programId.equals(associatedTokenProgram)||!buy[0]!.keys[1]!.pubkey.equals(new PublicKey(devBuyTokenAccount(input.launcherWallet,input.mint))))throw new Error('Unexpected Developer Buy instructions');
  return [...base,...buy];
 }
@@ -65,8 +75,8 @@ export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unkn
  if(Keypair.fromSecretKey(input.mintSecretKey).publicKey.toBase58()!==input.mint)throw new Error('Mint signing key does not match the prepared mint');
  return unsignedPumpLaunchInstructions(input,global);
 }
-export async function buildUnsignedPumpLaunch(input:PublicLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[],global?:unknown){
- const instructions=await unsignedPumpLaunchInstructions(input,global),user=new PublicKey(input.launcherWallet);
+export async function buildUnsignedPumpLaunch(input:PublicLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[],global?:unknown,recipients?:ProtocolFeeRecipients){
+ const instructions=await unsignedPumpLaunchInstructions(input,global,recipients),user=new PublicKey(input.launcherWallet);
  const transaction=new VersionedTransaction(new TransactionMessage({payerKey:user,recentBlockhash:blockhash,instructions}).compileToV0Message(lookupTables));
  let bytes:Uint8Array;
  try{bytes=transaction.serialize();}catch{throw new Error('Atomic launch exceeds Solana packet capacity; a verified address lookup table is required');}

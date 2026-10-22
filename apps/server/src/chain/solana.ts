@@ -95,12 +95,12 @@ export class SolanaRpcChain implements ChainGateway {
     return sigs.map((s) => s.signature);
   }
 
-  private async launchGenesis(){
-    if(!this.launchOptions?.enabled||!this.launchOptions.lookupTable)throw new ChainFeatureUnavailable("pump_launch_disabled","Safe-network Pump launches are disabled or have no verified lookup table configured");
+  private async launchGenesis(preparationOnly=false){
+    if(!this.launchOptions?.lookupTable||(!this.launchOptions.enabled&&!(preparationOnly&&this.launchOptions.cluster==="mainnet-beta")))throw new ChainFeatureUnavailable("pump_launch_disabled","Safe-network Pump launches are disabled or have no verified lookup table configured");
     const genesis=await this.conn.getGenesisHash();
     // A configured URL or MODE label alone never authorizes a mainnet write.
     const expected=this.launchOptions.cluster==="devnet"?"EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG":this.launchOptions.cluster==="localnet"&&["localhost","127.0.0.1","[::1]"].includes(new URL(this.conn.rpcEndpoint).hostname)?this.launchOptions.localGenesisHash:null;
-    if(this.launchOptions.cluster==="mainnet-beta"&&this.launchOptions.mainnetApproved){
+    if(this.launchOptions.cluster==="mainnet-beta"&&(this.launchOptions.mainnetApproved||preparationOnly)){
       if(genesis!==MAINNET_GENESIS)throw new ChainFeatureUnavailable("unsafe_launch_network","Approved Mainnet RPC genesis mismatch");
       try{await assertReviewedMainnetPrograms(this.conn);}catch{throw new ChainFeatureUnavailable("mainnet_protocol_changed","Mainnet program review is stale or unavailable; launches are blocked");}
       return genesis;
@@ -185,7 +185,7 @@ export class SolanaRpcChain implements ChainGateway {
       throw new ChainFeatureUnavailable("quote_unverified", "The configured USDC quote is not an initialized six-decimal SPL Token mint");
   }
 
-  private devBuyCache: { at: number; value: { available: boolean; reason: string | null } } | null = null;
+  private devBuyCache: { preparationOnly:boolean; at: number; value: { available: boolean; reason: string | null } } | null = null;
   private async launchTable(): Promise<AddressLookupTableAccount> {
     const address = new PublicKey(this.launchOptions!.lookupTable!), info = await this.conn.getAccountInfo(address, "confirmed");
     if (!info || !info.owner.equals(AddressLookupTableProgram.programId)) throw new ChainFeatureUnavailable("invalid_lookup_table", "Launch lookup table has an invalid owner or is missing");
@@ -200,10 +200,11 @@ export class SolanaRpcChain implements ChainGateway {
    * can touch, including every protocol and buyback fee recipient (the SDK picks one at random per transaction).
    * Checked against the live table and Global, and with a maximum-length sample packet. Cached for five minutes.
    */
-  async devBuySupport(): Promise<{ available: boolean; reason: string | null }> {
-    if (this.devBuyCache && Date.now() - this.devBuyCache.at < 300_000) return this.devBuyCache.value;
-    const done = (value: { available: boolean; reason: string | null }) => ((this.devBuyCache = { at: Date.now(), value }), value);
-    if (!this.launchOptions?.enabled || !this.launchOptions.lookupTable) return done({ available: false, reason: "Launches are not enabled on this network" });
+  async devBuySupport(preparationOnly=false): Promise<{ available: boolean; reason: string | null }> {
+    if (this.devBuyCache && this.devBuyCache.preparationOnly===preparationOnly && Date.now() - this.devBuyCache.at < 300_000) return this.devBuyCache.value;
+    const done = (value: { available: boolean; reason: string | null }) => ((this.devBuyCache = { preparationOnly,at: Date.now(), value }), value);
+    if (!this.launchOptions?.lookupTable || (!this.launchOptions.enabled && !(preparationOnly&&this.launchOptions.cluster==="mainnet-beta"))) return done({ available: false, reason: "Launches are not enabled on this network" });
+    if(preparationOnly)await this.launchGenesis(true);
     const [table, global] = await Promise.all([this.launchTable(), new sdk.OnlinePumpSdk(this.conn).fetchGlobal()]);
     const sample = async () => {
       const mint = Keypair.generate(), user = Keypair.generate().publicKey.toBase58(), { pumpLaunchInstructions } = await import("./pump-builder.js");
@@ -244,16 +245,20 @@ export class SolanaRpcChain implements ChainGateway {
     return this.buildLaunch(input);
   }
   async buildUnsignedLaunchTransaction(input: Omit<BuildLaunchInput,"mintSecretKey">): Promise<BuiltLaunchTransaction> {
-    return this.buildLaunch(input);
+    if(this.launchOptions?.cluster==='mainnet-beta'){
+      const {OFFICIAL_TREASURIES}=await import('@agentic-economy/shared');const {PLANNED_AECO_MINT}=await import('./offline-mint.js');
+      if(input.mint!==PLANNED_AECO_MINT||input.launcherWallet!==OFFICIAL_TREASURIES.aecoDeployer)throw new ChainFeatureUnavailable('invalid_mainnet_launch','Unsigned Mainnet preparation requires the fixed official mint and deployer');
+    }
+    return this.buildLaunch(input,true);
   }
-  private async buildLaunch(input: Omit<BuildLaunchInput,"mintSecretKey"> & {mintSecretKey?:Uint8Array}): Promise<BuiltLaunchTransaction> {
+  private async buildLaunch(input: Omit<BuildLaunchInput,"mintSecretKey"> & {mintSecretKey?:Uint8Array},preparationOnly=false): Promise<BuiltLaunchTransaction> {
     if(this.launchOptions?.cluster==="mainnet-beta"){const {OFFICIAL_TREASURIES}=await import("@agentic-economy/shared");if(input.platformTreasury!==OFFICIAL_TREASURIES.platform||input.agentRewardsTreasury!==OFFICIAL_TREASURIES.agentRewards||input.quoteAsset==="USDC")throw new ChainFeatureUnavailable("invalid_mainnet_launch","Mainnet launches require official treasuries and SOL");}
-    const genesisHash=await this.launchGenesis();
+    const genesisHash=await this.launchGenesis(preparationOnly);
     if(input.quoteAsset==="USDC")await this.verifyQuoteMint(input.quoteMint??"");
     const table=await this.launchTable();
     let global:unknown,globalAccountBase64:string|undefined,protocolFeeRecipients:{feeRecipient:string;buybackFeeRecipient:string}|undefined;
     if(input.devBuy){
-      const support=await this.devBuySupport();
+      const support=await this.devBuySupport(preparationOnly);
       if(!support.available)throw new ChainFeatureUnavailable("dev_buy_unavailable",support.reason??"Developer Buy is unavailable on this network");
       const account=await this.conn.getAccountInfo(sdk.GLOBAL_PDA,"confirmed");
       if(!account || account.owner.toBase58()!==PUMP_PROGRAM_ID)throw new ChainFeatureUnavailable("dev_buy_unavailable","Global account is unavailable or unrecognized");

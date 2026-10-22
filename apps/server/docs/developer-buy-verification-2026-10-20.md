@@ -1,5 +1,7 @@
 # Token validation and optional Developer Buy
 
+> Status correction, 22 October 2026: **Phantom desktop Developer Buy VERIFIED** — Zappercoin ($ZAP), 2%, exactly 20,000,000 tokens. Finalized Devnet transaction and database receipt independently checked. Physical mobile remains unverified. Older pending-desktop wording below is historical and superseded; no repeat desktop transaction is requested. [Acceptance evidence](phantom-desktop-developer-buy-2026-10-22.md) · [Current Phase 2 priorities](phase2-sol-only-acceptance.md). USDC is outside current scope.
+
 This release extends contract 0.5.0 without a database migration. Existing JSON drafts default to `devBuyBps: 0`; existing launch responses remain parseable. Frontend and backend must be released together. Individual file commits form one validated release series; intermediate commits are not independently buildable.
 
 ## Validation and preparation

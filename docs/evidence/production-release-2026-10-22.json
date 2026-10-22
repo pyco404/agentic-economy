@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-22T13:37:00.321979+00:00",
+  "environment": "5c4b546b-638f-487c-ad35-845f3d2074d4",
+  "approvedApplicationCommit": "6758f91bd2e8a69c242584133f0e5932b862bf7e",
+  "applications": {
+    "Postgres": {
+      "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+      "status": "SUCCESS",
+      "sha": null
+    },
+    "agentic-economy-web": {
+      "id": "493dc99c-f3d2-454c-87fb-ff8cf297ce65",
+      "status": "SUCCESS",
+      "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e"
+    },
+    "agentic-economy": {
+      "id": "04365147-839e-44ec-9a47-0c33bf54db04",
+      "status": "SUCCESS",
+      "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e"
+    }
+  },
+  "automaticTriggers": {
+    "c2b39851-a41b-4eab-9223-d2f6394b007f": [],
+    "b14eb48d-b9b6-4b25-990c-9229d378c2a2": []
+  },
+  "database": {
+    "name": "aeco_production",
+    "migrationChecksums": {
+      "004_launchpad_workspace.sql": "ca4aa60f3414149589c75525c9f1f4e35638ab5b239c874e0988ef3c12def277",
+      "001_init.sql": "3c389d7aee4b18676a8fbecaab3120a89f917182266e62fb82f632c1d87a0c42",
+      "002_coordination.sql": "c13371f5105664f5b52041b437b47c1364ee7ada39e2d35700c51052e6af5b2c",
+      "003_agent_identity.sql": "7f9ac94fafac52c197ab69844fa60304d474f33ae6a066ea77143f326bfef3d7"
+    },
+    "launches": 0,
+    "treasuryEntries": 0
+  },
+  "dnsChanged": false,
+  "financialExecution": false,
+  "backupRestorationRehearsed": false
+}

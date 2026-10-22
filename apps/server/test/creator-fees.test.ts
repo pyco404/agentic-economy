@@ -10,7 +10,8 @@ import {PublicKey} from '@solana/web3.js';
 import {distribution} from './fixtures/creator-distribution.js';
 const key=()=>Keypair.generate().publicKey.toBase58();
 describe('instruction-scoped creator distributions',()=>{
- it.each([WRAPPED_SOL_MINT,USDC_MINT])('verifies denomination and retained fractional-share dust for %s',quote=>{const f=distribution(quote);const v=verifiedCreatorDistribution(f.tx,f.platform,f.agent);expect(v.total).toBe(1001n);expect(v.dust).toBe(1n);expect(v.payouts.map(p=>p.amount)).toEqual([600n,400n]);expect(v.decimals).toBe(quote===USDC_MINT?6:9);});
+ it.each([WRAPPED_SOL_MINT,USDC_MINT])('verifies denomination and retained fractional-share dust for %s',quote=>{const f=distribution(quote);const v=verifiedCreatorDistribution(f.tx,f.platform,f.agent);expect(v.total).toBe(1000n);expect(v.dust).toBe(quote===WRAPPED_SOL_MINT?null:1n);expect(v.payouts.map(p=>p.amount)).toEqual([600n,400n]);expect(v.decimals).toBe(quote===USDC_MINT?6:9);});
+ it('rejects a successful no-op distribution rather than recording earned income',()=>{const f=distribution(WRAPPED_SOL_MINT,0n);expect(()=>verifiedCreatorDistribution(f.tx,f.platform,f.agent)).toThrow('No creator fees distributed');});
  it('rejects unrelated transfers, spoofed events and duplicate distributions',()=>{
   const f=distribution();f.tx.lamportDeltas[f.platform]=401n;expect(()=>verifiedCreatorDistribution(f.tx,f.platform,f.agent)).toThrow(/lamports/);
   f.tx.lamportDeltas[f.platform]=400n;f.tx.innerInstructions![0]!.programId=key();expect(()=>verifiedCreatorDistribution(f.tx,f.platform,f.agent)).toThrow(/event/);
@@ -48,5 +49,5 @@ it('normalizes RPC inner event instructions and exact token balances before USDC
  const postTokenBalances=preTokenBalances.map(b=>({...b,uiTokenAmount:{...b.uiTokenAmount,amount:f.tx.tokenAccounts![keys[b.accountIndex]!]!.post.toString()}}));
  const raw={slot:100,transaction:{message,signatures:[f.tx.signature]},meta:{err:null,fee:5000,preBalances,postBalances,preTokenBalances,postTokenBalances,innerInstructions:[{index:0,instructions:[{programIdIndex:keys.indexOf(PUMP_PROGRAM_ID),accounts:[keys.indexOf(ix.accounts[6]!)],data:bs58.encode(Buffer.from(f.tx.innerInstructions![0]!.dataBase64,'base64')),stackHeight:2}]}]}};
  const tx=normalizeTransaction(f.tx.signature,raw as unknown as VersionedTransactionResponse,'finalized');
- expect(verifiedCreatorDistribution(tx,f.platform,f.agent)).toMatchObject({symbol:'USDC',total:1001n,dust:1n});
+ expect(verifiedCreatorDistribution(tx,f.platform,f.agent)).toMatchObject({symbol:'USDC',total:1000n,dust:1n});
 });

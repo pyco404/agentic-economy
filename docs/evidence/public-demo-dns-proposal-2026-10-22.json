@@ -1,0 +1,65 @@
+{
+  "project": "c0003363-55ab-497b-a994-a1d07002b87d",
+  "environment": "57d15012-9025-449b-809d-44d3176494af",
+  "dnsChanged": false,
+  "cutoverApproved": false,
+  "domains": [
+    {
+      "domain": "useaeco.xyz",
+      "status": {
+        "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALIDATING_OWNERSHIP",
+        "dnsRecords": [
+          {
+            "currentValue": "",
+            "fqdn": "useaeco.xyz",
+            "purpose": "DNS_RECORD_PURPOSE_TRAFFIC_ROUTE",
+            "recordType": "DNS_RECORD_TYPE_CNAME",
+            "requiredValue": "7mgmz1yl.up.railway.app",
+            "status": "DNS_RECORD_STATUS_REQUIRES_UPDATE"
+          }
+        ],
+        "verificationDnsHost": "_railway-verify",
+        "verificationToken": "railway-verify=532758c7cbcceb482591c4ed8c95bf0cf14f33d3226c9054832ea9cde6e8de75",
+        "verified": false
+      }
+    },
+    {
+      "domain": "www.useaeco.xyz",
+      "status": {
+        "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALIDATING_OWNERSHIP",
+        "dnsRecords": [
+          {
+            "currentValue": "",
+            "fqdn": "www.useaeco.xyz",
+            "purpose": "DNS_RECORD_PURPOSE_TRAFFIC_ROUTE",
+            "recordType": "DNS_RECORD_TYPE_CNAME",
+            "requiredValue": "zgs8grk6.up.railway.app",
+            "status": "DNS_RECORD_STATUS_REQUIRES_UPDATE"
+          }
+        ],
+        "verificationDnsHost": "_railway-verify.www",
+        "verificationToken": "railway-verify=dec19dba69f2b720d111e35a786ff3c20b8695a9e219b28dcfbedf2a264d3ed4",
+        "verified": false
+      }
+    },
+    {
+      "domain": "api.useaeco.xyz",
+      "status": {
+        "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALIDATING_OWNERSHIP",
+        "dnsRecords": [
+          {
+            "currentValue": "",
+            "fqdn": "api.useaeco.xyz",
+            "purpose": "DNS_RECORD_PURPOSE_TRAFFIC_ROUTE",
+            "recordType": "DNS_RECORD_TYPE_CNAME",
+            "requiredValue": "mkevv1kk.up.railway.app",
+            "status": "DNS_RECORD_STATUS_REQUIRES_UPDATE"
+          }
+        ],
+        "verificationDnsHost": "_railway-verify.api",
+        "verificationToken": "railway-verify=40ede38f8ed68570be05c53976e950eef5fcff504b9ef6a4f2bad4aa0b5e6c40",
+        "verified": false
+      }
+    }
+  ]
+}

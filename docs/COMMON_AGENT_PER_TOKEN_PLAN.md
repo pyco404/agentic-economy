@@ -1,6 +1,8 @@
-# One Common Agent per confirmed token — approved product direction
+# Token-linked Common Agent plan — separate future scope
 
-Owner decision, 22 October 2026: **one Common Agent per confirmed token**, including multiple tokens launched by one wallet. This supersedes the former one-agent-per-wallet product rule. It does not authorize a database migration, Mainnet transaction or financial activation.
+**Scope clarification, 22 October 2026:** the subsequent automatic $AECO Common Agent requirement uses one identity per qualifying $AECO wallet. This historical token-linked plan does not define the $AECO holder mapping, does not change existing activation constraints, and is not a prerequisite for that automatic basic population. Phase 3 economic/token-linked privileges remain separate. See [current automatic mapping](AECO_COMMON_AGENTS.md).
+
+Earlier owner decision, 22 October 2026: **one Common Agent per confirmed token**, including multiple tokens launched by one wallet. This supersedes the former one-agent-per-wallet product rule. It does not authorize a database migration, Mainnet transaction or financial activation.
 
 ## Current implementation and compatibility gap
 

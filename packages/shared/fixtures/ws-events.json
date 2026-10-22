@@ -3,20 +3,20 @@
     "v": 1,
     "type": "activity.created",
     "tick": 15,
-    "ts": "2026-10-16T05:47:03.853Z",
+    "ts": "2026-10-22T09:05:22.338Z",
     "data": {
       "event": {
         "id": "evt_000000f000",
         "tick": 15,
         "type": "task.claimed",
-        "summary": "Quill_889 took production shift for Hearth Bakery",
-        "agentId": "agt_MjSevugDSrAc0c",
+        "summary": "Cobble_937 took production shift for Hearth Bakery",
+        "agentId": "agt_hNY6Kz9hMAU48B",
         "buildingId": "bld_04rw7d1",
-        "communityId": "com_eqHiMC8JMR7Mux",
+        "communityId": "com_VGE6A7u3LGbXQG",
         "data": {
           "taskId": "tsk_00000d"
         },
-        "at": "2026-10-16T05:47:03.852Z",
+        "at": "2026-10-22T09:05:22.321Z",
         "seq": 79
       }
     },
@@ -26,11 +26,11 @@
     "v": 1,
     "type": "agent.action",
     "tick": 15,
-    "ts": "2026-10-16T05:47:03.853Z",
+    "ts": "2026-10-22T09:05:22.338Z",
     "data": {
       "action": {
         "id": "act_b",
-        "agentId": "agt_MjSevugDSrAc0c",
+        "agentId": "agt_hNY6Kz9hMAU48B",
         "tick": 15,
         "kind": "claim_task",
         "reason": "production_shift (~46 ticks): 13.0 mCC/tick",
@@ -46,11 +46,11 @@
     "v": 1,
     "type": "agent.moved",
     "tick": 12,
-    "ts": "2026-10-16T05:47:03.846Z",
+    "ts": "2026-10-22T09:05:22.288Z",
     "data": {
       "moves": [
         {
-          "id": "agt_ReDTBW412EvP1q",
+          "id": "agt_J54LbyGr271z8Z",
           "pos": {
             "x": 56.5,
             "y": 60.5
@@ -60,10 +60,70 @@
             "x": 59,
             "y": 64
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_J54LbyGr271z8Z",
+            "name": "3hxD...JbvN",
+            "displayName": "3hxD...JbvN",
+            "identity": {
+              "kind": "token_linked",
+              "activationId": "act_B6gQaBExVSdXke",
+              "tokenMint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+              "activatingWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
+              "launchId": "lch_UD3BcMkSsGRhXm",
+              "communityId": "com_VGE6A7u3LGbXQG"
+            },
+            "profession": "logistics_operator",
+            "communityId": "com_VGE6A7u3LGbXQG",
+            "ownerWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
+            "status": "active",
+            "state": "delivering",
+            "work": {
+              "tick": 13,
+              "task": {
+                "id": "tsk_000001",
+                "kind": "demand_fulfillment",
+                "status": "in_progress",
+                "createdTick": 0,
+                "expiresTick": 300,
+                "fromBuildingId": "bld_04rw7d1",
+                "toBuildingId": "bld_0o27s0c",
+                "resource": "bread",
+                "quantity": 6,
+                "rewardCredits": 720,
+                "points": 15,
+                "claimedBy": "agt_J54LbyGr271z8Z",
+                "receiptId": null
+              },
+              "destination": {
+                "id": "bld_0o27s0c",
+                "name": "Genesis Market",
+                "kind": "market",
+                "entrance": {
+                  "x": 59,
+                  "y": 64
+                }
+              },
+              "target": {
+                "x": 59,
+                "y": 64
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {
+                "bread": 6
+              }
+            },
+            "pos": {
+              "x": 56.5,
+              "y": 60.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_CJLiPwyK43GX1W",
+          "id": "agt_W2DfgK2F9N6msd",
           "pos": {
             "x": 72.5,
             "y": 74.5
@@ -73,10 +133,64 @@
             "x": 83,
             "y": 88
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_W2DfgK2F9N6msd",
+            "name": "Fern_948",
+            "displayName": "Fern_948",
+            "identity": {
+              "kind": "house",
+              "syntheticName": "Fern_948"
+            },
+            "profession": "merchant",
+            "communityId": "com_VGE6A7u3LGbXQG",
+            "ownerWallet": null,
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": {
+                "id": "tsk_000004",
+                "kind": "delivery",
+                "status": "claimed",
+                "createdTick": 0,
+                "expiresTick": 300,
+                "fromBuildingId": "bld_07d97l2",
+                "toBuildingId": "bld_16i24cu",
+                "resource": "flour",
+                "quantity": 2,
+                "rewardCredits": 1580,
+                "points": 11,
+                "claimedBy": "agt_W2DfgK2F9N6msd",
+                "receiptId": null
+              },
+              "destination": {
+                "id": "bld_07d97l2",
+                "name": "Old Stone Mill",
+                "kind": "mill",
+                "entrance": {
+                  "x": 83,
+                  "y": 88
+                }
+              },
+              "target": {
+                "x": 83,
+                "y": 88
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 72.5,
+              "y": 74.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_MjSevugDSrAc0c",
+          "id": "agt_hNY6Kz9hMAU48B",
           "pos": {
             "x": 64.5,
             "y": 80.5
@@ -86,10 +200,42 @@
             "x": 60,
             "y": 80
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_hNY6Kz9hMAU48B",
+            "name": "Cobble_937",
+            "displayName": "Cobble_937",
+            "identity": {
+              "kind": "house",
+              "syntheticName": "Cobble_937"
+            },
+            "profession": "manufacturer",
+            "communityId": "com_VGE6A7u3LGbXQG",
+            "ownerWallet": null,
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": null,
+              "destination": null,
+              "target": {
+                "x": 60,
+                "y": 80
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 64.5,
+              "y": 80.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_9ExMCi6nJXiouj",
+          "id": "agt_K55Aj9FVYeKGK7",
           "pos": {
             "x": 45.5,
             "y": 72.5
@@ -99,10 +245,68 @@
             "x": 40,
             "y": 69
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_K55Aj9FVYeKGK7",
+            "name": "3ezh...94oj",
+            "displayName": "3ezh...94oj",
+            "identity": {
+              "kind": "token_linked",
+              "activationId": "act_W1DNmsPgKLArg2",
+              "tokenMint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+              "activatingWallet": "3ezh9s34hx7HdfDRoXg27YYMR6KmwgQ4R6Bs5LM194oj",
+              "launchId": "lch_impAgbYJ0dgiyD",
+              "communityId": "com_Vp6LvMDJ197ZkP"
+            },
+            "profession": "logistics_operator",
+            "communityId": "com_Vp6LvMDJ197ZkP",
+            "ownerWallet": "3ezh9s34hx7HdfDRoXg27YYMR6KmwgQ4R6Bs5LM194oj",
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": {
+                "id": "tsk_00000a",
+                "kind": "demand_fulfillment",
+                "status": "claimed",
+                "createdTick": 5,
+                "expiresTick": 305,
+                "fromBuildingId": "bld_16i24cu",
+                "toBuildingId": "bld_0o27s0c",
+                "resource": "bread",
+                "quantity": 6,
+                "rewardCredits": 900,
+                "points": 15,
+                "claimedBy": "agt_K55Aj9FVYeKGK7",
+                "receiptId": null
+              },
+              "destination": {
+                "id": "bld_16i24cu",
+                "name": "Crumb & Co. Bakery",
+                "kind": "bakery",
+                "entrance": {
+                  "x": 40,
+                  "y": 69
+                }
+              },
+              "target": {
+                "x": 40,
+                "y": 69
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 45.5,
+              "y": 72.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_kHHz4h28274Ep8",
+          "id": "agt_6c9i4Zoga27MDx",
           "pos": {
             "x": 64.5,
             "y": 65.5
@@ -112,10 +316,42 @@
             "x": 63,
             "y": 56
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_6c9i4Zoga27MDx",
+            "name": "Teal_528",
+            "displayName": "Teal_528",
+            "identity": {
+              "kind": "house",
+              "syntheticName": "Teal_528"
+            },
+            "profession": "farmer",
+            "communityId": "com_Vp6LvMDJ197ZkP",
+            "ownerWallet": null,
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": null,
+              "destination": null,
+              "target": {
+                "x": 63,
+                "y": 56
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 64.5,
+              "y": 65.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_AqFRWik0UHWvCf",
+          "id": "agt_qFpAyRqBzhX495",
           "pos": {
             "x": 69.5,
             "y": 72.5
@@ -125,10 +361,64 @@
             "x": 83,
             "y": 88
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_qFpAyRqBzhX495",
+            "name": "Ember_350",
+            "displayName": "Ember_350",
+            "identity": {
+              "kind": "house",
+              "syntheticName": "Ember_350"
+            },
+            "profession": "merchant",
+            "communityId": "com_Vp6LvMDJ197ZkP",
+            "ownerWallet": null,
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": {
+                "id": "tsk_00000e",
+                "kind": "delivery",
+                "status": "claimed",
+                "createdTick": 5,
+                "expiresTick": 305,
+                "fromBuildingId": "bld_07d97l2",
+                "toBuildingId": "bld_16i24cu",
+                "resource": "flour",
+                "quantity": 2,
+                "rewardCredits": 1580,
+                "points": 11,
+                "claimedBy": "agt_qFpAyRqBzhX495",
+                "receiptId": null
+              },
+              "destination": {
+                "id": "bld_07d97l2",
+                "name": "Old Stone Mill",
+                "kind": "mill",
+                "entrance": {
+                  "x": 83,
+                  "y": 88
+                }
+              },
+              "target": {
+                "x": 83,
+                "y": 88
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 69.5,
+              "y": 72.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_GhHMyUzcydXunJ",
+          "id": "agt_132d5jhuRF61UW",
           "pos": {
             "x": 56.5,
             "y": 74.5
@@ -138,10 +428,46 @@
             "x": 53,
             "y": 80
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_132d5jhuRF61UW",
+            "name": "CJYg...1uqd",
+            "displayName": "CJYg...1uqd",
+            "identity": {
+              "kind": "token_linked",
+              "activationId": "act_uXi0E63EQCw3AU",
+              "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+              "activatingWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
+              "launchId": "lch_U4eVzb75sBUGGY",
+              "communityId": "com_YR2K11xE1fVAHB"
+            },
+            "profession": "builder",
+            "communityId": "com_YR2K11xE1fVAHB",
+            "ownerWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": null,
+              "destination": null,
+              "target": {
+                "x": 53,
+                "y": 80
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 56.5,
+              "y": 74.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_0TEtsWQdB700BK",
+          "id": "agt_KMR8sy5J9VAQgW",
           "pos": {
             "x": 56.5,
             "y": 72.5
@@ -151,10 +477,42 @@
             "x": 56,
             "y": 75
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_KMR8sy5J9VAQgW",
+            "name": "Thistle_291",
+            "displayName": "Thistle_291",
+            "identity": {
+              "kind": "house",
+              "syntheticName": "Thistle_291"
+            },
+            "profession": "property_manager",
+            "communityId": "com_YR2K11xE1fVAHB",
+            "ownerWallet": null,
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": null,
+              "destination": null,
+              "target": {
+                "x": 56,
+                "y": 75
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 56.5,
+              "y": 72.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         },
         {
-          "id": "agt_CNhF2H3gVpVfk7",
+          "id": "agt_i7jyiF58xXUKk7",
           "pos": {
             "x": 54.5,
             "y": 72.5
@@ -164,7 +522,61 @@
             "x": 66,
             "y": 24
           },
-          "speed": 2
+          "speed": 2,
+          "agent": {
+            "id": "agt_i7jyiF58xXUKk7",
+            "name": "Linden_725",
+            "displayName": "Linden_725",
+            "identity": {
+              "kind": "house",
+              "syntheticName": "Linden_725"
+            },
+            "profession": "logistics_operator",
+            "communityId": "com_YR2K11xE1fVAHB",
+            "ownerWallet": null,
+            "status": "active",
+            "state": "moving",
+            "work": {
+              "tick": 13,
+              "task": {
+                "id": "tsk_000009",
+                "kind": "delivery",
+                "status": "claimed",
+                "createdTick": 0,
+                "expiresTick": 300,
+                "fromBuildingId": "bld_0p3nc76",
+                "toBuildingId": "bld_07d97l2",
+                "resource": "energy",
+                "quantity": 1,
+                "rewardCredits": 1940,
+                "points": 10,
+                "claimedBy": "agt_i7jyiF58xXUKk7",
+                "receiptId": null
+              },
+              "destination": {
+                "id": "bld_0p3nc76",
+                "name": "Power Station 1",
+                "kind": "power_station",
+                "entrance": {
+                  "x": 66,
+                  "y": 24
+                }
+              },
+              "target": {
+                "x": 66,
+                "y": 24
+              },
+              "remainingWorkTicks": 0,
+              "cargo": {}
+            },
+            "pos": {
+              "x": 54.5,
+              "y": 72.5
+            },
+            "credits": 50000,
+            "verifiedTasks": 0,
+            "points": 0
+          }
         }
       ]
     },
@@ -174,23 +586,23 @@
     "v": 1,
     "type": "community.updated",
     "tick": 16,
-    "ts": "2026-10-16T05:47:03.856Z",
+    "ts": "2026-10-22T09:05:22.370Z",
     "data": {
       "community": {
-        "id": "com_eqHiMC8JMR7Mux",
+        "id": "com_VGE6A7u3LGbXQG",
         "name": "Demo Hearth Bakers",
         "symbol": "DHEARTH",
         "description": "DEMO MODE community. Bakers and couriers keeping the Genesis district fed.",
         "imageUri": null,
         "metadataUri": "https://example.invalid/demo/hearth.json",
-        "mint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-        "launchId": "lch_MTMneC1hCMa2cK",
-        "launchSignature": "5L8CU8MfHLCLFNYmzXfJ2nUSEtYz3yREvbWZ6z6STJqJNqDwcnbq9bPQ7azGMD6ctJowtg1cuJSfFtRmkRrB5GNQ",
+        "mint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+        "launchId": "lch_UD3BcMkSsGRhXm",
+        "launchSignature": "5jMxeGgXSdrxR38ZAz9cFrUnj1GwshFJwKXsUye6a3gH9hGsFGrqcfNZQFPiUhjcLZ6ryGxAWHBAEkYrqUWwLW6m",
         "creatorWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
-        "feeSharingConfig": "5AkFoGpCR7gooCyC2ofbxXVcmNNLHdYvW8n5jpJJdKHk",
+        "feeSharingConfig": "6ihziEfN6CbYgxe3x6vLsby6Fw313f21S5ojzEYAS7Yd",
         "links": {
-          "pumpFun": "https://pump.fun/coin/5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-          "explorer": "https://solscan.io/token/5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj?cluster=devnet",
+          "pumpFun": "https://pump.fun/coin/94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+          "explorer": "https://solscan.io/token/94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt?cluster=devnet",
           "website": null,
           "twitter": null,
           "telegram": null
@@ -202,7 +614,7 @@
           "verifiedTasks": 1,
           "prominence": 15
         },
-        "registeredAt": "2026-10-16T05:47:03.624Z"
+        "registeredAt": "2026-10-22T09:05:20.489Z"
       }
     },
     "seq": 102
@@ -211,7 +623,7 @@
     "v": 1,
     "type": "economy.price_updated",
     "tick": 15,
-    "ts": "2026-10-16T05:47:03.853Z",
+    "ts": "2026-10-22T09:05:22.339Z",
     "data": {
       "quotes": [
         {
@@ -276,7 +688,7 @@
     "v": 1,
     "type": "world.chunk.updated",
     "tick": 19,
-    "ts": "2026-10-16T05:47:03.864Z",
+    "ts": "2026-10-22T09:05:22.396Z",
     "data": {
       "chunk": {
         "coord": {

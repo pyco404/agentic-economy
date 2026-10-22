@@ -2,7 +2,7 @@
 
 ## Current result
 
-Staging runs the latest relevant application changes and passes actual browser, API, database and WebSocket checks. The separate public-demo database is running and verified isolated. Its first frontend/backend releases are **QUEUED**, so useaeco.xyz is **not yet ready for DNS cutover**. No duplicate staging redeployment was requested.
+Staging runs the latest relevant application changes and passes actual browser, API, database and WebSocket checks. The separate public-demo database is running and verified isolated. Its first frontend/backend releases are **SUCCESS** at a2e1847, with API/database and approved schema verified. useaeco.xyz is **not yet ready for production DNS cutover**: the latest brief requires a separate production database and release, not the public-demo database. No duplicate staging redeployment was requested.
 
 Physical mobile on-chain acceptance is **DEFERRED at the owner's request**. Its API/gateway/tunnel are stopped and prior test approval revoked. All seven physical connection/authentication/layout/refresh checks and phone-image preview remain completed. Do not request mobile signatures, invitations or retries. Phase 2 is not fully accepted; Phase 3 and Mainnet financial execution remain disabled.
 
@@ -38,10 +38,10 @@ One reviewed application release at `a2e1847455a4f4154d97b0e64dcf61cb36b94737` w
 
 | Service | Deployment | Last observed |
 | --- | --- | --- |
-| API | 4f59ca17-cb44-4896-9b44-b0b54d748a12 | QUEUED |
-| Frontend | a1cf31be-1a7b-4036-84c1-cde189d5e0bd | QUEUED |
+| API | 4f59ca17-cb44-4896-9b44-b0b54d748a12 | SUCCESS |
+| Frontend | a1cf31be-1a7b-4036-84c1-cde189d5e0bd | SUCCESS |
 
-Review health endpoints still return 404 while no app instance runs. The backend pre-deploy may apply only approved 001–004 on the verified fresh database; no SQL migration had executed at this checkpoint. Verify actual schema checksums, identities, API/website/WSS/auth and demo restrictions after startup before claiming public readiness. [Sanitized provisioning audit](evidence/public-demo-provisioning-2026-10-22.json).
+Review HTTPS health/readiness and direct Launchpad now return 200. The approved 001–004 migrations were applied to aeco_public_demo only; read-only queries verify all checksums match main and staging. Capabilities report uploads=false, launchEnabled=false, Developer Buy unavailable; MODE=demo and financialFeaturesEnabled=false. This does not establish production/Mainnet readiness. [Sanitized provisioning audit](evidence/public-demo-provisioning-2026-10-22.json).
 
 ## Concrete DNS proposal — NOT APPLIED
 
@@ -55,4 +55,10 @@ Railway custom domains are attached only to public-demo; their certificates awai
 
 Preserve staging/api-staging CNAME/TXT, CAA and unrelated wildcard records. Existing apex ALIAS `cname.vercel-dns-017.com.` is the rollback target. No nameserver change is needed.
 
-**Do not apply this proposal yet.** First validate the isolated application releases and approved schema. Then obtain the owner's explicit approval to replace the existing apex record and perform public cutover. Public domain availability, valid public-origin certificates and real-origin wallet authentication remain unverified until those gates pass. Do not expose this preparation as a completed public beta.
+**Do not apply this public-demo proposal.** The latest brief requires a separate production database for the public production website. Prepare/validate that environment, obtain approval for its fresh schema, move custom-domain attachments with explicit approval and obtain the exact new Railway targets before DNS cutover. Never reuse these public-demo targets as if they referred to production. Public domain availability, valid public-origin certificates and real-origin wallet authentication remain unverified until those gates pass. Do not expose this preparation as a completed public beta.
+
+## Production release gate
+
+[Prepared production configuration](../infra/railway/env/production-readonly.env.example) and [Gamine integration/security findings](GAMINE_LAUNCHPAD_INTEGRATION.md). Fresh aeco_production schema approval has been requested; production remains empty and no migration or trigger change has been made. Official treasury addresses are fixed in the prepared configuration, all financial activation flags false. Public-demo is retained as an isolated reviewed demo, not promoted as real launch storage. Root/www remain Vercel 404 until the separately reviewed production cutover.
+
+Public-demo [pre-DNS browser/API evidence](evidence/public-demo-preflight-2026-10-22.json): desktop 1440×1000, folded 344×882 and unfolded 690×829 reach complete-world READY, display Launchpad, receive WebSocket updates, and have no page errors or horizontal overflow. All nine clean routes return 200; nonexistent assets/API remain 404. An automated disposable signer verifies exact useaeco.xyz challenge, secure host-only session, refresh/session read, replay rejection and logout. Browser requests were explicitly routed to Railway review hosts for this test; official DNS/certificates and physical Phantom on the official domain are still unverified. No user transaction was requested.

@@ -15,3 +15,10 @@ it('erases terminal and expired payloads and does not silently accept failed per
  saveSignedLaunch(s,'api',signed,100);eraseSignedLaunch(s,'api',binding);expect(readSignedLaunch(s,'api',binding,101)).toBeNull();
  expect(()=>saveSignedLaunch({...s,setItem:()=>{throw Error('quota');}},'api',signed)).toThrow('quota');
 });
+
+it('keeps Mainnet signed recovery isolated from test networks',()=>{
+ const s=fakeStorage(),mainnet={...binding,network:'mainnet-beta' as const};
+ saveSignedLaunch(s,'https://api.useaeco.xyz',{...signed,...mainnet},100);
+ expect(readSignedLaunch(s,'https://api.useaeco.xyz',mainnet,101)).toMatchObject(mainnet);
+ expect(readSignedLaunch(s,'https://api.useaeco.xyz',binding,101)).toBeNull();
+});

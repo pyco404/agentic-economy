@@ -11,7 +11,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
 | Latest application staging release | **DEPLOYED AND VERIFIED** — backend a2e1847 / frontend 9f1d3bc, compatible contract 0.5.1; browser, API/database, WSS and demo restrictions pass |
 
-## Restricted mobile preparation
+## Historical restricted mobile preparation — stopped
 
 Nominated dedicated Devnet wallet: `Aziw8URxK23irkF6VZQrq28HoyyMagxA66jpotBPiiYe`.
 
@@ -25,14 +25,14 @@ Normal development, Railway staging and public demo restrictions are unchanged. 
 
 ## Remaining gates
 
-- Physical Phantom mobile connection, authentication, refresh/recovery and separately approved Devnet launch, tested folded and unfolded.
+- Physical mobile **on-chain acceptance DEFERRED**; authentication, refresh, image preview and folded/unfolded layouts are completed. Do not request repeat tests.
 - **COMPLETED:** existing Railway releases finished; actual SHAs, website/API/database/WebSocket and demo restrictions verified.
 - Pinata credential rotation maintenance, without requiring a subscription upgrade.
 - Final security/recovery/regression and staging acceptance. Public post-graduation creator-fee coverage remains distinct from completed pre-graduation collection and local supported-path tests.
 
 Evidence: [desktop Phantom](../apps/server/docs/phantom-desktop-developer-buy-2026-10-22.md), [creator-fee and security review](../apps/server/docs/phase2-review-2026-10-22.md), [Helius activation](security/HELIUS_ROTATION.md), [Pinata evidence](../apps/server/docs/evidence/pinata-staging-2026-10-22.json), [physical mobile procedure](../apps/server/docs/phantom-mobile-acceptance.md).
 
-## Proposed mobile transaction — not yet authorized
+## Historical mobile proposal — approval subsequently revoked by owner pause
 
 Read-only unsigned simulation at Devnet quote slot 513848789 succeeded for proposed `Fold6 Mobile Test` (`FOLD6`), TOKEN/SOL, 2% Developer Buy: exactly 20,000,000 tokens (6 decimals). The wallet held 10,000,000,000 lamports. An ephemeral mint was used only for simulation; it was not created on-chain and no launch record or wallet signature was generated.
 
@@ -70,4 +70,12 @@ Remaining physical mobile on-chain acceptance is **DEFERRED**, neither failed no
 
 The dedicated mobile API (8797), gateway (5190) and associated ngrok tunnel were stopped. The prior approval journal is revoked while its history is preserved. MobileCoin and FOLD6 drafts remain unchanged with no uploaded image/metadata, saved launch, prepared mint or signed submission. [Read-only Devnet reconciliation](evidence/phantom-fold6-pause-reconciliation-2026-10-22.json) shows 10 Devnet SOL and no new wallet transaction after earlier funding; no FOLD6 charge was found. The exact browser timeout cause is not established and no retry was performed.
 
-Current priority: Railway deployment recovery and an isolated public-demo release for useaeco.xyz. Phase 2 is not fully accepted; do not start Phase 3 or enable Mainnet financial execution.
+Current priority: public website readiness and an isolated production release with Mainnet execution gated. The separate public-demo is a review environment, never the production launch database. Phase 2 is not fully accepted; do not start Phase 3 or enable Mainnet financial execution.
+
+## Gamine integration and Mainnet preparation — 22 October
+
+[Actual-code comparison and release gates](GAMINE_LAUNCHPAD_INTEGRATION.md). Gamine was inspected read-only, including a finalized historical Mainnet creation. Its frozen public lookup table works with Agentic Economy’s existing SDK, official treasuries, 0.05 SOL charge and locked 60/40 sharing in unsigned Mainnet simulations at 0%, 2% and 3.5% Developer Buy. These are simulations, not Agentic Economy Mainnet launches.
+
+A separate default-false `MAINNET_LAUNCH_APPROVED` gate, live genesis/program deployment checks and Mainnet wallet/recovery bindings are implemented. Neither Railway execution configuration nor treasury custody changed. Mainnet public launching remains Phase 2 scope, pending production readiness and separate activation approval. Public-demo frontend/backend have now completed their existing queued deployments at a2e1847; approved schema 001–004 and health are verified. Production database setup/schema approval, real-domain routing/HTTPS, production credentials/restore verification and final release acceptance remain open.
+
+The owner explicitly approved replacing per-wallet daily preparation quotas and timed mutation cooldowns with eight concurrent authenticated preparation requests per API process. Ownership, CSRF, authentication throttles, two-upload/four-execution concurrency, operation leases, exact signatures and idempotency remain. There is no per-wallet launch-count gate.

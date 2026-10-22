@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
 import { makeEnv, newWallet, type TestEnv } from './helpers.js';
+import {loadConfig} from '../src/config.js';
 import { LaunchpadStore } from '../src/store/launchpad.js';
 const origin='http://localhost:5173';
 let env:TestEnv;
@@ -60,19 +61,39 @@ it('pins protocol-readable metadata with the current social links and HTTPS imag
 });
 
 
-it('bounds preparation concurrency across wallets and releases capacity after success and validation errors',async()=>{
+it.each([['default',undefined,8],['lower','2',2],['higher','16',16]] as const)('bounds %s preparation capacity across wallets and releases slots after success and errors',async(_name,setting,limit)=>{
+ if(setting){await env.close();env=await makeEnv({LAUNCHPAD_PREPARATION_CONCURRENCY:setting});}
  const a=await login(),b=await login();let release!:()=>void;
  const gate=new Promise<void>(resolve=>{release=resolve;});
  const original=LaunchpadStore.prototype.create;
  const held=vi.spyOn(LaunchpadStore.prototype,'create').mockImplementation(async function(this:LaunchpadStore,draft){await gate;return original.call(this,draft);});
- const pending=Array.from({length:8},(_,i)=>request('POST','/api/v1/launchpad/drafts',a.cookie,{name:'Concurrent',symbol:'SAME'},`concurrent-${i}`).then(r=>r));
+ const pending=Array.from({length:limit},(_,i)=>request('POST','/api/v1/launchpad/drafts',a.cookie,{name:'Concurrent',symbol:'SAME'},`concurrent-${i}`).then(r=>r));
  try{
-  await vi.waitFor(()=>expect(held).toHaveBeenCalledTimes(8));
-  expect((await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'Other wallet'},'concurrent-other')).statusCode).toBe(503);
+  await vi.waitFor(()=>expect(held).toHaveBeenCalledTimes(limit));
+  const busy=await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'After release'},'concurrent-other');
+  expect(busy.statusCode).toBe(503);expect(busy.headers['retry-after']).toBe('1');expect(busy.json().error).toMatchObject({code:'unavailable',details:{retryable:true,retryAfterSeconds:1}});
+  expect((await request('POST','/api/v1/launchpad/drafts','',{name:'No session'},'concurrent-anon')).statusCode).toBe(401);
+  expect((await env.app.inject({method:'POST',url:'/api/v1/launchpad/drafts',headers:{cookie:b.cookie,origin:'https://evil.example','idempotency-key':'concurrent-evil'},payload:{name:'Bad origin'}})).statusCode).toBe(403);
  }finally{release();}
  try{
-  expect((await Promise.all(pending)).map(r=>r.statusCode)).toEqual(Array(8).fill(200));
+  expect((await Promise.all(pending)).map(r=>r.statusCode)).toEqual(Array(limit).fill(200));
   for(let i=0;i<10;i++)expect((await request('POST','/api/v1/launchpad/drafts',b.cookie,{quoteAsset:'AECO'},`invalid-fields-${i}`)).statusCode).toBe(400);
-  expect((await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'After release'},'concurrent-other')).statusCode).toBe(200);
+  const retry=await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'After release'},'concurrent-other');expect(retry.statusCode).toBe(200);
+  const replay=await request('POST','/api/v1/launchpad/drafts',b.cookie,{name:'After release'},'concurrent-other');expect(replay.statusCode).toBe(200);expect(replay.json().id).toBe(retry.json().id);expect(held).toHaveBeenCalledTimes(limit+1);
+  expect(await env.ctx.store.allTreasuryEntries()).toEqual([]);
  }finally{held.mockRestore();}
+});
+
+
+it('validates preparation configuration and keeps the default shared capacity at eight',()=>{
+ expect(loadConfig({}).launchpadPreparationConcurrency).toBe(8);
+ expect(loadConfig({LAUNCHPAD_PREPARATION_CONCURRENCY:'256'}).launchpadPreparationConcurrency).toBe(256);
+ for(const invalid of ['0','-1','1.5','257','invalid'])expect(()=>loadConfig({LAUNCHPAD_PREPARATION_CONCURRENCY:invalid})).toThrow();
+});
+
+it('permits more than one hundred intentional same-content drafts without a per-wallet daily cap',async()=>{
+ const user=await login(),ids=new Set<string>();
+ for(let i=0;i<105;i++){const draft=await create(user.cookie,`unlimited-draft-${i}`);ids.add(draft.id);}
+ expect(ids.size).toBe(105);expect(ids.has((await create(user.cookie,'unlimited-draft-104')).id)).toBe(true);
+ expect(await env.ctx.store.allTreasuryEntries()).toEqual([]);
 });

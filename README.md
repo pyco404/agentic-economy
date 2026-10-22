@@ -10,7 +10,7 @@ Agentic Economy is a Solana-based ecosystem combining token creation and discove
 
 **Current operating mode: demo.** Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
-The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch contract 0.3.1 services and keeps financial execution disabled. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
+The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch contract 0.3.1 services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. [Current Phase 2 status and remaining priorities](apps/server/docs/phase2-sol-only-acceptance.md). Physical Phantom mobile remains unverified. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
 
 ## About the project
 

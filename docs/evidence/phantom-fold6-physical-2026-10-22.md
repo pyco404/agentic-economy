@@ -48,3 +48,13 @@ This estimate uses an existing test metadata URI of normal CID length for simula
 ## Close-control correction
 
 On mobile/tablet or coarse-pointer layouts, the Launchpad page-close control now remains in its dedicated normal-flow row; it does not float over the logo, file picker or other form inputs. Desktop behavior remains unchanged. Mocked browser acceptance passed at 344×882 and 690×829, checking a minimum 44×44 touch target, normal-flow placement, no logo-heading overlap after scroll and accessibility again after returning to the top. These are browser regressions, not a second claimed physical-device test. The temporary mobile frontend was rebuilt and updated without restarting the gateway/API, invalidating the owner session or enabling broadcasts. Refresh to see it. Frontend typecheck/build passed; lint has no errors and two existing cleanup-ref warnings.
+
+## Specific transaction approval received
+
+The owner explicitly approved ONE FOLD6 public-Devnet launch from Aziw8URxK23irkF6VZQrq28HoyyMagxA66jpotBPiiYe, TOKEN/SOL, exact 2% (20,000,000 tokens), one 0.05 Devnet SOL platform charge, total debit at most 0.071 Devnet SOL, using the previously verified test recipients. The owner will personally approve in physical Phantom. No operator-side signing or submission is authorized.
+
+A separate owned draft `bb009350-184a-461c-a0d5-9633b4d0f315` was created with FOLD6/2%. The original MobileCoin draft was compared before/after and remains unchanged. No artwork or metadata was uploaded during setup. Its image must be reselected on the separate FOLD6 draft rather than silently copied from another draft.
+
+Only the isolated manual API uses the new single-test scope. It checks exact wallet, draft, token, SOL, allocation, treasury recipients, current simulated network/rent/buy amounts and the 0.071 total ceiling. A private durable journal binds a single launch ID, mint and message; signing/submission cannot authorize another message or coin. Exact signed-payload recovery remains available. If preparation fails after a mint is reserved, operator reconciliation is required rather than silently generating a replacement. Other draft mutations and deletion are blocked during this test, protecting MobileCoin.
+
+Four scope/wallet regression tests, backend typecheck, lint and build passed. No Mainnet, Railway financial settings or schema changes are included. The normal server entrypoint never imports this manual verification tool. Physical on-chain acceptance remains pending until the owner signs and independent finalized evidence is recorded.

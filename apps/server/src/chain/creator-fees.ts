@@ -56,9 +56,24 @@ export function verifiedCreatorDistribution(tx:ObservedTransaction,platform:stri
  const shares=[];for(let i=0;i<count;i++){const address=key(),bps=b.readUInt16LE(offset);offset+=2;shares.push({address,bps});}
  const total=b.readBigUInt64LE(offset);offset+=8;const eventQuote=key();
  // v1 events record SOL as the legacy all-zero quote address.
+ if(total===0n)throw new Error('No creator fees distributed');
  const normalizedQuote=eventQuote===SYSTEM_PROGRAM_ID?WRAPPED_SOL_MINT:eventQuote;
  if(offset!==b.length||normalizedQuote!==quote||shares[0]!.address!==holders[0]||shares[1]!.address!==holders[1]||!shares.some(s=>s.address===agent&&s.bps===6000)||!shares.some(s=>s.address===platform&&s.bps===4000))throw new Error('Event shares/quote mismatch');
- const payouts=shares.map(s=>({...s,amount:total*BigInt(s.bps)/10000n})),paid=payouts.reduce((n,p)=>n+p.amount,0n);
+ // The authenticated event's `distributed` is the SUM ACTUALLY PAID, not the
+ // pre-rounding vault amount. Re-splitting it can undercount the 60% recipient
+ // by one lamport. Read actual credits, then require an exact floor-consistent
+ // gross basis (net or net+1 for this two-share 60/40 policy).
+ const payouts=shares.map(s=>{
+  const amount=quote===WRAPPED_SOL_MINT
+   ? (tx.lamportDeltas[s.address]??0n)+(tx.feePayer===s.address?(tx.feeLamports??0n):0n)
+   : (()=>{const t=tx.tokenAccounts?.[associatedAccount(s.address,quote)];return t?t.post-t.pre:-1n;})();
+  if(amount<0n)throw Error('Recipient lamports/balance do not reconcile');
+  return {...s,amount};
+ });
+ const paid=payouts.reduce((n,p)=>n+p.amount,0n);
+ if(paid!==total)throw Error('Recipient lamports/balance do not match authenticated distributed amount');
+ let grossCandidates=[paid,paid+1n].filter(g=>payouts.every(p=>g*BigInt(p.bps)/10000n===p.amount));
+ if(!grossCandidates.length)throw Error('Recipient shares do not reconcile to exact 60/40 floors');
  // Consolidation accounts: wsol mint, token, system, ATA, coin creator (= sharing config), its pump-amm vault
  // authority, that authority's wrapped-SOL account, Pump creator vault, pump-amm event authority, pump-amm.
  const sweep=verifyCreatorSweeps(tx,mint,quote,ix.ixIndex,consolidations[0]?.ixIndex);
@@ -80,9 +95,11 @@ export function verifiedCreatorDistribution(tx:ObservedTransaction,platform:stri
   for(const p of payouts){const delta=(tx.lamportDeltas[p.address]??0n)+(tx.feePayer===p.address?(tx.feeLamports??0n):0n);if(delta!==p.amount)throw new Error('Recipient lamports do not reconcile');}
  }else{
   const source=tx.tokenAccounts?.[a[8]!];if(!source||source.owner!==vault||source.mint!==quote||source.decimals!==6||source.pre+sweep.curveSwept+consolidated-source.post!==paid)throw new Error('Quote vault debit mismatch');
+  grossCandidates=grossCandidates.filter(g=>g===source.pre+sweep.curveSwept+consolidated);
+  if(!grossCandidates.length)throw new Error('Quote vault gross amount does not reconcile');
   for(let i=0;i<2;i++){const p=payouts[i]!,dest=associatedAccount(p.address,quote),t=tx.tokenAccounts?.[dest];if(a[14+i]!==dest||!t||t.owner!==p.address||t.mint!==quote||t.decimals!==6||t.post-t.pre!==p.amount)throw new Error('Quote recipient balance mismatch');}
  }
- return {mint,quote,decimals:quote===WRAPPED_SOL_MINT?9:6,symbol:quote===WRAPPED_SOL_MINT?'SOL':'USDC',ixIndex:ix.ixIndex,total,dust:total-paid,consolidated,swept:sweep.curveSwept+sweep.poolSwept,payouts};
+ return {mint,quote,decimals:quote===WRAPPED_SOL_MINT?9:6,symbol:quote===WRAPPED_SOL_MINT?'SOL':'USDC',ixIndex:ix.ixIndex,total,dust:grossCandidates.length===1?grossCandidates[0]!-paid:null,consolidated,swept:sweep.curveSwept+sweep.poolSwept,payouts};
 }
 // Explicit discriminator helper for test fixtures; not accepted as RPC evidence by itself.
 export const distributionEventPrefix=()=>Buffer.from(eventPrefix);

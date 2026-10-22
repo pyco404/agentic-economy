@@ -17,7 +17,7 @@ async function open(page: Page, devBuy: 'available' | 'unavailable') {
   await expect(page.getByRole('heading', { name: 'Token details', exact: true })).toBeVisible({ timeout: 30000 });
 }
 
-for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 1180 }, { width: 390, height: 844 }])
+for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 1180 }, { width: 390, height: 844 }, { width: 344, height: 882 }, { width: 690, height: 829 }])
   test(`token limits and optional Developer Buy at ${viewport.width}px`, async ({ page }) => {
     test.setTimeout(180000); await page.setViewportSize(viewport);
     const errors: string[] = [], writes: string[] = [];

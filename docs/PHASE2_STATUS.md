@@ -9,6 +9,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
+| Public website | **LIVE AND VERIFIED:** https://useaeco.xyz; www redirect, valid apex/www/API TLS, official API/WSS, actual-origin automated auth/session refresh and responsive browser checks pass; transactions remain off |
 | Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **6758f91**, compatible contract 0.5.2; fresh HTTPS/API/database checks pass. Prior matched 6758f91 release passed WSS, clean routes, persistent world and responsive browser checks. New capacity/header live acceptance remains pending; financial execution off |
 
 ## Historical restricted mobile preparation — stopped
@@ -94,8 +95,18 @@ Regression coverage includes 105 intentional same-content drafts by one wallet, 
 
 Capacity follow-up release: application commit `ac7fc18` passed 246 backend tests (23 explicit integration skips), typecheck, lint and production build. Staging backend deployment `96e853df-bd74-4738-a6d6-58348ef41859` is now observed **SUCCESS**; the old evidence file records its earlier queued checkpoint. New live capacity/header verification remains pending, not claimed complete. The staging frontend remains at 6758f91, compatible contract 0.5.2, MODE=demo and execution off. No duplicate release was requested. [Sanitized capacity release checkpoint](evidence/launchpad-capacity-release-2026-10-22.json).
 
-## Live deployment recheck — 22 October 2026
+## Historical pre-cutover deployment recheck — 22 October 2026
 
 [Fresh read-only Railway and HTTP evidence](evidence/deployment-readiness-recheck-2026-10-22.json): staging backend ac7fc18, staging frontend 6758f91, production frontend/API 6758f91 and both PostgreSQL services are SUCCESS. Both APIs return health/readiness 200 with PostgreSQL healthy and compatible contract 0.5.2; financial features are disabled. Production targets aeco_production and has no repository deployment triggers. No builds, configuration changes or migrations were requested. Later main commits are documentation; production remains deliberately pinned to its approved application SHA.
 
-Official root/www/API still return Vercel DEPLOYMENT_NOT_FOUND (404). Production has no official custom-domain attachments, and its frontend still targets the temporary API/WSS host. This is a separate domain-cutover approval gate, not a queued-build blocker. See the [scoped proposal](PRODUCTION_DNS_CUTOVER_PROPOSAL.md). Remaining production acceptance includes real-domain HTTPS/session/WSS checks, an actual isolated backup restoration rehearsal, final security/recovery review and separately approved financial activation. Pinata rotation remains pending maintenance, and physical mobile on-chain acceptance remains DEFERRED.
+At that pre-cutover checkpoint (superseded below), official root/www/API returned Vercel DEPLOYMENT_NOT_FOUND (404). Production then had no official custom-domain attachments, and its frontend targeted the temporary API/WSS host. That was a separate domain-cutover approval gate, not a queued-build blocker; it is now resolved. See the [scoped proposal](PRODUCTION_DNS_CUTOVER_PROPOSAL.md). Remaining production acceptance includes real-domain HTTPS/session/WSS checks, an actual isolated backup restoration rehearsal, final security/recovery review and separately approved financial activation. Pinata rotation remains pending maintenance, and physical mobile on-chain acceptance remains DEFERRED.
+
+## Approved official-domain cutover — complete
+
+https://useaeco.xyz is live. One pinned frontend configuration release at 6758f91 (`ba11a995-8f60-4595-b8b2-010d340e0262`) switches API/WSS to api.useaeco.xyz; backend remains its approved 6758f91 release and aeco_production. The six approved DNS additions preserve all existing records and nameservers. Apex/www/API TLS validates, www redirects correctly, and the real public browser passes nine routes, world readiness/retained canvas, native WSS, exact-origin automated message auth/session refresh and five responsive viewports with zero page errors/overflow. No physical Phantom test or blockchain transaction was repeated. [Public readiness and evidence](PUBLIC_WEBSITE_READINESS.md).
+
+Domain routing is no longer a blocker. Mainnet activation remains separately unapproved; backup restore/security/recovery acceptance, Pinata maintenance and deferred mobile on-chain acceptance retain their distinct statuses. [Official $AECO and automatic Common Agent audit/next steps](PHASE2_NEXT_PRODUCTION_TASKS.md). Automatic Common Agent creation is not currently implemented: confirmed launches register communities/HQs, while token-linked activation is manual and demo-only with one-per-wallet/mint uniqueness. No agent-policy/schema change was made during cutover. Phase 3 has not started.
+
+## Common Agent product decision
+
+The owner selected **one Common Agent per confirmed token**, allowing multiple agents for multiple tokens launched by one wallet. The former wallet-unique schema is now a compatibility gap, not the intended product policy. [Review-only migration and implementation plan](COMMON_AGENT_PER_TOKEN_PLAN.md) is prepared outside the automatic migration directory. No migration beyond 004, new agent provisioning feature or Mainnet activation was applied. Existing identities and records remain unchanged.

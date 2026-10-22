@@ -810,7 +810,7 @@ export function AgentPanel({
           )}
           {data&&displayed&&<CurrentAgentWork agent={displayed} data={data} onViewBuilding={onViewBuilding}/>}
           <dl className="detail-list">
-            <div><dt>Canonical ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>
+            {import.meta.env.DEV && <div><dt>Canonical ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>}
             <div><dt>Given name</dt><dd>{agent.name}</dd></div>
             <div><dt>Identity type</dt><dd>{agent.identity.kind === "aeco_observed" ? "Common Agent" : agentIdentity(agent).kind === "unclassified" ? "Unclassified legacy agent" : readable(agentIdentity(agent).kind)}</dd></div>
             {agent.identity.kind === "aeco_observed" && <>
@@ -880,9 +880,9 @@ export function AgentPanel({
               <div className="decision-log" key={log.id}>
                 <b>{readable(log.kind)}</b>
                 <p>{log.reason}</p>
-                <small>
+                {import.meta.env.DEV && <small>
                   Tick {log.tick} · utility {log.utility.toFixed(2)}
-                </small>
+                </small>}
               </div>
             ))}
           {!logs.length && <p className="muted">No decisions yet.</p>}

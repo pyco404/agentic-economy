@@ -59,6 +59,17 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await expect(page.getByRole('region', { name: 'Live token preview' })).not.toContainText('Developer Buy');
     await toggle.check(); await percent.fill('3.5');
 
+    if (viewport.width <= 820) {
+      const close = page.getByRole('button', { name: 'Close page and view city', exact: true });
+      const size = await close.boundingBox();
+      expect(size?.width).toBeGreaterThanOrEqual(44); expect(size?.height).toBeGreaterThanOrEqual(44);
+      expect(await page.locator('.page-overlay-controls').evaluate(n => getComputedStyle(n).position)).toBe('static');
+      await page.locator('#launch-logo-title').scrollIntoViewIfNeeded();
+      const logo = await page.locator('#launch-logo-title').boundingBox(), button = await close.boundingBox();
+      expect(!!logo && !!button && button.y < logo.y && button.y + button.height <= logo.y).toBe(true);
+      await page.locator('.page-main').evaluate(n => { n.scrollTop = 0; });
+      await expect(close).toBeInViewport();
+    }
     await page.screenshot({ path: `artifacts/launch-dev-buy-${viewport.width}.png`, fullPage: true });
     expect(await page.locator('main').evaluate((n) => n.scrollWidth <= n.clientWidth + 1)).toBe(true);
     expect(writes).toEqual([]); // background text saves never upload artwork

@@ -6,6 +6,9 @@ import {makeEnv,newWallet,type TestEnv} from './helpers.js';
 import {buildPumpLaunch,pumpLaunchInstructions} from '../src/chain/pump-builder.js';
 import type {ChainGateway} from '../src/chain/types.js';
 import type {MockChain} from '../src/chain/mock.js';
+import {OFFICIAL_TREASURIES,LaunchDraft} from '@agentic-economy/shared';
+import {assertLaunchWalletAllowed,launchWalletAllowed} from '../src/services/launch-permission.js';
+import {login,DRAFT,idem} from './helpers.js';
 import {loadConfig} from '../src/config.js';
 const origin='http://localhost:5173',cid='bafkreicnu2aqjkoglrlrd65giwo4l64pdajxffk6jtq2vb7yaiopc3yu7m';
 let env:TestEnv|undefined;
@@ -217,15 +220,104 @@ it('keeps Mainnet provenance private until finalized and recovers one receipt wi
  vi.mocked(f.chain.buildLaunchTransaction).mockImplementation(async input=>({...await build(input),genesisHash:genesis}));
  vi.mocked(f.chain.getTransaction).mockImplementation(async signature=>{const tx=await observe(signature);return tx?{...tx,genesisHash:genesis,commitment}:null;});
  f.chain.getGenesisHash=async()=>genesis;
- env!.ctx.config.mode='production';env!.ctx.config.solana.cluster='mainnet-beta';env!.ctx.config.launchRegistrationCommitment='finalized';
+ env!.ctx.config.launchRegistrationCommitment='finalized';
  env!.ctx.config.treasuries={platform:'HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2',agentRewards:'GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi'};
- const first=await f.prepare();expect(first.statusCode).toBe(200);const p=first.json();expect(p.launch.execution.network).toBe('mainnet-beta');
+ const first=await f.prepare();expect(first.statusCode).toBe(200);const p=first.json();
  const signed=f.signed(p.transaction),url=`/api/v1/launchpad/launches/${p.launch.id}`;
  await f.call('POST',url+'/submit',{transaction:signed});f.setLanded();
+ // A synthetic historical Mainnet record predates the restriction. Only read-only recovery is allowed.
+ const rec=(await env!.ctx.store.getLaunch(p.launch.id))!;rec.launch.mode='production';rec.launch.execution!.network='mainnet-beta';await env!.ctx.store.updateLaunch(rec.launch,rec.version);
+ env!.ctx.config.mode='production';env!.ctx.config.solana.cluster='mainnet-beta';
  expect((await f.call('GET',url)).json().launch.status).toBe('submitted');expect((await env!.app.inject(`/api/v1/launches/${p.launch.id}`)).statusCode).toBe(404);
  commitment='finalized';expect((await f.call('GET',url)).json().launch.status).toBe('confirmed');
  expect((await env!.app.inject(`/api/v1/launches/${p.launch.id}`)).statusCode).toBe(200);
  const community=(await env!.ctx.store.allCommunities()).find(c=>c.launchId===p.launch.id);expect(community?.provenance?.network).toBe('mainnet-beta');
- await f.call('POST',url+'/submit',{transaction:signed});expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
+ expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(403);expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
  const receipts=(await env!.ctx.store.allTreasuryEntries()).filter(e=>e.launchId===p.launch.id);expect(receipts).toHaveLength(1);expect(receipts[0]!.amount).toBe('50000000');
+});
+
+
+describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)',()=>{
+ const restrict=()=>{env!.ctx.config.mode='production';env!.ctx.config.solana.cluster='mainnet-beta';};
+ it('denies ordinary authenticated wallets before allocation, including legacy preparation and body spoofing',async()=>{
+  const f=await setup();restrict();
+  expect((await f.prepare()).statusCode).toBe(403);
+  const user=await login(env!.app);
+  const legacy=await env!.app.inject({method:'POST',url:'/api/v1/launches/prepare',headers:{...user.auth,...idem()},payload:{draft:DRAFT}});
+  expect(legacy.statusCode).toBe(403);
+  const spoof=await f.call('POST',`/api/v1/launchpad/drafts/${f.draft.id}/launch`,{version:f.draft.version,wallet:OFFICIAL_TREASURIES.aecoDeployer});
+  expect(spoof.statusCode).toBe(403);
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+  expect((await env!.app.inject({method:'POST',url:`/api/v1/launchpad/drafts/${f.draft.id}/launch`,headers:{origin},payload:{version:f.draft.version}})).statusCode).toBe(401);
+ });
+ it('rejects a legacy cached response before returning its transaction bytes',async()=>{
+  const f=await setup(),user=await login(env!.app);
+  env!.ctx.config.mode='demo';
+  const request={method:'POST' as const,url:'/api/v1/launches/prepare',headers:{...user.auth,...idem()},payload:{draft:DRAFT}};
+  expect((await env!.app.inject(request)).statusCode).toBe(201);
+  restrict();expect((await env!.app.inject(request)).statusCode).toBe(403);
+  expect(f.chain.buildLaunchTransaction).toHaveBeenCalledTimes(1);expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('rejects a deployer sign-in forged with another wallet signature',async()=>{
+  const f=await setup();restrict();
+  const ch=(await env!.app.inject({method:'POST',url:'/api/v1/auth/challenge',headers:{origin},payload:{wallet:OFFICIAL_TREASURIES.aecoDeployer}})).json();
+  const forged=await env!.app.inject({method:'POST',url:'/api/v1/auth/browser/verify',headers:{origin},payload:{wallet:OFFICIAL_TREASURIES.aecoDeployer,nonce:ch.nonce,signature:f.user.sign(ch.message)}});
+  expect(forged.statusCode).toBe(401);expect(forged.headers['set-cookie']).toBeUndefined();
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('does not replay cached preparations or broadcast saved signed attempts after access is restricted',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),signed=f.signed(p.transaction),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  restrict();
+  expect((await f.prepare()).statusCode).toBe(403);
+  expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(403);
+  expect((await f.call('POST',url+'/resume',{transaction:signed})).statusCode).toBe(403);
+  expect((await f.call('GET',url)).statusCode).toBe(200);
+  expect(f.chain.buildLaunchTransaction).toHaveBeenCalledTimes(1);expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+  expect(await env!.ctx.store.allTreasuryEntries()).toEqual([]);
+ });
+ it('keeps signed recovery read-only for blocked wallets and hides resume availability',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  f.failRpc();expect((await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})).statusCode).toBe(503);
+  restrict();const status=await f.call('GET',url);
+  expect(status.statusCode).toBe(200);expect(status.json().recovery.canResume).toBe(false);
+  expect((await f.call('POST',url+'/resume',{})).statusCode).toBe(403);
+  expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
+ });
+ it('checks the persisted Mainnet network even when runtime configuration says Devnet',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),rec=(await env!.ctx.store.getLaunch(p.launch.id))!;
+  rec.launch.execution!.network='mainnet-beta';await env!.ctx.store.updateLaunch(rec.launch,rec.version);
+  await expect(env!.ctx.launches.submit(f.creator.publicKey.toBase58(),p.launch.id,f.signed(p.transaction))).rejects.toMatchObject({code:'forbidden'});
+  await expect(env!.ctx.launches.resume(f.creator.publicKey.toBase58(),p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('rechecks permission after asynchronous submission prerequisites',async()=>{
+  const f=await setup(),p=(await f.prepare()).json();
+  f.chain.assertLaunchSubmissionAllowed=async()=>{restrict();};
+  await expect(env!.ctx.launches.submit(f.creator.publicKey.toBase58(),p.launch.id,f.signed(p.transaction))).rejects.toMatchObject({code:'forbidden'});
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+  expect((await env!.ctx.store.getLaunch(p.launch.id))!.launch.status).toBe('awaiting_signature');
+ });
+ it('keeps capabilities and media preparation locked while public pages, drafts and reviews stay readable',async()=>{
+  const f=await setup();restrict();
+  for(const result of [await env!.app.inject('/api/v1/launchpad/capabilities'),await f.call('GET','/api/v1/launchpad/capabilities')])expect(result.json()).toMatchObject({uploads:false,launchEnabled:false,devBuy:{status:'unavailable'}});
+  expect((await f.call('GET',`/api/v1/launchpad/drafts/${f.draft.id}/review`)).json().launchEnabled).toBe(false);
+  expect((await f.call('GET',`/api/v1/launchpad/drafts/${f.draft.id}`)).statusCode).toBe(200);
+  expect((await f.call('POST',`/api/v1/launchpad/drafts/${f.draft.id}/metadata`,{version:f.draft.version})).statusCode).toBe(403);
+  expect((await f.call('POST',`/api/v1/launchpad/drafts/${f.draft.id}/logo?version=${f.draft.version}`,Buffer.from('blocked before buffering'))).statusCode).toBe(403);
+  expect((await env!.app.inject('/api/v1/world/stats')).statusCode).toBe(200);
+ });
+ it('permits only the fixed official deployer on Mainnet, keeps other execution gates independent and leaves Devnet unrestricted',async()=>{
+  const f=await setup(),cfg=env!.ctx.config;
+  expect(launchWalletAllowed(cfg,f.creator.publicKey.toBase58())).toBe(true);
+  restrict();
+  for(const wallet of [undefined,f.creator.publicKey.toBase58(),OFFICIAL_TREASURIES.platform,OFFICIAL_TREASURIES.agentRewards])expect(launchWalletAllowed(cfg,wallet)).toBe(false);
+  expect(launchWalletAllowed(cfg,OFFICIAL_TREASURIES.aecoDeployer)).toBe(true);
+  expect(()=>assertLaunchWalletAllowed(cfg,OFFICIAL_TREASURIES.aecoDeployer)).not.toThrow();
+  // Public keys suffice for unsigned preparation. No deployer signature or secret is used here.
+  const prepared=await env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT),{id:f.draft.id,version:0,launchId:'lch_deployerpolicy'});
+  expect(prepared.launch.launcherWallet).toBe(OFFICIAL_TREASURIES.aecoDeployer);
+  cfg.financialFeaturesEnabled=false;
+  await expect(env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT))).rejects.toMatchObject({code:'feature_disabled'});
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
 });

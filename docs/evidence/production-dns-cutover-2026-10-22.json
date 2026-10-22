@@ -1,0 +1,77 @@
+{
+  "startedAt": "2026-10-22T14:00:35.362554+00:00",
+  "ownerApproved": true,
+  "rollback": {
+    "apexRecord": {
+      "id": "rec_dac928a8f5c0464ef0160908",
+      "slug": "",
+      "name": "",
+      "type": "ALIAS",
+      "value": "cname.vercel-dns-017.com.",
+      "creator": "system",
+      "created": 1792096070916,
+      "updated": 1792096070916,
+      "createdAt": 1792096070916,
+      "updatedAt": 1792096070916,
+      "ttl": 60,
+      "comment": "Vercel automatically manages this record. It may change without notice."
+    },
+    "previousRelevantRecords": [],
+    "instructions": "Remove only the six new record IDs listed in operations to restore the preserved original Vercel routing. Do not delete CAA, wildcard or staging records. Frontend previous API/WSS variables are recorded in the pre-cutover audit; financial gates stay off."
+  },
+  "operations": [
+    {
+      "action": "add",
+      "name": "@",
+      "type": "ALIAS",
+      "value": "xaj0luvv.up.railway.app.",
+      "id": "rec_8d8db27243039e7146f32ffe",
+      "ttl": 60
+    },
+    {
+      "action": "add",
+      "name": "www",
+      "type": "CNAME",
+      "value": "9h8vju8f.up.railway.app.",
+      "id": "rec_9f36b8df178dd60cde1178cd",
+      "ttl": 60
+    },
+    {
+      "action": "add",
+      "name": "_railway-verify.www",
+      "type": "TXT",
+      "value": "railway-verify=dec19dba69f2b720d111e35a786ff3c20b8695a9e219b28dcfbedf2a264d3ed4",
+      "id": "rec_f024df390862f327e4ec013b",
+      "ttl": 60
+    },
+    {
+      "action": "add",
+      "name": "_railway-verify",
+      "type": "TXT",
+      "value": "railway-verify=532758c7cbcceb482591c4ed8c95bf0cf14f33d3226c9054832ea9cde6e8de75",
+      "id": "rec_3684ceca1700ef1e9e2ffa84",
+      "ttl": 60
+    },
+    {
+      "action": "add",
+      "name": "api",
+      "type": "CNAME",
+      "value": "53yjusbd.up.railway.app.",
+      "id": "rec_287a3a5bcdf959c6e431490f",
+      "ttl": 60
+    },
+    {
+      "action": "add",
+      "name": "_railway-verify.api",
+      "type": "TXT",
+      "value": "railway-verify=40ede38f8ed68570be05c53976e950eef5fcff504b9ef6a4f2bad4aa0b5e6c40",
+      "id": "rec_9b4d357b5d1afb3929f9637d",
+      "ttl": 60
+    }
+  ],
+  "completedAt": "2026-10-22T14:17:15.613602+00:00",
+  "allPreexistingRecordsPreserved": true,
+  "nameserversChanged": false,
+  "apexResolution": "Custom ALIAS overrides preserved Vercel automatic default; no existing DNS record deleted",
+  "frontendDeployment": "ba11a995-8f60-4595-b8b2-010d340e0262"
+}

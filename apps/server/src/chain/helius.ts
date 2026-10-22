@@ -1,9 +1,10 @@
+import WebSocket from 'ws';
 import { z } from 'zod';
 import { PublicKey } from '@agentic-economy/shared';
 import { bondingCurvePda } from './pump.js';
 
 export const HELIUS_GENESIS = { 'mainnet-beta': '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d', devnet: 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG' } as const;
-const READS = new Set(['getGenesisHash', 'getBalance', 'getSignaturesForAddress', 'getTransaction', 'getSignatureStatuses', 'getMultipleAccounts', 'getAccountInfo', 'getSlot', 'getBlockTime', 'getBlock', 'getTokenAccounts', 'getAsset']);
+const READS = new Set(['getGenesisHash', 'getBalance', 'getSignaturesForAddress', 'getTransaction', 'getSignatureStatuses', 'getMultipleAccounts', 'getAccountInfo', 'getSlot', 'getBlockTime', 'getBlock', 'getTokenAccounts', 'getAsset', 'getProgramAccounts']);
 export class HeliusReadError extends Error {
   constructor(readonly code: 'unavailable' | 'rate_limited' | 'unsupported' | 'unauthorized' | 'wrong_network' | 'budget') { super(`Helius read ${code.replaceAll('_', ' ')}`); }
 }
@@ -57,7 +58,7 @@ export class HeliusReader {
     if (!READS.has(method)) throw new HeliusReadError('unsupported');
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await this.budget.run(['getTokenAccounts', 'getAsset'].includes(method) ? 10 : 1, async () => {
+        return await this.budget.run(['getTokenAccounts', 'getAsset', 'getProgramAccounts'].includes(method) ? 10 : 1, async () => {
           let response: Response;
           try { response = await this.request(this.#url, { method: 'POST', redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 'aeco-read', method, params }), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(5000)]) : AbortSignal.timeout(5000) }); }
           catch { throw new HeliusReadError('unavailable'); }
@@ -65,7 +66,7 @@ export class HeliusReader {
           if (response.status === 429) { this.budget.pause(Number(response.headers.get('retry-after') ?? 1) * 1000); throw new HeliusReadError('rate_limited'); }
           if (!response.ok) throw new HeliusReadError('unavailable');
           let body: { result?: unknown; error?: { code?: number } };
-          try { const text = await response.text(); if (text.length > 4_000_000) throw new Error(); body = JSON.parse(text); } catch { throw new HeliusReadError('unavailable'); }
+          try { const text = await response.text(); if (text.length > (method === 'getProgramAccounts' ? 16_000_000 : 4_000_000)) throw new Error(); body = JSON.parse(text); } catch { throw new HeliusReadError('unavailable'); }
           if (body.error) {
             if (body.error.code === -32601 || body.error.code === -32003) throw new HeliusReadError('unsupported');
             if (body.error.code === -32001) throw new HeliusReadError('unauthorized');
@@ -93,6 +94,38 @@ export class HeliusReader {
     }
     if (method === 'getGenesisHash') return HELIUS_GENESIS[this.network];
     return this.raw(method, params, signal);
+  }
+  /** Finalized change notifications are hints only. Balances always come from a complete RPC
+   * reconciliation. Unsupported subscriptions fall back to polling; no secret URL is logged. */
+  watchTokenAccounts(mint: string, onChange: () => void, signal: AbortSignal, openSocket = (url: string) => new WebSocket(url, { handshakeTimeout: 10_000, maxPayload: 1_000_000 })): () => void {
+    PublicKey.parse(mint);
+    let socket: WebSocket | undefined;
+    let timer: NodeJS.Timeout | undefined;
+    let stopped = false;
+    const stop = () => { stopped = true; if (timer) clearTimeout(timer); if (socket) { socket.removeAllListeners('close'); socket.close(); } signal.removeEventListener('abort', stop); };
+    const connect = async () => {
+      if (stopped || signal.aborted) return;
+      try {
+        await this.rpc('getGenesisHash', [], signal);
+        if (stopped || signal.aborted) return;
+        socket = openSocket(this.#url.replace(/^https:/, 'wss:'));
+        socket.on('error', () => undefined);
+        socket.on('open', () => {
+          ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'].forEach((program, id) => socket?.send(JSON.stringify({ jsonrpc: '2.0', id: id + 1, method: 'programSubscribe', params: [program, { encoding: 'base64', commitment: 'finalized', filters: [{ memcmp: { offset: 0, bytes: mint } }] }] })));
+        });
+        socket.on('message', raw => {
+          try {
+            const body = JSON.parse(String(raw));
+            if (body.error) { stop(); return; }
+            if (body.method === 'programNotification' && Number.isSafeInteger(body.params?.result?.context?.slot)) onChange();
+          } catch { /* Malformed hints cannot mutate holdings. */ }
+        });
+        socket.on('close', () => { if (!stopped && !signal.aborted) timer = setTimeout(() => void connect(), 30_000); });
+      } catch { if (!stopped && !signal.aborted) timer = setTimeout(() => void connect(), 30_000); }
+    };
+    signal.addEventListener('abort', stop, { once: true });
+    void connect();
+    return stop;
   }
   /** Inject into web3.js with a non-secret placeholder URL; preserve JSON-RPC ids and batching. */
   readonly fetch: typeof fetch = async (_url, init) => {

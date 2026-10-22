@@ -17,8 +17,9 @@ export function mergeDashboard(
 ): Dashboard {
   if (!current || current.bootstrap.worldId !== incoming.bootstrap.worldId)
     return incoming;
+  const existingAgents = new Map(current.agents.map(a => [a.id, a]));
   const agents = incoming.agents.map((a) => {
-    const existing = current.agents.find((e) => e.id === a.id);
+    const existing = existingAgents.get(a.id);
     return existing &&
       (current.agentTicks?.[a.id] ?? 0) >
         (incoming.agentTicks?.[a.id] ?? incoming.stats.tick)
@@ -110,9 +111,10 @@ export function applyServerEvent(
     case "agent.moved": {
       const ticks = { ...data.agentTicks };
       const moves = new Map(event.data.moves.map((m) => [m.id, m]));
+      const known = new Set(data.agents.map(a => a.id));
       next = {
         ...next,
-        agents: data.agents.map((a) => {
+        agents: [...data.agents, ...event.data.moves.filter(m => m.agent && !known.has(m.id) && event.tick >= (ticks[m.id] ?? 0)).map(m => m.agent!)].map((a) => {
           const move = moves.get(a.id);
           if (!move || event.tick < (ticks[a.id] ?? 0)) return a;
           ticks[a.id] = event.tick;
@@ -121,9 +123,9 @@ export function applyServerEvent(
             ...(move.agent?.id === a.id ? move.agent : {}),
             pos: move.pos,
             state: move.state,
-            status: move.state === "paused" ? "paused" : "active",
+            status: move.state === "paused" ? "paused" as const : "active" as const,
           };
-        }),
+        }).filter(a => a.identity?.kind !== "aeco_observed" || a.status === "active"),
         agentTicks: ticks,
       };
       break;

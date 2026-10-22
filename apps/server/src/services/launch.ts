@@ -1,5 +1,5 @@
 import { MAINNET_GENESIS, PLANNED_AECO_MINT, inspectMintSigningReview, mintMessageHash, verifyMintSigningArtifact } from "../chain/offline-mint.js";
-import { assertLaunchWalletAllowed, launchWalletAllowed } from "./launch-permission.js";
+import { assertLaunchWalletAllowed, launchWalletAllowed, preparedMintPreparationAllowed } from "./launch-permission.js";
 import {SignedLaunchStore} from "../store/signed-launch.js";
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
@@ -24,7 +24,7 @@ import type { Coordinator } from "../coord/types.js";
 import type { CommandBus, StateReader } from "../roles/read-model.js";
 import { publishDurable } from "../roles/stream.js";
 import { communityBranding } from "./community.js";
-import { ConflictError, type Store } from "../store/types.js";
+import { ConflictError, type LaunchRecord, type Store } from "../store/types.js";
 import { AppError } from "../util/errors.js";
 import { newId } from "../util/ids.js";
 import type { TreasuryService } from "./treasury.js";
@@ -98,9 +98,15 @@ export class LaunchService {
   }
 
   async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
+    return this.prepareReview(wallet,draft,owned,quote);
+  }
+
+  private async prepareReview(wallet:string,draft:LaunchDraft,owned:{id:string;version:number;launchId:string;devBuyBps?:number}|undefined,quote:LaunchQuote,
+    renewal?:{record:LaunchRecord;finalizedHeight:number}) : Promise<PrepareLaunchResponse> {
     assertLaunchWalletAllowed(this.config, wallet);
-    this.assertEnabled();
-    if(this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
+    const readOnlyPreparation=!!owned&&preparedMintPreparationAllowed(this.config,wallet,owned.id);
+    if(!readOnlyPreparation)this.assertEnabled();
+    if(!readOnlyPreparation&&this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
     if(this.config.solana.cluster==="mainnet-beta" && !this.config.pumpLaunch.preparedMintDraftId)
       throw new AppError("feature_disabled","The official mint must be bound to its wallet-owned draft before Mainnet preparation");
     if(!currentQuoteAllowed(quote))throw new AppError("feature_disabled","Only SOL is supported for new launches");
@@ -108,7 +114,9 @@ export class LaunchService {
       const l=existing.launch;if(l.launcherWallet!==wallet||l.execution?.draftId!==owned.id||l.execution.draftVersion!==owned.version)throw new AppError("conflict","Launch attempt does not match this draft");
       assertLaunchWalletAllowed(this.config, wallet, l.mode === "production" ? "mainnet-beta" : l.execution.network);
       this.assertLocalMintBinding(l);
-      return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
+      if(!renewal)return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
+      if(existing.version!==renewal.record.version || l.execution.localMintReview?.messageSha256!==renewal.record.launch.execution?.localMintReview?.messageSha256)
+        throw new AppError("conflict","This review changed. Reload its current status before renewing.");
     }}
     if(Buffer.byteLength(draft.name)>32||Buffer.byteLength(draft.symbol)>13||Buffer.byteLength(draft.metadataUri)>200)throw new AppError("bad_request","Token name, symbol or metadata URI exceeds protocol byte limits");
     // Developer Buy comes only from the server-owned draft; quoted from the live chain, never from the client.
@@ -118,7 +126,7 @@ export class LaunchService {
       if(!Number.isInteger(devBuyBps)||devBuyBps<0||devBuyBps>DEV_BUY_MAX_BPS)throw new AppError("bad_request",`Developer Buy must be between 0% and ${DEV_BUY_MAX_BPS/100}% of total supply`);
       if(!owned||quote.asset!=="SOL"||!this.chain.quoteDevBuy||!this.chain.devBuySupport)throw new AppError("feature_disabled","Developer Buy is available only for SOL launches on an enabled test network");
       try{
-        const support=await this.chain.devBuySupport();
+        const support=await this.chain.devBuySupport(readOnlyPreparation);
         if(!support.available)throw new ChainFeatureUnavailable("dev_buy_unavailable",support.reason??"Developer Buy is unavailable on this network");
         devQuote=await this.chain.quoteDevBuy(devBuyBps);
       }catch(e){
@@ -131,8 +139,9 @@ export class LaunchService {
     const reserved = !!this.config.pumpLaunch.preparedMintDraftId && this.config.solana.cluster === "mainnet-beta";
     if(reserved && (wallet!==OFFICIAL_TREASURIES.aecoDeployer || owned?.id!==this.config.pumpLaunch.preparedMintDraftId))
       throw new AppError("forbidden","Only the operator-bound official draft may use this Mainnet launch release");
-    if(reserved && (!this.chain.buildUnsignedLaunchTransaction || !this.chain.mintAccountExists || await this.chain.mintAccountExists(PLANNED_AECO_MINT)))
+    if(reserved && (!this.chain.buildUnsignedLaunchTransaction || !this.chain.mintAccountExists))
       throw new AppError("unavailable","The reserved mint cannot be prepared. Reconcile its existing state; do not substitute another mint.");
+    if(reserved)await this.assertExpiredMintAbsent({mint:PLANNED_AECO_MINT});
     // The official branch never generates or receives its private mint key.
     const mintKp = reserved ? null : Keypair.generate();
     const mint = reserved ? PLANNED_AECO_MINT : mintKp!.publicKey.toBase58();
@@ -196,7 +205,24 @@ export class LaunchService {
       await inspectMintSigningReview(launch.execution.localMintReview,this.localMintPolicy());
       this.assertLocalMintBinding(launch);
     }
-    await this.store.createLaunch(launch);
+    if(renewal){
+      const old=renewal.record.launch,previous=old.execution!.localMintReview!,next=launch.execution?.localMintReview;
+      if(!next || !reserved || next.messageSha256===previous.messageSha256 || next.lastValidBlockHeight<=renewal.finalizedHeight)
+        throw new AppError("unavailable","A fresh signing window could not be prepared. The saved attempt is unchanged.");
+      next.renewal={previousMessageSha256:previous.messageSha256,previousLastValidBlockHeight:previous.lastValidBlockHeight,
+        finalizedBlockHeight:renewal.finalizedHeight,checkedAt:at};
+      launch.execution!.localMintReviewHistory=[...(old.execution!.localMintReviewHistory??[]),previous];
+      launch.createdAt=old.createdAt;launch.history=[...old.history,{status:"awaiting_signature",at}];
+      launch.errors=[...old.errors,{code:"mint_review_renewed",message:"Expired public signing review renewed on the same mint and attempt; fresh wallet approval is required.",at}];
+      if(await this.submissions.get(wallet,old.id))throw new AppError("conflict","Signed evidence appeared. Reconcile this attempt before renewing.");
+      try{await this.store.updateLaunch(launch,renewal.record.version);}catch(e){
+        if(e instanceof ConflictError){const latest=(await this.store.getLaunch(old.id))!.launch;
+          if(latest.execution?.localMintReview?.renewal?.previousMessageSha256===previous.messageSha256)
+            return {launch:latest,transaction:latest.execution.transaction,lastValidBlockHeight:latest.execution.lastValidBlockHeight,demoTransaction:false};
+          throw new AppError("conflict","The launch changed during renewal. Check its current status.");}
+        throw e;
+      }
+    }else await this.store.createLaunch(launch);
     return { launch, transaction: built.transaction, demoTransaction: built.demo, lastValidBlockHeight: built.lastValidBlockHeight };
   }
 
@@ -227,6 +253,33 @@ export class LaunchService {
     this.assertLocalMintBinding(l);
     if(!l.execution?.localMintReview)throw new AppError("bad_request","This launch uses the normal mint signer");
     return l.execution.localMintReview;
+  }
+
+  /** Explicit renewal of an expired, unsubmitted reserved review. Same mint/attempt, fresh approval, no broadcast. */
+  async renewLocalMintReview(wallet:string,id:string,previousMessageSha256:string){
+    const preparation=preparedMintPreparationAllowed(this.config,wallet);
+    if(!preparation)this.assertEnabled();
+    if(!preparation&&!this.config.pumpLaunch.enabled)throw new AppError("feature_disabled","Launch execution remains disabled");
+    await this.localMintReview(wallet,id);
+    const record=(await this.store.getLaunch(id))!,l=record.launch,review=l.execution!.localMintReview!;
+    this.assertLocalMintBinding(l);
+    if(review.messageSha256!==previousMessageSha256){
+      if(review.renewal?.previousMessageSha256===previousMessageSha256)
+        return {launch:l,transaction:l.execution!.transaction,lastValidBlockHeight:l.execution!.lastValidBlockHeight,demoTransaction:false};
+      throw new AppError("conflict","This is no longer the current signing review. Reload its status.");
+    }
+    if(!['awaiting_signature','expired'].includes(l.status)||l.signature||await this.submissions.get(wallet,id))
+      throw new AppError("conflict","Signed or unresolved launches cannot be renewed. Reconcile the original transaction.");
+    await this.assertPreparedNetwork(l);
+    if(!this.chain.getFinalizedBlockHeight)throw new AppError("unavailable","Finalized expiry verification is unavailable");
+    let height:number;try{height=await this.chain.getFinalizedBlockHeight();}catch{throw new AppError("unavailable","Finalized expiry verification is unavailable. The saved attempt is unchanged.");}
+    if(height<=review.lastValidBlockHeight)throw new AppError("conflict","The original signing window is still valid");
+    await this.assertExpiredMintAbsent(l);
+    let history:string[];try{history=await this.chain.listSignaturesForAddress(l.mint,null,1);}catch{throw new AppError("unavailable","Mint transaction history is unavailable. Reconcile this attempt before renewing.");}
+    if(history.length)
+      throw new AppError("unavailable","The reserved mint has transaction history. Reconcile it before renewing.");
+    return this.prepareReview(wallet,l.draft,{id:l.execution!.draftId,version:l.execution!.draftVersion,launchId:l.id,devBuyBps:l.execution!.devBuy?.bps??0},
+      {asset:'SOL'},{record,finalizedHeight:height});
   }
 
   /** Public signature import only. Original unsigned bytes remain immutable in durable storage. */
@@ -260,7 +313,7 @@ export class LaunchService {
   }
 
   /** Adapted from AgenticPad: finalized height alone cannot prove a mint was never created. */
-  private async assertExpiredMintAbsent(launch:TokenLaunch){
+  private async assertExpiredMintAbsent(launch:Pick<TokenLaunch,"mint">){
     if(!this.chain.mintAccountExists)throw new AppError("unavailable","Finalized mint verification is unavailable. Keep this saved launch; do not create another coin.");
     let exists:boolean;
     try{exists=await this.chain.mintAccountExists(launch.mint);}catch{throw new AppError("unavailable","Finalized mint verification failed. Keep this saved launch; retry checking its status.");}

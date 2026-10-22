@@ -102,6 +102,7 @@ export class LaunchService {
     if(!currentQuoteAllowed(quote))throw new AppError("feature_disabled","Only SOL is supported for new launches");
     if(owned){const existing=await this.store.getLaunch(owned.launchId);if(existing){
       const l=existing.launch;if(l.launcherWallet!==wallet||l.execution?.draftId!==owned.id||l.execution.draftVersion!==owned.version)throw new AppError("conflict","Launch attempt does not match this draft");
+      assertLaunchWalletAllowed(this.config, wallet, l.mode === "production" ? "mainnet-beta" : l.execution.network);
       return{launch:l,transaction:l.execution.transaction,lastValidBlockHeight:l.execution.lastValidBlockHeight,demoTransaction:false};
     }}
     if(Buffer.byteLength(draft.name)>32||Buffer.byteLength(draft.symbol)>13||Buffer.byteLength(draft.metadataUri)>200)throw new AppError("bad_request","Token name, symbol or metadata URI exceeds protocol byte limits");

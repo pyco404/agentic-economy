@@ -3,6 +3,8 @@ import {Connection,PublicKey,Keypair,AddressLookupTableAccount,AddressLookupTabl
 import {OFFICIAL_TREASURIES} from '@agentic-economy/shared';
 import {loadConfig} from '../src/config.js';
 import {MAINNET_GENESIS,MAINNET_PROGRAMS,assertReviewedMainnetPrograms} from '../src/chain/mainnet-policy.js';
+import {PLANNED_AECO_MINT} from '../src/chain/offline-mint.js';
+import {unsignedPumpLaunchInstructions} from '../src/chain/pump-builder.js';
 import {SolanaRpcChain} from '../src/chain/solana.js';
 const config={MODE:'production',DATABASE_URL:'postgres://never-connected',SOLANA_RPC_URL:'https://rpc.invalid',SOLANA_CLUSTER:'mainnet-beta',PLATFORM_TREASURY:OFFICIAL_TREASURIES.platform,AGENT_REWARDS_TREASURY:OFFICIAL_TREASURIES.agentRewards,FEE_ROUTING_VERIFIED:'true',PUMP_LAUNCH_ENABLED:'true',PUMP_LAUNCH_LOOKUP_TABLE:'33wnSGm8hPBd9omoa252NAY8JX5PWJngkTNJgzdvdEZr',AUTH_URI:'https://useaeco.xyz',CORS_ORIGINS:'https://useaeco.xyz,https://www.useaeco.xyz'};
 const loader=new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111');
@@ -34,4 +36,24 @@ describe('separately approved Mainnet release',()=>{
   const read=vi.spyOn(Connection.prototype,'getAddressLookupTable').mockResolvedValue({context:{slot:1},value:table(Keypair.generate().publicKey)});
   await expect(chain.assertLaunchSubmissionAllowed()).rejects.toMatchObject({code:'invalid_lookup_table'});read.mockResolvedValue({context:{slot:1},value:table()});await expect(chain.assertLaunchSubmissionAllowed()).resolves.toBeUndefined();expect(send).not.toHaveBeenCalled();
  });
+ it('allows only unsigned official preparation while execution flags stay off, and never broadcasts',async()=>{
+  const options={enabled:false,lookupTable:config.PUMP_LAUNCH_LOOKUP_TABLE,cluster:'mainnet-beta' as const,localGenesisHash:null,mainnetApproved:false};
+  const chain=new SolanaRpcChain('https://rpc.invalid',options),input={mint:PLANNED_AECO_MINT,launcherWallet:OFFICIAL_TREASURIES.aecoDeployer,
+    platformTreasury:OFFICIAL_TREASURIES.platform,agentRewardsTreasury:OFFICIAL_TREASURIES.agentRewards,name:'Mock Review',symbol:'MOCK',uri:'https://example.invalid/mock.json'};
+  const sends=vi.spyOn(Connection.prototype,'sendRawTransaction');
+  await expect(chain.buildUnsignedLaunchTransaction({...input,mint:Keypair.generate().publicKey.toBase58()})).rejects.toMatchObject({code:'invalid_mainnet_launch'});
+  vi.spyOn(Connection.prototype,'getGenesisHash').mockResolvedValue(MAINNET_GENESIS);vi.spyOn(Connection.prototype,'getMultipleAccountsInfo').mockResolvedValue(fixtures());
+  vi.spyOn(Connection.prototype,'getAccountInfo').mockResolvedValue({data:Buffer.alloc(0),owner:AddressLookupTableProgram.programId,lamports:1,executable:false,rentEpoch:0});
+  const ix=await unsignedPumpLaunchInstructions(input),addresses=[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()];
+  vi.spyOn(Connection.prototype,'getAddressLookupTable').mockResolvedValue({context:{slot:1},value:new AddressLookupTableAccount({key:new PublicKey(options.lookupTable),state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses}})});
+  vi.spyOn(Connection.prototype,'getLatestBlockhash').mockResolvedValue({blockhash:Keypair.generate().publicKey.toBase58(),lastValidBlockHeight:250});
+  vi.spyOn(Connection.prototype,'getBalance').mockResolvedValue(1_000_000_000);
+  vi.spyOn(Connection.prototype,'simulateTransaction').mockResolvedValue({context:{slot:1},value:{err:null,logs:[],accounts:[{lamports:940_000_000,owner:'11111111111111111111111111111111',data:['','base64'],executable:false,rentEpoch:0}]}});
+  vi.spyOn(Connection.prototype,'getFeeForMessage').mockResolvedValue({context:{slot:1},value:10000});
+  const built=await chain.buildUnsignedLaunchTransaction(input);expect(built.genesisHash).toBe(MAINNET_GENESIS);expect(built.mintSigningContext).toBeDefined();
+  await expect(chain.submitLaunchTransaction(built.transaction)).rejects.toMatchObject({code:'pump_launch_disabled'});
+  await expect(chain.assertLaunchSubmissionAllowed()).rejects.toMatchObject({code:'mainnet_approval_required'});
+  expect(options.enabled).toBe(false);expect(options.mainnetApproved).toBe(false);expect(sends).not.toHaveBeenCalled();
+ });
+
 });

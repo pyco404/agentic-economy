@@ -273,3 +273,5 @@ After verifying production remains isolated and the complete series passes valid
 Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Market availability and verified receipts are never simulated as live data; earned creator-fee settlement and production financial enablement remain gated.
 
 Current Phase 2 completion checklist: [verified milestones and remaining gates](docs/PHASE2_STATUS.md). Physical Phantom mobile remains pending; desktop Developer Buy and public-Devnet SOL creator-fee collection are complete.
+
+Official-domain and deployment readiness: [current public-demo rollout and gates](docs/PUBLIC_WEBSITE_READINESS.md). Physical mobile on-chain acceptance is deferred at the owner’s request; temporary mobile services are stopped.

@@ -3,7 +3,7 @@ import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import { ZodError, type z } from "zod";
-import { routes, type ApiError, type RouteDef, type RouteName } from "@agentic-economy/shared";
+import { routes, PrepareLaunchResponse, type ApiError, type RouteDef, type RouteName } from "@agentic-economy/shared";
 import type { AppContext } from "../context.js";
 import { assertLaunchWalletAllowed } from "../services/launch-permission.js";
 import { AppError } from "../util/errors.js";
@@ -108,6 +108,10 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
           const prev = await ctx.store.getIdempotent(idemKey, wallet, def.operationId);
           if (prev) {
             if (prev.requestHash !== requestHash) throw new AppError("idempotency_conflict", "Idempotency-Key reused with a different request");
+            if (name === "prepareLaunch") {
+              const { launch } = PrepareLaunchResponse.parse(prev.body);
+              assertLaunchWalletAllowed(ctx.config, wallet, launch.mode === "production" ? "mainnet-beta" : launch.execution?.network);
+            }
             reply.header("Idempotent-Replayed", "true");
             return reply.status(prev.status).send(prev.body);
           }

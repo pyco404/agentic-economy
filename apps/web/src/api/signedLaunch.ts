@@ -1,6 +1,6 @@
 import {z} from 'zod';
-const Envelope=z.object({wallet:z.string(),id:z.string(),mint:z.string(),network:z.enum(['devnet','localnet']),signature:z.string().min(64).max(88),transaction:z.string().min(1).max(1644),createdAt:z.number()});
-type Binding={wallet:string;id:string;mint:string;network:'devnet'|'localnet'};
+const Envelope=z.object({wallet:z.string(),id:z.string(),mint:z.string(),network:z.enum(['devnet','localnet','mainnet-beta']),signature:z.string().min(64).max(88),transaction:z.string().min(1).max(1644),createdAt:z.number()});
+type Binding={wallet:string;id:string;mint:string;network:'devnet'|'localnet'|'mainnet-beta'};
 export const SIGNED_PAYLOAD_TTL=24*60*60*1000;
 const key=(origin:string,b:Binding)=>`aeco:signed:${origin}:${b.wallet}:${b.id}`;
 /** A short-lived, tab-scoped recovery copy. Never stores private keys or logs transaction bytes. */

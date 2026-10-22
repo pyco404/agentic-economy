@@ -1,0 +1,401 @@
+{
+  "checkedAt": "2026-10-22T14:22:52.454582+00:00",
+  "auditIsReadOnly": true,
+  "cutoverFrontendDeployments": 1,
+  "backendDeploymentsTriggered": 0,
+  "migrationsApplied": 0,
+  "environments": {
+    "staging": {
+      "services": [
+        {
+          "name": "agentic-economy",
+          "deployment": "96e853df-bd74-4738-a6d6-58348ef41859",
+          "status": "SUCCESS",
+          "sha": "ac7fc18af4ad050489463894abd81fd6569006ab",
+          "active": [
+            {
+              "id": "96e853df-bd74-4738-a6d6-58348ef41859",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "name": "Postgres",
+          "deployment": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "name": "agentic-economy-web",
+          "deployment": "1fe31f55-7270-4c81-a32c-8f9b5cd08054",
+          "status": "SUCCESS",
+          "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e",
+          "active": [
+            {
+              "id": "1fe31f55-7270-4c81-a32c-8f9b5cd08054",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ],
+      "configuration": {
+        "MODE": "demo",
+        "SOLANA_CLUSTER": null,
+        "PUMP_LAUNCH_ENABLED": null,
+        "MAINNET_LAUNCH_APPROVED": null,
+        "FEE_ROUTING_VERIFIED": "false",
+        "AUTH_DOMAIN": "staging.useaeco.xyz",
+        "AUTH_URI": "https://staging.useaeco.xyz",
+        "CORS_ORIGINS": "https://staging.useaeco.xyz,https://agentic-economy-web-staging.up.railway.app,http://localhost:5173,http://127.0.0.1:5173",
+        "LAUNCHPAD_PREPARATION_CONCURRENCY": null,
+        "database": "railway"
+      },
+      "frontend": {
+        "VITE_API_URL": "https://api-staging.useaeco.xyz",
+        "VITE_WS_URL": "wss://api-staging.useaeco.xyz/api/v1/ws",
+        "providerSecretsAbsent": true
+      },
+      "domains": {
+        "backend": {
+          "customDomains": [
+            {
+              "domain": "api-staging.useaeco.xyz",
+              "id": "410d9236-8b5b-4b61-890e-d8caa6f8dd23",
+              "status": {
+                "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+                "dnsRecords": [
+                  {
+                    "currentValue": "45mhwwbf.up.railway.app",
+                    "fqdn": "api-staging.useaeco.xyz",
+                    "requiredValue": "45mhwwbf.up.railway.app",
+                    "status": "DNS_RECORD_STATUS_PROPAGATED"
+                  }
+                ],
+                "verified": true
+              }
+            }
+          ],
+          "serviceDomains": [
+            {
+              "domain": "agentic-economy-staging.up.railway.app",
+              "id": "6636426f-956c-4eab-a433-5bbaff6c827d",
+              "targetPort": null
+            }
+          ]
+        },
+        "frontend": {
+          "customDomains": [
+            {
+              "domain": "staging.useaeco.xyz",
+              "id": "edba1456-49df-4257-b66d-4c5bf46b3958",
+              "status": {
+                "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+                "dnsRecords": [
+                  {
+                    "currentValue": "9j45u3uc.up.railway.app",
+                    "fqdn": "staging.useaeco.xyz",
+                    "requiredValue": "9j45u3uc.up.railway.app",
+                    "status": "DNS_RECORD_STATUS_PROPAGATED"
+                  }
+                ],
+                "verified": true
+              }
+            }
+          ],
+          "serviceDomains": [
+            {
+              "domain": "agentic-economy-web-staging.up.railway.app",
+              "id": "5c490852-ca74-4c03-a6fd-44c79afde79b",
+              "targetPort": 8080
+            }
+          ]
+        }
+      }
+    },
+    "production": {
+      "services": [
+        {
+          "name": "Postgres",
+          "deployment": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "name": "agentic-economy-web",
+          "deployment": "ba11a995-8f60-4595-b8b2-010d340e0262",
+          "status": "SUCCESS",
+          "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e",
+          "active": [
+            {
+              "id": "ba11a995-8f60-4595-b8b2-010d340e0262",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "name": "agentic-economy",
+          "deployment": "04365147-839e-44ec-9a47-0c33bf54db04",
+          "status": "SUCCESS",
+          "sha": "6758f91bd2e8a69c242584133f0e5932b862bf7e",
+          "active": [
+            {
+              "id": "04365147-839e-44ec-9a47-0c33bf54db04",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ],
+      "configuration": {
+        "MODE": "production",
+        "SOLANA_CLUSTER": "mainnet-beta",
+        "PUMP_LAUNCH_ENABLED": "false",
+        "MAINNET_LAUNCH_APPROVED": "false",
+        "FEE_ROUTING_VERIFIED": "false",
+        "AUTH_DOMAIN": "useaeco.xyz",
+        "AUTH_URI": "https://useaeco.xyz",
+        "CORS_ORIGINS": "https://useaeco.xyz,https://www.useaeco.xyz,https://agentic-economy-web-production.up.railway.app",
+        "LAUNCHPAD_PREPARATION_CONCURRENCY": null,
+        "database": "aeco_production"
+      },
+      "frontend": {
+        "VITE_API_URL": "https://api.useaeco.xyz",
+        "VITE_WS_URL": "wss://api.useaeco.xyz/api/v1/ws",
+        "providerSecretsAbsent": true
+      },
+      "domains": {
+        "backend": {
+          "customDomains": [
+            {
+              "domain": "api.useaeco.xyz",
+              "id": "9fbdb632-053d-4763-a15b-df4079f22454",
+              "status": {
+                "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+                "dnsRecords": [
+                  {
+                    "currentValue": "53yjusbd.up.railway.app",
+                    "fqdn": "api.useaeco.xyz",
+                    "requiredValue": "53yjusbd.up.railway.app",
+                    "status": "DNS_RECORD_STATUS_PROPAGATED"
+                  }
+                ],
+                "verified": true
+              }
+            }
+          ],
+          "serviceDomains": [
+            {
+              "domain": "agentic-economy-production.up.railway.app",
+              "id": "b3cd2b5b-1951-4950-89a9-1f1b8e5b6ddc",
+              "targetPort": 8080
+            }
+          ]
+        },
+        "frontend": {
+          "customDomains": [
+            {
+              "domain": "useaeco.xyz",
+              "id": "67452c9c-7d15-4ae1-9bf8-e263cafa0410",
+              "status": {
+                "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+                "dnsRecords": [
+                  {
+                    "currentValue": "",
+                    "fqdn": "useaeco.xyz",
+                    "requiredValue": "xaj0luvv.up.railway.app",
+                    "status": "DNS_RECORD_STATUS_REQUIRES_UPDATE"
+                  }
+                ],
+                "verified": true
+              }
+            },
+            {
+              "domain": "www.useaeco.xyz",
+              "id": "ef178e16-53fc-4903-a447-9d91a9e9b8ff",
+              "status": {
+                "certificateStatus": "CERTIFICATE_STATUS_TYPE_VALID",
+                "dnsRecords": [
+                  {
+                    "currentValue": "9h8vju8f.up.railway.app",
+                    "fqdn": "www.useaeco.xyz",
+                    "requiredValue": "9h8vju8f.up.railway.app",
+                    "status": "DNS_RECORD_STATUS_PROPAGATED"
+                  }
+                ],
+                "verified": true
+              }
+            }
+          ],
+          "serviceDomains": [
+            {
+              "domain": "agentic-economy-web-production.up.railway.app",
+              "id": "89466d63-b5fc-4025-9c29-3d9542399b87",
+              "targetPort": 8080
+            }
+          ]
+        }
+      },
+      "repositoryTriggers": {
+        "backend": [],
+        "frontend": []
+      }
+    }
+  },
+  "http": [
+    {
+      "url": "https://api-staging.useaeco.xyz/healthz",
+      "status": 200,
+      "finalUrl": "https://api-staging.useaeco.xyz/healthz",
+      "body": {
+        "status": "ok",
+        "mode": "demo",
+        "role": "all",
+        "contractVersion": "0.5.2",
+        "tick": 1317908,
+        "simRunning": true,
+        "store": "postgres",
+        "financialFeaturesEnabled": false,
+        "simLeader": {
+          "localLeader": true,
+          "epoch": 35,
+          "lastTick": 1317908,
+          "heartbeatAgeMs": 108
+        }
+      }
+    },
+    {
+      "url": "https://api-staging.useaeco.xyz/readyz",
+      "status": 200,
+      "finalUrl": "https://api-staging.useaeco.xyz/readyz",
+      "body": {
+        "ready": true,
+        "role": "all",
+        "checks": [
+          {
+            "name": "database",
+            "ok": true,
+            "detail": "postgres"
+          },
+          {
+            "name": "state_view",
+            "ok": true,
+            "detail": "tick 1317908"
+          },
+          {
+            "name": "sim_leadership",
+            "ok": true,
+            "detail": "leader (epoch 35)"
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://agentic-economy-production.up.railway.app/healthz",
+      "status": 200,
+      "finalUrl": "https://agentic-economy-production.up.railway.app/healthz",
+      "body": {
+        "status": "ok",
+        "mode": "production",
+        "role": "all",
+        "contractVersion": "0.5.2",
+        "tick": 7373,
+        "simRunning": true,
+        "store": "postgres",
+        "financialFeaturesEnabled": false,
+        "simLeader": {
+          "localLeader": true,
+          "epoch": 1,
+          "lastTick": 7373,
+          "heartbeatAgeMs": 211
+        }
+      }
+    },
+    {
+      "url": "https://agentic-economy-production.up.railway.app/readyz",
+      "status": 200,
+      "finalUrl": "https://agentic-economy-production.up.railway.app/readyz",
+      "body": {
+        "ready": true,
+        "role": "all",
+        "checks": [
+          {
+            "name": "database",
+            "ok": true,
+            "detail": "postgres"
+          },
+          {
+            "name": "state_view",
+            "ok": true,
+            "detail": "tick 7373"
+          },
+          {
+            "name": "sim_leadership",
+            "ok": true,
+            "detail": "leader (epoch 1)"
+          },
+          {
+            "name": "indexer_lease",
+            "ok": true,
+            "detail": "active"
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://staging.useaeco.xyz/launchpad",
+      "status": 200,
+      "finalUrl": "https://staging.useaeco.xyz/launchpad",
+      "html": true
+    },
+    {
+      "url": "https://agentic-economy-web-production.up.railway.app/launchpad",
+      "status": 200,
+      "finalUrl": "https://agentic-economy-web-production.up.railway.app/launchpad",
+      "html": true
+    },
+    {
+      "url": "https://useaeco.xyz/",
+      "status": 200,
+      "finalUrl": "https://useaeco.xyz/",
+      "html": true
+    },
+    {
+      "url": "https://www.useaeco.xyz/",
+      "status": 200,
+      "finalUrl": "https://useaeco.xyz/",
+      "html": true
+    },
+    {
+      "url": "https://api.useaeco.xyz/healthz",
+      "status": 200,
+      "finalUrl": "https://api.useaeco.xyz/healthz",
+      "body": {
+        "status": "ok",
+        "mode": "production",
+        "role": "all",
+        "contractVersion": "0.5.2",
+        "tick": 7373,
+        "simRunning": true,
+        "store": "postgres",
+        "financialFeaturesEnabled": false,
+        "simLeader": {
+          "localLeader": true,
+          "epoch": 1,
+          "lastTick": 7373,
+          "heartbeatAgeMs": 176
+        }
+      }
+    }
+  ]
+}

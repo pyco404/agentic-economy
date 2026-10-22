@@ -20,7 +20,6 @@ import {
   Minus,
   Move,
   MousePointer2,
-  Navigation,
   Pause,
   Play,
   Plus,
@@ -79,6 +78,7 @@ export default function App() {
     [pageOpen, setPageOpen] = useState(true),
     [menu, setMenu] = useState(false),
     [touchPan, setTouchPan] = useState(false),
+    [worldToolsExpanded, setWorldToolsExpanded] = useState(false),
     [paused, setPaused] = useState(
       () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     ),
@@ -142,6 +142,7 @@ export default function App() {
       !window.confirm("Browser storage is unavailable. Your draft stays in this running app, but refreshing or closing the tab may lose it. Leave this page?")) return false;
     const nextUrl = routeUrl(p);
     if (window.location.pathname + window.location.search + window.location.hash !== nextUrl) window.history.pushState(null, "", nextUrl);
+    setWorldToolsExpanded(false);
     setPage(p);
     setPageOpen(true);
     setMenu(false);
@@ -320,10 +321,10 @@ export default function App() {
             aria-label="About Agentic Economy" title="About Agentic Economy" aria-current={!worldVisible && page === "about" ? "page" : undefined}
             onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("about"); }}>
             <Info size={18} aria-hidden="true" /><span>About</span></a>
-          <span className="demo-badge">
+          {import.meta.env.DEV && <span className="demo-badge">
             <i />
             {isDemo ? "Demo Mode" : `${data?.mode ?? "API"} · ${streamStatus}`}
-          </span>
+          </span>}
           <WalletButton />
           <button
             className="menu-button"
@@ -337,8 +338,7 @@ export default function App() {
           </button>
         </div>
       </header>
-      {menu && <MobileNavigation items={pages} active={worldVisible ? null : page} onNavigate={go} onClose={closeMenu}
-        modeLabel={isDemo ? "Demo Mode" : `${data?.mode ?? "API"} · ${streamStatus}`} />}
+      {menu && <MobileNavigation items={[{ id: "world", label: "World", icon: Building2 }, ...pages]} active={worldVisible ? "world" : page} onNavigate={go} onClose={closeMenu} />}
       {visualBootstrap && !skipWorld && <div className="global-world-layer" data-testid="global-world" data-interactive={worldVisible}
         inert={!worldVisible} aria-hidden={!worldVisible}>
                   <City
@@ -431,7 +431,7 @@ export default function App() {
           <div className="load-error" role="alert">
             {!worldVisible && <OverlayClose className="page-loading-close" onClose={closePage} />}
             <h1>Couldn’t load the city</h1>
-            <p>{error}</p>
+            <p>{import.meta.env.DEV ? error : "Please check your connection and try again."}</p>
             <button
               className="primary"
               onClick={() => {
@@ -440,7 +440,7 @@ export default function App() {
             >
               Try again
             </button>
-            <p className="small muted">
+            {import.meta.env.DEV && <><p className="small muted">
               The selected data source is {api.kind}. Backend failures never
               silently switch to demo.
             </p>
@@ -453,7 +453,7 @@ export default function App() {
               }}
             >
               Use offline fixtures (explicit fallback)
-            </button>
+            </button></>}
           </div>
         ) : (
           data && (
@@ -650,7 +650,7 @@ export default function App() {
                             <i />
                             {api.kind === "demo"
                               ? "Offline fixture activity"
-                              : "Backend simulation activity"}
+                              : "City activity"}
                           </div>
                           <select
                             className="world-filter"
@@ -691,11 +691,11 @@ export default function App() {
                                 </span>
                                 <div>
                                   <p>{displayActivity(a, data.agents)}</p>
-                                  <small>
+                                  {import.meta.env.DEV && <small>
                                     {api.kind === "demo"
                                       ? "Fixture event"
                                       : `Simulation tick ${a.tick}`}
-                                  </small>
+                                  </small>}
                                 </div>
                               </div>
                             ))}
@@ -713,12 +713,7 @@ export default function App() {
                     )}
                     </div>
                   </aside>
-                  <div className="camera-tools" aria-label="Camera controls">
-                    <button className="touch-pan-control" aria-label="Pan with one finger"
-                      aria-pressed={touchPan} title={touchPan ? "Pan mode on · tap to restore one-finger rotation" : "Pan with one finger · tap to enable"}
-                      onClick={() => setTouchPan((enabled) => !enabled)}>
-                      <Move size={18} /><span>{touchPan ? "Orbit" : "Pan"}</span>
-                    </button>
+                  <div className="camera-tools" role="group" aria-label="Camera controls" onKeyDown={(event) => { if (event.key === "Escape" && worldToolsExpanded) { setWorldToolsExpanded(false); event.currentTarget.querySelector<HTMLButtonElement>(".world-tools-toggle")?.focus(); } }}>
                     <button
                       aria-label="Zoom in"
                       onClick={() => city.current?.zoom(1.2)}
@@ -730,6 +725,15 @@ export default function App() {
                       onClick={() => city.current?.zoom(1 / 1.2)}
                     >
                       <Minus size={19} />
+                    </button>
+                    <button type="button" className="world-tools-toggle" aria-label="More world controls"
+                      aria-expanded={worldToolsExpanded} aria-controls="world-secondary-controls"
+                      onClick={() => setWorldToolsExpanded((open) => !open)}><Layers size={19} /></button>
+                    <div id="world-secondary-controls" className={`camera-tools-secondary${worldToolsExpanded ? " is-expanded" : ""}`}>
+                    <button className="touch-pan-control" aria-label="Pan with one finger"
+                      aria-pressed={touchPan} title={touchPan ? "Pan mode on · tap to restore one-finger rotation" : "Pan with one finger · tap to enable"}
+                      onClick={() => setTouchPan((enabled) => !enabled)}>
+                      <Move size={18} /><span>{touchPan ? "Orbit" : "Pan"}</span>
                     </button>
                     <span />
                     <button
@@ -762,6 +766,7 @@ export default function App() {
                     </button>
                     {mobileWorld && !immersive && <button aria-label="Enter immersive mode"
                       title="Hide world interface" onClick={() => setImmersive(true)}><Maximize2 size={17} /></button>}
+                    </div>
                   </div>
                   <div className="world-bottom">
                     <div className="world-stat">
@@ -784,9 +789,7 @@ export default function App() {
                             : data.stats.buildings}
                         </b>
                         <small>
-                          {api.kind === "demo"
-                            ? "Generated buildings"
-                            : "Persisted buildings"}
+                          Buildings
                         </small>
                       </span>
                     </div>
@@ -820,18 +823,15 @@ export default function App() {
                     </button>
                   </div>
                   <div className="world-footer">
-                    <span role="status" data-testid="connection-status">
+                    {import.meta.env.DEV && <span role="status" data-testid="connection-status">
                       {api.kind === "demo"
                         ? "Offline fixtures"
                         : `Backend demo · ${streamStatus} · Tick ${data.streamTick ?? data.stats.tick}`}
-                    </span>
-                    <span>
+                    </span>}
+                    <span className="camera-hint">
                       <MousePointer2 size={12} /> Drag to orbit · Right drag to pan · Scroll to zoom
                     </span>
-                    <span>
-                      <Navigation size={12} /> {metrics.chunks} visible chunks ·{" "}
-                      {metrics.fps} FPS · {metrics.drawCalls} draw calls
-                    </span>
+                    {import.meta.env.DEV && <span>{metrics.chunks} visible chunks · {metrics.fps} FPS · {metrics.drawCalls} draw calls</span>}
                     {api.kind === "demo" && (
                       <button
                         onClick={() => setGrowth((n) => Math.min(540, n + 180))}
@@ -901,7 +901,7 @@ export default function App() {
                       {data?.communities.filter(c => c.headquartersBuildingId === selectedNow.id).map(c => <p key={c.id}>Headquarters of <button className="text-button" onClick={() => openCommunity(c.id)}>{c.name} (${c.symbol})</button></p>)}
                       <span className="tag">
                         {readable(selectedNow.sourceKind ?? selectedNow.kind)} ·{" "}
-                        {isDemo ? "Demo building" : "Server building"}
+                        {isDemo ? "Demo building" : "Building"}
                       </span>
                       <div className="building-preview">
                         <Building2 size={60} strokeWidth={1} />
@@ -993,7 +993,7 @@ export default function App() {
                     <span>
                       {isDemo
                         ? "Demo preview · No real financial actions"
-                        : "Server data · Financial actions disabled"}{" "}
+                        : "Financial actions disabled"}{" "}
                       · City Credits are simulated.
                     </span>
                   </footer>

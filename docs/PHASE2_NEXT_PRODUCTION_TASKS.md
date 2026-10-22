@@ -8,6 +8,8 @@ Public browsing remains open. Before the official native token, complete one sep
 
 ## Mandatory official $AECO launch before Phase 3
 
+The official planned mint is **`ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco`**, supplied by the owner after vanity-keypair generation. Preserve it exactly and do not allocate another official mint. [Launch/signing, treasury-reference and holder-indexing preparation](OFFICIAL_AECO_LAUNCH_PLAN.md). This records a planned identity, not a verified on-chain launch or Mainnet authorization.
+
 The reserved deployer remains `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`. It must never substitute for Platform or Agent Rewards recipients. Current production treasury, SOL-only, 0.05 SOL and 60/40 rules remain unchanged. No official $AECO token has been launched by this deployment and no real transaction is authorized. A [read-only finalized Mainnet checkpoint](evidence/aeco-deployer-readonly-2026-10-22.json) found the reserved deployer balance at 0 lamports and no signatures in the bounded recent-history query. This is not an exhaustive mint/history audit. Any eventual funding and real transaction need separate authorization; no funds were moved.
 
 Phase 2 completes only after this real Mainnet launch is initiated and approved by the owner through useaeco.xyz and independently verified. Phase 3 is blocked until then. [Mandatory production release sequence](PRODUCTION_RELEASE_CHECKLIST.md). Supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and all transaction costs remain separately unapproved; existing protocol defaults are not owner approval. TOKEN/AECO pairing stays Phase 4.

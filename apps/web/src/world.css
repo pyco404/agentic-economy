@@ -130,3 +130,19 @@
   .world-main.is-immersive .selection-panel,
   .world-main.is-immersive .agent-detail { bottom: 28px; max-height: 42%; }
 }
+
+.camera-tools-secondary { display: contents; }
+.world-main .camera-tools .world-tools-toggle { display: none; }
+@media (max-width: 850px) {
+  .world-main .camera-tools button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+  .world-main .camera-tools .world-tools-toggle { display: grid; place-items: center; }
+  .world-main .camera-tools .camera-tools-secondary { display: none; }
+  .world-main .camera-tools .camera-tools-secondary.is-expanded {
+    display: flex; flex-direction: column; position: absolute; left: calc(100% + 8px); bottom: 0;
+    padding: 4px; max-height: min(60dvh, 360px); overflow-y: auto;
+    border: 1px solid #ddd4c2; border-radius: 9px; background: #fffaf0; box-shadow: 0 6px 20px #263a3020;
+  }
+  .world-main .camera-tools .camera-tools-secondary > span { display: none; }
+}
+
+@media (max-width: 850px) { .world-main .world-footer .camera-hint { display: none; } }

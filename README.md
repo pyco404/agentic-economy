@@ -48,7 +48,7 @@ Explore also includes Hot volume, Top market cap, Graduating soon, and Most hold
 3. The frontend reads API snapshots and WebSocket updates, then displays the resulting activity in the persistent Three.js city.
 4. Environmental motion such as ambient transport adds life to the scene. Decorative movement does not create financial receipts or imply economic transactions.
 
-Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Future holder-access agents, rentable Super-Agents, and funded $AECO rewards are roadmap items. Guarded token execution is verified in test environments and remains disabled on demo staging.
+Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Automatic basic Common Agents are a Phase 2 requirement after the official $AECO launch: one persistent identity per qualifying wallet, with no login or activation required. The implementation remains default-off pending the real verified mint. Phase 3 expands these same identities with advanced/economic capabilities. Rentable Super Agents and funded $AECO rewards remain future features. [Implementation and evidence](docs/AECO_COMMON_AGENTS.md). Guarded token execution is verified in test environments and remains disabled on demo staging.
 
 ### Technology
 
@@ -58,7 +58,7 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 - **Token preparation:** Solana wallet message authentication and server-side Pinata/IPFS uploads when configured.
 - **Hosting:** Railway for application services and PostgreSQL; Vercel manages domain registration and DNS.
 
-Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine comparison / gated Mainnet readiness](docs/GAMINE_LAUNCHPAD_INTEGRATION.md). Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval. Phase 2 also requires the owner-approved official $AECO Mainnet launch through useaeco.xyz and independent mint, supply, metadata, fee-routing, finality and Explore verification. Phase 3 stays blocked until that launch succeeds and Phase 2 is completed. [Production release checklist](docs/PRODUCTION_RELEASE_CHECKLIST.md).
+Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine comparison / gated Mainnet readiness](docs/GAMINE_LAUNCHPAD_INTEGRATION.md). Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval. Phase 2 also requires the owner-approved official $AECO Mainnet launch through useaeco.xyz and independent mint, supply, metadata, fee-routing, finality and Explore verification. Phase 2 additionally requires automatic $AECO ownership indexing, moving Common Agents and reconciled holder/agent counts. Phase 3 stays blocked until that launch and population acceptance succeed and Phase 2 is completed. [Production release checklist](docs/PRODUCTION_RELEASE_CHECKLIST.md).
 
 ## What works on main
 

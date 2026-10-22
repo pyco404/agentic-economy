@@ -5260,6 +5260,122 @@ components:
         - kind
         - syntheticName
         - legacyOwnerWallet
+    LocalMintReview:
+      type: object
+      properties:
+        version:
+          type: number
+          const: 1
+        launchId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        network:
+          type: string
+          enum:
+            - mainnet-beta
+            - devnet
+        genesisHash:
+          $ref: "#/components/schemas/PublicKey"
+        mint:
+          $ref: "#/components/schemas/PublicKey"
+        launcherWallet:
+          $ref: "#/components/schemas/PublicKey"
+        platformTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        agentRewardsTreasury:
+          $ref: "#/components/schemas/PublicKey"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+        symbol:
+          type: string
+          minLength: 1
+          maxLength: 13
+        uri:
+          type: string
+          minLength: 1
+          maxLength: 200
+        recentBlockhash:
+          $ref: "#/components/schemas/PublicKey"
+        lastValidBlockHeight:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        maxTotalDebitLamports:
+          type: string
+          pattern: ^[1-9][0-9]{0,19}$
+        messageSha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        unsignedTransaction:
+          type: string
+          minLength: 1
+          maxLength: 1644
+        lookupTables:
+          maxItems: 4
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                $ref: "#/components/schemas/PublicKey"
+              addresses:
+                maxItems: 256
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicKey"
+            required:
+              - key
+              - addresses
+            additionalProperties: false
+        devBuy:
+          type: object
+          properties:
+            tokenAmount:
+              type: string
+              pattern: ^[1-9][0-9]{0,19}$
+            maxQuoteCost:
+              type: string
+              pattern: ^[1-9][0-9]{0,19}$
+          required:
+            - tokenAmount
+            - maxQuoteCost
+          additionalProperties: false
+        globalAccountBase64:
+          type: string
+          maxLength: 32768
+        protocolFeeRecipients:
+          type: object
+          properties:
+            feeRecipient:
+              $ref: "#/components/schemas/PublicKey"
+            buybackFeeRecipient:
+              $ref: "#/components/schemas/PublicKey"
+          required:
+            - feeRecipient
+            - buybackFeeRecipient
+          additionalProperties: false
+      required:
+        - version
+        - launchId
+        - network
+        - genesisHash
+        - mint
+        - launcherWallet
+        - platformTreasury
+        - agentRewardsTreasury
+        - name
+        - symbol
+        - uri
+        - recentBlockhash
+        - lastValidBlockHeight
+        - maxTotalDebitLamports
+        - messageSha256
+        - unsignedTransaction
+        - lookupTables
+      additionalProperties: false
     MarketListing:
       type: object
       properties:
@@ -7085,6 +7201,8 @@ components:
                 - USDC
             quoteMint:
               $ref: "#/components/schemas/PublicKey"
+            localMintReview:
+              $ref: "#/components/schemas/LocalMintReview"
             platformOrigin:
               type: string
               const: PLATFORM
@@ -7248,6 +7366,8 @@ components:
                 - USDC
             quoteMint:
               $ref: "#/components/schemas/PublicKey"
+            localMintReview:
+              $ref: "#/components/schemas/LocalMintReview"
             platformOrigin:
               type: string
               const: PLATFORM

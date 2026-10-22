@@ -1,6 +1,6 @@
 # Phase 2 acceptance status — 22 October 2026
 
-This is the current checklist; earlier dated reports remain historical evidence. **Phase 2 cannot close, and Phase 3 cannot begin, until the owner launches the official $AECO token through https://useaeco.xyz on Solana Mainnet and independent on-chain verification passes.** Production readiness and separate Mainnet activation/transaction approvals come first. No $AECO parameters or transaction are approved by this requirement.
+This is the current checklist; earlier dated reports remain historical evidence. **Phase 2 cannot close, and Phase 3 cannot begin, until the owner launches the official $AECO token through https://useaeco.xyz on Solana Mainnet, independent on-chain verification passes, ownership indexing creates one persistent Common Agent per qualifying wallet, and the moving city population reconciles.** Production readiness and separate Mainnet activation/transaction approvals come first. No $AECO parameters or transaction are approved by this requirement.
 
 [Mandatory sequence, parameter approvals and release evidence checklist](PRODUCTION_RELEASE_CHECKLIST.md).
 
@@ -11,6 +11,7 @@ This is the current checklist; earlier dated reports remain historical evidence.
 | Physical Phantom mobile | **AUTHENTICATION VERIFIED; ON-CHAIN DEFERRED** — seven physical connection/authentication/layout/refresh checks plus phone-image preview passed; owner paused further launches |
 | Helius replacement | **ACTIVE AND VERIFIED** in the running staging backend |
 | Pinata image and metadata uploads | **VERIFIED** on staging; credential rotation remains pending maintenance |
+| Automatic $AECO Common Agents | **IMPLEMENTED / FIXTURES VERIFIED, RELEASE PENDING:** default-off finalized ownership indexing, durable identities, basic navigation and public population; real-mint acceptance awaits the separately approved official launch. Phase 3 expands these same identities. See [implementation and acceptance](AECO_COMMON_AGENTS.md) |
 | Official $AECO Mainnet launch | **REQUIRED / NOT LAUNCHED:** owner-initiated production TOKEN/SOL launch and independent mint/supply/metadata/fee-routing/finality/Explore verification are mandatory before Phase 2 completion and Phase 3 |
 | Public website | **LIVE AND VERIFIED:** https://useaeco.xyz; www redirect, valid apex/www/API TLS, official API/WSS, actual-origin automated auth/session refresh and responsive browser checks pass; transactions remain off |
 | Application staging release | **DEPLOYED:** backend **ac7fc18**, frontend **aa1f53a**, compatible contract 0.5.2; native-token roadmap gate, responsive browser, WSS, persistent world and API health checks pass. New capacity/header live acceptance remains pending; financial execution off |

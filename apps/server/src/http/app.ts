@@ -5,6 +5,7 @@ import websocket from "@fastify/websocket";
 import { ZodError, type z } from "zod";
 import { routes, type ApiError, type RouteDef, type RouteName } from "@agentic-economy/shared";
 import type { AppContext } from "../context.js";
+import { assertLaunchWalletAllowed } from "../services/launch-permission.js";
 import { AppError } from "../util/errors.js";
 import { registerHandlers } from "./handlers.js";
 import { registerWebSocket } from "../ws/gateway.js";
@@ -93,6 +94,8 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
         let wallet = "";
         let sessionExpiresAt = "";
         if (def.auth) ({ wallet, sessionExpiresAt } = await ctx.auth.authenticate(req.headers.authorization));
+        // Reauthorize before idempotent replay; old preparation receipts never grant Mainnet access.
+        if (name === "prepareLaunch") assertLaunchWalletAllowed(ctx.config, wallet);
         const params = def.params ? def.params.parse(req.params) : {};
         const query = def.query ? def.query.parse(req.query) : {};
         const body = def.body ? def.body.parse(req.body ?? {}) : undefined;

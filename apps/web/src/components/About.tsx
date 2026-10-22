@@ -44,8 +44,8 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       </div>
       <div className="about-world-window" aria-label="A view into the same procedural city behind this page">
         <span className="about-coordinate"><Globe2 size={15} aria-hidden="true" />One living world.<br /><small>Every page belongs to it.</small></span>
-        <div className="about-connection"><span className={`about-signal ${source === "http" && connected ? "is-connected" : ""}`} aria-hidden="true" />
-          <div><strong>{connection.label}</strong><p>{connection.detail}</p></div></div>
+        {import.meta.env.DEV && <div className="about-connection"><span className={`about-signal ${source === "http" && connected ? "is-connected" : ""}`} aria-hidden="true" />
+          <div><strong>{connection.label}</strong><p>{connection.detail}</p></div></div>}
       </div>
     </section>
 

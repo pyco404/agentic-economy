@@ -13,3 +13,6 @@ id.json
 
 # Private, locally retained database backups.
 /.backups/
+
+# Local promotional-video production sources and rendered media.
+/video/

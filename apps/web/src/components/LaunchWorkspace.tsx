@@ -38,10 +38,10 @@ export function LaunchWorkspace() {
  const [fields,setFields] = useState<Fields>(empty), [busy,setBusy] = useState(false), [error,setError] = useState(''), [message,setMessage] = useState('');
  const [review,setReview] = useState<z.infer<typeof DraftReview>|null>(null), [uploads,setUploads] = useState<boolean|null>(null);
  const [maxBytes,setMaxBytes] = useState(5_000_000), [memoryStorage,setMemoryStorage] = useState(false), [logoScope,setLogoScope] = useState(newScope);
- const [localFile,setLocalFile]=useState<File|null>(null),[launchEnabled,setLaunchEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false),[devBuyAvailability,setDevBuyAvailability]=useState<DevBuyAvailability|null>(null),[attempted,setAttempted]=useState(false);
+ const [localFile,setLocalFile]=useState<File|null>(null),[preparationEnabled,setPreparationEnabled]=useState(false),[executionBusy,setExecutionBusy]=useState(false),[executionLocked,setExecutionLocked]=useState(false),[logoValidating,setLogoValidating]=useState(false),[created,setCreated]=useState(false),[devBuyAvailability,setDevBuyAvailability]=useState<DevBuyAvailability|null>(null),[attempted,setAttempted]=useState(false);
  const [devBuyValid,setDevBuyValid]=useState(true),[reviewedDevBuyMax,setReviewedDevBuyMax]=useState<string|null>(null);
  const [recoveryOnly,setRecoveryOnly]=useState(false);
- const flowActive=!!review&&(review.launchEnabled||recoveryOnly);
+ const flowActive=!!review&&(review.launchEnabled||review.preparationEnabled||recoveryOnly);
  const [phase,setPhase] = useState<PreparationStage|null>(null), [progress,setProgress] = useState<number|null>(null), [removed,setRemoved] = useState(false);
  const [draftsOpen,setDraftsOpen]=useState(false),[restoring,setRestoring]=useState(false),[saveState,setSaveState]=useState<{phase:'idle'|'saving'|'saved'|'error';fingerprint:string;error?:string}>({phase:'idle',fingerprint:''}),[retrySave,setRetrySave]=useState(0),[imageReselect,setImageReselect]=useState(false);
  const writer=useRef<DraftWriter|null>(null),editorEpoch=useRef(0);
@@ -79,15 +79,15 @@ export function LaunchWorkspace() {
   try{const saved=JSON.parse(hint) as {key?:string;id?:string};if(!saved?.key&&!saved?.id)return;hasSavedAttempt=!!saved.id;}catch{return;}
   const r=await launchpadRequest(`${base}/${d.id}/review`,DraftReview);check();
   if(r.draft.wallet!==owner||r.draft.id!==d.id||r.draft.version!==d.version)throw Error('Saved launch details changed. Resume the correct draft.');
-  if(hasSavedAttempt||r.launchEnabled&&r.readyForNextMilestone){setRecoveryOnly(!r.launchEnabled||!r.readyForNextMilestone);setExecutionBusy(true);setReview(r);}
+  if(hasSavedAttempt||(r.launchEnabled||r.preparationEnabled)&&r.readyForNextMilestone){setRecoveryOnly(!r.launchEnabled||!r.readyForNextMilestone);setExecutionBusy(true);setReview(r);}
  };
 
  const reset=()=>{setRecoveryOnly(false);beginEditor(null);localSet(activeKey(owner),'new');setAttempted(false);setCreated(false);keys.current.clear();selected.current=null;setLocalFile(null);current.current=null;setDraft(null);setFields(empty);setReview(null);setRemoved(false);setImageReselect(false);setLogoScope(newScope());setError('');setMessage('');setDraftsOpen(false);};
  useEffect(()=>{
   const version=++generation.current;
   if(previousOwner.current&&previousOwner.current!==owner){selected.current=null;setLocalFile(null);form.current=empty;setFields(empty);setRemoved(false);setLogoScope(newScope());}
-  previousOwner.current=owner;setRecoveryOnly(false);beginEditor(null);keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setDraftsOpen(false);setImageReselect(false);setError('');setMessage('');setUploads(null);setLaunchEnabled(false);setDevBuyAvailability(null);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);setRestoring(!!owner);
-  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setLaunchEnabled(c.launchEnabled);setDevBuyAvailability(c.devBuy?{status:c.devBuy.status,reason:c.devBuy.reason}:null);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
+  previousOwner.current=owner;setRecoveryOnly(false);beginEditor(null);keys.current.clear();current.current=null;setDraft(null);setItems([]);setReview(null);setDraftsOpen(false);setImageReselect(false);setError('');setMessage('');setUploads(null);setPreparationEnabled(false);setDevBuyAvailability(null);setCreated(false);setExecutionBusy(false);setExecutionLocked(false);setMemoryStorage(false);setRestoring(!!owner);
+  void launchpadRequest(launchpadPaths.capabilities,LaunchpadCapabilities).then(c=>{if(version===generation.current){setUploads(c.uploads);setPreparationEnabled(!!(c.preparationEnabled||c.launchEnabled));setDevBuyAvailability(c.devBuy?{status:c.devBuy.status,reason:c.devBuy.reason}:null);setMaxBytes(c.maxBytes);setMemoryStorage(c.storage==='memory');}}).catch(()=>{if(version===generation.current)setUploads(false);});
   if(owner){const before=draftFingerprint(form.current),hadContent=hasDraftContent(form.current);void (async()=>{
    try{const result=await launchpadRequest(base,z.object({items:z.array(SavedLaunchDraft)}));if(version!==generation.current)return;setItems(result.items.filter(d=>d.wallet===owner));
     const active=localGet(activeKey(owner));if(active==='new'||hadContent||draftFingerprint(form.current)!==before)return;
@@ -132,7 +132,7 @@ export function LaunchWorkspace() {
   setReviewedDevBuyMax(!devQuote.loading&&devQuote.quote?.status==='available'&&devQuote.quote.bps===form.current.devBuyBps?devQuote.quote.maxQuoteCost:null);
   void run(async(signal,check)=>{
    if(uploads===null)throw new Error('Token preparation is still loading. Please try again in a moment.');
-   if(!launchEnabled)throw new Error('Coin creation is unavailable in this demo. You can preview your coin and save a draft.');
+   if(!preparationEnabled)throw new Error('Coin creation is unavailable in this demo. You can preview your coin and save a draft.');
    const result=await prepareLaunchDraft({fields:{...form.current},draft:current.current,file:selected.current?.file??null,removeImage:removed,uploads,devBuyAvailable:devBuyQuoteEnabled}, {
     check,stage:value=>{setPhase(value);setProgress(null);},save:values=>save(values,signal),
     removeImage:d=>launchpadRequest(`${base}/${d.id}/logo`,SavedLaunchDraft,{...jsonRequest('DELETE',{version:d.version}),signal}),
@@ -170,16 +170,16 @@ export function LaunchWorkspace() {
       onFileChange={file=>{setImageReselect(false);if(current.current)localSet(imageKey(current.current.id),file?'local':removed?'removed':null);setLocalFile(file);selected.current=file?{file,key:crypto.randomUUID()}:null;setReview(null);setError('');setMessage('');}}
       onImage={()=>{setRemoved(true);setImageReselect(false);if(current.current)localSet(imageKey(current.current.id),'removed');setReview(null);}}/>
      {imageReselect&&<p className="small muted" role="note">Your previous image was local to the browser. Please select it again before creating your coin.</p>}
-     <button className="primary wide" type="submit" disabled={!!owner&&(uploads===null||!launchEnabled||executionBusy||flowActive||logoValidating||!devBuyValid||restoring)}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':created?'Coin created':phase??(busy?'Preparing…':logoValidating?'Checking logo…':executionBusy?'Preparing transaction…':flowActive?'Continue below':'Create Coin')}</button>
+     <button className="primary wide" type="submit" disabled={!!owner&&(uploads===null||!preparationEnabled||executionBusy||flowActive||logoValidating||!devBuyValid||restoring)}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':created?'Coin created':phase??(busy?'Preparing…':logoValidating?'Checking logo…':executionBusy?'Preparing transaction…':flowActive?'Continue below':'Create Coin')}</button>
     </fieldset>
    </form>
-   {owner&&!flowActive&&uploads!==null&&!launchEnabled&&<p className="small muted" role="note">Coin creation is unavailable in this demo. Your preview and saved drafts remain available; no images are uploaded.</p>}
+   {owner&&!flowActive&&uploads!==null&&!preparationEnabled&&<p className="small muted" role="note">Coin creation is unavailable in this demo. Your preview and saved drafts remain available; no images are uploaded.</p>}
    <ol hidden={flowActive} className="launch-creation-steps" aria-label="Coin creation steps"><li aria-current={!flowActive?'step':undefined}>Token details</li><li aria-current={flowActive&&!created?'step':undefined}>Review</li><li aria-current={created?'step':undefined}>Result</li></ol>
    {progress!==null&&<progress max={100} value={progress} aria-label="Logo upload progress"/>}
    {busy&&<><p className="small" role="status">{phase??'Preparing…'}</p><button className="text-button" onClick={()=>controller.current?.abort()}>Cancel preparation</button></>}
    {(error||session.error)&&<p role="alert">{error||session.error}</p>}{message&&!flowActive&&<p role="status">{message}</p>}
    {review&&<section className="launch-review" aria-label="Token review">
-    {(review.launchEnabled&&review.readyForNextMilestone)||recoveryOnly?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft} reviewedMaxDevBuyCost={reviewedDevBuyMax} executionAllowed={!recoveryOnly} autoPrepare={!recoveryOnly} onConfirmed={setCreated} onNewCoin={reset} onBusyChange={setExecutionBusy} onLockChange={setExecutionLocked} onEdit={()=>{setReview(null);setError('');setMessage('Update your details, then choose Create Coin.');}}/>:<><h3>Token preparation</h3><p>Your draft is saved. Coin creation is not available yet.</p><button className="secondary wide" disabled>Token launch unavailable</button></>}
+    {((review.launchEnabled||review.preparationEnabled)&&review.readyForNextMilestone)||recoveryOnly?<LaunchExecution key={`${review.draft.id}:${review.draft.version}`} draft={review.draft} reviewedMaxDevBuyCost={reviewedDevBuyMax} executionAllowed={review.launchEnabled&&!recoveryOnly} preparationAllowed={!!(review.preparationEnabled||review.launchEnabled)} autoPrepare={!recoveryOnly} onConfirmed={setCreated} onNewCoin={reset} onBusyChange={setExecutionBusy} onLockChange={setExecutionLocked} onEdit={()=>{setReview(null);setError('');setMessage('Update your details, then choose Create Coin.');}}/>:<><h3>Token preparation</h3><p>Your draft is saved. Coin creation is not available yet.</p><button className="secondary wide" disabled>Token launch unavailable</button></>}
    </section>}
    {draftsOpen&&<MyDrafts items={items} busy={busy} memory={memoryStorage} onClose={()=>setDraftsOpen(false)} onResume={load}
     onNew={()=>void run(async(signal,check)=>{if(!await leaveEditor(signal))return;check();reset();})}

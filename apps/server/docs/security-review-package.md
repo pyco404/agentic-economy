@@ -1,5 +1,7 @@
 # Token Launchpad: security review package
 
+> Updated internal review: [22 October security, fee collection and mobile status](phase2-review-2026-10-22.md). Public-Devnet earned SOL creator-fee collection now has finalized evidence; current staging Pinata uploads are verified. Physical mobile and independent review remain open. USDC is outside Phase 2. Historical statements below retain their original date.
+
 Prepared 19 October 2026 for an independent reviewer. **No independent review has been performed yet.** Everything below comes from the development team's own review and tests. Read it alongside [the Phase 2 completion record](phase2-completion-2026-10-19.md) and [the blockchain audit](phase2-final-blockchain-audit.md).
 
 Current posture: staging runs `MODE=demo`. Mainnet launches, real charges, payouts, claims and treasury signing are disabled. Mainnet writes are hard-rejected in code.

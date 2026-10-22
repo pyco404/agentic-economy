@@ -16,9 +16,9 @@ const load=():ObservedTransaction=>JSON.parse(readFileSync(new URL('./fixtures/p
 const AGENT='C2DTiS8qWqsehvQc8oqsa82rHwnjSCbmKuZ7smajQWd',PLATFORM='4zgPy6LyASjdGCSXhqKKbsS176jQHEshDKrZKN6dhrDb';
 
 describe('original distribute_creator_fees (SOL)',()=>{
- it('verifies the real distribution: exact 60/40 payouts that reconcile to the creator vault, no dust',()=>{
+ it('verifies the real distribution: exact 60/40 payouts that reconcile to the creator vault, dust not inferred from net event',()=>{
   const tx=load(),v=verifiedCreatorDistribution(tx,PLATFORM,AGENT);
-  expect(v).toMatchObject({quote:WRAPPED_SOL_MINT,symbol:'SOL',decimals:9,total:2_550_160n,dust:0n});
+  expect(v).toMatchObject({quote:WRAPPED_SOL_MINT,symbol:'SOL',decimals:9,total:2_550_160n,dust:null});
   expect(v.payouts).toEqual(expect.arrayContaining([
    expect.objectContaining({address:AGENT,bps:6000,amount:1_530_096n}),
    expect.objectContaining({address:PLATFORM,bps:4000,amount:1_020_064n}),

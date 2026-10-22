@@ -1,19 +1,19 @@
 # Official website readiness — 22 October 2026
 
-**LIVE, reverified 22 October 2026 at 17:20 UTC:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
+**LIVE, reverified 22 October 2026 after the `5fa0507` frontend/API rollout:** https://useaeco.xyz. The owner approved the scoped official-domain cutover, which is completed. Public browsing is available independently of remaining Mainnet launch readiness. Financial execution, payments, broadcasting and payouts remain disabled.
 
 ## Actual deployed applications
 
 | Environment/service | Application SHA | Successful Railway deployment |
 | --- | --- | --- |
-| Production frontend | `3b369f602e14ecc36332c806b1c11ae9c59b05a4` | `8afd89e8-a7e6-4f03-89a4-488e69db98a8` |
-| Production API | `6758f91bd2e8a69c242584133f0e5932b862bf7e` | `04365147-839e-44ec-9a47-0c33bf54db04` |
-| Staging frontend | `3b369f602e14ecc36332c806b1c11ae9c59b05a4` | `403ef016-f05e-4003-850b-ded59fe1a76b` |
-| Staging API | `947866d58dff46b52d20d58687cd7d260a3a263e` | `00d7f7d9-6451-45b5-b3ce-3b4d8013f469` |
+| Production frontend | `5fa0507167695df96d57cecd332a45e9422209b2` | `2de54da5-8ac0-472e-85b0-db56533be625` |
+| Production API | `5fa0507167695df96d57cecd332a45e9422209b2` | `4a7f0533-98db-4e93-a47d-f0bcad9b237d` |
+| Staging frontend | `5fa0507167695df96d57cecd332a45e9422209b2` | `ca2e25bc-91b4-41c5-8485-3feed4e8b0b5` |
+| Staging API | `5fa0507167695df96d57cecd332a45e9422209b2` | `d044cfd5-c491-4dc8-b2a6-5f541e5c3213` |
 
-Production API remains pinned at contract 0.5.2. The current frontend consumes its compatible responses: actual public-origin browser verification covers the complete world, all routes, API/WSS, authenticated sessions and refresh, with execution disabled. Staging API uses contract 0.6.0. Only the frontend was explicitly promoted for the public mobile UI fix; no production backend, database, DNS or financial setting changed. Automatic production promotion remains off. Documentation commits are not application deployments. [Mobile diagnosis, implementation and verification](PUBLIC_MOBILE_NAVIGATION.md), [current public browser/session acceptance](evidence/public-mobile-release-2026-10-22.json).
+All four application services are SUCCESS at the compatible release, contract 0.6.0. Production was promoted once per service; no duplicate builds, DNS changes, financial changes or migrations were required. Both production repository triggers remain absent. Root documentation commits may follow this application SHA without another deployment.
 
-[Current deployment/API health evidence](evidence/public-mobile-ui-2026-10-22.json), [current public-origin browser/session checks](evidence/public-mobile-release-2026-10-22.json), [earlier database/domain isolation checks](evidence/public-production-recheck-2026-10-22.json), [trusted TLS checks](evidence/public-domain-tls-recheck-2026-10-22.json). The production API remains intentionally pinned; documentation commits are not application deployments.
+The public domain now serves `/assets/index-D3BDbBI-.js` (SHA-256 `41cc5232f5716d9f9e0b603f5cbb3aea2f63866d5290f8dc76860d91261cb6f2`), rather than the prior production bundle. Fresh actual public-origin checks verify routes, secure message-authenticated sessions, official API/WSS, responsive layouts and retained world with execution off. The deployed backend denies ordinary authenticated launch preparation, submission, resume and mint-signature import with 403. [Current release, database and browser evidence](evidence/direct-aeco-preparation-2026-10-22.json).
 
 ## Why the domain returned 404, and what changed
 
@@ -35,13 +35,13 @@ Production uses independent `aeco_production`, not staging or `aeco_public_demo`
 
 The updated release plan requires an owner-initiated official $AECO TOKEN/SOL launch on Solana Mainnet through useaeco.xyz, as the first official Mainnet launch, after native-token readiness, disposable Devnet signing rehearsal and separate activation, parameter and exact transaction-cost approvals. A separate Mainnet test token is no longer required. Independent mint/supply/metadata/fee-routing/finality/Explore verification is mandatory before Phase 2 closes or Phase 3 starts. No $AECO transaction has been authorized or submitted. [Release checklist](PRODUCTION_RELEASE_CHECKLIST.md), [actual native-roadmap release and browser checks](evidence/native-aeco-roadmap-release-2026-10-22.json).
 
-Public launching stays closed through native-token readiness, the direct native-token launch and holder-agent verification. It requires a later explicit owner approval and reviewed removal of the initial backend deployer-only policy. The permission gate is implemented on main for the next reviewed production release; this documentation update does not deploy it or enable execution. [Restricted release sequence](PRODUCTION_RELEASE_CHECKLIST.md).
+Public launching stays closed through native-token readiness, the direct native-token launch and holder-agent verification. It requires a later explicit owner approval and reviewed removal of the initial backend deployer-only policy. The permission gate is deployed at `5fa0507`; live authenticated denial checks pass and execution remains disabled. [Restricted release sequence](PRODUCTION_RELEASE_CHECKLIST.md).
 
 ## Remaining Phase 2 work
 
-Public website availability is complete. Mainnet activation remains separately gated by backup restoration rehearsal, final security/recovery/operations review and explicit owner approval. Pinata rotation remains pending maintenance. Physical mobile on-chain acceptance is DEFERRED; preserve evidence and do not request a new mobile launch. The historical desktop Developer Buy and public-Devnet creator-fee acceptance remain completed.
+Public website availability is complete. The owner intentionally has not funded the deployer; funding and balance checks are not infrastructure prerequisites. Check balance only when the owner prepares to authorize the actual launch. No launch is scheduled, signed or broadcast by this release. Mainnet activation remains separately gated by backup restoration rehearsal, final security/recovery/operations review and explicit owner approval. Pinata rotation remains pending maintenance. Physical mobile on-chain acceptance is DEFERRED; preserve evidence and do not request a new mobile launch. The historical desktop Developer Buy and public-Devnet creator-fee acceptance remain completed.
 
-The [official $AECO plan](PHASE2_NEXT_PRODUCTION_TASKS.md) records the reserved deployer. [Automatic Common Agent implementation](AECO_COMMON_AGENTS.md) is tested and deployed to staging with indexing disabled; it is not enabled in production. Real holder indexing remains gated on a separately approved and independently verified official mint. Production currently has no verified launched token, so no new production launch indexing or creator-fee income is claimed. Do not start Phase 3 or activate transactions as part of website routing.
+The [official $AECO plan](PHASE2_NEXT_PRODUCTION_TASKS.md) records the reserved deployer. [Automatic Common Agent implementation](AECO_COMMON_AGENTS.md) is tested and deployed to staging and production with indexing disabled. Real holder indexing remains gated on a separately approved and independently verified official mint. Production currently has no verified launched token, so no new production launch indexing or creator-fee income is claimed. Do not start Phase 3 or activate transactions as part of website routing.
 
 ## Preserved historical checkpoints
 

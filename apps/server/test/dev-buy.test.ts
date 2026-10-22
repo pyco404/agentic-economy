@@ -133,7 +133,7 @@ describe('Developer Buy and token rules through the Launchpad API', () => {
   it('measures names and symbols in UTF-8 bytes, never trims, and rejects out-of-range Developer Buy values on save', async () => {
     const { call } = await session(false);
     const save = (fields: object) => call('POST', '/api/v1/launchpad/drafts', fields);
-    for (const ok of [{ name: 'é'.repeat(16) }, { name: '😀'.repeat(8) }, { name: 'A'.repeat(32), symbol: 'ABCDEFGHIJKLM' }, { name: '  Moss  ' }, { devBuyBps: 350 }, { devBuyBps: 0 }])
+    for (const ok of [{ name: 'é'.repeat(16) }, { name: '😀'.repeat(8) }, { name: 'A'.repeat(32), symbol: 'ABCDEFGHIJKLM' }, { name: '  Moss  ' }, { devBuyBps: 350 }, { devBuyBps: 0 }, { devBuyBps: 1 }, { devBuyBps: 275 }])
       expect((await save(ok)).statusCode, JSON.stringify(ok)).toBe(200);
     expect((await save({ name: '  Moss  ' })).json().fields.name).toBe('  Moss  ');
     const rejected: [object, string, string][] = [[{ name: 'é'.repeat(17) }, 'name', 'too_long'], [{ name: 'A'.repeat(33) }, 'name', 'too_long'], [{ symbol: 'ABCDEFGHIJKLMN' }, 'symbol', 'too_long'],

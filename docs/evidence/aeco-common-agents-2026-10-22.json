@@ -104,7 +104,16 @@
     "status": "passed",
     "explicitOwnerApproval": true,
     "temporaryClusterStopped": true,
-    "existingDatabasesTouched": false
+    "existingDatabasesTouched": false,
+    "freshProcessRestartVerification": {
+      "database": "aeco_common_agents_20261022_test",
+      "newNodeProcess": true,
+      "databaseClusterRestarted": true,
+      "identities": 400,
+      "exactPersistedStateHash": true,
+      "authenticatedControlGranted": false,
+      "financialExecution": false
+    }
   },
   "stagingRelease": {
     "sha": "84d7b2e8ad32158edfe2bc2919debf2288c02b4a",

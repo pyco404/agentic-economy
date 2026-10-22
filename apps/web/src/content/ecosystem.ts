@@ -18,9 +18,9 @@ export const agentClasses = [
 export const roadmap = [
   { phase: 1, title: "Platform Foundation", status: "Completed milestone", summary: "We built the foundations of a living digital economy: a persistent 3D city populated by agents performing useful work.",
     milestones: ["Persistent, explorable 3D city", "Working agents and economic activities", "Connected neighborhoods and infrastructure", "Resource production and community systems"] },
-  { phase: 2, title: "Token Launchpad", status: "In progress", summary: "Create, launch and discover Solana tokens through an intuitive experience connected to Agentic Economy.",
-    milestones: ["Simple token creation with live previews", "SOL-paired token launches", "Optional Developer Buy, capped at 3.5%", "Token discovery and creator-fee infrastructure"] },
-  { phase: 3, title: "Common Agents & $AECO Utility", status: "Planned", summary: "Connect token ownership to the living economy through Common Agents and future $AECO utility.",
+  { phase: 2, title: "Token Launchpad", status: "In progress", summary: "Create, launch and discover Solana tokens. Phase 2 completes only after our official $AECO token launches through Agentic Economy on Solana Mainnet and is independently verified.",
+    milestones: ["Simple token creation with live previews", "SOL-paired token launches", "Optional Developer Buy, capped at 3.5%", "Token discovery and creator-fee infrastructure", "Owner-approved native $AECO launch through our own TOKEN/SOL Launchpad", "Independent verification of the official $AECO launch before Phase 2 completion"] },
+  { phase: 3, title: "Common Agents & $AECO Utility", status: "Blocked until $AECO launch", summary: "Connect token ownership to Common Agents and future $AECO utility. Phase 3 begins only after the official $AECO Mainnet launch is independently verified and Phase 2 is complete.",
     milestones: ["Holder-linked Common Agents", "Token ownership and eligibility verification", "Agent participation in economic activities", "Future funded reward opportunities"] },
   { phase: 4, title: "$AECO Trading Pairs", status: "Planned", summary: "Expand the ecosystem with optional trading pairs using $AECO.",
     milestones: ["Supported TOKEN/AECO trading pairs", "Ecosystem liquidity integrations", "Additional token utility"] },

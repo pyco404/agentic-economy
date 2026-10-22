@@ -14,7 +14,10 @@ export const devBuyTokenAccount=(owner:string,mint:string)=>PublicKey.findProgra
 /** Construction only: never enables API quotes. USDC requires an explicit network mint;
  * callers must verify its live Global allowlist and token-program ownership before execution.
  */
-export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unknown){
+export type PublicLaunchInput = Omit<BuildLaunchInput, 'mintSecretKey'>;
+
+/** Public-key-only construction for operator-local mint signing. Never reads or generates a key. */
+export async function unsignedPumpLaunchInstructions(input:PublicLaunchInput,global?:unknown){
  if(input.quoteAsset!==undefined&&!['SOL','USDC'].includes(input.quoteAsset))throw new Error('Unsupported quote asset');
  if(input.quoteAsset==='USDC'&&!input.quoteMint)throw new Error('USDC launches require the configured quote mint');
  const quoteMint=input.quoteAsset==='USDC'?new PublicKey(input.quoteMint!):nativeMint;
@@ -22,14 +25,13 @@ export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unkn
  LaunchDraft.parse({name:input.name,symbol:input.symbol,metadataUri:input.uri});
  // The protocol limits UTF-8 bytes, not JavaScript UTF-16 code units.
  if(Buffer.byteLength(input.name)>32||Buffer.byteLength(input.symbol)>13||Buffer.byteLength(input.uri)>200)throw new Error('Pump metadata exceeds UTF-8 byte limits');
- const mint=Keypair.fromSecretKey(input.mintSecretKey),user=new PublicKey(input.launcherWallet),platform=new PublicKey(input.platformTreasury),agent=new PublicKey(input.agentRewardsTreasury);
+ const mint=new PublicKey(input.mint),user=new PublicKey(input.launcherWallet),platform=new PublicKey(input.platformTreasury),agent=new PublicKey(input.agentRewardsTreasury);
  if([input.platformTreasury,input.agentRewardsTreasury].includes(OFFICIAL_TREASURIES.aecoDeployer))throw new Error('The AECO deployer cannot be a treasury recipient');
  if(AGENT_TREASURY_CREATOR_FEE_BPS+PLATFORM_TREASURY_CREATOR_FEE_BPS!==BPS_DENOMINATOR)throw new Error('Human creator-fee shares must total 10000 basis points');
- if(mint.publicKey.toBase58()!==input.mint)throw new Error('Mint signing key does not match the prepared mint');
- if(platform.equals(agent)||platform.equals(user)||agent.equals(user)||platform.equals(mint.publicKey)||agent.equals(mint.publicKey)||user.equals(mint.publicKey))throw new Error('Creator, mint and treasury roles must be distinct');
- const create=await PUMP_SDK.createV2Instruction({mint:mint.publicKey,user,creator:user,name:input.name,symbol:input.symbol,uri:input.uri,mayhemMode:false,cashback:false,holderReward:false,...(input.quoteAsset==='USDC'?{quoteMint,quoteTokenProgram:tokenProgram}:{})});
- const sharing=await PUMP_SDK.createFeeSharingConfig({creator:user,mint:mint.publicKey,pool:null});
- const shares=await PUMP_SDK.updateFeeSharesV2({authority:user,mint:mint.publicKey,currentShareholders:[user],newShareholders:[{address:agent,shareBps:AGENT_TREASURY_CREATOR_FEE_BPS},{address:platform,shareBps:PLATFORM_TREASURY_CREATOR_FEE_BPS}],quoteMint,quoteTokenProgram:tokenProgram,bondingCurveComplete:false});
+ if(platform.equals(agent)||platform.equals(user)||agent.equals(user)||platform.equals(mint)||agent.equals(mint)||user.equals(mint))throw new Error('Creator, mint and treasury roles must be distinct');
+ const create=await PUMP_SDK.createV2Instruction({mint:mint,user,creator:user,name:input.name,symbol:input.symbol,uri:input.uri,mayhemMode:false,cashback:false,holderReward:false,...(input.quoteAsset==='USDC'?{quoteMint,quoteTokenProgram:tokenProgram}:{})});
+ const sharing=await PUMP_SDK.createFeeSharingConfig({creator:user,mint:mint,pool:null});
+ const shares=await PUMP_SDK.updateFeeSharesV2({authority:user,mint:mint,currentShareholders:[user],newShareholders:[{address:agent,shareBps:AGENT_TREASURY_CREATOR_FEE_BPS},{address:platform,shareBps:PLATFORM_TREASURY_CREATOR_FEE_BPS}],quoteMint,quoteTokenProgram:tokenProgram,bondingCurveComplete:false});
  // Non-native distribution during the final share update reads both source
  // vault ATAs even when their balances are zero. Initialize them atomically.
  const vaults=input.quoteAsset==='USDC'?[7,17].map(index=>{
@@ -54,17 +56,30 @@ export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unkn
  // The curve does not exist yet: the SDK only reads its creator (the sharing config after the share update) and
  // mayhem flag, and prepends the idempotent Token-2022 account creation. slippage 0: max_sol_cost = maxQuoteCost.
  const buy:TransactionInstruction[]=await PUMP_SDK.buyInstructions({global:g as never,bondingCurveAccountInfo:null as never,bondingCurve:{creator:new PublicKey(sharingConfigPda(input.mint)),isMayhemMode:false} as never,
-  associatedUserAccountInfo:null,mint:mint.publicKey,user,amount:new BN(tokenAmount.toString()) as never,solAmount:new BN(maxQuoteCost.toString()) as never,slippage:0,tokenProgram:token2022});
+  associatedUserAccountInfo:null,mint:mint,user,amount:new BN(tokenAmount.toString()) as never,solAmount:new BN(maxQuoteCost.toString()) as never,slippage:0,tokenProgram:token2022});
  if(buy.length!==2||!buy[0]!.programId.equals(associatedTokenProgram)||!buy[0]!.keys[1]!.pubkey.equals(new PublicKey(devBuyTokenAccount(input.launcherWallet,input.mint))))throw new Error('Unexpected Developer Buy instructions');
  return [...base,...buy];
 }
-export async function buildPumpLaunch(input:BuildLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[],global?:unknown){
- const instructions=await pumpLaunchInstructions(input,global),mint=Keypair.fromSecretKey(input.mintSecretKey),user=new PublicKey(input.launcherWallet);
+/** Existing server-owned path preserves its key/public-key check and partially signed output. */
+export async function pumpLaunchInstructions(input:BuildLaunchInput,global?:unknown){
+ if(Keypair.fromSecretKey(input.mintSecretKey).publicKey.toBase58()!==input.mint)throw new Error('Mint signing key does not match the prepared mint');
+ return unsignedPumpLaunchInstructions(input,global);
+}
+export async function buildUnsignedPumpLaunch(input:PublicLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[],global?:unknown){
+ const instructions=await unsignedPumpLaunchInstructions(input,global),user=new PublicKey(input.launcherWallet);
  const transaction=new VersionedTransaction(new TransactionMessage({payerKey:user,recentBlockhash:blockhash,instructions}).compileToV0Message(lookupTables));
  let bytes:Uint8Array;
- try{transaction.sign([mint]);bytes=transaction.serialize();}catch{throw new Error('Atomic launch exceeds Solana packet capacity; a verified address lookup table is required');}
+ try{bytes=transaction.serialize();}catch{throw new Error('Atomic launch exceeds Solana packet capacity; a verified address lookup table is required');}
  if(bytes.length>1232)throw new Error(`Atomic launch exceeds Solana packet size (${bytes.length}/1232); a verified address lookup table is required`);
  return {transaction:Buffer.from(bytes).toString('base64'),bytes:bytes.length,instructions};
+}
+export async function buildPumpLaunch(input:BuildLaunchInput,blockhash:string,lookupTables:AddressLookupTableAccount[]=[],global?:unknown){
+ const mint=Keypair.fromSecretKey(input.mintSecretKey);
+ if(mint.publicKey.toBase58()!==input.mint)throw new Error('Mint signing key does not match the prepared mint');
+ const built=await buildUnsignedPumpLaunch(input,blockhash,lookupTables,global);
+ const transaction=VersionedTransaction.deserialize(Buffer.from(built.transaction,'base64'));
+ transaction.sign([mint]);
+ return {...built,transaction:Buffer.from(transaction.serialize()).toString('base64')};
 }
 
 /** Compare against the SERVER-PERSISTED preparation, never a client-supplied template.

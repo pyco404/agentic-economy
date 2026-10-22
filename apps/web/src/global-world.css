@@ -129,3 +129,9 @@
 }
 .page-main .discovery-section-label > span { color: var(--readable-secondary); }
 .page-main .discovery > .project-links { width: fit-content; }
+
+/* The mobile Launchpad close control stays in its reserved row instead of
+ * floating across form labels, artwork and touch targets while scrolling. */
+@media (max-width: 1100px), (hover: none) and (pointer: coarse) {
+  .app[data-route="launchpad"] .page-overlay-controls { position: static; }
+}

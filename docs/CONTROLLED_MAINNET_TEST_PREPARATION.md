@@ -1,4 +1,6 @@
-# First controlled Mainnet test — proposal, not transaction approval
+# Withdrawn intermediate Mainnet test proposal
+
+**SUPERSEDED by the owner on 22 October 2026.** A separate Mainnet test token is not required and must not be requested or executed. $AECO is to be the first official Mainnet launch, after readiness and specific final approval. The material below is historical preparation evidence, not the current release plan. See [direct launch review](DIRECT_AECO_LAUNCH_REVIEW.md).
 
 ## Proposed token
 
@@ -37,7 +39,7 @@ Before a Mainnet signature: finalize the proposed content and protocol parameter
 
 The deployer-only gate on main passes authenticated ownership/forged-wallet, legacy/alternate preparation, saved-intent/replay, submit/resume and media/capability regressions. Production originally remained at API `6758f91`, which predates that gate; all production execution flags are false. A tested compatible gate-bearing API release must be verified on production before any activation. The current public frontend is already `d5d3d7c`, matches the approved UI assets and passes fresh desktop/mobile browsing. No frontend redesign or duplicate frontend deployment is needed.
 
-The official $AECO launch follows only after this controlled token succeeds. Its fixed vanity mint must use the [operator-local co-signing integration](AECO_LOCAL_MINT_SIGNING.md), with independently approved supply, decimals, tokenomics, Developer Buy, metadata and costs. Holder indexing follows finalized official mint/provenance acceptance. Public launching and Phase 3 remain separately blocked.
+Historical proposal only: the former requirement for this controlled token has been withdrawn. Its fixed vanity mint must use the [operator-local co-signing integration](AECO_LOCAL_MINT_SIGNING.md), with independently approved supply, decimals, tokenomics, Developer Buy, metadata and costs. Holder indexing follows finalized official mint/provenance acceptance. Public launching and Phase 3 remain separately blocked.
 
 ## Final deployment checkpoint — blocked, existing website healthy
 

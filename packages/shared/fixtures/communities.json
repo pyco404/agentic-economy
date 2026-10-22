@@ -1,20 +1,20 @@
 {
   "items": [
     {
-      "id": "com_qCF54payr7sLyM",
+      "id": "com_YR2K11xE1fVAHB",
       "name": "Demo Stonewright Co",
       "symbol": "DSTONE",
       "description": "DEMO MODE community. Builders keeping the city in good repair.",
       "imageUri": null,
       "metadataUri": "https://example.invalid/demo/stonewright.json",
-      "mint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-      "launchId": "lch_Aq2F1vC6CLgKLA",
-      "launchSignature": "2suJY8x6GMCZSHMpY6NYEeMfjZbKvcTZomvC2UpLgvDizjRyiN5yerkqNVBbmpAWigKNUf28apVzjBquVy7ZfxKL",
+      "mint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+      "launchId": "lch_U4eVzb75sBUGGY",
+      "launchSignature": "2wHRr9Fe9GV3fzJeMKHuPnKBGuAWgRMKrAboHZZPb8yFZTK9mi45zRHDpitRNabhsufRkUVJ31wYd3uoMwAsBxhk",
       "creatorWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
-      "feeSharingConfig": "bfVqq819NdX58EKsDCB8bDYcKTfk3AN7io9HRLW78bY",
+      "feeSharingConfig": "3wnvrFav8XENWqp95i7P6AqYnJbWk2fQ7o8uQYDBtQpA",
       "links": {
-        "pumpFun": "https://pump.fun/coin/25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
-        "explorer": "https://solscan.io/token/25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1?cluster=devnet",
+        "pumpFun": "https://pump.fun/coin/9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
+        "explorer": "https://solscan.io/token/9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf?cluster=devnet",
         "website": null,
         "twitter": null,
         "telegram": null
@@ -26,23 +26,23 @@
         "verifiedTasks": 7,
         "prominence": 76
       },
-      "registeredAt": "2026-10-16T05:47:03.725Z"
+      "registeredAt": "2026-10-22T09:05:21.349Z"
     },
     {
-      "id": "com_NH3cSni98pP93P",
+      "id": "com_Vp6LvMDJ197ZkP",
       "name": "Demo Riverside Guild",
       "symbol": "DRIVER",
       "description": "DEMO MODE community. Farmers and haulers along the river.",
       "imageUri": null,
       "metadataUri": "https://example.invalid/demo/riverside.json",
-      "mint": "ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-      "launchId": "lch_9HzWrgUxqiqacb",
-      "launchSignature": "41kAQZ9LFtSx8sQ8137Qj6NFpfFsvjvnT23B3D2btGUicxgYuzTGg9R4UpDMiDdBGHV5QXQjv3Pfsjyh36ccSWHF",
+      "mint": "4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+      "launchId": "lch_impAgbYJ0dgiyD",
+      "launchSignature": "tR2DFPWMRSpcimCdixQbtUSJdBV2YW9ofU33FxSLnQ94fS2CewJXvjPUFQC2j7jDW2pBihPJXBNSCLStVHxC1UW",
       "creatorWallet": "3ezh9s34hx7HdfDRoXg27YYMR6KmwgQ4R6Bs5LM194oj",
-      "feeSharingConfig": "8stYwCTXYCaoxA5eQWgCGDkz9ZPziMgAhx8XWMcD7Vxg",
+      "feeSharingConfig": "E31v1GaERnPwFEEEaVsrXToBKEFNCNKoWmRc2Dq4eUoX",
       "links": {
-        "pumpFun": "https://pump.fun/coin/ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj",
-        "explorer": "https://solscan.io/token/ETcWZz7bmySj7qijs7qmPZP4DPZasisKd6XyoZmVGkpj?cluster=devnet",
+        "pumpFun": "https://pump.fun/coin/4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn",
+        "explorer": "https://solscan.io/token/4EsXPBL7BwZ3jKpXTYzX91j3JUdQsrnpoQpzwJVENssn?cluster=devnet",
         "website": null,
         "twitter": null,
         "telegram": null
@@ -54,23 +54,23 @@
         "verifiedTasks": 18,
         "prominence": 197
       },
-      "registeredAt": "2026-10-16T05:47:03.703Z"
+      "registeredAt": "2026-10-22T09:05:21.083Z"
     },
     {
-      "id": "com_eqHiMC8JMR7Mux",
+      "id": "com_VGE6A7u3LGbXQG",
       "name": "Demo Hearth Bakers",
       "symbol": "DHEARTH",
       "description": "DEMO MODE community. Bakers and couriers keeping the Genesis district fed.",
       "imageUri": null,
       "metadataUri": "https://example.invalid/demo/hearth.json",
-      "mint": "5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-      "launchId": "lch_MTMneC1hCMa2cK",
-      "launchSignature": "5L8CU8MfHLCLFNYmzXfJ2nUSEtYz3yREvbWZ6z6STJqJNqDwcnbq9bPQ7azGMD6ctJowtg1cuJSfFtRmkRrB5GNQ",
+      "mint": "94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+      "launchId": "lch_UD3BcMkSsGRhXm",
+      "launchSignature": "5jMxeGgXSdrxR38ZAz9cFrUnj1GwshFJwKXsUye6a3gH9hGsFGrqcfNZQFPiUhjcLZ6ryGxAWHBAEkYrqUWwLW6m",
       "creatorWallet": "3hxDAATXKi1b7k6itLWxKvQLTAo42qmYjTFc5MdmJbvN",
-      "feeSharingConfig": "5AkFoGpCR7gooCyC2ofbxXVcmNNLHdYvW8n5jpJJdKHk",
+      "feeSharingConfig": "6ihziEfN6CbYgxe3x6vLsby6Fw313f21S5ojzEYAS7Yd",
       "links": {
-        "pumpFun": "https://pump.fun/coin/5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj",
-        "explorer": "https://solscan.io/token/5tvNGvxq6Dtv8LKsE8sw8QhKKL1pmaPqf5g3ZB8BQ2Lj?cluster=devnet",
+        "pumpFun": "https://pump.fun/coin/94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt",
+        "explorer": "https://solscan.io/token/94W89mzkCXAfExgkiMVHDSfvYKdewyNX3iYKNbH4F5Kt?cluster=devnet",
         "website": null,
         "twitter": null,
         "telegram": null
@@ -82,7 +82,7 @@
         "verifiedTasks": 17,
         "prominence": 186
       },
-      "registeredAt": "2026-10-16T05:47:03.624Z"
+      "registeredAt": "2026-10-22T09:05:20.489Z"
     }
   ],
   "nextCursor": null,

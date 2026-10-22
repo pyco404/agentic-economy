@@ -33,7 +33,9 @@ Production uses independent `aeco_production`, not staging or `aeco_public_demo`
 
 ## Mandatory official native-token milestone
 
-The live roadmap requires an owner-initiated official $AECO TOKEN/SOL launch on Solana Mainnet through useaeco.xyz, after separate readiness, activation, parameter and transaction-cost approvals. Independent mint/supply/metadata/fee-routing/finality/Explore verification is mandatory before Phase 2 closes or Phase 3 starts. No $AECO transaction has been authorized or submitted. [Release checklist](PRODUCTION_RELEASE_CHECKLIST.md), [actual native-roadmap release and browser checks](evidence/native-aeco-roadmap-release-2026-10-22.json).
+The updated release plan requires an owner-initiated official $AECO TOKEN/SOL launch on Solana Mainnet through useaeco.xyz, after a separately approved and verified deployer-only Mainnet test token, then separate native-token readiness, activation, parameter and transaction-cost approvals. Independent mint/supply/metadata/fee-routing/finality/Explore verification is mandatory before Phase 2 closes or Phase 3 starts. No $AECO transaction has been authorized or submitted. [Release checklist](PRODUCTION_RELEASE_CHECKLIST.md), [actual native-roadmap release and browser checks](evidence/native-aeco-roadmap-release-2026-10-22.json).
+
+Public launching stays closed through the controlled test, native-token launch and holder-agent verification. It requires a later explicit owner approval and reviewed removal of the initial backend deployer-only policy. The permission gate is implemented on main for the next reviewed production release; this documentation update does not deploy it or enable execution. [Restricted release sequence](PRODUCTION_RELEASE_CHECKLIST.md).
 
 ## Remaining Phase 2 work
 

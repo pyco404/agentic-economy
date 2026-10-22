@@ -4,6 +4,7 @@ import type { AgentSummary, EconomicEvent } from "./shared";
  * Optional fields retain compatibility with the deployed 0.2.0 contract. */
 export type AuthoritativeIdentity =
   | { kind: "token_linked"; activatingWallet: string; tokenMint: string; activationId: string }
+  | { kind: "aeco_observed"; wallet: string; tokenMint: string; network: "devnet" | "mainnet-beta"; balanceRaw: string; decimals: number; observedSlot: number }
   | { kind: "house"; syntheticName: string }
   | { kind: "legacy"; syntheticName: string; legacyOwnerWallet: string };
 export type IdentityAgent = Pick<AgentSummary, "id" | "name"> &
@@ -12,6 +13,10 @@ const roots = ["Bow", "Fern", "Kestrel", "Vesper", "Stonecrop", "Willow", "Rowan
 const publicKey = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 export function agentIdentity(agent: IdentityAgent) {
   const identity = agent.identity;
+  if (identity?.kind === "aeco_observed" && publicKey.test(identity.wallet) && publicKey.test(identity.tokenMint)) {
+    const primary = `${identity.wallet.slice(0, 4)}...${identity.wallet.slice(-4)}`;
+    return { primary, tag: agent.id, displayName: primary, canonicalId: agent.id, givenName: "Common Agent", owner: null, observedWallet: identity.wallet, kind: "aeco_observed" as const };
+  }
   // An owner record or token balance alone is never activation evidence.
   const linked = identity?.kind === "token_linked" && publicKey.test(identity.activatingWallet) &&
     publicKey.test(identity.tokenMint) && !!identity.activationId;

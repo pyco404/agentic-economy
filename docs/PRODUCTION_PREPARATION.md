@@ -13,13 +13,13 @@ Health/readiness return 200, PostgreSQL and simulation are healthy, and contract
 
 ## Mandatory Phase 2 completion gate
 
-[Production release checklist](PRODUCTION_RELEASE_CHECKLIST.md): public readiness → security/readiness acceptance → separate owner approval and public TOKEN/SOL activation → owner-initiated official $AECO launch through useaeco.xyz on Mainnet → independent mint, approved supply/decimals, metadata, fee routing, finalized transaction and Explore verification → Phase 2 completion → Phase 3. The dedicated deployer is `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`, not either treasury. Supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and transaction costs require separate final approval. No official $AECO transaction is authorized or submitted. TOKEN/AECO pairing remains a later feature.
+[Production release checklist](PRODUCTION_RELEASE_CHECKLIST.md): public readiness → security/readiness acceptance → separate owner approval and deployer-only activation → owner-initiated official $AECO launch through useaeco.xyz on Mainnet → independent mint, approved supply/decimals, metadata, fee routing, finalized transaction and Explore verification → Phase 2 completion → Phase 3. The dedicated deployer is `3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR`, not either treasury. Supply, decimals, tokenomics, metadata, launch configuration, Developer Buy and transaction costs require separate final approval. No official $AECO transaction is authorized or submitted. TOKEN/AECO pairing remains a later feature.
 
 ## Database and migration boundary
 
 `aeco_production` uses independent volume `7d78e336-4efc-4935-9a54-04caa6f7afeb` and its own generated private credential. Zero public tables were verified before applying approved 001–004 atomically. The deployed pre-start guard requires exactly those four filenames and published checksums before running migration validation; no additional migration was applied. Read-only post-release checks find zero launches and zero treasury entries. Staging and public-demo data remain untouched.
 
-A 52,616-byte private baseline archive is outside the active worktree in a Git-ignored backup directory (0700/0600). PostgreSQL 18 tools validated its table of contents. **An actual restoration rehearsal is still outstanding.** [Database baseline](evidence/production-database-2026-10-22.json), [deployed release/schema evidence](evidence/production-release-2026-10-22.json).
+A 52,616-byte private baseline archive is outside the active worktree in a Git-ignored backup directory (0700/0600). PostgreSQL 18 tools validated its table of contents. A fresh PostgreSQL 18.6 archive containing both saved drafts was restored into a private, initially empty local PostgreSQL 18.6 database and verified again after restart. Source/restore fingerprints, constraints and migrations 001–004 match. No production writes/migrations occurred. This is a verified local recovery copy, not a claim of scheduled/offsite backups. [Restoration evidence](evidence/production-backup-restoration-2026-10-22.json). [Database baseline](evidence/production-database-2026-10-22.json), [deployed release/schema evidence](evidence/production-release-2026-10-22.json).
 
 ## Actual external verification
 
@@ -37,7 +37,7 @@ The separately approved [official-domain cutover](PRODUCTION_DNS_CUTOVER_PROPOSA
 
 The earlier two-host Railway preview had a Strict-cookie cross-site limitation. The official frontend/API are now same-site; [Actual public-domain browser acceptance](evidence/public-domain-browser-2026-10-22.json) now passes with an automated unfunded message signer and no test routing overrides: exact-origin challenge, secure cookie, refresh session 200, official API/WSS, persistent world and five responsive viewports. It is not a new physical Phantom test. Cookie/origin protection was not weakened.
 
-Production restoration rehearsal, credential maintenance and external Mainnet transaction/security review remain open. Physical mobile on-chain acceptance is **DEFERRED**; do not request another mobile signature. Phase 2 is not fully accepted and Phase 3 has not begun. [Official $AECO and automatic Common Agent next steps](PHASE2_NEXT_PRODUCTION_TASKS.md) distinguish preparation from authorized execution.
+Production restoration/restart is complete. Pinata credential rotation remains maintenance; final live Mainnet transaction simulation, costs and owner authorization remain launch-time gates. Automated/source security acceptance does not claim an independent third-party audit. Physical mobile on-chain acceptance is **DEFERRED**; do not request another mobile signature. Phase 2 is not fully accepted and Phase 3 has not begun. [Official $AECO and automatic Common Agent next steps](PHASE2_NEXT_PRODUCTION_TASKS.md) distinguish preparation from authorized execution.
 
 ## Recurring infrastructure costs
 

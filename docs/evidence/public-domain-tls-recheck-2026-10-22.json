@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-22T16:21:50.005002+00:00",
+  "certificates": [
+    {
+      "host": "useaeco.xyz",
+      "valid": true,
+      "tls": "TLSv1.3",
+      "dnsNames": [
+        "useaeco.xyz"
+      ],
+      "notAfter": "Jan 20 13:45:37 2027 GMT"
+    },
+    {
+      "host": "www.useaeco.xyz",
+      "valid": true,
+      "tls": "TLSv1.3",
+      "dnsNames": [
+        "www.useaeco.xyz"
+      ],
+      "notAfter": "Jan 20 13:45:05 2027 GMT"
+    },
+    {
+      "host": "api.useaeco.xyz",
+      "valid": true,
+      "tls": "TLSv1.3",
+      "dnsNames": [
+        "api.useaeco.xyz"
+      ],
+      "notAfter": "Jan 20 13:04:06 2027 GMT"
+    }
+  ]
+}

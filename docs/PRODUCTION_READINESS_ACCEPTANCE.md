@@ -33,3 +33,26 @@ Pinata uploads were previously verified; credential rotation remains pending mai
 The owner personally connects the official deployer, enters metadata/artwork, chooses Developer Buy and reviews costs in the existing website. Bind only that selected wallet-owned draft to the reserved mint, refresh actual network/program/lookup checks and simulation, then obtain explicit approval of the exact transaction/debit before enabling execution. Check/fund the wallet only at that owner-initiated stage. No separate Mainnet test token is required. No transaction is scheduled or automatically submitted by a website release.
 
 The official $AECO launch/finalization, actual mint/metadata/fees/Explore verification and subsequent verified-holder Common Agent indexing remain future acceptance. Public launching requires another explicit approval and never unlocks automatically. Physical mobile on-chain acceptance remains DEFERRED. Phase 2 is not fully accepted and Phase 3 has not begun.
+
+
+## Actual production release and public verification
+
+Both application services are **SUCCESS** at **`384d54ab093217586a1b95618c54cd0ba96ba912`** (22 October 2026). Thirty granular single-file Conventional Commits were pushed directly to main; production auto-deploy triggers remain absent. Each service received one explicit pinned deployment; a transient preflight API failure occurred before any mutation and did not create a duplicate deployment.
+
+| Service | Deployment | Result |
+| --- | --- | --- |
+| Production API (`c2b39851-a41b-4eab-9223-d2f6394b007f`) | `dbf421f8-91a7-4684-bd74-d85251aaefda` | SUCCESS at the release SHA |
+| Production frontend (`b14eb48d-b9b6-4b25-990c-9229d378c2a2`) | `c4821c80-74fe-40d4-8d2e-6e5a0fffa781` | SUCCESS at the release SHA |
+| Isolated production PostgreSQL | Existing `691c3d26-ab6d-43d4-b8f3-86fef0a05a17` | Unchanged, healthy `aeco_production`; no pending migration |
+
+https://useaeco.xyz serves `/assets/index-CIL1WArZ.js`, SHA-256 `feacbd8791466ddc0f0f527f168eb5e463500cd1d24a0deded37ad8c995c8c38`, containing the new renewal/locked-review UI. Root/www/API TLS certificates validate through 20 January 2027. www returns 308 to the apex while preserving path/query. All nine public direct routes return HTML200; missing asset/API paths stay404. All nine rendered routes omit public debug labels.
+
+Fresh actual-domain browser checks use no route overrides and only a disposable authentication-message signer: correct production challenge origin, secure host-only HttpOnly Strict cookie and session refresh200; Back/Forward retains the exact world canvas; native WebSocket receives32frames using only the official API origin; zero page errors; zero registered service workers/cache entries. Desktop1440, tablet820, mobile390, folded344 and unfolded690 viewports show no horizontal overflow. Screenshots were inspected and preserved in ignored `apps/web/artifacts/production-readiness-20261022/`. This is automated browser verification, not a new physical Phantom test.
+
+Authenticated ordinary-wallet probes return403 before legacy preparation, owned launch/media preparation, mint-review renewal, signature import, submit and resume. New API capabilities report `launchEnabled=false` and `preparationEnabled=false`; no live operator draft binding was installed. Production Mainnet financial flags remainfalse, live AECO discovery/mint remainunset, official treasuries are unchanged, and no transaction was broadcast. Helius Mainnet and Devnet genesis checks returnHTTP200; running backend provider values match configured values and neither key appears in frontend variables/served entry assets. Pinata credential rotation is still pending.
+
+Staging/public-demo deployment IDs are unchanged from the pre-release snapshot. No legacy resources, database data, volumes, provider secrets or DNS records were deleted or changed. Rollback preserves API `5fa0507167695df96d57cecd332a45e9422209b2` / deployment `4a7f0533-98db-4e93-a47d-f0bcad9b237d`, and frontend `16e4bea3a4c55c8764b58e712a3bbc9526255cf8` / deployment `18f11a0e-cf24-4469-be7e-aa564df8e042`; rollback would be an explicit pinned code deployment with financial gates unchanged.
+
+[Sanitized release/browser/API/schema/provider/TLS evidence](evidence/production-readiness-release-2026-10-22.json). Application deployment is complete; following documentation-only commits do not require another build.
+
+**Readiness conclusion:** restoration, expiry/recovery implementation, regression checks and the production website release are complete. The secure owner-operated vanity-mint handoff is implemented/tested; its official private key remains untouched. Remaining launch-time gates are binding the owner's selected draft, refreshed exact transaction/cost review and explicit financial activation/transaction approval. Security remains qualified by the documented transitive-dependency advisories and lack of independent audit, rather than an unconditional Mainnet clearance. Local backup restoration does not establish scheduled/offsite coverage. Pinata rotation remains maintenance; physical mobile on-chain acceptance remains deferred. Neither launch nor Phase2 completion is claimed.

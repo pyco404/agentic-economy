@@ -30,7 +30,7 @@ export function validateWalletChallenge(challenge:z.infer<typeof ChallengeRespon
  if(!uri||new URL(uri).origin!==current.origin||lines[0]!==`${current.host} wants you to sign in with your Solana account:`||lines[1]!==address||!lines.includes(`Nonce: ${challenge.nonce}`)||Date.parse(challenge.expiresAt)<=Date.now())
   throw new Error(`Wallet sign-in must match this page (${current.origin}), including its port. Reload this page or use the configured website URL.`);
 }
-interface WalletChoice {name:string;connect():Promise<string>;sign(message:Uint8Array):Promise<Uint8Array>;signTransaction?(message:Uint8Array,network:"devnet"|"localnet"):Promise<Uint8Array>;disconnect():Promise<void>;listen(change:()=>void):()=>void;}
+interface WalletChoice {name:string;connect():Promise<string>;sign(message:Uint8Array):Promise<Uint8Array>;signTransaction?(message:Uint8Array,network:"devnet"|"localnet"|"mainnet-beta"):Promise<Uint8Array>;disconnect():Promise<void>;listen(change:()=>void):()=>void;}
 interface Injected {publicKey?:{toBase58():string};connect():Promise<{publicKey:{toBase58():string}}>;signMessage(m:Uint8Array,encoding?:string):Promise<{signature:Uint8Array}>;signTransaction?(transaction:unknown):Promise<{serialize():Uint8Array}>;disconnect():Promise<void>;on?(e:string,f:()=>void):void;removeListener?(e:string,f:()=>void):void;}
 export function installedWallets():WalletChoice[]{
  const result:WalletChoice[]=[];
@@ -49,7 +49,7 @@ export function installedWallets():WalletChoice[]{
   // sign-only transactions exclusively on its injected provider. Do not let the
   // standard registration hide that capability, or fall back after a rejection.
   const signTransaction=signingTx?.supportedTransactionVersions?.includes(0)
-   ? async(transaction:Uint8Array,network:"devnet"|"localnet")=>{const account=wallet.accounts.find(a=>a.address===address);const chain=`solana:${network}` as const;if(!account||!account.chains.includes(chain))throw new Error('This wallet account does not support the selected testing network');const result=(await signingTx.signTransaction({account,transaction,chain}))[0];if(!result)throw new Error('Wallet did not return a signed transaction');return result.signedTransaction;}
+   ? async(transaction:Uint8Array,network:"devnet"|"localnet"|"mainnet-beta")=>{const account=wallet.accounts.find(a=>a.address===address);const chain=network==="mainnet-beta"?"solana:mainnet":`solana:${network}` as const;if(!account||!account.chains.includes(chain))throw new Error('This wallet account does not support the selected Solana network');const result=(await signingTx.signTransaction({account,transaction,chain}))[0];if(!result)throw new Error('Wallet did not return a signed transaction');return result.signedTransaction;}
    : injected?.signTransaction
     ? async(transaction:Uint8Array)=>{if(injected.publicKey?.toBase58()!==address)throw new Error('Wallet account changed. Reconnect before signing.');const {VersionedTransaction}=await import('@solana/web3.js');const signed=await injected.signTransaction!(VersionedTransaction.deserialize(transaction));if(injected.publicKey?.toBase58()!==address)throw new Error('Wallet account changed during signing');return signed.serialize();}
     : undefined;
@@ -61,7 +61,7 @@ export function installedWallets():WalletChoice[]{
  for(const [name,provider] of [['Phantom',browser.phantom?.solana],['Solflare',browser.solflare],['Backpack',browser.backpack]] as const){if(!provider||result.some(w=>w.name===name))continue;result.push({name,connect:async()=>(await provider.connect()).publicKey.toBase58(),sign:async m=>(await provider.signMessage(m,'utf8')).signature,...(provider.signTransaction?{signTransaction:async(bytes:Uint8Array)=>{const {VersionedTransaction}=await import('@solana/web3.js');return(await provider.signTransaction!(VersionedTransaction.deserialize(bytes))).serialize();}}:{}),disconnect:()=>provider.disconnect(),listen:f=>{provider.on?.('accountChanged',f);provider.on?.('disconnect',f);return()=>{provider.removeListener?.('accountChanged',f);provider.removeListener?.('disconnect',f);};}});}
  return result;
 }
-interface SessionState {identity:Identity|null;busy:boolean;error:string;available:boolean;signLaunch(transaction:Uint8Array,network:"devnet"|"localnet"):Promise<Uint8Array>;open():void;logout():Promise<void>;}
+interface SessionState {identity:Identity|null;busy:boolean;error:string;available:boolean;signLaunch(transaction:Uint8Array,network:"devnet"|"localnet"|"mainnet-beta"):Promise<Uint8Array>;open():void;logout():Promise<void>;}
 const SessionContext=createContext<SessionState>({identity:null,busy:false,error:'',available:false,signLaunch:async()=>{throw new Error('Connect a transaction-signing wallet first');},open:()=>{},logout:async()=>{}});
 export const useWalletSession=()=>useContext(SessionContext);
 export function WalletSessionProvider({children}:{children:ReactNode}){
@@ -107,7 +107,7 @@ export function WalletSessionProvider({children}:{children:ReactNode}){
    stopPending?.();stopPending=undefined;active.current=wallet;unlisten.current?.();unlisten.current=wallet.listen(()=>{void logout();});setIdentity(verified);setDialog(false);
   }catch(e){setError(e instanceof Error?e.message:'Connection or signature was rejected. Please retry.');}finally{stopPending?.();lock.current=false;setBusy(false);}
  };
- const signLaunch=async(transaction:Uint8Array,network:"devnet"|"localnet")=>{
+ const signLaunch=async(transaction:Uint8Array,network:"devnet"|"localnet"|"mainnet-beta")=>{
   const wallet=active.current,current=epoch.current;if(!identity||!wallet?.signTransaction)throw new Error('Reconnect a supported transaction-signing wallet to continue');
   const signed=await wallet.signTransaction(transaction,network);if(current!==epoch.current)throw new Error('Wallet changed during launch approval');return signed;
  };

@@ -12,8 +12,11 @@ describe("ecosystem editorial boundary", () => {
     expect(roadmap[0].status).toBe("Completed milestone");
     expect(roadmap[1].title).toBe("Token Launchpad");
     expect(roadmap[1].status).toBe("In progress");
-    expect(roadmap.slice(2).every((p) => p.status === "Planned")).toBe(true);
-    expect(roadmap.every((p) => p.milestones.length >= 3 && p.milestones.length <= 4 && p.summary.length > 0)).toBe(true);
+    expect(roadmap[2].status).toBe("Blocked until $AECO launch");
+    expect(roadmap[1].summary).toContain("official $AECO token launches through Agentic Economy on Solana Mainnet and is independently verified");
+    expect(roadmap[2].summary).toContain("Phase 2 is complete");
+    expect(roadmap.slice(3).every((p) => p.status === "Planned")).toBe(true);
+    expect(roadmap.every((p) => p.milestones.length >= 3 && p.milestones.length <= (p.phase === 2 ? 6 : 4) && p.summary.length > 0)).toBe(true);
     const copy = JSON.stringify(roadmap);
     expect(copy).not.toMatch(/USDC|staging|devnet|validator|PostgreSQL|contract version|RPC|migration|harness|test count/i);
     expect(roadmap[1].milestones.join(" ")).toContain("SOL-paired");

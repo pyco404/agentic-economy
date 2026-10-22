@@ -1,0 +1,69 @@
+{
+  "checkedAt": "2026-10-22T20:14:55.082564+00:00",
+  "sourceDatabase": "aeco_production",
+  "sourceVersion": "18.6 (Debian 18.6-1.pgdg13+2)",
+  "targetDatabase": "aeco_production_restore_20261022_test",
+  "targetVersion": "18.6 (Ubuntu 18.6-1.pgdg24.04+2)",
+  "targetTcpDisabled": true,
+  "targetInitiallyEmpty": true,
+  "sourceWrites": 0,
+  "migrationsRun": [],
+  "archive": {
+    "pathRelativeToOriginalWorkspace": ".backups/production-readiness/aeco_production_20261022T201442Z.dump",
+    "bytes": 257071,
+    "sha256": "a3a4bc0caf3b18886d593284bf2b2c2835242d21865a41168ca8cfe9a4762459",
+    "mode": "0o600",
+    "format": "PostgreSQL custom"
+  },
+  "businessFingerprints": {
+    "world_meta": {
+      "count": 1,
+      "digest": "c0f8d20057645da713db962551c45873"
+    },
+    "schema_migrations": {
+      "count": 4,
+      "digest": "96edde81b863bc36ee3f81878f74c072"
+    },
+    "launches": {
+      "count": 0,
+      "digest": "d751713988987e9331980363e24189ce"
+    },
+    "launchpad_drafts": {
+      "count": 2,
+      "digest": "a58b73f7472ddae3bf9d99368ac7d200"
+    },
+    "communities": {
+      "count": 0,
+      "digest": "d751713988987e9331980363e24189ce"
+    },
+    "agent_names": {
+      "count": 0,
+      "digest": "d751713988987e9331980363e24189ce"
+    },
+    "agent_activations": {
+      "count": 0,
+      "digest": "d751713988987e9331980363e24189ce"
+    },
+    "treasury_entries": {
+      "count": 0,
+      "digest": "d751713988987e9331980363e24189ce"
+    }
+  },
+  "restoreMatchesSource": true,
+  "restartMatchesSource": true,
+  "invariants": {
+    "unvalidatedConstraints": 0,
+    "disabledUserTriggers": 0,
+    "snapshotRows": 5,
+    "schemaMigrations": [
+      "001_init.sql",
+      "002_coordination.sql",
+      "003_agent_identity.sql",
+      "004_launchpad_workspace.sql"
+    ]
+  },
+  "stagingOrDemoModified": false,
+  "productionRestoredOrMigrated": false,
+  "limitation": "Current production has no confirmed launch/treasury rows; recovery fixtures separately test nonempty records. Local archive retained; no scheduled Railway backup claimed.",
+  "isolatedClusterStopped": true
+}

@@ -33,7 +33,7 @@ This policy is a wallet-access gate, not transaction approval and not a per-wall
 | Tokenomics, allocations and applicable controls | Not finalized or approved |
 | Name, ticker, description, artwork, project links and pinned metadata | Owner enters Agentic Economy / AECO and all content in Create Coin; review the complete pinned metadata with the final transaction, without separate approvals for ordinary form fields |
 | Launch configuration | TOKEN/SOL architecture required; exact launch settings need approval |
-| Developer Buy | Owner selected 1% for official AECO and will enter it in the UI; no purchase or Mainnet debit authorized |
+| Developer Buy | User-selected 0–3.5% inclusive, in 0.01% increments; default 0% also for $AECO. No fixed/preselected 1%, purchase or Mainnet debit authorized |
 | Mainnet costs and maximum wallet debit | Fresh simulation and explicit approval required; no total estimate invented |
 
 Verify that the protocol's actual supply/decimal constraints support the approved parameters before preparation. Existing SDK defaults and parameters used by other test tokens are not approval for $AECO. Stop if incompatible rather than silently substituting values.

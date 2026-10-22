@@ -1,22 +1,52 @@
 {
   "items": [
     {
-      "id": "agt_GhHMyUzcydXunJ",
+      "id": "agt_132d5jhuRF61UW",
       "name": "CJYg...1uqd",
       "displayName": "CJYg...1uqd",
       "identity": {
         "kind": "token_linked",
-        "activationId": "act_Bf0tHyjJXhDiGM",
-        "tokenMint": "25cC4wjG9cWCWorZAjvArqFWquJLFA6A1ULbE2Bx6oT1",
+        "activationId": "act_uXi0E63EQCw3AU",
+        "tokenMint": "9zJ9CSD8n4wLwstv6GTVxtzzoNew4KrvGL8qzcxFz4Xf",
         "activatingWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
-        "launchId": "lch_Aq2F1vC6CLgKLA",
-        "communityId": "com_qCF54payr7sLyM"
+        "launchId": "lch_U4eVzb75sBUGGY",
+        "communityId": "com_YR2K11xE1fVAHB"
       },
       "profession": "builder",
-      "communityId": "com_qCF54payr7sLyM",
+      "communityId": "com_YR2K11xE1fVAHB",
       "ownerWallet": "CJYg6dyiFRPjjR5A6i9TGLAcsSeUWZ9RYwLxG1NS1uqd",
       "status": "active",
       "state": "working",
+      "work": {
+        "tick": 252,
+        "task": {
+          "id": "tsk_00000l",
+          "kind": "production_shift",
+          "status": "in_progress",
+          "createdTick": 10,
+          "expiresTick": 310,
+          "fromBuildingId": null,
+          "toBuildingId": "bld_079czck",
+          "resource": null,
+          "quantity": 0,
+          "rewardCredits": 840,
+          "points": 8,
+          "claimedBy": "agt_132d5jhuRF61UW",
+          "receiptId": null
+        },
+        "destination": {
+          "id": "bld_079czck",
+          "name": "Lumber Yard 1",
+          "kind": "lumber_yard",
+          "entrance": {
+            "x": 8,
+            "y": 5
+          }
+        },
+        "target": null,
+        "remainingWorkTicks": 1,
+        "cargo": {}
+      },
       "pos": {
         "x": 8.5,
         "y": 5.5
@@ -26,18 +56,51 @@
       "points": 8
     },
     {
-      "id": "agt_0TEtsWQdB700BK",
-      "name": "Anvil_712",
-      "displayName": "Anvil_712",
+      "id": "agt_KMR8sy5J9VAQgW",
+      "name": "Thistle_291",
+      "displayName": "Thistle_291",
       "identity": {
         "kind": "house",
-        "syntheticName": "Anvil_712"
+        "syntheticName": "Thistle_291"
       },
       "profession": "property_manager",
-      "communityId": "com_qCF54payr7sLyM",
+      "communityId": "com_YR2K11xE1fVAHB",
       "ownerWallet": null,
       "status": "active",
       "state": "moving",
+      "work": {
+        "tick": 252,
+        "task": {
+          "id": "tsk_00002m",
+          "kind": "maintenance",
+          "status": "claimed",
+          "createdTick": 240,
+          "expiresTick": 540,
+          "fromBuildingId": "bld_1fl12j2",
+          "toBuildingId": "bld_0p3nc76",
+          "resource": "stone",
+          "quantity": 2,
+          "rewardCredits": 800,
+          "points": 15,
+          "claimedBy": "agt_KMR8sy5J9VAQgW",
+          "receiptId": null
+        },
+        "destination": {
+          "id": "bld_1fl12j2",
+          "name": "Depot C",
+          "kind": "warehouse",
+          "entrance": {
+            "x": 64,
+            "y": 24
+          }
+        },
+        "target": {
+          "x": 64,
+          "y": 24
+        },
+        "remainingWorkTicks": 0,
+        "cargo": {}
+      },
       "pos": {
         "x": 56.5,
         "y": 67.5
@@ -47,18 +110,53 @@
       "points": 0
     },
     {
-      "id": "agt_CNhF2H3gVpVfk7",
-      "name": "Plover_624",
-      "displayName": "Plover_624",
+      "id": "agt_i7jyiF58xXUKk7",
+      "name": "Linden_725",
+      "displayName": "Linden_725",
       "identity": {
         "kind": "house",
-        "syntheticName": "Plover_624"
+        "syntheticName": "Linden_725"
       },
       "profession": "logistics_operator",
-      "communityId": "com_qCF54payr7sLyM",
+      "communityId": "com_YR2K11xE1fVAHB",
       "ownerWallet": null,
       "status": "active",
       "state": "delivering",
+      "work": {
+        "tick": 252,
+        "task": {
+          "id": "tsk_00001x",
+          "kind": "delivery",
+          "status": "in_progress",
+          "createdTick": 150,
+          "expiresTick": 450,
+          "fromBuildingId": "bld_0p3nc76",
+          "toBuildingId": "bld_07d97l2",
+          "resource": "energy",
+          "quantity": 1,
+          "rewardCredits": 2522,
+          "points": 10,
+          "claimedBy": "agt_i7jyiF58xXUKk7",
+          "receiptId": null
+        },
+        "destination": {
+          "id": "bld_07d97l2",
+          "name": "Old Stone Mill",
+          "kind": "mill",
+          "entrance": {
+            "x": 83,
+            "y": 88
+          }
+        },
+        "target": {
+          "x": 83,
+          "y": 88
+        },
+        "remainingWorkTicks": 0,
+        "cargo": {
+          "energy": 1
+        }
+      },
       "pos": {
         "x": 72.5,
         "y": 38.5

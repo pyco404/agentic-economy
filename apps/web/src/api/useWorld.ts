@@ -65,6 +65,11 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
       import.meta.env.VITE_WS_URL ?? api.webSocketUrl,
       (event) => {
         if (controller.signal.aborted) return;
+        if(event.type==='world.snapshot'&&state.current&&
+          (event.data.worldId!==state.current.bootstrap.worldId||event.data.seed!==state.current.bootstrap.seed)){
+          // A seed transition needs one complete HTTP world, never mixed old/new chunks.
+          recovery();return;
+        }
         if (event.type === "system.notice") setNotice(event.data.message);
         if (event.type === "system.heartbeat")
           setNotice(

@@ -1,6 +1,6 @@
 # Automatic $AECO Common Agents — Phase 2
 
-Implementation added 22 October 2026. **Not activated on Mainnet:** the official mint has not been configured or launched. No launch/payment/broadcast/payout gate changes, migrations, new wallet controls or Phase 3 economics accompany this feature.
+Implementation added 22 October 2026. **Not activated on Mainnet:** the owner-supplied planned mint `ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco` has not been independently verified as launched or enabled for live indexing. [Fixed-mint plan](OFFICIAL_AECO_LAUNCH_PLAN.md). No launch/payment/broadcast/payout gate changes, migrations, new wallet controls or Phase 3 economics accompany this feature.
 
 ## Product and identity
 
@@ -51,7 +51,8 @@ Backend only, default off:
 ```dotenv
 AECO_COMMON_AGENTS_ENABLED=false
 # Set only AFTER the real official mint is launched and independently verified:
-# AECO_MINT=<verified actual mint>
+# Planned public address, not a verified/active runtime assignment:
+# AECO_MINT=ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco
 AECO_MINT_VERIFIED=false
 AECO_RECONCILE_INTERVAL_MS=1800000
 AECO_EXCLUDED_WALLETS=

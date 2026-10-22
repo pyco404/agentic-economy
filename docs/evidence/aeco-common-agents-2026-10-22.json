@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-22",
+  "scope": "default-off automatic Common Agents implementation; fixtures and read-only existing Devnet token",
+  "officialAecoMint": null,
+  "mainnetExecutionEnabled": false,
+  "databaseMigrationsApplied": false,
+  "gamineModified": false,
+  "liveDevnetRead": {
+    "mint": "DJbKJVKMFQyM5qnGcydqsPTw7WyR8xRzwgBDfmXp3ZVc",
+    "token": "existing ZAP test token; not official AECO",
+    "network": "devnet",
+    "commitment": "finalized",
+    "slot": 513930180,
+    "decimals": 6,
+    "qualifyingWallets": 1,
+    "balances": [
+      {
+        "wallet": "3pF1MM1PCg2tekM5KeWEDyT8LVKbVd7ia668NRAnYpAR",
+        "raw": "20000000000000"
+      }
+    ],
+    "transactionsSubmitted": 0
+  },
+  "fixtureAcceptance": {
+    "uniqueWallets400": 400,
+    "persistentIdentities10000": 10000,
+    "averageEngineTickMsApproximate": [
+      7,
+      8
+    ],
+    "desktopTabletMobileWidths": [
+      390,
+      768,
+      1440
+    ],
+    "largePopulationBrowser": {
+      "identities": 10000,
+      "width": 1440,
+      "status": "passed"
+    },
+    "mainnetEvidence": false
+  },
+  "localChecks": {
+    "backendRegressionBeforeFinalAdditionalGuards": {
+      "passed": 257,
+      "skipped": 23
+    },
+    "finalTargetedHolderAndHeliusTests": 25,
+    "frontendUnitTests": 251,
+    "sharedTests": 34,
+    "typecheck": "passed",
+    "lint": "passed; two existing frontend effect-cleanup warnings",
+    "build": "passed; existing bundle size warning",
+    "postgresRestartForNewPopulation": "not rerun"
+  },
+  "remaining": [
+    "Official owner-approved AECO Mainnet launch and read-only population acceptance",
+    "Isolated PostgreSQL full-process restart and sustained population/provider load rehearsal",
+    "Live subscription disconnect/reconnect acceptance",
+    "Staging deployment and browser verification"
+  ]
+}

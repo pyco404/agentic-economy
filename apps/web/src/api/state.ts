@@ -60,6 +60,8 @@ export function applyServerEvent(
   event: ServerEvent,
   receivedAt = Date.now(),
 ): Dashboard {
+  if(event.type==='world.snapshot'&&(event.data.worldId!==data.bootstrap.worldId||event.data.seed!==data.bootstrap.seed))return data;
+  if(data.stats.simulation&&event.tick<data.stats.simulation.startedTick)return data;
   if (
     event.type === "world.snapshot" &&
     event.data.reason === "server_restart"

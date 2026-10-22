@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-22T13:35:20.525Z",
+  "automatedAuthSigner": true,
+  "transactionsSigned": 0,
+  "transactionsBroadcast": 0,
+  "additionalPinataUploads": 0,
+  "review": {
+    "status": 200,
+    "launchEnabled": false,
+    "platformChargeSol": "0.05",
+    "draftReadiness": "incomplete (no further uploads)"
+  },
+  "disabledEndpoints": {
+    "ownedPreparation": 503,
+    "signedSubmission": 503,
+    "signedResume": 503,
+    "legacyPreparation": 503
+  },
+  "validation": {
+    "USDC": 400,
+    "developerBuyAbove350Bps": 400,
+    "rejectedEditPreservedDraft": true
+  },
+  "draftSavedReloaded": true,
+  "testDraftSoftDeleted": true
+}

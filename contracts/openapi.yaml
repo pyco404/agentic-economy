@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.5.0
+  version: 0.5.1
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -8120,7 +8120,10 @@ components:
             distributed:
               $ref: "#/components/schemas/AmountString"
             distributedDust:
-              $ref: "#/components/schemas/AmountString"
+              anyOf:
+                - $ref: "#/components/schemas/AmountString"
+                - type: "null"
+              description: Retained rounding units only when uniquely proven; null when the event and balances do not determine the gross amount.
           required:
             - source
             - version
@@ -8228,7 +8231,10 @@ components:
             distributed:
               $ref: "#/components/schemas/AmountString"
             distributedDust:
-              $ref: "#/components/schemas/AmountString"
+              anyOf:
+                - $ref: "#/components/schemas/AmountString"
+                - type: "null"
+              description: Retained rounding units only when uniquely proven; null when the event and balances do not determine the gross amount.
           required:
             - source
             - version

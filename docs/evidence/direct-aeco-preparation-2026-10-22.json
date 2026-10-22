@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-10-22T19:19:42.991535+00:00",
-  "scope": "direct official AECO preparation; no intermediate Mainnet test token",
+  "checkedAt": "2026-10-22T19:44:05.449780+00:00",
+  "scope": "production website release and direct official AECO signing preparation; no launch execution",
   "ownerEntersAllTokenContent": true,
   "ownerSelectedDevBuyBps": 100,
   "ordinaryDraftDefaultBps": 0,
@@ -10,7 +10,7 @@
   "physicalMobileOnChainAcceptance": "deferred",
   "checks": {
     "productionPreflight": {
-      "checkedAt": "2026-10-22T18:57:58.596947+00:00",
+      "checkedAt": "2026-10-22T19:40:58.099238+00:00",
       "readOnly": true,
       "schema": {
         "database": "aeco_production",
@@ -60,7 +60,9 @@
       "simulationPerformed": false,
       "transactionsSigned": 0,
       "transactionsBroadcast": 0,
-      "checkedAt": "2026-10-22T18:55:06.300492+00:00"
+      "checkedAt": "2026-10-22T18:55:06.300492+00:00",
+      "historicalObservationOnly": true,
+      "intentionalUnfundedBalanceIsNotDeploymentBlocker": true
     },
     "programs": {
       "network": "mainnet-beta",
@@ -123,7 +125,7 @@
       "maxBuyLamports": "288605364",
       "platformChargeLamports": "50000000",
       "totalWalletDebit": null,
-      "totalDebitReason": "Final owner-entered metadata, funded-payer simulation and rent/network fees still required",
+      "totalDebitReason": "Launch-time review only: owner-entered metadata, actual transaction simulation, rent and network fees; not a website deployment prerequisite",
       "lookupTable": "33wnSGm8hPBd9omoa252NAY8JX5PWJngkTNJgzdvdEZr",
       "existingDevBuyCoverageGuardPasses": true,
       "missingRequiredLookupAccounts": [],
@@ -176,13 +178,209 @@
     }
   },
   "release": {
-    "productionFrontend": "d5d3d7cb56db6e0baff4a5fa4605a1a9caa6522b",
-    "productionActiveApi": "6758f91bd2e8a69c242584133f0e5932b862bf7e",
-    "newHandoffLive": false,
-    "failedProductionDeployment": "1ae5b036-4de4-46e6-b99e-667b41937c73",
-    "failedStagingDeployment": "77a5df05-d5e8-4a5a-a4fb-aaa6ddffa97f",
-    "knownBuildFailure": "BUILD_IMAGE generic failure; no actionable Docker/application log",
-    "deploymentRetriesRequested": 0
+    "applicationSha": "5fa0507167695df96d57cecd332a45e9422209b2",
+    "productionFrontend": "5fa0507167695df96d57cecd332a45e9422209b2",
+    "productionActiveApi": "5fa0507167695df96d57cecd332a45e9422209b2",
+    "newHandoffCodeLive": true,
+    "officialPrivateKeyHandoffExecuted": false,
+    "deployments": {
+      "production": [
+        {
+          "service": "Postgres",
+          "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+          "deploymentId": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy-web",
+          "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+          "deploymentId": "2de54da5-8ac0-472e-85b0-db56533be625",
+          "status": "SUCCESS",
+          "sha": "5fa0507167695df96d57cecd332a45e9422209b2",
+          "active": [
+            {
+              "id": "2de54da5-8ac0-472e-85b0-db56533be625",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy",
+          "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+          "deploymentId": "4a7f0533-98db-4e93-a47d-f0bcad9b237d",
+          "status": "SUCCESS",
+          "sha": "5fa0507167695df96d57cecd332a45e9422209b2",
+          "active": [
+            {
+              "id": "4a7f0533-98db-4e93-a47d-f0bcad9b237d",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ],
+      "publicDemo": [
+        {
+          "service": "agentic-economy-web",
+          "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+          "deploymentId": "a1cf31be-1a7b-4036-84c1-cde189d5e0bd",
+          "status": "SUCCESS",
+          "sha": "a2e1847455a4f4154d97b0e64dcf61cb36b94737",
+          "active": [
+            {
+              "id": "a1cf31be-1a7b-4036-84c1-cde189d5e0bd",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy",
+          "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+          "deploymentId": "4f59ca17-cb44-4896-9b44-b0b54d748a12",
+          "status": "CRASHED",
+          "sha": "a2e1847455a4f4154d97b0e64dcf61cb36b94737",
+          "active": [
+            {
+              "id": "4f59ca17-cb44-4896-9b44-b0b54d748a12",
+              "status": "CRASHED"
+            }
+          ]
+        },
+        {
+          "service": "Postgres",
+          "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+          "deploymentId": "99a0d4ac-b31c-489e-b879-b3e93ba4ac05",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "99a0d4ac-b31c-489e-b879-b3e93ba4ac05",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ],
+      "staging": [
+        {
+          "service": "agentic-economy",
+          "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+          "deploymentId": "d044cfd5-c491-4dc8-b2a6-5f541e5c3213",
+          "status": "SUCCESS",
+          "sha": "5fa0507167695df96d57cecd332a45e9422209b2",
+          "active": [
+            {
+              "id": "d044cfd5-c491-4dc8-b2a6-5f541e5c3213",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "Postgres",
+          "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+          "deploymentId": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+          "status": "SUCCESS",
+          "sha": null,
+          "active": [
+            {
+              "id": "ea2e5a63-ad0e-4d85-9ef7-5911c0aa76ba",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "service": "agentic-economy-web",
+          "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+          "deploymentId": "ca2e25bc-91b4-41c5-8485-3feed4e8b0b5",
+          "status": "SUCCESS",
+          "sha": "5fa0507167695df96d57cecd332a45e9422209b2",
+          "active": [
+            {
+              "id": "ca2e25bc-91b4-41c5-8485-3feed4e8b0b5",
+              "status": "SUCCESS"
+            }
+          ]
+        }
+      ]
+    },
+    "publicHttp": [
+      {
+        "url": "https://useaeco.xyz/",
+        "status": 200,
+        "finalUrl": "https://useaeco.xyz/",
+        "cacheControl": "no-cache",
+        "assets": [
+          "/assets/index-D3BDbBI-.js",
+          "/assets/index-CZDLadOS.css"
+        ],
+        "assetHashes": {
+          "/assets/index-D3BDbBI-.js": "41cc5232f5716d9f9e0b603f5cbb3aea2f63866d5290f8dc76860d91261cb6f2",
+          "/assets/index-CZDLadOS.css": "6f0d8a2fe84016ae4578af7dd511f34431f6b1aa87476cbaa3ba8ed8b4c73797"
+        }
+      },
+      {
+        "url": "https://www.useaeco.xyz/launchpad?release-check=1",
+        "status": 200,
+        "finalUrl": "https://useaeco.xyz/launchpad?release-check=1",
+        "cacheControl": "no-cache",
+        "assets": [
+          "/assets/index-D3BDbBI-.js",
+          "/assets/index-CZDLadOS.css"
+        ]
+      },
+      {
+        "url": "https://api.useaeco.xyz/readyz",
+        "status": 200,
+        "finalUrl": "https://api.useaeco.xyz/readyz",
+        "cacheControl": null,
+        "ready": true,
+        "launchEnabled": null
+      },
+      {
+        "url": "https://api.useaeco.xyz/api/v1/launchpad/capabilities",
+        "status": 200,
+        "finalUrl": "https://api.useaeco.xyz/api/v1/launchpad/capabilities",
+        "cacheControl": "no-store",
+        "ready": null,
+        "launchEnabled": false
+      },
+      {
+        "url": "https://staging.useaeco.xyz/",
+        "status": 200,
+        "finalUrl": "https://staging.useaeco.xyz/",
+        "cacheControl": "no-cache",
+        "assets": [
+          "/assets/index-Cl0tb5B0.js",
+          "/assets/index-CZDLadOS.css"
+        ]
+      },
+      {
+        "url": "https://api-staging.useaeco.xyz/readyz",
+        "status": 200,
+        "finalUrl": "https://api-staging.useaeco.xyz/readyz",
+        "cacheControl": null,
+        "ready": true,
+        "launchEnabled": null
+      },
+      {
+        "url": "https://api-staging.useaeco.xyz/api/v1/launchpad/capabilities",
+        "status": 200,
+        "finalUrl": "https://api-staging.useaeco.xyz/api/v1/launchpad/capabilities",
+        "cacheControl": "no-store",
+        "ready": null,
+        "launchEnabled": false
+      }
+    ],
+    "productionDeploymentRequests": 2,
+    "duplicateDeploymentsRequested": 0,
+    "financialConfigurationChanged": false,
+    "migrationsApplied": [],
+    "historicalImageFailuresResolvedBySuccessfulRelease": true
   },
   "verification": {
     "backendTestsPassed": 282,
@@ -195,7 +393,7 @@
     "localMintBrowserMock": "passed",
     "realNewPhantomTransaction": false,
     "publicProductionAuthentication": {
-      "checkedAt": "2026-10-22T19:16:59.385Z",
+      "checkedAt": "2026-10-22T19:40:50.703Z",
       "officialDomain": true,
       "testRoutingOverrides": false,
       "physicalPhantom": false,
@@ -308,7 +506,7 @@
         "worldReady": true,
         "worldRetainedDuringBackForward": true,
         "pageErrors": [],
-        "webSocketFrames": 31,
+        "webSocketFrames": 14,
         "apiOrigins": [
           "https://api.useaeco.xyz"
         ],
@@ -354,22 +552,91 @@
     },
     "contracts": "up to date; unrelated generated fixtures preserved",
     "frontendTestsPassed": 251,
-    "frontendTestNote": "Full suite passed serially with 60-second hook allowance after concurrency-related initial hook timeouts"
+    "frontendTestNote": "Full suite passed serially with 60-second hook allowance after concurrency-related initial hook timeouts",
+    "liveDeployerPolicy": {
+      "checkedAt": "2026-10-22T19:41:41.216Z",
+      "network": "mainnet-beta",
+      "authenticatedOrdinaryWallet": "7XKAArGAME7BBzqh5C9NpY4kqgC2QHsaFwZSNhg9XaB8",
+      "realSignature": "disposable authentication message only",
+      "deployerOnlyRejections": [
+        {
+          "path": "/api/v1/launches/prepare",
+          "status": 403,
+          "code": "forbidden"
+        },
+        {
+          "path": "/api/v1/launchpad/drafts/00000000-0000-4000-8000-000000000001/launch",
+          "status": 403,
+          "code": "forbidden"
+        },
+        {
+          "path": "/api/v1/launchpad/drafts/00000000-0000-4000-8000-000000000001/metadata",
+          "status": 403,
+          "code": "forbidden"
+        },
+        {
+          "path": "/api/v1/launchpad/launches/lch_policyprobe/submit",
+          "status": 403,
+          "code": "forbidden"
+        },
+        {
+          "path": "/api/v1/launchpad/launches/lch_policyprobe/resume",
+          "status": 403,
+          "code": "forbidden"
+        },
+        {
+          "path": "/api/v1/launchpad/launches/lch_policyprobe/mint-signature",
+          "status": 403,
+          "code": "forbidden"
+        }
+      ],
+      "launchEnabled": false,
+      "tokenLaunches": 0,
+      "blockchainTransactionsSigned": 0,
+      "transactionsBroadcast": 0
+    },
+    "publicProductionNavigation": {
+      "checkedAt": "2026-10-22T19:45:08.716280+00:00",
+      "result": "1 passed (1.4m)",
+      "actualOrigin": "https://useaeco.xyz",
+      "mockRouting": false,
+      "viewports": [
+        344,
+        690,
+        820,
+        1440
+      ],
+      "navigationDrawer": true,
+      "minimumTouchTargetPixels": 44,
+      "walletSelectionDialog": true,
+      "worldControlsDisclosure": true,
+      "keyboardEscapeAndFocusReturn": true,
+      "persistentCanvas": true,
+      "javascriptErrors": [],
+      "blockchainTransactions": 0,
+      "physicalDevice": false
+    }
   },
   "remainingGates": [
-    "compatible staging and production release with authenticated deployer-policy checks",
-    "actual owner-entered metadata and 1% selection",
-    "funded-payer Mainnet simulation and exact maximum debit",
-    "expiry renewal operational procedure and final security review",
-    "explicit final parameters and specific Mainnet transaction approval",
+    "short-blockhash expiry/renewal operational procedure and final security/recovery acceptance",
+    "transaction preparation remains locked behind execution-off capability; do not enable execution merely for preparation testing",
+    "after owner decides to launch: their metadata, UI-selected 1%, refreshed simulation, complete costs and final balance check",
+    "explicit final parameters and specific Mainnet transaction/activation approval",
     "after finalized launch: official mint holder-indexer activation and live population reconciliation",
-    "separate public launching approval"
+    "separate public launching approval; physical mobile on-chain acceptance remains deferred"
   ],
   "productionTriggers": {
-    "checkedAt": "2026-10-22T19:20:10.797059+00:00",
+    "checkedAt": "2026-10-22T19:43:13.708801+00:00",
     "productionTriggers": {
       "frontend": 0,
       "backend": 0
     }
+  },
+  "walletFundingPolicy": {
+    "ownerIntentionallyDefersFunding": true,
+    "infrastructureBlocker": false,
+    "balanceCheckedDuringThisDeploymentVerification": false,
+    "nextBalanceCheck": "Only when the owner prepares to authorize the actual launch",
+    "automaticOrScheduledLaunch": false
   }
 }

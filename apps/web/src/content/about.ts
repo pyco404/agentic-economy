@@ -8,29 +8,28 @@ import {
  * separately; a connected demo server does not enable financial operations.
  */
 export const aboutStatus = [
-  { id: "demo", title: "Verified on staging", note: "Available in the connected demo environment.", items: [
-    "Persistent procedural city, irregular terrain and coordinated world reveal",
-    "Rule-based agent work, production, deliveries and simulation receipts",
-    "PostgreSQL persistence, stable agent identities and live HTTP/WebSocket activity",
-    "Desktop Phantom authentication and wallet-owned token drafts",
-    "Pinata V3 artwork and metadata integration verified with the real service",
-    "Explore discovery and source-attributed market data where available",
+  { id: "demo", title: "Live today", note: "Explore Agentic Economy on our official website.", items: [
+    "A persistent shared city with connected neighborhoods and moving agents",
+    "The official $AECO token, launched on Solana Mainnet through Agentic Economy",
+    "One persistent Common Agent per qualifying $AECO holder wallet",
+    "Verified token discovery, communities and available market data",
   ] },
-  { id: "local", title: "Verified in test environments", note: "Evidence from isolated local tests and public devnet, not live staging launches.", items: [
-    "Create Coin: local preview, deferred uploads, explicit fee review and wallet approval",
-    "SOL creation through the application with real Pinata and public devnet confirmation",
-    "Desktop Phantom transaction signing and an atomic 0.05 test-SOL platform charge",
-    "Restart, duplicate-submission and interrupted-response recovery",
+  { id: "local", title: "Verified launch capabilities", note: "Delivered through our own Launchpad; public access awaits release approval.", items: [
+    "TOKEN/SOL creation, artwork uploads and personal Phantom approval",
+    "Optional Developer Buy with a strict 3.5% supply maximum",
+    "A separate one-time 0.05 SOL platform launch charge",
+    "Creator-fee collection and verified 60/40 treasury distribution on Mainnet",
+    "Transaction refresh and recovery with duplicate-submission protections",
   ] },
-  { id: "verification", title: "Awaiting external verification", note: "Implementation alone does not make a capability operational.", items: [
-    "Physical-device Phantom mobile signing acceptance",
-    "Earned creator-fee collection, graduation and independent reconciliation evidence",
-    "Final SOL launch, security and staging acceptance; mainnet financial enablement requires separate approval",
+  { id: "verification", title: "Before public launching", note: "Phase 2 remains in progress until the public release is approved and verified.", items: [
+    "Final public-launch acceptance and release approval",
+    "Physical mobile wallet connection and layouts verified; on-chain mobile launch acceptance remains deferred",
+    "Treasury payouts remain disabled",
   ] },
-  { id: "planned", title: "Planned for future phases", note: "Not live entitlements or promises of returns.", items: [
-    "Automatic $AECO Common Agents with basic activity in Phase 2; advanced economic capabilities and funded, performance-based $AECO rewards in later phases",
+  { id: "planned", title: "Planned for future phases", note: "Future capabilities are not promises of returns.", items: [
+    "Advanced behavior, verified controls, economic services and eligibility-based rewards for existing Common Agents in Phase 3",
     "Optional TOKEN/AECO trading pairs in Phase 4",
-    "Super Agents, AECO-lock rentals and a rental marketplace",
+    "Separate Super Agents, AECO-lock rentals and a rental marketplace",
     "Controlled autonomous finance and agent-run services and businesses",
   ] },
 ] as const;
@@ -47,5 +46,5 @@ export function aboutConnection(source: "http" | "demo", connected: boolean, mod
   if (source === "demo") return { label: "Offline fixture preview", detail: "Local demonstration data. No live backend or blockchain activity." };
   if (!connected) return { label: "City connection unavailable", detail: "About remains available. Return to the World to check the connection; no automatic fixture fallback is used." };
   return { label: mode === "demo" ? "Connected to the demo city" : "Connected to the city backend",
-    detail: "Simulation updates arrive from the backend. Financial actions remain disabled in this frontend." };
+    detail: "The shared city updates independently of this page. Launch access is permission-controlled; treasury payouts remain disabled." };
 }

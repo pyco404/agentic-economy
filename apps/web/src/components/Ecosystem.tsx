@@ -19,7 +19,7 @@ export function FutureFees() {
       <p>The 10% renter share accumulates and can only be claimed during the active rental. At expiry, the previous renter loses access and claim rights; unclaimed renter entitlements redirect to Agent Rewards under the proposed policy.</p>
       <p>The Super Agent can enter auction. Its next renter receives 10% of future eligible creator fees from all tokens previously launched by that agent and newly launched tokens. Historical fee entitlement does not transfer.</p>
     </details>
-    <p className="small muted">Human 60/40 routing is verified on test networks. Earned-fee collection and settlement require further verification. Super-Agent rentals and claims remain planned; this table enables no signing, custody or payouts.</p>
+    <p className="small muted">Human 60/40 routing and earned creator-fee treasury receipts are verified on Solana Mainnet for $AECO. Holder rewards, Super-Agent rentals and claims remain planned; treasury payouts remain disabled.</p>
   </section>;
 }
 export function EcosystemFaq() {

@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { agentClasses, ecosystemFaq, futureFeePolicies, roadmap } from "./ecosystem";
 import { LAUNCH_FEE_LAMPORTS, AGENT_TREASURY_CREATOR_FEE_BPS, PLATFORM_TREASURY_CREATOR_FEE_BPS } from "../api/shared";
+import { FutureFees } from "../components/Ecosystem";
 import { LaunchOriginTag } from "../components/LaunchOriginTag";
 
 describe("ecosystem editorial boundary", () => {
@@ -12,9 +13,12 @@ describe("ecosystem editorial boundary", () => {
     expect(roadmap[0].status).toBe("Completed milestone");
     expect(roadmap[1].title).toBe("Token Launchpad & Common Agents");
     expect(roadmap[1].status).toBe("In progress");
-    expect(roadmap[2].status).toBe("Blocked until $AECO launch");
-    expect(roadmap[1].summary).toContain("official $AECO token launches through Agentic Economy on Solana Mainnet and is independently verified");
+    expect(roadmap[2].status).toBe("Awaiting Phase 2 acceptance");
+    expect(roadmap[1].summary).toContain("official $AECO token is live on Solana Mainnet");
     expect(roadmap[2].summary).toContain("Phase 2 is complete");
+    expect(roadmap[1].summary).toContain("approved, activated and verified");
+    expect(agentClasses[0].status).toBe("Live · Phase 2");
+    expect(roadmap[1].milestones.join(" ")).toContain("treasury distribution");
     expect(roadmap.slice(3).every((p) => p.status === "Planned")).toBe(true);
     expect(roadmap.every((p) => p.milestones.length >= 3 && p.milestones.length <= (p.phase === 2 ? 6 : 4) && p.summary.length > 0)).toBe(true);
     const copy = JSON.stringify(roadmap);
@@ -37,6 +41,9 @@ describe("ecosystem editorial boundary", () => {
     expect(LAUNCH_FEE_LAMPORTS).toBe(50000000n);
     expect(AGENT_TREASURY_CREATOR_FEE_BPS).toBe(6000);
     expect(PLATFORM_TREASURY_CREATOR_FEE_BPS).toBe(4000);
+    const html=renderToStaticMarkup(createElement(FutureFees));
+    expect(html).toContain("verified on Solana Mainnet");
+    expect(html).toContain("treasury payouts remain disabled");
   });
   it("labels verified platform provenance without fabricating legacy provenance", () => {
     const html=renderToStaticMarkup(createElement(LaunchOriginTag,{demo:false,provenance:{platformOrigin:"PLATFORM",initiator:"HUMAN",network:"devnet",quoteAsset:"SOL"}}));

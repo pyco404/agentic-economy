@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aboutConnection, aboutFees } from "./about";
+import { aboutConnection, aboutFees, aboutStatus } from "./about";
 
 describe("About connection and financial disclosures", () => {
   it("never presents fixture data as a connected backend", () => {
@@ -10,9 +10,14 @@ describe("About connection and financial disclosures", () => {
     expect(aboutConnection("http", false, "demo").label).toBe("City connection unavailable");
     expect(aboutConnection("http", false).detail).toContain("no automatic fixture fallback");
   });
-  it("keeps financial actions disabled regardless of the connected backend mode", () => {
+  it("keeps editorial copy separate from launch permissions and discloses disabled payouts", () => {
     expect(aboutConnection("http", true, "demo").label).toBe("Connected to the demo city");
-    expect(aboutConnection("http", true, "production").detail).toContain("Financial actions remain disabled");
+    expect(aboutConnection("http", true, "production").detail).toContain("treasury payouts remain disabled");
     expect(aboutFees.financialActionsEnabled).toBe(false);
+    const copy=JSON.stringify(aboutStatus);
+    expect(copy).toContain("official $AECO token");
+    expect(copy).toContain("60/40 treasury distribution on Mainnet");
+    expect(copy).toContain("on-chain mobile launch acceptance remains deferred");
+    expect(copy).not.toMatch(/Verified on staging|Awaiting external verification|Automatic .* in Phase 2;/);
   });
 });

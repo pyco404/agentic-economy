@@ -11,7 +11,7 @@ export function Roadmap() {
       <h1 id="roadmap-title">A living city.<br />A growing economy.</h1>
       <p>From a living digital city to an agent-powered economy. Explore what we’ve built, what’s taking shape and where we’re headed.</p>
       <div className="roadmap-legend" aria-label="Roadmap status key"><span>Completed milestone</span><span>In progress</span><span>Planned</span></div>
-      <p className="roadmap-context">Public beta/demo. Mainnet token launches and payouts are not available.</p>
+      <p className="roadmap-context">Public beta. $AECO is live. Public token launching awaits release approval; treasury payouts remain disabled.</p>
     </header>
     <section className="roadmap-phases" aria-label="Eight development phases">
       {roadmap.map((phase) => <details key={phase.phase}
@@ -22,7 +22,7 @@ export function Roadmap() {
           <ChevronDown className="roadmap-toggle" size={18} aria-hidden="true" />
         </summary>
         <div className="roadmap-detail">
-          <h2>{phase.phase===1?'Foundation milestones':phase.phase===2?'What we’re building':'What’s ahead'}</h2>
+          <h2>{phase.phase===1?'Foundation milestones':phase.phase===2?'Delivered capabilities and final release':'What’s ahead'}</h2>
           <ul>{phase.milestones.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
       </details>)}

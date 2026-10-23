@@ -18,12 +18,12 @@ for (const width of [320, 768, 1024, 1440]) {
     await expect(phases.nth(1).locator('summary')).toContainText('In progress');
     await expect(phases.nth(1).locator('summary')).toContainText('Current phase');
     await expect(page.locator('[data-status="planned"]')).toHaveCount(6);
-    await expect(page.locator('.roadmap-context')).toContainText('Mainnet token launches and payouts are not available');
+    await expect(page.locator('.roadmap-context')).toContainText('Public token launching awaits release approval');
     await expect(page.locator('.roadmap-page')).not.toContainText(/USDC|staging|Devnet|validator|PostgreSQL|RPC|harness/);
     await phases.nth(1).locator('summary').press('Enter');
     await expect(phases.nth(1).locator('li')).toHaveCount(6);
-    await expect(phases.nth(1)).toContainText('Owner-approved native $AECO launch');
-    await expect(phases.nth(2).locator('summary')).toContainText('Blocked until $AECO launch');
+    await expect(phases.nth(1)).toContainText('Official $AECO Mainnet launch');
+    await expect(phases.nth(2).locator('summary')).toContainText('Awaiting Phase 2 acceptance');
     await expect(phases.nth(2)).toContainText('Phase 2 is complete');
     await expect(phases.nth(1)).toContainText('SOL-paired token launches');
     await phases.nth(1).locator('summary').press('Enter');

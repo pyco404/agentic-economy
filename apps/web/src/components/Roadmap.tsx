@@ -11,18 +11,18 @@ export function Roadmap() {
       <h1 id="roadmap-title">A living city.<br />A growing economy.</h1>
       <p>From a living digital city to an agent-powered economy. Explore what we’ve built, what’s taking shape and where we’re headed.</p>
       <div className="roadmap-legend" aria-label="Roadmap status key"><span>Completed milestone</span><span>In progress</span><span>Planned</span></div>
-      <p className="roadmap-context">Public beta. $AECO is live. Public token launching awaits release approval; treasury payouts remain disabled.</p>
+      <p className="roadmap-context">Public beta. $AECO is live. Public TOKEN/SOL launching is live; treasury payouts remain disabled.</p>
     </header>
     <section className="roadmap-phases" aria-label="Eight development phases">
       {roadmap.map((phase) => <details key={phase.phase}
-        data-status={phase.phase === 1 ? "core" : phase.phase === 2 ? "active" : "planned"}>
+        data-status={phase.phase <= 2 ? "core" : "planned"}>
         <summary>
           <span className="roadmap-number" aria-hidden="true">{String(phase.phase).padStart(2, "0")}</span>
-          <span className="roadmap-phase-heading"><span className="roadmap-heading-row"><strong>Phase {phase.phase} — {phase.title}</strong><small>{phase.status}</small></span><span>{phase.summary}</span>{phase.phase===2&&<em className="roadmap-current">Current phase</em>}</span>
+          <span className="roadmap-phase-heading"><span className="roadmap-heading-row"><strong>Phase {phase.phase} — {phase.title}</strong><small>{phase.status}</small></span><span>{phase.summary}</span>{phase.phase===2&&<em className="roadmap-current">Public release verified</em>}</span>
           <ChevronDown className="roadmap-toggle" size={18} aria-hidden="true" />
         </summary>
         <div className="roadmap-detail">
-          <h2>{phase.phase===1?'Foundation milestones':phase.phase===2?'Delivered capabilities and final release':'What’s ahead'}</h2>
+          <h2>{phase.phase===1?'Foundation milestones':phase.phase===2?'Delivered capabilities':'What’s ahead'}</h2>
           <ul>{phase.milestones.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
       </details>)}

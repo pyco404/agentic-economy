@@ -18,7 +18,7 @@ const systems = [
   { title: "Autonomous agents", icon: Blocks, text: "Common Agents represent qualifying $AECO holders and take part in basic simulated city activities. Separate simulation citizens keep the city working." },
   { title: "Communities", icon: Users, text: "Groups participate through agents, headquarters and useful economic activity in one shared environment." },
   { title: "Economic activity", icon: Workflow, text: "City work and services shape the shared world. City Credits are simulated and cannot be withdrawn or spent from your wallet." },
-  { title: "Solana infrastructure", icon: Network, text: "Tokens are created through our TOKEN/SOL Launchpad with personal wallet approval. $AECO is live on Mainnet; public launching awaits final release approval." },
+  { title: "Solana infrastructure", icon: Network, text: "Tokens are created through our TOKEN/SOL Launchpad with personal wallet approval. $AECO is live on Mainnet, and the Launchpad is open to authenticated wallets." },
 ] as const;
 
 export function About({ onNavigate, source, connected, mode }: Props) {
@@ -40,7 +40,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
         <h1 id="about-title">A world<br />that works<span>.</span></h1>
         <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. $AECO is live, and each qualifying holder wallet automatically receives one persistent Common Agent for basic simulated city activities, without registration or wallet connection. Phase 3 expands these same agents with advanced behavior and economic capabilities. Super Agents are a separate class planned for Phase 5.</p>
         <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}{link("roadmap", "View Roadmap")}</div>
-        <p className="about-hero-footnote">A World That Works. $AECO connects holders to our shared city.<br />Public token launching awaits release approval. Treasury payouts remain disabled.</p><ProjectLinks /><p className="small"><a href={project.website} target="_blank" rel="noopener noreferrer">Official website · useaeco.xyz</a></p>
+        <p className="about-hero-footnote">A World That Works. $AECO connects holders to our shared city.<br />Public TOKEN/SOL launching is live. Treasury payouts remain disabled.</p><ProjectLinks /><p className="small"><a href={project.website} target="_blank" rel="noopener noreferrer">Official website · useaeco.xyz</a></p>
       </div>
       <div className="about-world-window" aria-label="A view into the same procedural city behind this page">
         <span className="about-coordinate"><Globe2 size={15} aria-hidden="true" />One living world.<br /><small>Every page belongs to it.</small></span>
@@ -113,7 +113,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
     </section>
 
     <section id="about-status" className="about-paper about-status" aria-labelledby="about-status-title">
-      {heading("07", "Where we are", "Built in the open. Clear about what’s next.", "$AECO and holder Common Agents are live. Public launching is our final Phase 2 release milestone; Phase 3 has not started.")}
+      {heading("07", "Where we are", "Built in the open. Clear about what’s next.", "$AECO, holder Common Agents and public TOKEN/SOL launching are live. Phase 2 public-release acceptance is complete; Phase 3 has not started.")}
       <div className="about-status-grid">{aboutStatus.map((group) => <div key={group.id} className={`about-status-column about-status-${group.id}`}>
         <span className="about-status-mark" aria-hidden="true">{group.id === "demo" ? <Check size={17} /> : group.id === "local" ? <Sparkles size={17} /> : <LockKeyhole size={17} />}</span>
         <h3>{group.title}</h3><p>{group.note}</p><ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul></div>)}</div>

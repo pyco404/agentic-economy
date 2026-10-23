@@ -998,7 +998,7 @@ export default function App() {
                     <span>
                       {isDemo
                         ? "Demo preview · No real financial actions"
-                        : "Financial actions disabled"}{" "}
+                        : "Treasury payouts disabled"}{" "}
                       · City Credits are simulated.
                     </span>
                   </footer>

@@ -12,11 +12,12 @@ describe("ecosystem editorial boundary", () => {
     expect(roadmap[0].title).toBe("Platform Foundation");
     expect(roadmap[0].status).toBe("Completed milestone");
     expect(roadmap[1].title).toBe("Token Launchpad & Common Agents");
-    expect(roadmap[1].status).toBe("In progress");
-    expect(roadmap[2].status).toBe("Awaiting Phase 2 acceptance");
-    expect(roadmap[1].summary).toContain("official $AECO token is live on Solana Mainnet");
+    expect(roadmap[1].status).toBe("Completed milestone");
+    expect(roadmap[2].status).toBe("Upcoming");
+    expect(roadmap[1].summary).toContain("Public TOKEN/SOL launching is live");
     expect(roadmap[2].summary).toContain("Phase 2 is complete");
-    expect(roadmap[1].summary).toContain("approved, activated and verified");
+    expect(roadmap[1].milestones.join(" ")).toContain("approved, activated and verified");
+    expect(roadmap[2].summary).toContain("has not started");
     expect(agentClasses[0].status).toBe("Live · Phase 2");
     expect(roadmap[1].milestones.join(" ")).toContain("treasury distribution");
     expect(roadmap.slice(3).every((p) => p.status === "Planned")).toBe(true);

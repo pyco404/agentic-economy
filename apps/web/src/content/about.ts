@@ -14,15 +14,15 @@ export const aboutStatus = [
     "One persistent Common Agent per qualifying $AECO holder wallet",
     "Verified token discovery, communities and available market data",
   ] },
-  { id: "local", title: "Verified launch capabilities", note: "Delivered through our own Launchpad; public access awaits release approval.", items: [
+  { id: "local", title: "Verified launch capabilities", note: "Available through our public Launchpad with your own wallet approval.", items: [
     "TOKEN/SOL creation, artwork uploads and personal Phantom approval",
     "Optional Developer Buy with a strict 3.5% supply maximum",
     "A separate one-time 0.05 SOL platform launch charge",
     "Creator-fee collection and verified 60/40 treasury distribution on Mainnet",
     "Transaction refresh and recovery with duplicate-submission protections",
   ] },
-  { id: "verification", title: "Before public launching", note: "Phase 2 remains in progress until the public release is approved and verified.", items: [
-    "Final public-launch acceptance and release approval",
+  { id: "verification", title: "Public release verified", note: "Phase 2 public-release acceptance is complete. Phase 3 has not started.", items: [
+    "Authenticated public TOKEN/SOL launching is enabled",
     "Physical mobile wallet connection and layouts verified; on-chain mobile launch acceptance remains deferred",
     "Treasury payouts remain disabled",
   ] },

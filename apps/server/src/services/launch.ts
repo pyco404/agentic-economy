@@ -145,7 +145,10 @@ export class LaunchService {
       if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount||devQuote.tokenAmount*10_000n>devQuote.totalSupply*BigInt(DEV_BUY_MAX_BPS))throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
     }
     assertLaunchWalletAllowed(this.config, wallet);
-    const reserved = this.config.solana.cluster === "mainnet-beta";
+    // Existing official attempts retain their exact mint/signing policy after public release.
+    // Newly approved public launches use the normal durable random-mint signer.
+    const reserved = !!renewal?.record.launch.execution?.localMintReview ||
+      (this.config.solana.cluster === "mainnet-beta" && !this.config.pumpLaunch.publicMainnetApproved);
     if(reserved && (!owned || !preparedMintPreparationAllowed(this.config,wallet,owned.id)))
       throw new AppError("forbidden","Only the authenticated official launch intent may use this Mainnet mint");
     if(reserved && (!this.chain.buildUnsignedLaunchTransaction || !this.chain.mintAccountExists))
@@ -258,7 +261,8 @@ export class LaunchService {
       !l.execution.draftId || review.launchId!==l.id || review.mint!==l.mint || review.launcherWallet!==l.launcherWallet ||
       (this.config.pumpLaunch.preparedMintDraftId && l.execution.draftId!==this.config.pumpLaunch.preparedMintDraftId)))
       throw new AppError("forbidden","The official mint reservation changed. Keep this attempt for read-only reconciliation.");
-    if((l.mode==="production"||l.execution?.network==="mainnet-beta") && !review)
+    if((l.mode==="production"||l.execution?.network==="mainnet-beta") && !review &&
+      (!this.config.pumpLaunch.publicMainnetApproved || l.mint===PLANNED_AECO_MINT))
       throw new AppError("forbidden","This saved attempt is outside the official mint reservation");
   }
 

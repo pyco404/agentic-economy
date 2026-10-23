@@ -68,6 +68,8 @@ const Env = z.object({
   FEE_ROUTING_VERIFIED: z.enum(["true", "false"]).default("false"),
   /** Separate owner-approved Mainnet activation; never set by normal demo/staging deployment. */
   MAINNET_LAUNCH_APPROVED: z.enum(["true", "false"]).default("false"),
+  /** Separate public-release approval. Unset/false preserves deployer-only Mainnet access. */
+  MAINNET_PUBLIC_LAUNCH_APPROVED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_ENABLED: z.enum(["true", "false"]).default("false"),
   PUMP_LAUNCH_LOOKUP_TABLE: PublicKey.optional(),
   /** Trusted operator binding only. Does not activate execution or supply any form fields. */
@@ -128,6 +130,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     throw new Error("MODE=production registers launches only at finalized commitment");
   const feeRoutingVerified = e.FEE_ROUTING_VERIFIED === "true";
   const mainnetApproved = e.MODE === "production" && e.MAINNET_LAUNCH_APPROVED === "true";
+  if (e.MAINNET_PUBLIC_LAUNCH_APPROVED === "true" && !mainnetApproved)
+    throw new Error("Public Mainnet launching requires separate Mainnet execution approval");
   if (e.MAINNET_LAUNCH_APPROVED === "true" && e.MODE !== "production") throw new Error("Mainnet approval cannot be used outside production");
   if (mainnetApproved && (e.SOLANA_CLUSTER !== "mainnet-beta" || !e.PUMP_LAUNCH_LOOKUP_TABLE || !feeRoutingVerified || e.PUMP_LAUNCH_ENABLED !== "true" || !(["https://useaeco.xyz","https://www.useaeco.xyz"].includes(e.AUTH_URI)) || e.CORS_ORIGINS.split(",").some(origin=>!["https://useaeco.xyz","https://www.useaeco.xyz"].includes(origin.trim()))))
     throw new Error("Approved Mainnet launching requires Mainnet RPC configuration, lookup table, verified routing, HTTPS and explicit launch enablement");
@@ -178,7 +182,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     },
     corsOrigins: e.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
     feeRoutingVerified,
-    pumpLaunch: {preparedMintDraftId:e.PUMP_PREPARED_MINT_DRAFT_ID??null,enabled:(e.MODE==="devnet"||mainnetApproved)&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",mainnetApproved,lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null,
+    pumpLaunch: {preparedMintDraftId:e.PUMP_PREPARED_MINT_DRAFT_ID??null,enabled:(e.MODE==="devnet"||mainnetApproved)&&feeRoutingVerified&&e.PUMP_LAUNCH_ENABLED==="true",mainnetApproved,publicMainnetApproved:e.MAINNET_PUBLIC_LAUNCH_APPROVED==="true",lookupTable:e.PUMP_LAUNCH_LOOKUP_TABLE??null,localGenesisHash:e.PUMP_LOCAL_GENESIS_HASH??null,
       usdcEnabled:false, // Product policy: preserve legacy implementation, never enable new USDC launches.
       // The quote mint is fixed per network, never client-supplied; prepare re-checks it against the live Pump Global allowlist.
       usdcMint:USDC_QUOTE_MINTS[e.SOLANA_CLUSTER]},

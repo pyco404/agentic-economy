@@ -419,6 +419,62 @@ describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)'
  });
 });
 
+describe('separately approved public Mainnet release (disposable keys and mock RPC only)',()=>{
+ async function publicRelease(){
+  const f=await setup(),cfg=env!.ctx.config;
+  const build=vi.mocked(f.chain.buildLaunchTransaction).getMockImplementation()!;
+  vi.mocked(f.chain.buildLaunchTransaction).mockImplementation(async input=>({...await build(input),genesisHash:MAINNET_GENESIS}));
+  const observe=vi.mocked(f.chain.getTransaction).getMockImplementation()!;
+  vi.mocked(f.chain.getTransaction).mockImplementation(async signature=>{const tx=await observe(signature);return tx?{...tx,genesisHash:MAINNET_GENESIS,commitment:'finalized' as const}:null;});
+  f.chain.getGenesisHash=async()=>MAINNET_GENESIS;
+  cfg.mode='production';cfg.solana.cluster='mainnet-beta';cfg.launchRegistrationCommitment='finalized';
+  cfg.treasuries={platform:OFFICIAL_TREASURIES.platform,agentRewards:OFFICIAL_TREASURIES.agentRewards};
+  cfg.pumpLaunch.mainnetApproved=true;cfg.pumpLaunch.publicMainnetApproved=true;
+  return f;
+ }
+ it('keeps public approval default-off and rejects approval without the independent execution gates',()=>{
+  expect(loadConfig({MODE:'demo'}).pumpLaunch.publicMainnetApproved).toBe(false);
+  expect(()=>loadConfig({MODE:'demo',MAINNET_PUBLIC_LAUNCH_APPROVED:'true'})).toThrow('separate Mainnet execution approval');
+ });
+ it('uses a normal random mint, refreshes it, requires the independent payer signature and finalizes one charge',async()=>{
+  const f=await publicRelease();
+  expect(launchWalletAllowed(env!.ctx.config,undefined)).toBe(false);
+  const result=await f.prepare();expect(result.statusCode).toBe(200);const p=result.json();
+  expect(p.launch.mint).not.toBe(PLANNED_AECO_MINT);expect(p.launch.execution.localMintReview).toBeUndefined();
+  expect(p.launch.fees).toMatchObject({platformLaunchFeeLamports:'50000000',platformTreasury:OFFICIAL_TREASURIES.platform,developerBuy:null,creatorFeeSplit:{agentRewardsTreasury:OFFICIAL_TREASURIES.agentRewards,agentRewardsBps:6000,platformTreasury:OFFICIAL_TREASURIES.platform,platformBps:4000}});
+  const {mintMessageHash}=await import('../src/chain/offline-mint.js'),hash=(t:string)=>mintMessageHash(VersionedTransaction.deserialize(Buffer.from(t,'base64'))),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const refreshed=await f.call('POST',url+'/refresh-transaction',{messageSha256:hash(p.transaction)});
+  expect(refreshed.statusCode).toBe(200);expect(refreshed.json().launch.mint).toBe(p.launch.mint);
+  const issued=await f.call('POST',url+'/wallet-transaction',{messageSha256:hash(refreshed.json().transaction)});
+  expect(issued.statusCode).toBe(200);const tx=VersionedTransaction.deserialize(Buffer.from(issued.json().transaction,'base64'));
+  expect(tx.signatures[0]!.every(b=>b===0)).toBe(true);expect(tx.signatures[1]!.some(b=>b!==0)).toBe(true);
+  expect((await f.call('POST',url+'/submit',{transaction:issued.json().transaction})).statusCode).toBe(400);
+  const signed=f.signed(issued.json().transaction);expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(200);
+  f.setLanded();expect((await f.call('GET',url)).json().launch.status).toBe('confirmed');
+  expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(200);
+  expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1);
+  expect((await env!.ctx.store.allTreasuryEntries()).filter(r=>r.stream==='launch_fee')).toHaveLength(1);
+  expect((await env!.ctx.store.allCommunities()).some(c=>c.mint===p.launch.mint&&c.provenance?.network==='mainnet-beta')).toBe(true);
+ });
+ it('allows repeated metadata and multiple independent mints while never routing a normal launch through the official signer',async()=>{
+  const f=await publicRelease(),owner=f.creator.publicKey.toBase58(),draft=LaunchDraft.parse(DRAFT);
+  const prepare=(suffix:string)=>env!.ctx.launches.prepare(owner,draft,{id:crypto.randomUUID(),version:0,launchId:`lch_public_${suffix}`});
+  const first=await prepare('first'),second=await prepare('second');
+  expect(first.launch.mint).not.toBe(second.launch.mint);expect([first.launch.mint,second.launch.mint]).not.toContain(PLANNED_AECO_MINT);
+  expect(first.launch.draft).toEqual(second.launch.draft);expect(f.chain.mintAccountExists).not.toHaveBeenCalled();
+  expect(f.chain.buildLaunchTransaction).toHaveBeenCalledTimes(2);expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('blocks pending preparations, refresh, signer issuance and submission immediately after public access is rolled back',async()=>{
+  const f=await publicRelease(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  env!.ctx.config.pumpLaunch.publicMainnetApproved=false;
+  expect((await f.prepare()).statusCode).toBe(403);
+  for(const suffix of ['/refresh-transaction','/wallet-transaction','/submit','/resume'])
+   expect((await f.call('POST',url+suffix,{transaction:f.signed(p.transaction),messageSha256:'a'.repeat(64)})).statusCode).toBe(403);
+  expect((await f.call('GET',url)).statusCode).toBe(200);
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+});
+
 describe('operator-bound prepared official mint (public keys and mock RPC only)',()=>{
  async function reserved(){
   const f=await setup(),cfg=env!.ctx.config;

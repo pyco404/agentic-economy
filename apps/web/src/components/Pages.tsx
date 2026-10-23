@@ -1,3 +1,4 @@
+import { AgentSocialLife } from "./AgentSocialLife";
 import { OfficialTreasuries } from './OfficialTreasuries';
 import { CurrentAgentWork, JobFacts, ProductionFacilities, WorkingAgents } from "./AgentWork";
 import { observableTasks, workDescription } from "../api/agentWork";
@@ -808,6 +809,7 @@ export function AgentPanel({
               {following ? "Stop following agent" : "Follow agent"} <ArrowRight size={14} />
             </button>
           )}
+          <AgentSocialLife agent={agent} observed={observed ?? undefined} agents={data?.agents ?? []} />
           {data&&displayed&&<CurrentAgentWork agent={displayed} data={data} onViewBuilding={onViewBuilding}/>}
           <dl className="detail-list">
             {import.meta.env.DEV && <div><dt>Canonical ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>}

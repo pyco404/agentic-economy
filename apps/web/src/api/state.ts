@@ -122,7 +122,7 @@ export function applyServerEvent(
           ticks[a.id] = event.tick;
           return {
             ...a,
-            ...(move.agent?.id === a.id ? move.agent : {}),
+            ...(move.agent?.id === a.id ? { ...move.agent, social: move.agent.social } : {}),
             pos: move.pos,
             state: move.state,
             status: move.state === "paused" ? "paused" as const : "active" as const,

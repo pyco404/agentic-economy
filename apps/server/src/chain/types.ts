@@ -63,6 +63,7 @@ export interface DevBuyChainQuote {
   totalSupply: bigint;
   tokenAmount: bigint;
   capTokenAmount: bigint;
+  maxAllowedQuoteCost?: bigint;
   /** Lamports the buy costs, including Pump protocol fee (buyback is part of it) and creator fee. */
   estimatedQuoteCost: bigint;
   pumpFees: bigint;
@@ -105,7 +106,7 @@ export interface ChainGateway {
   /** Developer Buy support on this network (lookup-table coverage and packet capacity); reason when unavailable. */
   devBuySupport?(preparationOnly?:boolean): Promise<{ available: boolean; reason: string | null }>;
   /** Quote an exact Developer Buy of `bps` basis points of total supply for a new SOL curve. */
-  quoteDevBuy?(bps: number): Promise<DevBuyChainQuote>;
+  quoteDevBuy?(bps: number, budgetLamports?: bigint): Promise<DevBuyChainQuote>;
   /** Authoritative bonding-curve state read at `slot`; null when the curve account does not exist. */
   getCurveProgress?(mint: string): Promise<CurveProgress | null>;
   /** Distinct owners holding a positive balance of `mint` (excluding the curve's own vault); null holders when too many to count safely. */

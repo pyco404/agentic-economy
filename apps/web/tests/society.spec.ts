@@ -27,9 +27,21 @@ for (const width of [1440, 820, 344, 690]) test(`shared social activity, inspect
     const expand = page.getByRole('button', { name: 'Expand city activity', exact: true });
     if (await expand.isVisible()) await expand.click();
   }
+  const sourceInfo = panel.locator('.city-activity-info');
+  const sourceToggle = sourceInfo.locator('summary');
+  await sourceToggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(sourceInfo).toHaveAttribute('open', '');
+  await expect(sourceInfo).toContainText('Qualifying $AECO holder wallets');
+  await expect(sourceInfo).toContainText('Active city-group residents');
+  await expect(sourceInfo).toContainText('No independently verified economic-service total');
+  await page.screenshot({ path: `artifacts/city-sources-${width}.png` });
+  await page.keyboard.press('Enter');
+  await expect(sourceInfo).not.toHaveAttribute('open');
+  await expect(page.locator('.world-bottom')).not.toContainText(/Simulated services|Simulation groups/);
   await page.getByLabel('Filter city activity').selectOption('social');
   await expect(panel.locator('.activity-focus').first()).toBeVisible({ timeout: 30000 });
-  await expect(panel).toContainText('Simulated social activity');
+  await expect(panel).toContainText('City World');
   const beforeCamera = await city.getAttribute('data-camera');
   await panel.locator('.activity-focus').first().click();
   await expect(page.getByRole('region', { name: 'Social life' })).toBeVisible();

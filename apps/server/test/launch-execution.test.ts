@@ -388,7 +388,7 @@ describe('operator-bound prepared official mint (public keys and mock RPC only)'
   expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
  });
  it('renews only a definitively expired unsigned review on the same mint and retains history/idempotency',async()=>{
-  const f=await reserved(),first=await f.prepareOfficial(),old=first.launch.execution!.localMintReview!,service=env!.ctx.launches;
+  const f=await reserved();f.cfg.pumpLaunch.preparedMintDraftId=null;const first=await f.prepareOfficial(),old=first.launch.execution!.localMintReview!,service=env!.ctx.launches;
   await expect(service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256)).rejects.toMatchObject({code:'conflict'});
   f.expire();const builder=f.chain.buildUnsignedLaunchTransaction!;f.chain.buildUnsignedLaunchTransaction=vi.fn(async input=>({...await builder(input),lastValidBlockHeight:250}));
   const renewed=await service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256);

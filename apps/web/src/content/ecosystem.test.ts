@@ -10,7 +10,7 @@ describe("ecosystem editorial boundary", () => {
     expect(roadmap.map((p) => p.phase)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(roadmap[0].title).toBe("Platform Foundation");
     expect(roadmap[0].status).toBe("Completed milestone");
-    expect(roadmap[1].title).toBe("Token Launchpad");
+    expect(roadmap[1].title).toBe("Token Launchpad & Common Agents");
     expect(roadmap[1].status).toBe("In progress");
     expect(roadmap[2].status).toBe("Blocked until $AECO launch");
     expect(roadmap[1].summary).toContain("official $AECO token launches through Agentic Economy on Solana Mainnet and is independently verified");

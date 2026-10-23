@@ -130,6 +130,25 @@ describe('Developer Buy and token rules through the Launchpad API', () => {
     chain.quoteDevBuy = async (bps) => ({ slot: 9, totalSupply: SUPPLY, tokenAmount: devBuyTokenAmount(SUPPLY, bps), capTokenAmount: CAP, estimatedQuoteCost: 10_242_053n, pumpFees: 126_446n, maxQuoteCost: 10_344_474n, priceImpactBps: 685, ...quote });
   };
 
+  it('persists SOL budgets, validates API quotes and blocks invalid purchases before Pinata',async()=>{
+    const {call,logo,chain}=await session(true);supported(chain);
+    chain.quoteDevBuy=async(_bps,budget)=>({slot:9,totalSupply:SUPPLY,tokenAmount:1_000_000n,capTokenAmount:CAP,estimatedQuoteCost:budget!-1n,pumpFees:1n,maxQuoteCost:budget!,maxAllowedQuoteCost:20_000_000n,priceImpactBps:1});
+    let d=(await call('POST','/api/v1/launchpad/drafts',{name:'Budget',symbol:'BGT',devBuySol:'0.001000001'})).json();
+    expect((await call('GET',`/api/v1/launchpad/drafts/${d.id}`)).json().fields.devBuySol).toBe('0.001000001');
+    const quote=(await call('GET','/api/v1/launchpad/dev-buy-quote?sol=0.001000001')).json();
+    expect(quote).toMatchObject({status:'available',budgetLamports:'1000001',maxQuoteCost:'1000001',estimatedQuoteCost:'1000000'});
+    for(const sol of ['0','-1','0.0000000001','1e3'])expect((await call('GET',`/api/v1/launchpad/dev-buy-quote?sol=${sol}`)).statusCode).toBe(400);
+    expect((await call('GET','/api/v1/launchpad/dev-buy-quote?sol=0.1&bps=1')).statusCode).toBe(400);
+    const build=vi.spyOn(chain,'buildLaunchTransaction').mockResolvedValue({transaction:Buffer.alloc(8).toString('base64'),lastValidBlockHeight:100,demo:false,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'20643360',devBuy:{tokenAmount:'1000000',quoteSpent:'1000000'}});
+    d=(await logo(d.id,d.version)).json();d=(await call('POST',`/api/v1/launchpad/drafts/${d.id}/metadata`,{version:d.version})).json();
+    const prepared=await call('POST',`/api/v1/launchpad/drafts/${d.id}/launch`,{version:d.version});
+    expect(prepared.statusCode,prepared.body).toBe(200);expect(prepared.json().launch.execution.devBuy).toMatchObject({budgetSol:'0.001000001',bps:0,maxQuoteCost:'1000001'});
+    expect(build.mock.calls[0]![0].devBuy).toEqual({tokenAmount:1000000n,maxQuoteCost:1000001n});
+    vi.mocked(fetch).mockClear();supported(chain,{tokenAmount:CAP+1n});
+    const bad=(await call('POST','/api/v1/launchpad/drafts',{name:'Bad',symbol:'BAD',devBuySol:'0.001'})).json();
+    expect((await logo(bad.id,bad.version)).statusCode).toBe(400);expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('measures names and symbols in UTF-8 bytes, never trims, and rejects out-of-range Developer Buy values on save', async () => {
     const { call } = await session(false);
     const save = (fields: object) => call('POST', '/api/v1/launchpad/drafts', fields);

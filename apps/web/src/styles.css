@@ -8,6 +8,9 @@
   --green: #33664d;
   --muted: #777768;
   --line: #e6ddcc;
+  --border-width: 1px;
+  --focus-color: var(--green);
+  --focus-offset: 2px;
   --cream: #f7f0e2;
   --surface: #fffaf2;
   --terracotta: #ae6848;
@@ -46,14 +49,29 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-canvas:focus-visible {
-  outline: 2px solid #33664d;
-  outline-offset: 4px;
+/* One shared keyboard indicator. Text controls paint over their existing border,
+   rather than stacking an outline and a shadow around it. */
+:focus-visible {
+  outline: var(--border-width) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+}
+:where(input, textarea, select) {
+  border-width: var(--border-width);
+}
+:where(input, textarea, select):focus-visible {
+  border-color: var(--focus-color);
+  outline-offset: calc(-1 * var(--border-width));
+  box-shadow: none;
+}
+/* Composite controls use the outer frame as their only focus indicator. */
+:is(.search, .launch-dev-buy-sol, .launch-quote-card):focus-within {
+  border-color: var(--focus-color);
+  outline: var(--border-width) solid var(--focus-color);
+  outline-offset: calc(-1 * var(--border-width));
+  box-shadow: none;
+}
+:is(.search, .launch-dev-buy-sol, .launch-quote-card) input:focus-visible {
+  outline: none;
 }
 button {
   border: 0;
@@ -78,13 +96,13 @@ p {
 }
 hr {
   border: 0;
-  border-top: 1px solid var(--line);
+  border-top: var(--border-width) solid var(--line);
   margin: 22px 0;
 }
 .topbar {
   height: 86px;
   background: #fffaf0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
   display: flex;
   align-items: center;
   padding: 0 32px;
@@ -116,7 +134,7 @@ hr {
   display: grid;
   place-items: center;
   background: transparent;
-  border: 1px solid transparent;
+  border: var(--border-width) solid transparent;
   border-radius: 9px;
   width: 43px;
   height: 43px;
@@ -182,7 +200,7 @@ hr {
 .wallet-button {
   padding: 10px 14px;
   background: #f0ebdd;
-  border: 1px solid #d9ded1;
+  border: var(--border-width) solid #d9ded1;
   border-radius: 5px;
   font-size: 11px;
   display: flex;
@@ -263,7 +281,7 @@ hr {
   align-items: center;
   gap: 12px;
   background: #fffaf3f5;
-  border: 1px solid #dde2d6;
+  border: var(--border-width) solid #dde2d6;
   border-radius: 6px;
   padding: 10px 14px;
   font-size: 11px;
@@ -281,7 +299,7 @@ hr {
   top: 145px;
   width: 250px;
   background: #fffaf2f7;
-  border: 1px solid #e3d8c2;
+  border: var(--border-width) solid #e3d8c2;
   border-radius: 8px;
   padding: 18px;
   box-shadow: 0 8px 28px #72532e12;
@@ -324,7 +342,7 @@ hr {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e2ddcb;
+  border: var(--border-width) solid #e2ddcb;
   border-radius: 50%;
   width: 26px;
   height: 26px;
@@ -347,7 +365,7 @@ hr {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #e4e8db;
+  border-top: var(--border-width) solid #e4e8db;
   padding: 15px 0 0;
   margin-top: 20px;
   width: 100%;
@@ -399,7 +417,7 @@ hr {
   flex-direction: column;
   gap: 1px;
   background: #fffaf3f7;
-  border: 1px solid #e3d8c2;
+  border: var(--border-width) solid #e3d8c2;
   padding: 5px;
   border-radius: 7px;
   box-shadow: 0 4px 15px #58634708;
@@ -429,7 +447,7 @@ hr {
   bottom: 45px;
   display: flex;
   align-items: center;
-  border: 1px solid #e3d8c2;
+  border: var(--border-width) solid #e3d8c2;
   border-radius: 8px;
   min-height: 80px;
   background: #fffaf2f7;
@@ -444,7 +462,7 @@ hr {
   align-items: center;
   gap: 12px;
   padding-left: 22px;
-  border-left: 1px solid #e8dfcd;
+  border-left: var(--border-width) solid #e8dfcd;
   color: #748268;
 }
 .world-stat:first-child {
@@ -470,7 +488,7 @@ hr {
   display: flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid #dee5d3;
+  border: var(--border-width) solid #dee5d3;
   border-radius: 4px;
   padding: 10px;
   color: #3c6648;
@@ -508,7 +526,7 @@ hr {
   max-height: calc(100% - 285px);
   overflow: auto;
   background: #fffbf3;
-  border: 1px solid #dbe1d2;
+  border: var(--border-width) solid #dbe1d2;
   border-radius: 8px;
   padding: 25px;
   box-shadow: 0 12px 40px #53634515;
@@ -532,7 +550,7 @@ hr {
 .tag {
   background: #eaf0e1;
   color: #718264;
-  border: 1px solid #dee7d3;
+  border: var(--border-width) solid #dee7d3;
   font-size: 9px;
   border-radius: 4px;
   padding: 5px 8px;
@@ -557,7 +575,7 @@ hr {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
   padding: 10px 0;
 }
 .detail-list dt {
@@ -591,7 +609,7 @@ hr {
   background: #3e5c41;
 }
 .secondary {
-  border: 1px solid #d8dfd0;
+  border: var(--border-width) solid #d8dfd0;
   background: #f7f2e6;
   color: #6b7d60;
 }
@@ -609,7 +627,7 @@ hr {
   align-items: center;
   gap: 10px;
   background: none;
-  border-bottom: 1px solid #e3e8d9;
+  border-bottom: var(--border-width) solid #e3e8d9;
   padding: 10px 0;
   width: 100%;
   text-align: left;
@@ -629,7 +647,7 @@ hr {
   display: flex;
   gap: 10px;
   align-items: center;
-  border: 1px solid #dfe4d8;
+  border: var(--border-width) solid #dfe4d8;
   border-radius: 5px;
   padding: 10px 14px;
   background: #fffbf4;
@@ -653,7 +671,7 @@ hr {
   left: 85px;
   bottom: 150px;
   background: #fffaf1f0;
-  border: 1px solid #dce4d1;
+  border: var(--border-width) solid #dce4d1;
   border-radius: 5px;
   padding: 13px;
   font-size: 10px;
@@ -696,7 +714,7 @@ hr {
 }
 .surface {
   background: #fffcf5;
-  border: 1px solid var(--line);
+  border: var(--border-width) solid var(--line);
   border-radius: 8px;
   padding: 25px;
   margin-bottom: 20px;
@@ -721,7 +739,7 @@ hr {
   display: block;
   width: 100%;
   background: #fbf6e9;
-  border: 1px solid #dfe5d6;
+  border: var(--border-width) solid #dfe5d6;
   border-radius: 5px;
   color: #586750;
   padding: 11px 12px;
@@ -752,7 +770,7 @@ hr {
   justify-content: space-between;
   gap: 15px;
   padding: 13px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
 }
 .fee-list dt {
   color: #899480;
@@ -789,7 +807,7 @@ hr {
   padding: 16px;
   color: #879579;
   background: #edf1e6;
-  border: 1px solid #dfe7d4;
+  border: var(--border-width) solid #dfe7d4;
   border-radius: 6px;
   margin: 20px 0;
 }
@@ -830,7 +848,7 @@ hr {
 }
 .community-card {
   background: #fffaf0;
-  border: 1px solid var(--line);
+  border: var(--border-width) solid var(--line);
   border-radius: 8px;
   padding: 0;
   text-align: left;
@@ -866,7 +884,7 @@ hr {
 .drawn-building {
   width: 72px;
   height: 70px;
-  border: 1px solid #84947a;
+  border: var(--border-width) solid #84947a;
   background: #f1f0df;
   transform: skewY(-15deg);
   position: relative;
@@ -933,7 +951,7 @@ hr {
 .card-stats {
   display: flex;
   gap: 20px;
-  border-top: 1px solid var(--line);
+  border-top: var(--border-width) solid var(--line);
   margin-top: 20px;
   padding-top: 15px;
   font-size: 9px;
@@ -959,7 +977,7 @@ hr {
 .page-footer {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid var(--line);
+  border-top: var(--border-width) solid var(--line);
   padding: 25px 0 10px;
   margin-top: 40px;
   font-size: 10px;
@@ -983,7 +1001,7 @@ hr {
   position: relative;
   background: #fffaf0;
   border-radius: 10px;
-  border: 1px solid #dce3d2;
+  border: var(--border-width) solid #dce3d2;
   padding: 35px;
   max-width: 480px;
   width: 100%;
@@ -1012,7 +1030,7 @@ hr {
   gap: 12px;
   font-size: 11px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
 }
 .eligibility {
   display: flex;
@@ -1035,7 +1053,7 @@ hr {
 .launch-logo { margin-top: 24px; }
 .launch-logo h3 { font-size: 12px; font-weight: 500; margin-bottom: 12px; }
 .logo-dropzone { display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 22px 16px; border: 1px dashed #bcc7af; border-radius: 8px; background: #faf7ef; text-align: center; }
+  padding: 22px 16px; border: var(--border-width) dashed #bcc7af; border-radius: 8px; background: #faf7ef; text-align: center; }
 .logo-dropzone img { width: 120px; height: 120px; object-fit: contain; border-radius: 8px; background: transparent; }
 .logo-dropzone p { margin: 0; }
 .logo-dropzone button { min-height: 44px; }
@@ -1074,7 +1092,7 @@ hr {
 .economy-panel { height: clamp(440px, 46dvh, 480px); }
 .receipt-ledger { height: clamp(460px, 50dvh, 500px); }
 .panel-scroll-content { flex: 1; min-height: 0; min-width: 0; padding-right: 6px; }
-.panel-scroll-content:focus-visible { outline: 2px solid #7f9376; outline-offset: 3px; border-radius: 3px; }
+.panel-scroll-content:focus-visible { border-radius: 3px; }
 .scroll-panel table { border-collapse: separate; border-spacing: 0; }
 .scroll-panel th { position: sticky; top: 0; z-index: 1; background: #fffaf2; }
 .economy-panel table { table-layout: fixed; }
@@ -1090,7 +1108,7 @@ hr {
 }
 .agent-row {
   background: none;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
   padding: 13px 0;
   display: flex;
   align-items: center;
@@ -1140,7 +1158,7 @@ hr {
 .production-flow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border: 1px solid var(--line);
+  border: var(--border-width) solid var(--line);
   border-radius: 8px;
   background: #fffbf4;
   margin-bottom: 25px;
@@ -1196,7 +1214,7 @@ th {
   padding: 15px 8px 15px 0;
 }
 td {
-  border-top: 1px solid var(--line);
+  border-top: var(--border-width) solid var(--line);
   padding: 16px 8px 16px 0;
 }
 td:not(:first-child),
@@ -1217,7 +1235,7 @@ th:not(:first-child) {
   gap: 12px;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
   color: #8a9b7b;
 }
 .task-row > span:first-of-type {
@@ -1293,7 +1311,7 @@ th:not(:first-child) {
   left: 15%;
   right: 30%;
   background: #fffbf3;
-  border: 1px solid #d4ddc9;
+  border: var(--border-width) solid #d4ddc9;
   padding: 24px;
   font-size: 13px;
   border-radius: 7px;
@@ -1322,7 +1340,7 @@ th:not(:first-child) {
 .loading-dot {
   width: 20px;
   height: 20px;
-  border: 2px solid #dce4d2;
+  border: var(--border-width) solid #dce4d2;
   border-top-color: #748b60;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1803,7 +1821,7 @@ th:not(:first-child) {
   right: 25%;
   z-index: 18;
   background: #f8f1df;
-  border: 1px solid #dfd2b3;
+  border: var(--border-width) solid #dfd2b3;
   border-radius: 5px;
   padding: 10px;
   font-size: 11px;
@@ -1857,7 +1875,7 @@ th:not(:first-child) {
   font-size: 9px;
   color: #526b49;
   background: #fffaf2f2;
-  border: 1px solid #dce3d2;
+  border: var(--border-width) solid #dce3d2;
   letter-spacing: 1.4px;
 }
 .muted {
@@ -1882,7 +1900,7 @@ th:not(:first-child) {
   width: 100%;
   margin-top: 12px;
   background: #faf5e9;
-  border: 1px solid #e4dbc7;
+  border: var(--border-width) solid #e4dbc7;
   padding: 7px;
   border-radius: 4px;
   color: #52654a;
@@ -1898,7 +1916,7 @@ th:not(:first-child) {
   max-width: 245px;
   padding: 12px 15px;
   background: #fffaf2fa;
-  border: 1px solid #d6e0c9;
+  border: var(--border-width) solid #d6e0c9;
   border-radius: 6px;
   box-shadow: 0 4px 18px #52644212;
   font-size: 11px;

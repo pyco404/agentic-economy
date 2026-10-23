@@ -1,3 +1,4 @@
+import { OfficialTokenAddress } from "./components/OfficialTokenAddress";
 import { ProjectLinks } from "./components/ProjectLinks";
 import { WalletButton } from "./components/WalletButton";
 import { useApplicationStartup } from "./startup/ApplicationStartup";
@@ -414,7 +415,7 @@ export default function App() {
         {(page === "about" || page === "roadmap") && <div hidden={worldVisible} className="page-content about-shell">
           <div className="page-overlay-controls"><OverlayClose onClose={closePage} /></div>
           {page === "roadmap" ? <Roadmap /> : <About onNavigate={go} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />}
-          <footer className="page-footer"><span>Agentic Economy · A World That Works</span><ProjectLinks /><span>Demo preview · Financial execution disabled</span></footer>
+          <footer className="page-footer"><span>Agentic Economy · A World That Works</span><ProjectLinks /><OfficialTokenAddress /></footer>
         </div>}
         {((page !== "about" && page !== "roadmap") || worldVisible) && (worldVisible && world && !data ? (
           <div className="world-summary-pending" role="status">
@@ -493,6 +494,7 @@ export default function App() {
                       <p>
                         A World That Works. Token creation and discovery meet a persistent living economy on Solana.
                       </p>
+                      <OfficialTokenAddress prominent />
                     </div>
                     <div className="district-badge">
                       <Leaf size={17} />
@@ -994,6 +996,7 @@ export default function App() {
                   {page === "treasury" && <Treasury data={data} />}{" "}
                   {page === "launchpad" && <Launchpad />}
                   <footer className="page-footer">
+                    <OfficialTokenAddress />
                     <span>Agentic Economy · A World That Works</span><ProjectLinks /><a href={routeUrl("about")} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("about"); }}>About the world <ArrowRight size={13} aria-hidden="true" /></a>
                     <span>
                       {isDemo
@@ -1027,6 +1030,7 @@ export default function App() {
           )
         ))}
       </main>
+      {worldVisible && <footer className="official-world-footer"><OfficialTokenAddress /></footer>}
     </div>
   );
 }

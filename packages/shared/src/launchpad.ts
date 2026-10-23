@@ -20,6 +20,7 @@ export type SavedLaunchDraft=z.infer<typeof SavedLaunchDraft>;
 export const TokenFieldIssueSchema=z.object({field:z.enum(['name','symbol','description','devBuyBps','devBuySol','quoteAsset']),code:z.string(),message:z.string()});
 export const DraftReview=z.object({draft:SavedLaunchDraft,readyForNextMilestone:z.boolean(),issues:z.array(z.string()),fieldIssues:z.array(TokenFieldIssueSchema).default([]),launchEnabled:z.boolean(),preparationEnabled:z.boolean().optional(),launchChargeSol:z.literal('0.05')});
 export const LaunchpadCapabilities=z.object({version:z.literal(1),authentication:z.literal('cookie'),uploads:z.boolean(),maxBytes:z.number().int(),maxPixels:z.number().int(),storage:z.enum(['memory','postgres']),launchEnabled:z.boolean(),preparationEnabled:z.boolean().optional(),quotes:z.object({SOL:z.literal('draft'),USDC:z.enum(['planned','draft']).describe('Legacy compatibility field; current SOL-only product always reports planned (disabled)'),AECO:z.literal('future')}),
+ automaticMintSigning:z.boolean().optional(),
  devBuy:z.object({status:z.enum(['available','unavailable']),maxBps:z.literal(DEV_BUY_MAX_BPS),quoteAssets:z.array(z.literal('SOL')),reason:z.string().nullable()}).optional()});
 /** Server quote for an optional Developer Buy, computed from Pump's live Global and fee configuration. */
 export const DevBuyQuote=z.discriminatedUnion('status',[

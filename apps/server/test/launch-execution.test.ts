@@ -274,6 +274,7 @@ describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)'
   expect((await f.prepare()).statusCode).toBe(403);
   expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(403);
   expect((await f.call('POST',url+'/resume',{transaction:signed})).statusCode).toBe(403);
+  expect((await f.call('POST',url+'/mint-signature/automatic',{})).statusCode).toBe(403);
   expect((await f.call('POST',url+'/mint-review/renew',{messageSha256:'a'.repeat(64)})).statusCode).toBe(403);
   expect((await f.call('GET',url)).statusCode).toBe(200);
   expect(f.chain.buildLaunchTransaction).toHaveBeenCalledTimes(1);expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
@@ -358,6 +359,20 @@ describe('operator-bound prepared official mint (public keys and mock RPC only)'
   await expect(env!.ctx.launches.submit(f.owner,first.launch.id,first.transaction)).rejects.toMatchObject({code:'feature_disabled'});
   await expect(env!.ctx.launches.importLocalMintSignature(f.owner,first.launch.id,{})).rejects.toMatchObject({code:'feature_disabled'});
   expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('guards automatic signing before key access on permission, expiry, network, mint and recovery uncertainty',async()=>{
+  const f=await reserved(),service=env!.ctx.launches,sign=vi.fn();
+  Object.defineProperty(service,'serverMintSigner',{value:{configured:()=>true,sign}});
+  const p=await f.prepareOfficial();
+  await expect(service.automaticMintSignature(f.creator.publicKey.toBase58(),p.launch.id)).rejects.toMatchObject({code:'forbidden'});
+  f.cfg.financialFeaturesEnabled=false;await expect(service.automaticMintSignature(f.owner,p.launch.id)).rejects.toMatchObject({code:'feature_disabled'});f.cfg.financialFeaturesEnabled=true;
+  f.expire();await expect(service.automaticMintSignature(f.owner,p.launch.id)).rejects.toMatchObject({code:'conflict'});f.chain.getFinalizedBlockHeight=async()=>1;
+  f.chain.getGenesisHash=async()=>'wrong';await expect(service.automaticMintSignature(f.owner,p.launch.id)).rejects.toMatchObject({code:'unavailable'});f.chain.getGenesisHash=async()=>MAINNET_GENESIS;
+  f.chain.mintAccountExists=async()=>true;await expect(service.automaticMintSignature(f.owner,p.launch.id)).rejects.toMatchObject({code:'unavailable'});f.chain.mintAccountExists=async()=>false;
+  f.chain.assertLaunchSubmissionAllowed=async()=>{throw new Error('Protocol changed');};await expect(service.automaticMintSignature(f.owner,p.launch.id)).rejects.toMatchObject({code:'unavailable'});f.chain.assertLaunchSubmissionAllowed=async()=>{};
+  const submissions=(service as unknown as {submissions:SignedLaunchStore}).submissions;
+  await submissions.put({wallet:f.owner,launchId:p.launch.id,mint:p.launch.mint,genesisHash:MAINNET_GENESIS,signature:bs58.encode(new Uint8Array(64).fill(1)),transaction:p.transaction});
+  await expect(service.automaticMintSignature(f.owner,p.launch.id)).rejects.toMatchObject({code:'conflict'});expect(sign).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
  });
  it('persists the exact public mint without a mint secret and restores the immutable unsigned review',async()=>{
   const f=await reserved(),p=await f.prepareOfficial();

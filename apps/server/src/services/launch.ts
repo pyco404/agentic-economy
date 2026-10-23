@@ -1,5 +1,6 @@
 import { MAINNET_GENESIS, PLANNED_AECO_MINT, inspectMintSigningReview, mintMessageHash, verifyMintSigningArtifact } from "../chain/offline-mint.js";
 import { assertLaunchWalletAllowed, launchWalletAllowed, preparedMintPreparationAllowed } from "./launch-permission.js";
+import {officialServerMintSigner, type ServerMintSigner} from '../chain/server-mint.js';
 import {SignedLaunchStore} from "../store/signed-launch.js";
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
@@ -66,6 +67,7 @@ export class LaunchService {
     private readonly now: () => Date = () => new Date(),
     private readonly submissions:SignedLaunchStore = new SignedLaunchStore(),
     private readonly diagnose:(event:{stage:string;launchId:string;signature?:string;code?:string})=>void=()=>{},
+    private readonly serverMintSigner:ServerMintSigner|undefined=officialServerMintSigner(config),
   ) {}
 
   feeBreakdown(quote: LaunchQuote = { asset: "SOL" }): FeeBreakdown {
@@ -286,6 +288,33 @@ export class LaunchService {
       throw new AppError("unavailable","The reserved mint has transaction history. Reconcile it before renewing.");
     return this.prepareReview(wallet,l.draft,{id:l.execution!.draftId,version:l.execution!.draftVersion,launchId:l.id,devBuyBps:l.execution!.devBuy?.bps??0,...(l.execution!.devBuy?.budgetSol?{devBuyBps:0,devBuySol:l.execution!.devBuy.budgetSol}:{})},
       {asset:'SOL'},{record,finalizedHeight:height});
+  }
+
+  automaticMintSigningAvailable(wallet?:string){
+    return !!(wallet&&this.config.financialFeaturesEnabled&&this.config.pumpLaunch.enabled&&
+      preparedMintPreparationAllowed(this.config,wallet)&&this.serverMintSigner?.configured());
+  }
+
+  /** Mint-only signature immediately before Phantom; never constructs, submits or broadcasts a new attempt. */
+  async automaticMintSignature(wallet:string,id:string){
+    assertLaunchWalletAllowed(this.config,wallet);
+    this.assertEnabled();
+    if(!this.automaticMintSigningAvailable(wallet)||!this.serverMintSigner)throw new AppError('feature_disabled','Automatic mint signing is not configured. The offline signing fallback remains available.');
+    const review=await this.localMintReview(wallet,id),record=await this.store.getLaunch(id);
+    if(!record||record.launch.status!=='awaiting_signature'||record.launch.signature||await this.submissions.get(wallet,id))
+      throw new AppError('conflict','Reconcile this launch before requesting another mint signature');
+    await this.assertPreparedNetwork(record.launch);
+    if(!this.chain.getFinalizedBlockHeight||await this.chain.getFinalizedBlockHeight()>review.lastValidBlockHeight)
+      throw new AppError('conflict','This signing review expired. Refresh the same attempt before wallet approval.');
+    await this.assertExpiredMintAbsent(record.launch);
+    try{await this.chain.assertLaunchSubmissionAllowed?.();}catch{throw new AppError('unavailable','Mainnet transaction checks are unavailable or have changed. Nothing was signed.');}
+    // Recheck mutable permissions after asynchronous RPC work, before accessing the signing key.
+    assertLaunchWalletAllowed(this.config,wallet,record.launch.execution?.network);
+    this.assertEnabled();
+    if(!this.automaticMintSigningAvailable(wallet))throw new AppError('feature_disabled','Automatic mint signing is unavailable');
+    const artifact=await this.serverMintSigner.sign(review,wallet);
+    // Existing import validation rechecks the persisted review, state, network and expiry after signing.
+    return this.importLocalMintSignature(wallet,id,artifact);
   }
 
   /** Public signature import only. Original unsigned bytes remain immutable in durable storage. */

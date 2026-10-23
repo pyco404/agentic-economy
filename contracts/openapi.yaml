@@ -84,6 +84,8 @@ paths:
                       - SOL
                       - USDC
                       - AECO
+                  automaticMintSigning:
+                    type: boolean
                   devBuy:
                     type: object
                     properties:

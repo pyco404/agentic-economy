@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Agentic Economy API
-  version: 0.6.0
+  version: 0.7.0
   description: |-
     Backend contract for Agentic Economy. Generated from packages/shared (Zod) by apps/server/scripts/gen-contracts.ts — do not edit by hand.
 
@@ -1583,6 +1583,8 @@ components:
           $ref: "#/components/schemas/AgentStatus"
         state:
           $ref: "#/components/schemas/AgentState"
+        social:
+          $ref: "#/components/schemas/AgentSocial"
         work:
           description: Absent on older servers; never infer a job from walking alone.
           $ref: "#/components/schemas/AgentWork"
@@ -1601,6 +1603,16 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        socialHistory:
+          maxItems: 12
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMoment"
+        relationships:
+          maxItems: 12
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialRelationship"
         strategy:
           $ref: "#/components/schemas/AgentStrategy"
         permissions:
@@ -1712,6 +1724,8 @@ components:
           $ref: "#/components/schemas/AgentStatus"
         state:
           $ref: "#/components/schemas/AgentState"
+        social:
+          $ref: "#/components/schemas/AgentSocialInput"
         work:
           description: Absent on older servers; never infer a job from walking alone.
           $ref: "#/components/schemas/AgentWorkInput"
@@ -1730,6 +1744,16 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        socialHistory:
+          maxItems: 12
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMomentInput"
+        relationships:
+          maxItems: 12
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialRelationshipInput"
         strategy:
           $ref: "#/components/schemas/AgentStrategyInput"
         permissions:
@@ -1982,6 +2006,7 @@ components:
         - rest
         - wait
         - rejected
+        - social
     AgentActionPage:
       type: object
       properties:
@@ -2253,6 +2278,110 @@ components:
       required:
         - mode
         - agent
+    AgentSocial:
+      type: object
+      properties:
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        personality:
+          $ref: "#/components/schemas/SocialPersonality"
+        mood:
+          type: string
+          enum:
+            - content
+            - curious
+            - delighted
+            - thoughtful
+        socialNeed:
+          type: integer
+          minimum: 0
+          maximum: 100
+        current:
+          anyOf:
+            - $ref: "#/components/schemas/SocialPresence"
+            - type: "null"
+        destination:
+          anyOf:
+            - type: object
+              properties:
+                buildingId:
+                  $ref: "#/components/schemas/BuildingId"
+                name:
+                  type: string
+                  maxLength: 100
+                purpose:
+                  type: string
+                  maxLength: 80
+                location:
+                  $ref: "#/components/schemas/GridPos"
+              required:
+                - buildingId
+                - name
+                - purpose
+                - location
+              additionalProperties: false
+            - type: "null"
+      required:
+        - tick
+        - personality
+        - mood
+        - socialNeed
+        - current
+        - destination
+      additionalProperties: false
+    AgentSocialInput:
+      type: object
+      properties:
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        personality:
+          $ref: "#/components/schemas/SocialPersonalityInput"
+        mood:
+          type: string
+          enum:
+            - content
+            - curious
+            - delighted
+            - thoughtful
+        socialNeed:
+          type: integer
+          minimum: 0
+          maximum: 100
+        current:
+          anyOf:
+            - $ref: "#/components/schemas/SocialPresenceInput"
+            - type: "null"
+        destination:
+          anyOf:
+            - type: object
+              properties:
+                buildingId:
+                  $ref: "#/components/schemas/BuildingId"
+                name:
+                  type: string
+                  maxLength: 100
+                purpose:
+                  type: string
+                  maxLength: 80
+                location:
+                  $ref: "#/components/schemas/GridPosInput"
+              required:
+                - buildingId
+                - name
+                - purpose
+                - location
+            - type: "null"
+      required:
+        - tick
+        - personality
+        - mood
+        - socialNeed
+        - current
+        - destination
     AgentState:
       type: string
       enum:
@@ -2360,6 +2489,8 @@ components:
           $ref: "#/components/schemas/AgentStatus"
         state:
           $ref: "#/components/schemas/AgentState"
+        social:
+          $ref: "#/components/schemas/AgentSocial"
         work:
           description: Absent on older servers; never infer a job from walking alone.
           $ref: "#/components/schemas/AgentWork"
@@ -2416,6 +2547,8 @@ components:
           $ref: "#/components/schemas/AgentStatus"
         state:
           $ref: "#/components/schemas/AgentState"
+        social:
+          $ref: "#/components/schemas/AgentSocialInput"
         work:
           description: Absent on older servers; never infer a job from walking alone.
           $ref: "#/components/schemas/AgentWorkInput"
@@ -4272,6 +4405,9 @@ components:
         - community.registered
         - building.placed
         - launch.confirmed
+        - social.encounter
+        - social.gathering
+        - social.consequence
     EconomySummary:
       type: object
       properties:
@@ -6581,6 +6717,336 @@ components:
         - $ref: "#/components/schemas/TreasuryUpdatedEvent"
         - $ref: "#/components/schemas/SystemNoticeEvent"
         - $ref: "#/components/schemas/HeartbeatEvent"
+    SocialMoment:
+      type: object
+      properties:
+        causedBy:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        id:
+          type: string
+          maxLength: 80
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        kind:
+          type: string
+          enum:
+            - conversation
+            - friendship
+            - disagreement
+            - reconciliation
+            - negotiation
+            - celebration
+            - performance
+            - market
+            - festival
+            - construction
+        phase:
+          type: string
+          enum:
+            - invitation
+            - encounter
+            - consequence
+        summary:
+          type: string
+          maxLength: 320
+        participants:
+          maxItems: 8
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentId"
+        buildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        location:
+          $ref: "#/components/schemas/GridPos"
+        simulated:
+          type: boolean
+          const: true
+      required:
+        - id
+        - tick
+        - kind
+        - phase
+        - summary
+        - participants
+        - buildingId
+        - location
+        - simulated
+      additionalProperties: false
+    SocialMomentInput:
+      type: object
+      properties:
+        causedBy:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        id:
+          type: string
+          maxLength: 80
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        kind:
+          type: string
+          enum:
+            - conversation
+            - friendship
+            - disagreement
+            - reconciliation
+            - negotiation
+            - celebration
+            - performance
+            - market
+            - festival
+            - construction
+        phase:
+          type: string
+          enum:
+            - invitation
+            - encounter
+            - consequence
+        summary:
+          type: string
+          maxLength: 320
+        participants:
+          maxItems: 8
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentId"
+        buildingId:
+          anyOf:
+            - $ref: "#/components/schemas/BuildingId"
+            - type: "null"
+        location:
+          $ref: "#/components/schemas/GridPosInput"
+        simulated:
+          type: boolean
+          const: true
+      required:
+        - id
+        - tick
+        - kind
+        - phase
+        - summary
+        - participants
+        - buildingId
+        - location
+        - simulated
+    SocialPersonality:
+      type: object
+      properties:
+        temperament:
+          type: string
+          enum:
+            - sociable
+            - reflective
+            - spirited
+            - practical
+        interest:
+          type: string
+          enum:
+            - music
+            - gardening
+            - craft
+            - food
+            - stories
+        routine:
+          type: string
+          enum:
+            - morning market
+            - afternoon stroll
+            - evening square
+      required:
+        - temperament
+        - interest
+        - routine
+      additionalProperties: false
+    SocialPersonalityInput:
+      type: object
+      properties:
+        temperament:
+          type: string
+          enum:
+            - sociable
+            - reflective
+            - spirited
+            - practical
+        interest:
+          type: string
+          enum:
+            - music
+            - gardening
+            - craft
+            - food
+            - stories
+        routine:
+          type: string
+          enum:
+            - morning market
+            - afternoon stroll
+            - evening square
+      required:
+        - temperament
+        - interest
+        - routine
+    SocialPresence:
+      type: object
+      properties:
+        eventId:
+          type: string
+          maxLength: 80
+        kind:
+          type: string
+          enum:
+            - conversation
+            - friendship
+            - disagreement
+            - reconciliation
+            - negotiation
+            - celebration
+            - performance
+            - market
+            - festival
+            - construction
+        description:
+          type: string
+          maxLength: 160
+        speech:
+          type: string
+          maxLength: 100
+        reaction:
+          type: string
+          enum:
+            - talk
+            - wave
+            - cheer
+            - consider
+        partnerIds:
+          maxItems: 7
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentId"
+        untilTick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        location:
+          $ref: "#/components/schemas/GridPos"
+      required:
+        - eventId
+        - kind
+        - description
+        - speech
+        - reaction
+        - partnerIds
+        - untilTick
+        - location
+      additionalProperties: false
+    SocialPresenceInput:
+      type: object
+      properties:
+        eventId:
+          type: string
+          maxLength: 80
+        kind:
+          type: string
+          enum:
+            - conversation
+            - friendship
+            - disagreement
+            - reconciliation
+            - negotiation
+            - celebration
+            - performance
+            - market
+            - festival
+            - construction
+        description:
+          type: string
+          maxLength: 160
+        speech:
+          type: string
+          maxLength: 100
+        reaction:
+          type: string
+          enum:
+            - talk
+            - wave
+            - cheer
+            - consider
+        partnerIds:
+          maxItems: 7
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentId"
+        untilTick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        location:
+          $ref: "#/components/schemas/GridPosInput"
+      required:
+        - eventId
+        - kind
+        - description
+        - speech
+        - reaction
+        - partnerIds
+        - untilTick
+        - location
+    SocialRelationship:
+      type: object
+      properties:
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        affinity:
+          type: integer
+          minimum: -100
+          maximum: 100
+        encounters:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        lastTick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - agentId
+        - affinity
+        - encounters
+        - lastTick
+      additionalProperties: false
+    SocialRelationshipInput:
+      type: object
+      properties:
+        agentId:
+          $ref: "#/components/schemas/AgentId"
+        affinity:
+          type: integer
+          minimum: -100
+          maximum: 100
+        encounters:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        lastTick:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - agentId
+        - affinity
+        - encounters
+        - lastTick
     SyntheticName:
       type: string
       pattern: ^[A-Z][a-z]{1,15}_[0-9]{3,6}$
@@ -7709,7 +8175,9 @@ components:
         source:
           anyOf:
             - type: string
-              const: dexscreener
+              enum:
+                - dexscreener
+                - solana_rpc
             - type: "null"
         sourceUrl:
           anyOf:
@@ -7727,6 +8195,82 @@ components:
                 - SOL
                 - USDC
             - type: "null"
+        fdvUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        priceSol:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        volume24hSol:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        transactions24h:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        metricSources:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: string
+        valuationBasis:
+          type: string
+        liquidityBasis:
+          type: string
+        volumeBasis:
+          type: string
+        usdReference:
+          anyOf:
+            - type: object
+              properties:
+                source:
+                  type: string
+                  const: coinbase
+                price:
+                  type: number
+                  exclusiveMinimum: 0
+                asOf:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+              required:
+                - source
+                - price
+                - asOf
+              additionalProperties: false
+            - type: "null"
+        activityCoverage:
+          type: object
+          properties:
+            complete:
+              type: boolean
+            durable:
+              type: boolean
+            through:
+              anyOf:
+                - type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                - type: "null"
+            reason:
+              type:
+                - string
+                - "null"
+          required:
+            - complete
+            - durable
+            - through
+            - reason
+          additionalProperties: false
         priceUsd:
           anyOf:
             - type: number
@@ -7958,7 +8502,9 @@ components:
         source:
           anyOf:
             - type: string
-              const: dexscreener
+              enum:
+                - dexscreener
+                - solana_rpc
             - type: "null"
         sourceUrl:
           anyOf:
@@ -7976,6 +8522,80 @@ components:
                 - SOL
                 - USDC
             - type: "null"
+        fdvUsd:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        priceSol:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        volume24hSol:
+          anyOf:
+            - type: number
+              minimum: 0
+            - type: "null"
+        transactions24h:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+        metricSources:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: string
+        valuationBasis:
+          type: string
+        liquidityBasis:
+          type: string
+        volumeBasis:
+          type: string
+        usdReference:
+          anyOf:
+            - type: object
+              properties:
+                source:
+                  type: string
+                  const: coinbase
+                price:
+                  type: number
+                  exclusiveMinimum: 0
+                asOf:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+              required:
+                - source
+                - price
+                - asOf
+            - type: "null"
+        activityCoverage:
+          type: object
+          properties:
+            complete:
+              type: boolean
+            durable:
+              type: boolean
+            through:
+              anyOf:
+                - type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                - type: "null"
+            reason:
+              type:
+                - string
+                - "null"
+          required:
+            - complete
+            - durable
+            - through
+            - reason
         priceUsd:
           anyOf:
             - type: number
@@ -8166,6 +8786,15 @@ components:
     TokenTrade:
       type: object
       properties:
+        eventIndex:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        venue:
+          type: string
+          enum:
+            - bonding_curve
+            - pumpswap
         signature:
           $ref: "#/components/schemas/TxSignature"
         slot:
@@ -8221,6 +8850,15 @@ components:
     TokenTradeInput:
       type: object
       properties:
+        eventIndex:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        venue:
+          type: string
+          enum:
+            - bonding_curve
+            - pumpswap
         signature:
           $ref: "#/components/schemas/TxSignature"
         slot:

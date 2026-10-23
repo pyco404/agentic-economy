@@ -19,8 +19,10 @@ export function heliusMarketChain(original: ChainGateway, reader: HeliusReader):
       if (property === 'getHolderCount') return async (mint: string) => { try { return await reader.holderCount(mint); } catch { return fallback('getHolderCount', [mint]); } };
       if (property === 'getIndexedMetadata') return (mint: string) => reader.metadata(mint);
       if (preferred.has(String(property))) return async (...args: unknown[]) => {
-        try { return await (indexed[property as keyof SolanaRpcChain] as (...values: unknown[]) => unknown).apply(indexed, args); }
-        catch { return fallback(property as keyof ChainGateway, args); }
+        // Routine polling uses the existing RPC; preserve scarce Helius credits for holders and agent observation.
+        try { const value=await fallback(property as keyof ChainGateway, args);if(value!==null)return value; }
+        catch { /* Retry failed or pruned reads through the independently verified provider. */ }
+        return (indexed[property as keyof SolanaRpcChain] as (...values: unknown[]) => unknown).apply(indexed, args);
       };
       const value = Reflect.get(target, property); return typeof value === 'function' ? value.bind(target) : value;
     },

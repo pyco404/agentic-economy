@@ -43,9 +43,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await symbol.fill('MOSS');
 
     // Developer Buy: optional, off by default, capped at 3.5% of supply.
-    const group = page.getByRole('group', { name: /Developer Buy/ }), toggle = group.getByRole('switch');
-    await expect(toggle).not.toBeChecked();
-    await toggle.check();
+    const group = page.getByRole('group', { name: /Developer Buy/ });
+    await expect(group.getByRole('switch')).toHaveCount(0);
+    await expect(group.getByRole('alert')).toHaveCount(0);
+    await expect(group).toContainText('Leave blank to skip. Maximum allocation: 3.5% of supply.');
     const amount=group.getByRole('textbox',{name:'Amount in SOL',exact:true});
     await expect(amount).toHaveValue('');await expect(amount).toHaveAttribute('inputmode','decimal');
     await amount.fill('0.001');await expect(group).toContainText('3,500,000 MOSS');
@@ -59,9 +60,11 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await expect(group.getByRole('alert')).toContainText('nine decimal');
     await amount.fill('0.000000001');await expect(group).toContainText('3.5 MOSS');
     await amount.fill('');await expect(amount).toHaveAttribute('aria-invalid','false');
-    await toggle.uncheck();await expect(amount).toHaveCount(0);
+    await expect(amount).toBeVisible();await expect(amount).toHaveValue('');
+    await expect(group.locator('.launch-dev-buy-estimate')).toHaveCount(0);
+    await expect(group.getByRole('alert')).toHaveCount(0);
     await expect(page.getByRole('region',{name:'Live token preview'})).not.toContainText('Developer Buy');
-    await toggle.check();await expect(amount).toHaveValue('');
+    await expect(amount).toHaveValue('');
     await amount.fill('0.001');await expect(group).toContainText('3,500,000 MOSS');
     await expect(page.locator('.launch-save-status')).toHaveText('Saved');
     // Restore the exact entered budget from the wallet-owned saved draft.
@@ -92,10 +95,19 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     expect(errors).toEqual([]);
   });
 
-test('Developer Buy stays off and explains why where it is unavailable', async ({ page }) => {
+test('Developer Buy keeps the optional input visible when execution is unavailable', async ({ page }) => {
   test.setTimeout(120000);
+  await page.route('**/api/v1/auth/browser/session',route=>route.fulfill({json:{wallet:'11111111111111111111111111111111',sessionExpiresAt:new Date(Date.now()+3600000).toISOString()}}));
   await open(page, 'unavailable');
   const group = page.getByRole('group', { name: /Developer Buy/ });
-  await expect(group.getByRole('switch')).toBeDisabled(); await expect(group.getByRole('switch')).not.toBeChecked();
-  await expect(group.getByRole('note')).toContainText('verified test network');
+  await expect(group.getByRole('switch')).toHaveCount(0);
+  const amount=group.getByRole('textbox',{name:'Amount in SOL',exact:true});
+  await expect(amount).toBeVisible();await expect(amount).toBeEnabled();
+  await expect(amount).toHaveValue('');await expect(amount).toHaveAttribute('placeholder','0.00');
+  await expect(group).not.toContainText('verified test network');
+  await expect(group.getByRole('alert')).toHaveCount(0);
+  await amount.fill('0.001');await expect(amount).toHaveValue('0.001');
+  await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeDisabled();
+  await expect(group.locator('.launch-dev-buy-estimate')).toHaveCount(0);
+  await amount.clear();await expect(group.getByRole('alert')).toHaveCount(0);
 });

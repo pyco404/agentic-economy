@@ -1,3 +1,4 @@
+import { activityFocus, interestingActivity, isSocialActivity } from "./api/socialActivity";
 import { OfficialTokenAddress } from "./components/OfficialTokenAddress";
 import { ProjectLinks } from "./components/ProjectLinks";
 import { WalletButton } from "./components/WalletButton";
@@ -365,6 +366,7 @@ export default function App() {
                       paused: a.status === "paused",
                       state: a.state,
                       work: a.work,
+                      social: a.social,
                     }))}
                     demo={api.kind === "demo"}
                     selectedAgentId={agentId}
@@ -662,7 +664,8 @@ export default function App() {
                             value={activityFilter}
                             onChange={(e) => setActivityFilter(e.target.value)}
                           >
-                            <option value="all">All economic activity</option>
+                            <option value="all">City highlights</option>
+                            <option value="social">Social life</option>
                             <option value="production.completed">
                               Production
                             </option>
@@ -681,26 +684,20 @@ export default function App() {
                           {data.activities
                             .filter(
                               (a) =>
-                                activityFilter === "all" ||
-                                a.type === activityFilter,
+                                activityFilter === "all" ? interestingActivity(a) : activityFilter === "social" ? isSocialActivity(a) : a.type === activityFilter,
                             )
                             .map((a) => (
                               <div className="feed-item" key={a.id} data-event-id={a.id}>
-                                <span className="feed-icon" data-kind={a.type}>
-                                  {a.type === "task.verified" ? (
-                                    <CheckMark />
-                                  ) : (
-                                    <Activity size={14} />
-                                  )}
-                                </span>
-                                <div>
-                                  <p>{displayActivity(a, data.agents)}</p>
-                                  {import.meta.env.DEV && <small>
-                                    {api.kind === "demo"
-                                      ? "Fixture event"
-                                      : `Simulation tick ${a.tick}`}
-                                  </small>}
-                                </div>
+                                <button type="button" className="activity-focus" disabled={!activityFocus(a, data.agents, buildings)} onClick={() => {
+                                  const focus = activityFocus(a, data.agents, buildings);
+                                  if (!focus) return;
+                                  setSelected(null); setAgentId(focus.agentId); city.current?.focus(focus.x, focus.z, 3.6);
+                                }}>
+                                  <span className="feed-icon" data-kind={a.type}>{a.type === "task.verified" ? <CheckMark /> : <Activity size={14} />}</span>
+                                  <span className="activity-copy">{displayActivity(a, data.agents)}
+                                    {isSocialActivity(a) && <span className="social-kind">Simulated social activity · View in city ↗</span>}
+                                  </span>
+                                </button>
                               </div>
                             ))}
                         </div>

@@ -7,14 +7,14 @@ export function currentAssignment(agent: Pick<AgentSummary, 'id' | 'work'>) {
 }
 export function workDescription(agent: Pick<AgentSummary, 'id' | 'state' | 'work'> & Partial<Pick<AgentSummary, 'social'>>) {
   if (agent.state === 'paused') return 'Paused';
-  if (agent.social?.current) return `Simulated ${agent.social.current.kind} · ${agent.social.current.description}`;
+  if (agent.social?.current) return `City World · ${agent.social.current.description}`;
   if (agent.social?.destination && !currentAssignment(agent)) return `${agent.state === 'moving' ? 'Visiting' : 'At'} ${agent.social.destination.name} · ${agent.social.destination.purpose}`;
   if (!agent.work) return 'Work details unavailable on this backend';
   const task = currentAssignment(agent), destination = agent.work?.destination;
   if (!task || !destination) return agent.state === 'moving' ? 'Walking · no assigned job' : agent.state === 'resting' ? 'Resting · awaiting an assignment' : 'No active assignment';
   if (agent.state === 'moving') return `Traveling to ${destination.name}`;
   if (agent.state === 'delivering') return `Transporting ${Object.keys(agent.work!.cargo).join(', ') || task.resource || 'supplies'} to ${destination.name}`;
-  if (agent.state === 'working') return `${task.kind === 'maintenance' ? 'Maintaining' : 'Production shift at'} ${destination.name}`;
+  if (agent.state === 'working') return `${task.kind === 'maintenance' ? 'Maintaining' : 'Work shift at'} ${destination.name}`;
   return `Assigned to ${destination.name}`;
 }
 /** Only animate presence work at the server's registered entrance, after arrival. */

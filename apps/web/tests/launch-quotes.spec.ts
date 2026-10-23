@@ -19,7 +19,7 @@ for(const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:3
   await expect(pair).toContainText('HOME / SOL');
   await expect(page.getByText('Tokens are paired with Solana.')).toBeVisible();
   await expect(page.getByRole('switch')).not.toBeChecked();
-  await expect(page.getByText(/up to 3.5% of supply/)).toBeVisible();
+  await expect(page.getByText(/Enter the amount of SOL/)).toBeVisible();
   await page.locator('form').getByRole('button',{name:'Connect wallet',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('Connect your wallet');
   await page.getByRole('button',{name:'Close wallet selection'}).click();

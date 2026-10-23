@@ -812,11 +812,12 @@ export function AgentPanel({
           <AgentSocialLife agent={agent} observed={observed ?? undefined} agents={data?.agents ?? []} />
           {data&&displayed&&<CurrentAgentWork agent={displayed} data={data} onViewBuilding={onViewBuilding}/>}
           <dl className="detail-list">
-            {import.meta.env.DEV && <div><dt>Canonical ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>}
+            <div><dt>Agent ID</dt><dd className="agent-identity-value" data-testid="agent-canonical-id">{agent.id}</dd></div>
+            {"tokenMint" in agent.identity && <div><dt>Associated token mint</dt><dd className="agent-identity-value">{agent.identity.tokenMint}</dd></div>}
             <div><dt>Given name</dt><dd>{agent.name}</dd></div>
-            <div><dt>Identity type</dt><dd>{agent.identity.kind === "aeco_observed" ? "Common Agent" : agentIdentity(agent).kind === "unclassified" ? "Unclassified legacy agent" : readable(agentIdentity(agent).kind)}</dd></div>
+            <div><dt>Identity type</dt><dd>{agent.identity.kind === "aeco_observed" ? "Common Agent" : agent.identity.kind === "house" ? "City Resident" : agent.identity.kind === "legacy" ? "Virtual Agent" : agentIdentity(agent).kind === "unclassified" ? "Unclassified legacy agent" : readable(agentIdentity(agent).kind)}</dd></div>
             {agent.identity.kind === "aeco_observed" && <>
-              <div><dt>Public wallet</dt><dd title={agent.identity.wallet}>{agent.identity.wallet.slice(0, 6)}…{agent.identity.wallet.slice(-6)}</dd></div>
+              <div><dt>Public wallet</dt><dd className="agent-identity-value">{agent.identity.wallet}</dd></div>
               <div><dt>Observed $AECO balance (base units)</dt><dd>{agent.identity.balanceRaw}</dd></div>
               <div><dt>Finalized observation</dt><dd>Slot {agent.identity.observedSlot} · {agent.identity.network}</dd></div>
               <div><dt>Access</dt><dd className="small muted">Public ownership observation. No wallet control or reward entitlement is granted.</dd></div>

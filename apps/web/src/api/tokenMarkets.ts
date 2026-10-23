@@ -17,3 +17,12 @@ export const marketNumber=(n:number|null|undefined)=>n==null?'Unavailable':new I
 /** Raw base units to a decimal string without floating-point rounding. */
 export function baseUnits(amount:string,decimals:number){const v=amount.padStart(decimals+1,'0'),whole=v.slice(0,-decimals)||'0',frac=v.slice(-decimals).replace(/0+$/,'');return frac?`${BigInt(whole).toLocaleString()}.${frac}`:BigInt(whole).toLocaleString();}
 export const explorerTx=(signature:string,network:string)=>`https://explorer.solana.com/tx/${signature}${network==='mainnet-beta'?'':`?cluster=${network==='localnet'?'custom':network}`}`;
+
+/** Attribution belongs to the metric, not to whichever supplementary provider responded. */
+export function marketSource(market:Snapshot|undefined,field?:string){
+ const source=(field?market?.metricSources?.[field]:null)??market?.source;
+ if(source==='dexscreener')return 'DEX Screener';
+ if(source?.includes('coinbase'))return 'Solana · Coinbase';
+ if(source==='helius_das')return 'Helius';
+ return source==='solana_rpc'?'Solana':'Market data';
+}

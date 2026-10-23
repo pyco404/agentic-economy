@@ -133,3 +133,8 @@ it('uses finalized mint-filtered subscriptions only as hints and closes them on 
   socket.emit('message', 'malformed'); expect(hint).toHaveBeenCalledOnce();
   abort.abort(); expect(socket.close).toHaveBeenCalledOnce();
 });
+
+it('does not invalidate holder balances when only the empty terminal page advances its index slot',async()=>{
+ const mint=key();let page=0;const f=setup(()=>++page===1?{last_indexed_slot:10,cursor:'last',token_accounts:[{address:key(),mint,owner:key(),amount:'1'}]}:{last_indexed_slot:11,token_accounts:[]});
+ expect(await f.reader.holderCount(mint)).toMatchObject({slot:10,holders:1,exact:true,index:{complete:true}});
+});

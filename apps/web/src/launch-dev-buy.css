@@ -31,3 +31,10 @@
  .launch-workspace .launch-dev-buy-estimate > div { flex-direction: row; gap: 12px; }
  .launch-workspace .launch-dev-buy-estimate dd { text-align: right; }
 }
+
+.launch-dev-buy-sol { display:flex; align-items:center; gap:12px; border:1px solid #d5d9c8; border-radius:8px; background:#fffdf6; padding-right:14px; margin-top:6px; }
+.surface .launch-dev-buy-sol input { width:100%; min-width:0; min-height:48px; margin:0; border:0; background:transparent; box-shadow:none; }
+.launch-dev-buy-sol:focus-within { outline:2px solid #426c51; outline-offset:2px; }
+.launch-dev-buy-sol > span { color:#34523e; font-size:13px; }
+.surface .launch-dev-buy .launch-dev-buy-toggle { min-height:44px; white-space:normal; }
+.launch-preview-dev-buy small { display:block; font-weight:400; }

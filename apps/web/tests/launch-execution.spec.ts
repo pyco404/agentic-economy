@@ -10,7 +10,8 @@ import {sharingConfigPda} from '../../server/src/chain/pump';
 const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
 test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
 for(const useLocalMint of [false,true]) test(`safe-network signing UI handles rejection and verified confirmation (${useLocalMint?'local mint handoff':'normal mint'}; mock RPC, real signatures)`,async({page})=>{
- test.setTimeout(360000);await page.setViewportSize({width:390,height:844});
+ // The reserved-mint case additionally reloads the complete world twice for locked renewal.
+ test.setTimeout(useLocalMint?720000:360000);await page.setViewportSize({width:390,height:844});
  const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let executionEnabled=true;let renewals=0;let renewFixture:(()=>Promise<void>)|undefined;let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='',submittedPayload='';let resumptions=0;const prepareKeys:string[]=[];
  let launch:Record<string,unknown>|undefined,prepared='';
  let localReview:MintSigningReview|undefined,localArtifact:Awaited<ReturnType<typeof coSignReviewedMint>>|undefined,localPolicy:MintSigningPolicy|undefined,imports=0;
@@ -80,7 +81,9 @@ for(const useLocalMint of [false,true]) test(`safe-network signing UI handles re
   await expect(execution.getByRole('button',{name:'Approve in wallet',exact:true})).toHaveCount(0);
   executionEnabled=true;await page.reload();await waitForApplicationReady(page);
   await expect(page.getByRole('button',{name:'Approve in wallet',exact:true})).toBeDisabled();
-  await execution.getByText('Prepared mint signing',{exact:true}).click();
+  const mintDisclosure=execution.getByText('Prepared mint signing',{exact:true});
+  await expect(mintDisclosure).toBeVisible();
+  await mintDisclosure.click({timeout:15000});
   const download=page.waitForEvent('download');await execution.getByRole('button',{name:'Download public review'}).click();
   expect((await download).suggestedFilename()).toBe('lch_BrowserExecutionTest-public-mint-review.json');
   const file=execution.getByLabel('Public mint-signature file');

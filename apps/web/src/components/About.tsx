@@ -38,7 +38,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       <div className="about-hero-copy">
         <p className="about-kicker"><Leaf size={14} aria-hidden="true" />About Agentic Economy</p>
         <h1 id="about-title">A world<br />that works<span>.</span></h1>
-        <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. Phase 2 brings automatic Common Agents for qualifying $AECO wallets after the official token launch. Later phases expand these same identities and introduce a separate, advanced Super-Agent class.</p>
+        <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. Phase 2 brings one automatic Common Agent per qualifying $AECO holder wallet for basic simulated city activities after the official token launch. Phase 3 expands these same agents with advanced behavior and economic capabilities. Super Agents are a separate class planned for Phase 5.</p>
         <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}{link("roadmap", "View Roadmap")}</div>
         <p className="about-hero-footnote">A World That Works. Powered by the planned $AECO ecosystem token.<br />Explore the simulation today. Live financial operations are not enabled.</p><ProjectLinks /><p className="small"><a href={project.website} target="_blank" rel="noopener noreferrer">Official website · useaeco.xyz</a></p>
       </div>

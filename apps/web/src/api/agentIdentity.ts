@@ -9,22 +9,21 @@ export type AuthoritativeIdentity =
   | { kind: "legacy"; syntheticName: string; legacyOwnerWallet: string };
 export type IdentityAgent = Pick<AgentSummary, "id" | "name"> &
   { ownerWallet?: string | null; identity?: AuthoritativeIdentity; displayName?: string };
-const roots = ["Bow", "Fern", "Kestrel", "Vesper", "Stonecrop", "Willow", "Rowan", "Ovenkeeper", "Courier", "Linden"];
 const publicKey = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 export function agentIdentity(agent: IdentityAgent) {
   const identity = agent.identity;
   if (identity?.kind === "aeco_observed" && publicKey.test(identity.wallet) && publicKey.test(identity.tokenMint)) {
-    const primary = `${identity.wallet.slice(0, 4)}...${identity.wallet.slice(-4)}`;
+    const parts = agent.displayName?.split("...");
+    const expanded = parts?.length === 2 && parts[0]!.length >= 4 && parts[0]!.length === parts[1]!.length &&
+      agent.displayName!.length < identity.wallet.length && identity.wallet.startsWith(parts[0]!) && identity.wallet.endsWith(parts[1]!);
+    const primary = expanded ? agent.displayName! : `${identity.wallet.slice(0, 4)}...${identity.wallet.slice(-4)}`;
     return { primary, tag: agent.id, displayName: primary, canonicalId: agent.id, givenName: "Common Agent", owner: null, observedWallet: identity.wallet, kind: "aeco_observed" as const };
   }
   // An owner record or token balance alone is never activation evidence.
   const linked = identity?.kind === "token_linked" && publicKey.test(identity.activatingWallet) &&
     publicKey.test(identity.tokenMint) && !!identity.activationId;
-  const hash = [...agent.id].reduce((value, letter) => Math.imul(value ^ letter.charCodeAt(0), 16777619) >>> 0, 2166136261);
-  const code = String(hash % 1000).padStart(3, "0");
-  const generated = `${roots[Math.floor(hash / 1000) % roots.length]}_${code}`;
   const houseName = (identity?.kind === "house" || identity?.kind === "legacy") && /^[A-Z][a-z]{1,15}_[0-9]{3,6}$/.test(identity.syntheticName)
-    ? identity.syntheticName : generated;
+    ? identity.syntheticName : agent.id;
   const owner = linked ? identity.activatingWallet : null;
   // The server may extend the shortened wallet name to resolve collisions.
   const parts = agent.displayName?.split("...");
@@ -33,11 +32,9 @@ export function agentIdentity(agent: IdentityAgent) {
     owner.startsWith(parts[0]!) && owner.endsWith(parts[1]!);
   const persistedWalletName = owner && (agent.displayName === owner || walletNameMatches) ? agent.displayName : null;
   const primary = owner ? persistedWalletName ?? `${owner.slice(0, 4)}...${owner.slice(-4)}` : houseName;
-  const persisted = identity?.kind === "house" || identity?.kind === "legacy" || linked;
-  // The fixed ID tag makes legacy house aliases unambiguous even if their short
-  // hash collides. Never renumber or change a name based on the current roster.
+  // Preserve the authoritative ID alongside the public name; do not generate identities.
   const tag = owner ? owner : agent.id.replace(/^agt_/, "");
-  return { primary, tag, displayName: persisted ? primary : `${primary} · ${tag}`,
+  return { primary, tag, displayName: primary,
     canonicalId: agent.id, givenName: agent.name, owner,
     kind: linked ? "token_linked" : identity?.kind === "house" ? "house" : identity?.kind === "legacy" ? "legacy" : "unclassified" };
 }

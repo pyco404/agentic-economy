@@ -1,8 +1,0 @@
-{
-  "checkedAt": "2026-10-22T13:41:10.063433+00:00",
-  "deployment": "04365147-839e-44ec-9a47-0c33bf54db04",
-  "sampledLogRows": 150,
-  "currentProviderCredentialsAbsentFromSample": true,
-  "unhandledErrorMessages": 0,
-  "scope": "Latest 150 production backend log rows only; not an exhaustive historical audit"
-}

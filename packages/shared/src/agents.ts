@@ -1,3 +1,4 @@
+import { AgentSocial, SocialMoment, SocialRelationship } from "./society.js";
 import { z } from "zod";
 import { AgentId, BuildingId, CommunityId, DataMode, PublicKey, TaskId, WorldPos, GridPos } from "./primitives.js";
 import { Resource, Task } from "./economy.js";
@@ -78,6 +79,7 @@ export const AgentSummary = z
     ownerWallet: PublicKey.nullable(),
     status: AgentStatus,
     state: AgentState,
+    social: AgentSocial.optional(),
     work: AgentWork.optional().describe("Absent on older servers; never infer a job from walking alone."),
     pos: WorldPos,
     credits: z.number().int().describe("City Credit balance (mCC). Simulated; not withdrawable."),
@@ -88,6 +90,8 @@ export const AgentSummary = z
 export type AgentSummary = z.infer<typeof AgentSummary>;
 
 export const Agent = AgentSummary.extend({
+  socialHistory: z.array(SocialMoment).max(12).optional(),
+  relationships: z.array(SocialRelationship).max(12).optional(),
   strategy: AgentStrategy,
   permissions: z.array(AgentPermission),
   createdTick: z.number().int(),
@@ -109,7 +113,7 @@ export const Agent = AgentSummary.extend({
 export type Agent = z.infer<typeof Agent>;
 
 export const AgentActionKind = z
-  .enum(["move", "claim_task", "pickup", "deliver", "produce", "trade", "maintain", "rest", "wait", "rejected"])
+  .enum(["move", "claim_task", "pickup", "deliver", "produce", "trade", "maintain", "rest", "wait", "rejected", "social"])
   .meta({ id: "AgentActionKind" });
 
 /** A validated action and its compact decision log. `rejected` actions record the failed validation. */

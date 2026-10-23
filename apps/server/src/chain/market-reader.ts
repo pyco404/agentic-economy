@@ -1,3 +1,4 @@
+import {marketTransaction} from './market-transaction.js';
 import bs58 from 'bs58';
 import {type Connection,PublicKey} from '@solana/web3.js';
 import {PUMP_PROGRAM_ID,PUMP_AMM_PROGRAM_ID,WRAPPED_SOL_MINT} from '@agentic-economy/shared';
@@ -11,7 +12,7 @@ const EVENT_TAG=Buffer.from('e445a52e51cb9a1d','hex');
 const positive=(v:bigint)=>{if(v<0n)throw Error('Invalid market reserves');return v.toString();};
 /** Read-only canonical curve/AMM discovery. Provider pool listings never establish identity. */
 export class MarketReader{
- constructor(private conn:Connection){}
+ constructor(private conn:Connection,private readTransaction:(signature:string)=>Promise<unknown>=async()=>{throw Error('Raw market transaction reader unavailable')}){}
  async state(mint:string):Promise<MarketState>{
   const key=new PublicKey(mint),curveAddress=bondingCurvePda(mint),poolAddress=sdk.canonicalPumpPoolPda(key);
   const {context,value:[mintAccount,curve,global,pool]}=await this.conn.getMultipleAccountsInfoAndContext([key,new PublicKey(curveAddress),sdk.GLOBAL_PDA,poolAddress],'finalized');
@@ -46,18 +47,16 @@ export class MarketReader{
   const trades:MarketTrade[]=[];
   for(const sig of sigs){
    if(sig.err)continue;
-   const tx=await this.conn.getTransaction(sig.signature,{maxSupportedTransactionVersion:0,commitment:'finalized'});
-   if(!tx?.meta||tx.meta.err)throw Error('Finalized trade evidence unavailable; cursor retained');
-   if(tx.blockTime==null)throw Error('Trade time unavailable; cursor retained');
-   const message=tx.transaction.message,keys=message.getAccountKeys({accountKeysFromLookups:tx.meta.loadedAddresses});
+   const tx=marketTransaction(await this.readTransaction(sig.signature),sig.signature);
+   const keys={get:(index:number)=>new PublicKey(tx.keys[index]!)};
    const beforeEvents=trades.length;
-   const instructions=[...message.compiledInstructions,...(tx.meta.innerInstructions??[]).flatMap(g=>g.instructions).map(i=>({programIdIndex:i.programIdIndex,accountKeyIndexes:i.accounts,data:Buffer.from(bs58.decode(i.data))}))];
+   const instructions=[...tx.instructions,...tx.innerInstructions.flatMap(g=>g.instructions)];
    const marketProgram=address===allowed[0]?PUMP_PROGRAM_ID:PUMP_AMM_PROGRAM_ID;
    const idl=marketProgram===PUMP_PROGRAM_ID?sdk.pumpIdl:sdk.getPumpAmmProgram(this.conn).idl;
    const discriminators=new Set(idl.instructions.filter((i:{name:string})=>/^(buy|sell)/i.test(i.name)).map((i:{discriminator:number[]})=>Buffer.from(i.discriminator).toString('hex')));
-   const expectedTrades=instructions.filter(i=>keys.get(i.programIdIndex)?.toBase58()===marketProgram&&Array.from(i.accountKeyIndexes).some(index=>keys.get(index)?.toBase58()===address)&&discriminators.has(Buffer.from(i.data).subarray(0,8).toString('hex'))).length;
+   const expectedTrades=instructions.filter(i=>keys.get(i.programIdIndex)?.toBase58()===marketProgram&&i.accounts.some(index=>keys.get(index)?.toBase58()===address)&&discriminators.has(Buffer.from(bs58.decode(i.data)).subarray(0,8).toString('hex'))).length;
    let eventIndex=0;
-   for(const group of tx.meta.innerInstructions??[])for(const ix of group.instructions){
+   for(const group of tx.innerInstructions)for(const ix of group.instructions){
     const program=keys.get(ix.programIdIndex)!.toBase58(),accounts=ix.accounts.map(i=>keys.get(i)!.toBase58());
     const data=Buffer.from(bs58.decode(ix.data));const index=eventIndex++;
     if(program===PUMP_PROGRAM_ID){

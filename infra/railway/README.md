@@ -39,6 +39,8 @@ The old `.railway/railway.ts` is a **historical staging/split-topology template,
 
 ## Legacy environment retirement
 
-Staging and public-demo remain intact until the dependency inventory, retained evidence/drafts, external backup and isolated restore requirements are satisfied and the owner explicitly approves exact deletions. Stop treating either as a release prerequisite. Do not copy their demo records into production or revoke Pinata/Helius keys shared with production.
+Public-demo was retired with explicit owner approval on 2026-10-23. Its independent database was backed up off Railway and restored into an empty, socket-only local PostgreSQL cluster. All 23 tables, 58,029 rows, constraints, indexes and sequences matched; the restore also passed a restart check. The backup and detailed retirement evidence are retained privately outside Git. Its application instances, database volume and Railway environment were removed. The obsolete public-demo provisioning plan has been removed; do not recreate that environment.
+
+Staging remains intact. Its services, database, volumes, evidence and DNS require a dependency inventory, external backup, verified isolated restore and separate owner approval before deletion. It is not a release prerequisite. Do not copy legacy demo records into production or revoke Pinata/Helius keys shared with production. Public-demo retirement does not authorize changes to production, staging, treasury settings or financial gates.
 
 [Dependency, data, domain and backup inventory; scoped retirement plan](../../docs/RAILWAY_SINGLE_PRODUCTION.md). [Current Phase 2 scope](../../docs/PHASE2_NEXT_PRODUCTION_TASKS.md). [Owner-local vanity-mint handoff](../../docs/AECO_LOCAL_MINT_SIGNING.md).

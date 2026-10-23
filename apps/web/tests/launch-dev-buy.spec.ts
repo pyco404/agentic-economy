@@ -66,7 +66,9 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await expect(page.locator('.launch-save-status')).toHaveText('Saved');
     // Restore the exact entered budget from the wallet-owned saved draft.
     await expect(page.getByRole('button',{name:'My Drafts',exact:true})).toHaveCount(0);
-    await page.reload();await waitForApplicationReady(page);
+    await page.evaluate(()=>{history.pushState(null,'','/explore?source=backend');window.dispatchEvent(new PopStateEvent('popstate'));});
+    await expect(page).toHaveURL(/\/explore/);await page.goBack();
+    await expect(page.getByTestId('application-startup')).toHaveAttribute('data-startup-state','ready');
     await expect(amount).toHaveValue('0.001');
     expect(writes).toEqual([]);
 

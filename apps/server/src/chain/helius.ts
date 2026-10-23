@@ -1,3 +1,5 @@
+import {PublicKey as SolanaKey} from '@solana/web3.js';
+import sdk from './pump-sdk.cjs';
 import WebSocket from 'ws';
 import { z } from 'zod';
 import { PublicKey } from '@agentic-economy/shared';
@@ -187,7 +189,8 @@ export class HeliusReader {
       cursor = result.cursor; cursors.add(cursor);
     }
     const owners = new Map<string, bigint>();
-    for (const account of accounts.values()) if (account.amount > 0n && account.owner !== bondingCurvePda(mint)) owners.set(account.owner, (owners.get(account.owner) ?? 0n) + account.amount);
+    const reserves=new Set([bondingCurvePda(mint),sdk.canonicalPumpPoolPda(new SolanaKey(mint)).toBase58()]);
+    for (const account of accounts.values()) if (account.amount > 0n && !reserves.has(account.owner)) owners.set(account.owner, (owners.get(account.owner) ?? 0n) + account.amount);
     // DAS does not promise a pinned snapshot across pages. Never call a changing/mixed-slot scan exact.
     const exact = complete && consistent;
     if (!consistent) reason = 'Index changed during enumeration; no current holder count is claimed.';

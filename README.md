@@ -188,6 +188,12 @@ curl http://localhost:8787/healthz
 curl http://localhost:8787/readyz
 ```
 
+### Optional local social simulation
+
+The new social simulation is **not deployed or enabled in production**. To preview it against the in-memory backend above, add `SOCIAL_SIMULATION_ENABLED=true`. Keep `MODE=demo` and `DATABASE_URL=`. The backend records activation through its existing fenced command log; personalities, relationships and bounded memories live in existing JSON snapshots, while events and per-agent timelines use the existing history tables. No schema migration is required.
+
+The opt-in simulation adds proximity-based conversations, friendships, disagreements and reconciliation; routines and gatherings at existing venues; short speech bubbles and gestures; and clickable city activity. Dialogue uses bounded contextual grammar with no external model calls. It cannot sign transactions, change token ownership, earn verified service rewards or spend wallet funds. Disabling the flag releases social reservations while preserving meaningful social history. Review compatible frontend/backend releases together before enabling it on a persisted world.
+
 ## Configuration and secrets
 
 | Setting | Purpose |

@@ -132,7 +132,7 @@ for(const viewport of [{width:1440,height:1000,mode:'normal'},{width:390,height:
  await page.reload();await waitForApplicationReady(page);await expect(page.getByRole('button',{name:'Create Coin',exact:true})).toBeVisible();expect(signing).toBe(1);
  await expect(page.getByLabel('Token name',{exact:true})).toHaveValue('Moss Community');await expect(page.getByAltText('Token logo preview')).toBeVisible();
  await expect(page.getByLabel('Website',{exact:true})).toHaveValue('https://moss.example/about');await expect(page.getByLabel('X (Twitter)',{exact:true})).toHaveValue('https://x.com/mosscoin');await expect(page.getByLabel('Telegram',{exact:true})).toHaveValue('https://t.me/mosscoin');
- await page.getByRole('button',{name:'My Drafts',exact:true}).click();await expect(page.getByRole('dialog',{name:'My Drafts'})).toContainText('Moss Community');await page.getByRole('button',{name:'Close My Drafts'}).click();
+ await expect(page.getByRole('button',{name:'My Drafts',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Save draft',exact:true})).toHaveCount(0);
  const before=preparation.length;await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toBeVisible();expect(preparation.slice(before).map(p=>p.split(' ')[0])).toEqual(['GET']);
  await page.getByRole('textbox',{name:'Description',exact:true}).fill('Latest details');await page.getByRole('button',{name:'Create Coin',exact:true}).click();await expect(review).toContainText('Your draft is saved. Coin creation is not available yet.');
  // Wallet changes revoke the cookie session; drafts disappear immediately.

@@ -48,11 +48,16 @@ export function displayActivity(event: Pick<EconomicEvent, "summary" | "agentId"
   // Normalize only our exact historical confirmed-launch template, never token/user content.
   // The authoritative event, signature and confirmation status remain untouched.
   if (event.type?.startsWith("social.")) return event.summary;
+  if (!event.agentId && event.type === "task.created") return event.summary.replace(/^production shift posted: /, "Work shift available: ");
   if (!event.agentId) return event.type === "launch.confirmed"
     ? event.summary.replace(/^(.* \(\$[^()\r\n]+\)) launched on Pump\.fun through Agentic Economy\.?$/, "$1 launched on Agentic Economy.")
     : event.summary;
+  const summary = event.type === "task.created" ? event.summary.replace(/^production shift posted: /, "Work shift available: ")
+    : event.type === "task.claimed" ? event.summary.replace(/ took production shift for /, " accepted a work shift at ")
+    : event.type === "task.verified" ? event.summary.replace(/ completed production shift for /, " completed a work shift at ")
+    : event.summary;
   const agent = agents.find((a) => a.id === event.agentId);
   const name = displayAgentName(agent ?? { id: event.agentId, name: "Agent" });
-  return agent?.name && event.summary.includes(agent.name)
-    ? event.summary.replace(agent.name, name) : `${event.summary} · ${name}`;
+  return agent?.name && summary.includes(agent.name)
+    ? summary.replace(agent.name, name) : `${summary} · ${name}`;
 }

@@ -1,5 +1,7 @@
 # Production readiness acceptance — 22 October 2026
 
+**Current checkpoint, 23 October:** [final owner-operated AECO readiness and exact launch steps](FINAL_AECO_MAINNET_READINESS.md). Production frontend/API now run `a9dc155`; the release details below are historical. Current targeted signing/security and browser checks passed. Mainnet execution remains disabled, with owner draft selection/binding, exact live transaction review and explicit activation/transaction approval still required. This is not an unconditional security clearance; transitive dependency advisories remain documented.
+
 Website deployment and the owner's future $AECO transaction are separate. Production is the only permanent Railway environment. This acceptance introduces no new environment, wizard, schema migration, financial activation or wallet funding requirement.
 
 ## Completed infrastructure and signing checks

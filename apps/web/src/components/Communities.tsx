@@ -1,3 +1,4 @@
+import { activityCategory } from "../api/activityPresentation";
 import { useState } from "react";
 import { ArrowRight, Building2, Search, Users } from "lucide-react";
 import type { ApiAdapter, Dashboard } from "../api/adapter";
@@ -27,28 +28,28 @@ export function Communities({ api, data, selectedId, onSelect, onExplore, onAgen
   const number = (n: number) => n.toLocaleString();
   return <div className="discovery communities-discovery">
     <header className="discovery-hero"><div><span className="eyebrow">COMMUNITIES IN ONE WORLD</span>
-      <h1 aria-label="Different communities. One world.">Different communities.<br />One world.</h1><p>Every token has an identity and a place in the city. Explore its headquarters, associated simulation agents and verified contributions.</p>
-      <span className="source-pill">{data.mode === "demo" ? "Demo communities · simulated economy" : "Registered communities"}</span></div>
+      <h1 aria-label="Different communities. One world.">Different communities.<br />One world.</h1><p>Every token has an identity and a place in the city. Explore its headquarters, associated agents and city activity.</p>
+      <span className="source-pill">{data.mode === "demo" ? "Demo communities · City World" : "Registered communities"}</span></div>
       <div className="discovery-hero-plan" aria-hidden="true"><span /><span /><span /><span /><span /><b>GENESIS<br />A shared place to build.</b></div>
     </header>
     <p className="small muted">Platform updates from Agentic Economy. Each token community retains its own identity and social accounts.</p>
-    {!!data.stats.simulation?.groups.length&&<section aria-label="City simulation groups">
-      <div className="surface"><h2>Life in the city</h2><p className="small muted">Synthetic simulation groups keep the city working. They are not launched tokens or $AECO holder agents. Services and City Credits are simulated.</p></div>
+    {!!data.stats.simulation?.groups.length&&<section aria-label="City groups">
+      <div className="surface"><h2>Life in the city</h2><p className="small muted">Virtual neighbourhood groups keep the city working. They are distinct from token communities and holder-linked Common Agents. City activities and non-withdrawable City Credits belong to City World.</p></div>
       <div className="discovery-grid">{data.stats.simulation.groups.map(g=><article className="discovery-card community-card" key={g.id}>
-        <div className="discovery-card-body"><span className="source-pill">Simulation group</span><h3>{g.name}</h3><p>{g.description}</p>
-          <p className="small">{g.activeAgents} simulation agents · {g.completedServices.toLocaleString()} simulated services</p>
+        <div className="discovery-card-body"><span className="source-pill">City group</span><h3>{g.name}</h3><p>{g.description}</p>
+          <p className="small">{g.activeAgents} city residents · {g.completedServices.toLocaleString()} completed city activities</p>
           <button className="secondary" disabled={!g.headquartersBuildingId} onClick={()=>onExplore(g.id)}>View headquarters</button>
           <div className="compact-list">{data.agents.filter(a=>a.communityId===g.id&&a.identity.kind==='house').map(a=><button key={a.id} onClick={()=>onAgent(a.id)}><span>{displayAgentName(a)}</span><small>{a.profession.replaceAll('_',' ')} · {a.state}</small></button>)}</div>
         </div></article>)}</div>
     </section>}
     <div className="discovery-summary"><div><b>{number(data.communities.length)}</b><span>Registered communities</span></div>
-      <div><b>{number(data.communities.reduce((n, c) => n + c.stats.activeAgents, 0))}</b><span>Active simulation agents</span></div>
-      <div><b>{number(data.communities.reduce((n, c) => n + c.stats.verifiedTasks, 0))}</b><span>Verified useful services</span></div>
+      <div><b>{number(data.communities.reduce((n, c) => n + c.stats.activeAgents, 0))}</b><span>Active community agents</span></div>
+      <div><b>{number(data.communities.reduce((n, c) => n + c.stats.verifiedTasks, 0))}</b><span>Completed city activities</span></div>
       <p>Small decisions.<br />A world built together.</p></div>
     <div className="discovery-toolbar"><label className="search"><Search size={17}/><input aria-label="Search communities" placeholder="Find a name, symbol or purpose…" value={query} onChange={(e) => setQuery(e.target.value)}/></label>
       <label>Show<select aria-label="Filter communities" value={filter} onChange={(e) => setFilter(e.target.value)}><option value="all">All communities</option><option value="active">With active agents</option><option value="headquarters">With headquarters</option></select></label>
-      <label>Sort by<select aria-label="Sort communities" value={sort} onChange={(e) => setSort(e.target.value)}><option value="services">Useful services</option><option value="newest">Newest registered</option><option value="name">Name A–Z</option></select></label></div>
-    <div className="discovery-section-label"><h2>Find your people.</h2><span aria-live="polite">{results.length} communities · useful services are backend-verified tasks</span></div>
+      <label>Sort by<select aria-label="Sort communities" value={sort} onChange={(e) => setSort(e.target.value)}><option value="services">City activities</option><option value="newest">Newest registered</option><option value="name">Name A–Z</option></select></label></div>
+    <div className="discovery-section-label"><h2>Find your people.</h2><span aria-live="polite">{results.length} communities · city activities count completed virtual work tasks</span></div>
     {error && <p className="discovery-error" role="status">Token verification is temporarily incomplete. Community records remain available. <button className="text-button" onClick={retry}>Retry verification</button></p>}
     <div className="discovery-grid">{results.map((c) => <article key={c.id} className="discovery-card community-card" aria-label={`${c.name} community`}>
       <CommunityLogo name={c.name} symbol={c.symbol} src={logoFor(c)}/>
@@ -69,12 +70,12 @@ export function Communities({ api, data, selectedId, onSelect, onExplore, onAgen
       <TokenSocialLinks {...selected.links}/>
       <div className="discovery-dialog-actions"><button className="primary" disabled={!tokenFor(selected.id)} onClick={() => { onToken(selected.mint); onSelect(null); }}>View Token</button></div>
       <section className="community-detail-section"><h3>Headquarters</h3><p>{hq(selected)?.name ?? (selected.headquartersBuildingId ? "Registered; location unavailable in this view." : "A headquarters has not been assigned yet.")}</p>{hq(selected) && <p className="small muted">{data.bootstrap.regions.find(r => { const b=hq(selected)!; return b.x>=r.bounds.minX && b.x<r.bounds.maxX && b.z>=r.bounds.minY && b.z<r.bounds.maxY; })?.name ?? "Genesis"}</p>}<button className="secondary" disabled={!hq(selected)} onClick={() => { onExplore(selected.id); onSelect(null); }}>View Headquarters</button></section>
-      <section className="community-detail-section"><h3>Community activity</h3><p>{communityActivitySummary(selected)}</p><p className="small muted">These are city simulation contributions. Common Agents, holder eligibility and AECO rewards are not active here.</p>
+      <section className="community-detail-section"><h3>Community activity</h3><p>{communityActivitySummary(selected)}</p><p className="small muted">These are virtual city contributions, not paid economic services. Qualifying $AECO holders receive Common Agents automatically; city activity does not establish financial entitlements or rewards.</p>
       <div className="compact-list">{data.agents.filter((a) => a.communityId === selected.id).map((a) => <button key={a.id} onClick={() => onAgent(a.id)}><span>{displayAgentName(a)}</span><small>{a.profession.replaceAll("_", " ")} · {a.state}{a.work?.task ? ` · ${a.work.task.kind.replaceAll("_", " ")}` : ""}</small></button>)}</div>
       {!data.agents.some((a) => a.communityId === selected.id) && <p className="small muted">No associated agents in the current public snapshot.</p>}</section>
-      <section className="community-detail-section"><h3>Recent events</h3>{data.activities.filter((e) => e.communityId === selected.id).slice(0, 6).map((e) => <p className="community-event" key={e.id}>{displayActivity(e, data.agents)}</p>)}
+      <section className="community-detail-section"><h3>Recent events</h3>{data.activities.filter((e) => e.communityId === selected.id).slice(0, 6).map((e) => <p className="community-event" key={e.id}>{displayActivity(e, data.agents)}<span className="activity-category" title={activityCategory(e, data.communities, data.mode).detail}>{activityCategory(e, data.communities, data.mode).label}</span></p>)}
       {!data.activities.some((e) => e.communityId === selected.id) && <p className="small muted">No recent community events. New activity will appear as it happens.</p>}</section>
-      <details className="community-technical"><summary>Technical details</summary><dl className="detail-list"><div><dt>Registration</dt><dd>{new Date(selected.registeredAt).toLocaleString()}</dd></div><div><dt>Launch ID</dt><dd className="mint ui-select-text">{selected.launchId}</dd></div><div><dt>Registered building</dt><dd className="mint ui-select-text">{selected.headquartersBuildingId ?? "Not assigned"}</dd></div></dl>{data.activities.filter(e => e.communityId === selected.id).slice(0,6).map(e => <p className="small" key={e.id}>{e.type} · simulation tick {e.tick}</p>)}</details>
+      <details className="community-technical"><summary>Technical details</summary><dl className="detail-list"><div><dt>Registration</dt><dd>{new Date(selected.registeredAt).toLocaleString()}</dd></div><div><dt>Launch ID</dt><dd className="mint ui-select-text">{selected.launchId}</dd></div><div><dt>Registered building</dt><dd className="mint ui-select-text">{selected.headquartersBuildingId ?? "Not assigned"}</dd></div></dl>{import.meta.env.DEV && data.activities.filter(e => e.communityId === selected.id).slice(0,6).map(e => <p className="small" key={e.id}>{e.type} · simulation tick {e.tick}</p>)}</details>
     </section></div>}
   </div>;
 }

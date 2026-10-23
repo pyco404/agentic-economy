@@ -47,6 +47,7 @@ export const displayAgentName = (agent: IdentityAgent) => agentIdentity(agent).d
 export function displayActivity(event: Pick<EconomicEvent, "summary" | "agentId"> & Partial<Pick<EconomicEvent, "type">>, agents: IdentityAgent[]) {
   // Normalize only our exact historical confirmed-launch template, never token/user content.
   // The authoritative event, signature and confirmation status remain untouched.
+  if (event.type?.startsWith("social.")) return event.summary;
   if (!event.agentId) return event.type === "launch.confirmed"
     ? event.summary.replace(/^(.* \(\$[^()\r\n]+\)) launched on Pump\.fun through Agentic Economy\.?$/, "$1 launched on Agentic Economy.")
     : event.summary;

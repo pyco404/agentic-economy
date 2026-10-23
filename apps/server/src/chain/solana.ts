@@ -1,3 +1,4 @@
+import {MarketReader} from './market-reader.js';
 import { quoteTokenBudget } from './dev-buy-budget.js';
 import { solFromLamports } from '@agentic-economy/shared';
 import {MAINNET_GENESIS,assertReviewedMainnetPrograms} from "./mainnet-policy.js";
@@ -23,6 +24,8 @@ export class SolanaRpcChain implements ChainGateway {
     this.conn = new Connection(rpcUrl, {commitment:"confirmed", ...readOptions});
   }
 
+  getMarketState(mint:string){return new MarketReader(this.conn).state(mint);}
+  getMarketTradePage(mint:string,address:string,before?:string,until?:string,limit?:number){return new MarketReader(this.conn).page(mint,address,before,until,limit);}
   getGenesisHash(){return this.conn.getGenesisHash();}
   async assertLaunchSubmissionAllowed(){
     if(this.launchOptions?.cluster==="mainnet-beta"){

@@ -51,8 +51,9 @@ it('indexes authenticated PumpSwap events once by instruction, ignoring forged e
  const authority=sdk.PUMP_AMM_EVENT_AUTHORITY_PDA,forger=PublicKey.unique(),program=new PublicKey(PUMP_AMM_PROGRAM_ID);
  const message=new TransactionMessage({payerKey:PublicKey.unique(),recentBlockhash:PublicKey.default.toBase58(),instructions:[new TransactionInstruction({programId:program,keys:[pool,authority,forger].map(pubkey=>({pubkey,isSigner:false,isWritable:false})),data:Buffer.alloc(8)})]}).compileToV0Message();
  const keys=message.staticAccountKeys,ix=(key:PublicKey)=>({programIdIndex:keys.findIndex(k=>k.equals(program)),accounts:[keys.findIndex(k=>k.equals(key))],data:bs58.encode(payload)});
- vi.spyOn(connection,'getSignaturesForAddress').mockResolvedValue([{signature:'unit-test-signature',slot:1,err:null,memo:null,blockTime:100}]);
- vi.spyOn(connection,'getTransaction').mockResolvedValue({slot:1,blockTime:100,transaction:{message,signatures:[]},meta:{err:null,innerInstructions:[{index:0,instructions:[ix(forger),ix(authority)]}]}} as never);
- const page=await new MarketReader(connection).page(mint,pool.toBase58());
+ const signature='1'.repeat(64);
+ vi.spyOn(connection,'getSignaturesForAddress').mockResolvedValue([{signature,slot:1,err:null,memo:null,blockTime:100}]);
+ const raw={version:1,slot:1,blockTime:100,transaction:{signatures:[signature],message:{accountKeys:keys.map(k=>k.toBase58()),transactionConfig:{priorityFee:0},instructions:[]}},meta:{err:null,loadedAddresses:{writable:[],readonly:[]},innerInstructions:[{index:0,instructions:[ix(forger),ix(authority)]}]}};
+ const page=await new MarketReader(connection,async()=>raw).page(mint,pool.toBase58());
  expect(page.trades).toHaveLength(1);expect(page.trades[0]).toMatchObject({venue:'pumpswap',eventIndex:1,tokenAmount:'1000000',quoteAmount:'10000000',side:'buy'});
 });

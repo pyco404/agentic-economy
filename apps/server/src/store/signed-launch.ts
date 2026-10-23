@@ -37,9 +37,24 @@ export class SignedLaunchStore{
   if(this.pool)await this.pool.query("UPDATE launchpad_operations SET result=result-'transaction' WHERE wallet=$1 AND key=$2 AND kind=$3",[wallet,id,kind]);
   else{const r=this.records.get(`${wallet}:${id}`);if(r)delete r.receipt.transaction;}
  }
+ /** Retain reconciled evidence separately before releasing the active-message slot. */
+ async retireExpired(wallet:string,id:string,signature:string){
+  if(this.pool){
+   const c=await this.pool.connect();
+   try{await c.query('BEGIN');
+    await c.query("INSERT INTO launchpad_operations(wallet,key,kind,hash,status,result,lease_until,created_at) SELECT wallet,key||':'||$3,'expired_signed_launch',hash,status,result,lease_until,created_at FROM launchpad_operations WHERE wallet=$1 AND key=$2 AND kind='signed_launch' AND result->>'signature'=$3 ON CONFLICT DO NOTHING",[wallet,id,signature]);
+    await c.query("DELETE FROM launchpad_operations WHERE wallet=$1 AND key=$2 AND kind='signed_launch' AND result->>'signature'=$3",[wallet,id,signature]);
+    await c.query('COMMIT');
+   }catch{await c.query('ROLLBACK');throw new AppError('unavailable','Expired submission evidence could not be archived. Keep this attempt.');}finally{c.release();}
+  }else{
+   const key=`${wallet}:${id}`,r=this.records.get(key);
+   if(r&&r.receipt.signature!==signature)throw new AppError('conflict','Signed evidence changed. Reconcile this attempt.');
+   if(r){this.records.set(`${key}:expired:${signature}`,r);this.records.delete(key);}
+  }
+ }
  /** Bounded startup cleanup; only recovery payloads are removed, never launch/fee records. */
  async prune(){
-  if(this.pool)await this.pool.query("WITH old AS (SELECT wallet,key,kind FROM launchpad_operations WHERE kind=$1 AND created_at<$2 AND result ? 'transaction' LIMIT 100 FOR UPDATE SKIP LOCKED) UPDATE launchpad_operations o SET result=o.result-'transaction' FROM old WHERE o.wallet=old.wallet AND o.key=old.key AND o.kind=old.kind",[kind,new Date(this.now()-SIGNED_LAUNCH_RETENTION_MS)]);
+  if(this.pool)await this.pool.query("WITH old AS (SELECT wallet,key,kind FROM launchpad_operations WHERE kind IN ($1,'expired_signed_launch') AND created_at<$2 AND result ? 'transaction' LIMIT 100 FOR UPDATE SKIP LOCKED) UPDATE launchpad_operations o SET result=o.result-'transaction' FROM old WHERE o.wallet=old.wallet AND o.key=old.key AND o.kind=old.kind",[kind,new Date(this.now()-SIGNED_LAUNCH_RETENTION_MS)]);
   else for(const r of this.records.values())if(Date.parse(r.receipt.createdAt)+SIGNED_LAUNCH_RETENTION_MS<=this.now())delete r.receipt.transaction;
  }
 }

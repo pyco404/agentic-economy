@@ -7297,6 +7297,8 @@ components:
               enum:
                 - SOL
                 - USDC
+            walletApprovalIssued:
+              type: boolean
             quoteMint:
               $ref: "#/components/schemas/PublicKey"
             localMintReview:
@@ -7487,6 +7489,8 @@ components:
               enum:
                 - SOL
                 - USDC
+            walletApprovalIssued:
+              type: boolean
             quoteMint:
               $ref: "#/components/schemas/PublicKey"
             localMintReview:

@@ -1,6 +1,7 @@
 import { MAINNET_GENESIS, PLANNED_AECO_MINT, inspectMintSigningReview, mintMessageHash, verifyMintSigningArtifact } from "../chain/offline-mint.js";
 import { assertLaunchWalletAllowed, launchWalletAllowed, preparedMintPreparationAllowed } from "./launch-permission.js";
 import {officialServerMintSigner, type ServerMintSigner} from '../chain/server-mint.js';
+import {PreparedMintStore} from "../store/prepared-mint.js";
 import {SignedLaunchStore} from "../store/signed-launch.js";
 import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
@@ -68,6 +69,7 @@ export class LaunchService {
     private readonly submissions:SignedLaunchStore = new SignedLaunchStore(),
     private readonly diagnose:(event:{stage:string;launchId:string;signature?:string;code?:string})=>void=()=>{},
     private readonly serverMintSigner:ServerMintSigner|undefined=officialServerMintSigner(config),
+    private readonly preparedMints:PreparedMintStore = new PreparedMintStore(),
   ) {}
 
   feeBreakdown(quote: LaunchQuote = { asset: "SOL" }): FeeBreakdown {
@@ -105,7 +107,7 @@ export class LaunchService {
   }
 
   private async prepareReview(wallet:string,draft:LaunchDraft,owned:{id:string;version:number;launchId:string;devBuyBps?:number;devBuySol?:string}|undefined,quote:LaunchQuote,
-    renewal?:{record:LaunchRecord;finalizedHeight:number}) : Promise<PrepareLaunchResponse> {
+    renewal?:{record:LaunchRecord;finalizedHeight:number;unissued?:boolean}) : Promise<PrepareLaunchResponse> {
     assertLaunchWalletAllowed(this.config, wallet);
     const readOnlyPreparation=!!owned&&preparedMintPreparationAllowed(this.config,wallet,owned.id);
     if(!readOnlyPreparation)this.assertEnabled();
@@ -150,7 +152,7 @@ export class LaunchService {
       throw new AppError("unavailable","The reserved mint cannot be prepared. Reconcile its existing state; do not substitute another mint.");
     if(reserved)await this.assertExpiredMintAbsent({mint:PLANNED_AECO_MINT});
     // The official branch never generates or receives its private mint key.
-    const mintKp = reserved ? null : Keypair.generate();
+    const mintKp = reserved ? null : owned ? await this.preparedMints.getOrCreate(wallet,owned.launchId,renewal?.record.launch.mint) : Keypair.generate();
     const mint = reserved ? PLANNED_AECO_MINT : mintKp!.publicKey.toBase58();
     let built;
     try {
@@ -169,6 +171,12 @@ export class LaunchService {
     } catch (e) {
       if (e instanceof ChainFeatureUnavailable) throw new AppError("feature_disabled", e.message, { code: e.code });
       throw new AppError("unavailable","Launch preparation is temporarily unavailable. Retry with the same attempt; nothing has been submitted.");
+    }finally{mintKp?.secretKey.fill(0);}
+    // Review templates never expose a mint signature. It is issued only at the wallet stage.
+    if(owned&&!reserved&&!built.demo){
+      const template=VersionedTransaction.deserialize(Buffer.from(built.transaction,'base64'));
+      template.signatures=template.signatures.map(()=>new Uint8Array(64));
+      built={...built,transaction:Buffer.from(template.serialize()).toString('base64')};
     }
     const at = this.now().toISOString();
     const launch: TokenLaunch = {
@@ -183,7 +191,7 @@ export class LaunchService {
         // The simulated spend (exact for this transaction) replaces the formula estimate when available.
         developerBuy:devQuote?{bps:devBuyBps,quoteAsset:"SOL" as const,totalSupply:devQuote.totalSupply.toString(),tokenAmount:devQuote.tokenAmount.toString(),
           estimatedQuoteCost:built.devBuy?.quoteSpent??devQuote.estimatedQuoteCost.toString(),pumpFees:devQuote.pumpFees.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString(),priceImpactBps:devQuote.priceImpactBps}:null},
-      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster,quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const,
+      ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{walletApprovalIssued:false,draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster,quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const,
         ...(devQuote?{devBuy:{bps:devBuyBps,...(owned?.devBuySol?{budgetSol:owned.devBuySol}:{}),tokenAmount:devQuote.tokenAmount.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString()}}:{})}}:{}),
       signature: null,
       slot: null,
@@ -213,19 +221,25 @@ export class LaunchService {
       this.assertLocalMintBinding(launch);
     }
     if(renewal){
-      const old=renewal.record.launch,previous=old.execution!.localMintReview!,next=launch.execution?.localMintReview;
-      if(!next || !reserved || next.messageSha256===previous.messageSha256 || next.lastValidBlockHeight<=renewal.finalizedHeight)
+      const old=renewal.record.launch,previous=old.execution!.localMintReview,next=launch.execution?.localMintReview;
+      const previousHash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(old.execution!.transaction,'base64')));
+      const nextHash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(launch.execution!.transaction,'base64')));
+      if((!renewal.unissued&&nextHash===previousHash) || launch.mint!==old.mint || launch.execution!.lastValidBlockHeight<=renewal.finalizedHeight)
         throw new AppError("unavailable","A fresh signing window could not be prepared. The saved attempt is unchanged.");
-      next.renewal={previousMessageSha256:previous.messageSha256,previousLastValidBlockHeight:previous.lastValidBlockHeight,
-        finalizedBlockHeight:renewal.finalizedHeight,checkedAt:at};
-      launch.execution!.localMintReviewHistory=[...(old.execution!.localMintReviewHistory??[]),previous];
+      if(previous&&next){
+        launch.execution!.localMintReviewHistory=[...(old.execution!.localMintReviewHistory??[]),previous];
+      }
+      if(previous&&next&&!renewal.unissued){
+        next.renewal={previousMessageSha256:previous.messageSha256,previousLastValidBlockHeight:previous.lastValidBlockHeight,
+          finalizedBlockHeight:renewal.finalizedHeight,checkedAt:at};
+      }
       if(old.execution!.expiredApprovals)launch.execution!.expiredApprovals=old.execution!.expiredApprovals;
       launch.createdAt=old.createdAt;launch.history=[...old.history,{status:"awaiting_signature",at}];
-      launch.errors=[...old.errors,{code:"mint_review_renewed",message:"Expired public signing review renewed on the same mint and attempt; fresh wallet approval is required.",at}];
+      launch.errors=[...old.errors,{code:"mint_review_renewed",message:"Transaction refreshed on the same mint and attempt; fresh wallet approval is required.",at}];
       if(await this.submissions.get(wallet,old.id))throw new AppError("conflict","Signed evidence appeared. Reconcile this attempt before renewing.");
       try{await this.store.updateLaunch(launch,renewal.record.version);}catch(e){
         if(e instanceof ConflictError){const latest=(await this.store.getLaunch(old.id))!.launch;
-          if(latest.execution?.localMintReview?.renewal?.previousMessageSha256===previous.messageSha256)
+          if(previous && latest.execution?.localMintReview?.renewal?.previousMessageSha256===previous.messageSha256)
             return {launch:latest,transaction:latest.execution.transaction,lastValidBlockHeight:latest.execution.lastValidBlockHeight,demoTransaction:false};
           throw new AppError("conflict","The launch changed during renewal. Check its current status.");}
         throw e;
@@ -293,6 +307,68 @@ export class LaunchService {
       {asset:'SOL'},{record,finalizedHeight:height});
   }
 
+  /** Rebuild only an unissued template or a conclusively expired message. Never submits. */
+  async refreshTransaction(wallet:string,id:string,previousMessageSha256:string){
+    assertLaunchWalletAllowed(this.config,wallet);
+    const preparation=preparedMintPreparationAllowed(this.config,wallet);
+    if(!preparation)this.assertEnabled();
+    if(!preparation&&!this.config.pumpLaunch.enabled)throw new AppError('feature_disabled','Wallet approval is disabled');
+    const record=await this.store.getLaunch(id),l=record?.launch;
+    if(!record||!l||l.launcherWallet!==wallet||!l.execution)throw new AppError('not_found','Launch not found');
+    this.assertLocalMintBinding(l);
+    const hash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(l.execution.transaction,'base64')));
+    if(hash!==previousMessageSha256)throw new AppError('conflict','The review changed. Check this same launch before continuing.');
+    if(!['awaiting_signature','expired'].includes(l.status)||(l.status!=='expired'&&(l.signature||await this.submissions.get(wallet,id))))
+      throw new AppError('conflict','Reconcile the original transaction before refreshing.');
+    await this.assertPreparedNetwork(l);
+    if(!this.chain.getFinalizedBlockHeight)throw new AppError('unavailable','Finalized expiry verification is unavailable');
+    const height=await this.chain.getFinalizedBlockHeight();
+    if(l.fees.platformTreasury!==this.config.treasuries.platform||l.fees.creatorFeeSplit.agentRewardsTreasury!==this.config.treasuries.agentRewards||l.fees.creatorFeeSplit.platformTreasury!==this.config.treasuries.platform)throw new AppError('conflict','Treasury recipients changed. Keep this attempt for reconciliation.');
+    const unissued=l.execution.walletApprovalIssued===false&&(!l.execution.localMintReview||this.automaticMintSigningAvailable(wallet));
+    if(!unissued){
+      if(height<=l.execution.lastValidBlockHeight)throw new AppError('conflict','The previous transaction may still execute. Check its status before refreshing.');
+      const refreshed=await this.refresh(wallet,id);
+      if(refreshed.status!=='expired'||!await this.expiredReview(wallet,id))throw new AppError('conflict','Reconcile the previous approval before refreshing.');
+    }
+    await this.assertExpiredMintAbsent(l);
+    if((await this.chain.listSignaturesForAddress(l.mint,null,1)).length)throw new AppError('conflict','The mint has transaction history. Reconcile it before refreshing.');
+    // Reload after reconciliation; CAS prevents concurrent issuance/rebuild from replacing a message.
+    let current=(await this.store.getLaunch(id))!;
+    if(mintMessageHash(VersionedTransaction.deserialize(Buffer.from(current.launch.execution!.transaction,'base64')))!==hash || current.launch.execution!.walletApprovalIssued!==l.execution.walletApprovalIssued)
+      throw new AppError('conflict','This transaction changed. Check its current status.');
+    if(current.launch.signature||await this.submissions.get(wallet,id)){
+      // Proof is re-read here; no automatic rebuilding takes place on status polling.
+      const proof=await this.expiredReview(wallet,id);
+      const receipt=await this.submissions.get(wallet,id),signature=current.launch.signature??receipt?.signature;
+      if(!proof||!signature||proof.checkedSignature!==signature)throw new AppError('conflict','The original submission remains uncertain.');
+      await this.submissions.retireExpired(wallet,id,signature);
+      current.launch.signature=null;
+      current.launch.execution!.expiredApprovals=[...(current.launch.execution!.expiredApprovals??[]),{signature,messageSha256:hash,at:this.now().toISOString()}];
+      await this.store.updateLaunch(current.launch,current.version);
+      current=(await this.store.getLaunch(id))!;
+    }
+    return this.prepareReview(wallet,l.draft,{id:l.execution.draftId,version:l.execution.draftVersion,launchId:id,
+      devBuyBps:l.execution.devBuy?.bps??0,...(l.execution.devBuy?.budgetSol?{devBuyBps:0,devBuySol:l.execution.devBuy.budgetSol}:{})},
+      {asset:'SOL'},{record:current,finalizedHeight:height,unissued});
+  }
+
+  /** Issue the exact persisted mint-signed message, never a payer signature or a broadcast. */
+  async walletTransaction(wallet:string,id:string,hash:string){
+    await this.signingWindow(wallet,id);
+    const record=(await this.store.getLaunch(id))!,l=record.launch,execution=l.execution!;
+    const tx=VersionedTransaction.deserialize(Buffer.from(execution.transaction,'base64'));
+    if(mintMessageHash(tx)!==hash)throw new AppError('conflict','The transaction changed. Review it before wallet approval.');
+    // Mark before returning any signature: a crash must never allow replacing an issued valid message.
+    if(execution.walletApprovalIssued===false){execution.walletApprovalIssued=true;await this.store.updateLaunch(l,record.version);}
+    if(execution.localMintReview)return this.automaticMintSignature(wallet,id);
+    const key=await this.preparedMints.getOrCreate(wallet,id,l.mint);
+    try{tx.sign([key]);}finally{key.secretKey.fill(0);}
+    await this.signingWindow(wallet,id);
+    const latest=(await this.store.getLaunch(id))!.launch;
+    if(latest.execution!.transaction!==execution.transaction)throw new AppError('conflict','The transaction changed. Nothing was sent to your wallet.');
+    return{transaction:Buffer.from(tx.serialize()).toString('base64'),messageSha256:hash};
+  }
+
   automaticMintSigningAvailable(wallet?:string){
     return !!(wallet&&this.config.financialFeaturesEnabled&&this.config.pumpLaunch.enabled&&
       preparedMintPreparationAllowed(this.config,wallet)&&this.serverMintSigner?.configured());
@@ -321,7 +397,9 @@ export class LaunchService {
   async expiredReview(wallet:string,id:string,reportedSignature?:string){
     const record=await this.store.getLaunch(id),l=record?.launch;
     if(!l||l.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
-    if(l.status!=='expired'||!l.execution||l.signature||await this.submissions.get(wallet,id))return undefined;
+    if(l.status!=='expired'||!l.execution)return undefined;
+    const receipt=await this.submissions.get(wallet,id);
+    if(receipt&&(receipt.mint!==l.mint||receipt.genesisHash!==l.execution.genesisHash||l.signature&&l.signature!==receipt.signature))throw new AppError('conflict','Signed evidence does not match this launch.');
     await this.assertPreparedNetwork(l);
     if(!this.chain.getFinalizedBlockHeight)throw new AppError('unavailable','Finalized expiry verification is unavailable');
     let height:number;try{height=await this.chain.getFinalizedBlockHeight();}catch{throw new AppError('unavailable','Finalized expiry verification failed. Keep this attempt.');}
@@ -331,12 +409,12 @@ export class LaunchService {
     if(history.length)throw new AppError('unavailable','The mint has transaction history. Keep this attempt for reconciliation.');
     const hash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(l.execution.transaction,'base64')));
     const approvals=(l.execution.expiredApprovals??[]).filter(a=>a.messageSha256===hash);
-    const signatures=new Set([...approvals.map(a=>a.signature),...(reportedSignature?[reportedSignature]:[])]);
+    const signatures=new Set([...approvals.map(a=>a.signature),...(reportedSignature?[reportedSignature]:[]),...(l.signature?[l.signature]:[]),...(receipt?[receipt.signature]:[])]);
     for(const signature of signatures){
       if(!this.chain.getSignatureStatus)throw new AppError('unavailable','Signature reconciliation is unavailable');
       try{if(await this.chain.getSignatureStatus(signature)||await this.chain.getTransaction(signature))throw new Error();}catch{throw new AppError('unavailable','Signature history is uncertain. Keep this attempt for reconciliation.');}
     }
-    return{messageSha256:hash,lastValidBlockHeight:l.execution.lastValidBlockHeight,finalizedBlockHeight:height,...(reportedSignature||approvals.at(-1)?.signature?{checkedSignature:reportedSignature??approvals.at(-1)!.signature}:{})};
+    return{messageSha256:hash,lastValidBlockHeight:l.execution.lastValidBlockHeight,finalizedBlockHeight:height,...(reportedSignature||l.signature||receipt?.signature||approvals.at(-1)?.signature?{checkedSignature:reportedSignature??l.signature??receipt?.signature??approvals.at(-1)!.signature}:{})};
   }
 
   /** Mint-only signature immediately before Phantom; never constructs, submits or broadcasts a new attempt. */
@@ -357,6 +435,10 @@ export class LaunchService {
     this.assertEnabled();
     if(!this.automaticMintSigningAvailable(wallet))throw new AppError('feature_disabled','Automatic mint signing is unavailable');
     await this.signingWindow(wallet,id);
+    const issuing=(await this.store.getLaunch(id))!;
+    if(issuing.launch.execution!.walletApprovalIssued===false){
+      issuing.launch.execution!.walletApprovalIssued=true;await this.store.updateLaunch(issuing.launch,issuing.version);
+    }
     const artifact=await this.serverMintSigner.sign(review,wallet);
     // Existing import validation rechecks the persisted review, state, network and expiry after signing.
     return this.importLocalMintSignature(wallet,id,artifact);
@@ -377,6 +459,7 @@ export class LaunchService {
     try{checked=await verifyMintSigningArtifact(review,this.localMintPolicy(),artifact);}
     catch{throw new AppError("bad_request","The public mint signature does not match this saved attempt");}
     this.assertLocalMintBinding(record.launch);
+    if(record.launch.execution!.walletApprovalIssued===false){record.launch.execution!.walletApprovalIssued=true;await this.store.updateLaunch(record.launch,record.version);}
     return {transaction:checked.transaction,messageSha256:checked.messageSha256};
   }
 
@@ -600,6 +683,7 @@ export class LaunchService {
         communityId,
         data: { mint: launch.mint, signature },
       });
+      await this.preparedMints.erase(launch.launcherWallet,launch.id).catch(()=>this.diagnose({stage:'mint_signer_cleanup_pending',launchId:launch.id}));
       await publishDurable(this.coord, `treasury:${feeEntry.id}`, "treasury.updated", this.reader.tick, { entry: feeEntry });
       // Give the community a headquarters in the shared world (durable command, applied by the simulation leader).
       await this.registerInWorld(communityId, launch.draft.name, launch.mint, true);

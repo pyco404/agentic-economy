@@ -103,13 +103,15 @@ export const TokenLaunch = z
       draftId:z.string().uuid(),draftVersion:z.number().int().nonnegative(),
       transaction:z.string().max(1644),lastValidBlockHeight:z.number().int().nonnegative(),genesisHash:PublicKey,
       network:z.enum(["devnet","localnet","mainnet-beta"]),quoteAsset:z.enum(["SOL","USDC"]),
+      /** False only while no mint co-signature has left the backend for this exact message. */
+      walletApprovalIssued:z.boolean().optional(),
       /** USDC only: the quote mint the server verified against the live Pump Global allowlist. Never client-supplied. */
       quoteMint:PublicKey.optional(),
       /** Immutable public template for the separately authorized local mint signature. */
       localMintReview:LocalMintReview.optional(),
       /** Immutable prior public reviews retained when the same reserved attempt is explicitly renewed. */
       localMintReviewHistory:z.array(LocalMintReview).optional(),
-      /** Validated wallet approvals that expired before broadcasting; retained across review renewal. */
+      /** Validated wallet approvals with conclusively expired, absent on-chain results; retained across renewal. */
       expiredApprovals:z.array(z.object({signature:TxSignature,messageSha256:z.string().regex(/^[a-f0-9]{64}$/),at:z.iso.datetime()})).optional(),
       platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
       /** Requested Developer Buy: exact token amount (never above 3.5% of supply) and the maximum lamports it may cost. */
@@ -135,7 +137,7 @@ export const PrepareLaunchResponse = z
   .object({
     launch: TokenLaunch,
     /**
-     * Base64 serialized versioned transaction, already partially signed by the new mint keypair.
+     * Base64 serialized versioned review template. New intents receive the mint co-signature only at the wallet stage.
      * The launcher wallet signs as fee payer + creator and submits. Contains, atomically:
      * SystemProgram.transfer(0.05 SOL → platform treasury), Pump create_v2, create_fee_sharing_config,
      * update_fee_shares_v2([agent 6000, platform 4000]) which revokes the config admin.

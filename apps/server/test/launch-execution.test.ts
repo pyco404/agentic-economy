@@ -31,7 +31,7 @@ async function setup(){
  draft=(await call('POST',`/api/v1/launchpad/drafts/${draft.id}/metadata`,{version:1},'metadata-test-key')).json();
  const chain=env.ctx.chain as MockChain & ChainGateway;let landed=false;let pendingSig='';let finalizedHeight=1;let input:Parameters<typeof buildPumpLaunch>[0];let rpcFailure=false;
  vi.spyOn(chain,'buildLaunchTransaction').mockImplementation(async p=>{
-  input=p;const ix=await pumpLaunchInstructions(p);const table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses:[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()]}});
+  input={...p,mintSecretKey:Uint8Array.from(p.mintSecretKey)};const ix=await pumpLaunchInstructions(p);const table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses:[...new Map(ix.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()]}});
   return{...await buildPumpLaunch(p,Keypair.generate().publicKey.toBase58(),[table]),demo:false,lastValidBlockHeight:100,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG'};
  });
  const get=chain.getTransaction.bind(chain);vi.spyOn(chain,'getTransaction').mockImplementation(async signature=>{
@@ -47,10 +47,58 @@ async function setup(){
  chain.submitLaunchTransaction=vi.fn(async transaction=>{pendingSig=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);if(rpcFailure)throw new Error('RPC timed out');return pendingSig;});
  env.ctx.config.mode='devnet';env.ctx.config.financialFeaturesEnabled=true;env.ctx.config.pumpLaunch.enabled=true;
  const prepare=async(key='prepare-test-key')=>call('POST',`/api/v1/launchpad/drafts/${draft.id}/launch`,{version:draft.version},key);
- const signed=(transaction:string)=>{const tx=VersionedTransaction.deserialize(Buffer.from(transaction,'base64'));tx.sign([creator]);return Buffer.from(tx.serialize()).toString('base64');};
+ const signed=(transaction:string)=>{const tx=VersionedTransaction.deserialize(Buffer.from(transaction,'base64'));tx.sign([creator,Keypair.fromSecretKey(input.mintSecretKey)]);return Buffer.from(tx.serialize()).toString('base64');};
  return{call,prepare,signed,draft,chain,creator,user,setLanded:()=>{landed=true;},expire:()=>{finalizedHeight=101;},failRpc:()=>{rpcFailure=true;}};
 }
 describe('owned launch execution API (mock RPC, real transaction bytes/signatures)',()=>{
+ it('keeps review unsigned and refreshes the SAME random mint just before wallet issuance',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const {mintMessageHash}=await import('../src/chain/offline-mint.js');
+  const hash=(t:string)=>mintMessageHash(VersionedTransaction.deserialize(Buffer.from(t,'base64')));
+  expect(VersionedTransaction.deserialize(Buffer.from(p.transaction,'base64')).signatures.every(s=>s.every(b=>b===0))).toBe(true);
+  const fresh=await f.call('POST',url+'/refresh-transaction',{messageSha256:hash(p.transaction)});
+  expect(fresh.statusCode).toBe(200);const r=fresh.json();
+  expect(r.launch).toMatchObject({id:p.launch.id,mint:p.launch.mint,draft:p.launch.draft,execution:{walletApprovalIssued:false}});
+  expect(hash(r.transaction)).not.toBe(hash(p.transaction));
+  const ready=await f.call('POST',url+'/wallet-transaction',{messageSha256:hash(r.transaction)});
+  expect(ready.statusCode).toBe(200);const tx=VersionedTransaction.deserialize(Buffer.from(ready.json().transaction,'base64'));
+  expect(tx.signatures[0]!.every(b=>b===0)).toBe(true);expect(tx.signatures[1]!.some(b=>b!==0)).toBe(true);
+  expect((await f.call('POST',url+'/refresh-transaction',{messageSha256:hash(r.transaction)})).statusCode).toBe(409);
+  expect((await f.call('POST',url+'/wallet-transaction',{messageSha256:hash(p.transaction)})).statusCode).toBe(409);
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('refreshes an issued random mint only after authoritative expiry and invalidates its old mint signature',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const {mintMessageHash}=await import('../src/chain/offline-mint.js');const hash=(t:string)=>mintMessageHash(VersionedTransaction.deserialize(Buffer.from(t,'base64')));
+  const ready=(await f.call('POST',url+'/wallet-transaction',{messageSha256:hash(p.transaction)})).json();
+  const old=f.signed(ready.transaction);f.expire();
+  expect((await f.call('POST',url+'/submit',{transaction:old})).json().expiredReview).toBeDefined();
+  // A fresh RPC blockhash must also return a renewed validity height.
+  const build=f.chain.buildLaunchTransaction.bind(f.chain);
+  vi.spyOn(f.chain,'buildLaunchTransaction').mockImplementation(async input=>({...await build(input),lastValidBlockHeight:250}));
+  const refreshed=await f.call('POST',url+'/refresh-transaction',{messageSha256:hash(p.transaction)});
+  expect(refreshed.statusCode).toBe(200);const r=refreshed.json();expect(r.launch.mint).toBe(p.launch.mint);expect(r.launch.id).toBe(p.launch.id);
+  expect(r.launch.execution.expiredApprovals).toHaveLength(1);
+  expect(VersionedTransaction.deserialize(Buffer.from(r.transaction,'base64')).signatures.every(s=>s.every(b=>b===0))).toBe(true);
+  expect((await f.call('POST',url+'/submit',{transaction:old})).statusCode).toBe(400);
+  const issued=await f.call('POST',url+'/wallet-transaction',{messageSha256:hash(r.transaction)});expect(issued.statusCode).toBe(200);
+  expect(issued.json().messageSha256).not.toBe(ready.messageSha256);expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('reconciles an interrupted RPC submission before archiving evidence and allowing a same-mint refresh',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const {mintMessageHash}=await import('../src/chain/offline-mint.js');const hash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(p.transaction,'base64')));
+  f.failRpc();expect((await f.call('POST',url+'/submit',{transaction:f.signed(p.transaction)})).statusCode).toBe(503);
+  expect((await f.call('POST',url+'/refresh-transaction',{messageSha256:hash})).statusCode).toBe(409);
+  f.expire();const status=await f.call('GET',url);expect(status.json().launch.status).toBe('expired');expect(status.json().expiredReview).toBeDefined();
+  const {submissions}=env!.ctx.launches as unknown as {submissions:SignedLaunchStore};
+  expect(await submissions.get(f.creator.publicKey.toBase58(),p.launch.id)).not.toBeNull();
+  const build=f.chain.buildLaunchTransaction.bind(f.chain);vi.spyOn(f.chain,'buildLaunchTransaction').mockImplementation(async input=>({...await build(input),lastValidBlockHeight:250}));
+  const fresh=await f.call('POST',url+'/refresh-transaction',{messageSha256:hash});expect(fresh.statusCode).toBe(200);
+  expect(fresh.json().launch).toMatchObject({id:p.launch.id,mint:p.launch.mint,signature:null,status:'awaiting_signature'});
+  expect(fresh.json().launch.execution.expiredApprovals).toHaveLength(1);
+  expect(await submissions.get(f.creator.publicKey.toBase58(),p.launch.id)).toBeNull();
+  expect(f.chain.submitLaunchTransaction).toHaveBeenCalledTimes(1); // Only the original failed RPC request, no retry.
+ });
  it('records a late wallet approval without broadcasting and returns exact-message expiry proof',async()=>{
   const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
   const transaction=f.signed(p.transaction),signature=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);
@@ -313,6 +361,8 @@ describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)'
   expect((await f.prepare()).statusCode).toBe(403);
   expect((await f.call('POST',url+'/submit',{transaction:signed})).statusCode).toBe(403);
   expect((await f.call('POST',url+'/resume',{transaction:signed})).statusCode).toBe(403);
+  expect((await f.call('POST',url+'/refresh-transaction',{messageSha256:'a'.repeat(64)})).statusCode).toBe(403);
+  expect((await f.call('POST',url+'/wallet-transaction',{messageSha256:'a'.repeat(64)})).statusCode).toBe(403);
   expect((await f.call('POST',url+'/mint-signature/automatic',{})).statusCode).toBe(403);
   expect((await f.call('POST',url+'/mint-review/renew',{messageSha256:'a'.repeat(64)})).statusCode).toBe(403);
   expect((await f.call('GET',url)).statusCode).toBe(200);

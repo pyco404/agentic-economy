@@ -16,3 +16,15 @@ it('erases payloads on finality or after bounded retention without losing public
  const other={...input(),launchId:'lch_other'};await s.put(other);now+=SIGNED_LAUNCH_RETENTION_MS;await s.prune();
  expect((await s.get(other.wallet,other.launchId))!.transaction).toBeUndefined();expect((await s.get(other.wallet,other.launchId))!.signature).toBe(other.signature);
 });
+it('archives expired evidence before freeing the active slot, refuses a different signature and prunes only payloads',async()=>{
+ let now=1000;const s=new SignedLaunchStore(undefined,()=>now),r=input();await s.put(r);
+ await expect(s.retireExpired(r.wallet,r.launchId,bs58.encode(new Uint8Array(64).fill(2)))).rejects.toMatchObject({code:'conflict'});
+ expect(await s.get(r.wallet,r.launchId)).toMatchObject(r);
+ await s.retireExpired(r.wallet,r.launchId,r.signature);expect(await s.get(r.wallet,r.launchId)).toBeNull();
+ const archive=(s as unknown as {records:Map<string,{receipt:Record<string,unknown>}>}).records;
+ expect([...archive.values()][0]!.receipt).toMatchObject(r);
+ const next={...r,signature:bs58.encode(new Uint8Array(64).fill(3)),transaction:'fresh-signed-transaction'};
+ await s.put(next);expect(await s.get(r.wallet,r.launchId)).toMatchObject(next);expect(archive.size).toBe(2);
+ now+=SIGNED_LAUNCH_RETENTION_MS;await s.prune();
+ expect([...archive.values()].every(v=>!v.receipt.transaction)).toBe(true);expect([...archive.values()][0]!.receipt.signature).toBe(r.signature);
+});

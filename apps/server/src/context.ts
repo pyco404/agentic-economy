@@ -2,6 +2,7 @@ import { readAecoHolders } from "./chain/aeco-holders.js";
 import { CommonAgentIndexer, isOfficialAecoLaunch } from "./services/common-agents.js";
 import { HeliusReader, HeliusReadBudget } from './chain/helius.js';
 import { heliusMarketChain } from './chain/helius-market.js';
+import {PreparedMintStore} from './store/prepared-mint.js';
 import {SignedLaunchStore} from './store/signed-launch.js';
 import {TokenMarketService} from './services/token-market.js';
 import type { AppConfig } from "./config.js";
@@ -100,7 +101,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
   let pruning:Promise<void>|undefined;
   const recoveryPruner=setInterval(()=>{if(!pruning)pruning=submissions.prune().catch(()=>logger.warn({},'Signed launch payload cleanup is temporarily unavailable')).finally(()=>{pruning=undefined;});},60_000);
   recoveryPruner.unref();
-  const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader,undefined,submissions,event=>logger.info(event,'Launch execution stage'));
+  const launches = new LaunchService(store, chain, config, treasury, coord, runtime.bus, runtime.reader,undefined,submissions,event=>logger.info(event,'Launch execution stage'),undefined,new PreparedMintStore(store instanceof PostgresStore?store.pool:undefined));
 
   const runsIndexer = config.role === "indexer" || (config.role === "all" && config.mode !== "demo");
   const indexer = runsIndexer

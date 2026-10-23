@@ -1,3 +1,4 @@
+import {MarketJournal} from './services/market-journal.js';
 import { readAecoHolders } from "./chain/aeco-holders.js";
 import { CommonAgentIndexer, isOfficialAecoLaunch } from "./services/common-agents.js";
 import { HeliusReader, HeliusReadBudget } from './chain/helius.js';
@@ -127,6 +128,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     : null;
   const authPruner = config.auth.prune.enabled && (config.role === "api" || config.role === "all") ? new AuthPruner(store, config.auth.prune, logger) : null;
 
+  const tokenMarket=new TokenMarketService(store,marketChain,config.mode==='demo'?'demo':config.solana.cluster,fetch,()=>Date.now(),new MarketJournal(store instanceof PostgresStore?store.pool:undefined),config.tokenMarket,message=>logger.warn({},message));
   return {
     config,
     store,
@@ -135,7 +137,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     runtime,
     auth,
     treasury,
-    tokenMarket:new TokenMarketService(store,marketChain,config.mode==='demo'?'demo':config.solana.cluster),
+    tokenMarket,
     launches,
     communities,
     eligibility,
@@ -146,6 +148,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     wsStats: { connections: 0 },
     async close() {
       clearInterval(recoveryPruner);await pruning;
+      await tokenMarket.stop();
       await commonAgentIndexer?.stop();
       await indexer?.stop();
       await authPruner?.stop();

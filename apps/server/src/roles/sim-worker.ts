@@ -130,6 +130,9 @@ export class SimWorker {
       const engine = this.engine!;
       const t0 = performance.now();
       try {
+        // Activation is a durable, replayable command, never a snapshot rewrite or schema migration.
+        if (Boolean(engine.state.society?.enabled) !== this.config.socialSimulationEnabled)
+          await this.coord.enqueueCommand({ type: "society.configure", enabled: this.config.socialSimulationEnabled }, `society:v1:${engine.tick}:${this.config.socialSimulationEnabled}`);
         const inbox = await session.claimInbox(INBOX_BATCH);
         const applied = inbox.map((r) => {
           const logged: LoggedCommand = { tick: engine.tick, seq: this.nextSeq++, command: r.command };

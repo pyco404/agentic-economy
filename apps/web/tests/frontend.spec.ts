@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { test, expect } from "@playwright/test";
 test("procedural city, navigation, selection, growth and draft boundaries", async ({
   page,
@@ -20,8 +21,8 @@ test("procedural city, navigation, selection, growth and draft boundaries", asyn
   ).toBeVisible();
   await page.getByRole("button", { name: "Close building details" }).click();
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
-  await page.getByRole("button", { name: "Rotate camera" }).click();
-  await page.getByRole("button", { name: "Reset camera" }).click();
+  await expandWorldControls(page); await page.getByRole("button", { name: "Rotate camera" }).click();
+  await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
   await page.locator("canvas").focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("+");

@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
@@ -16,6 +17,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
         return { yaw: Math.atan2(d[0], d[2]), polar: Math.acos(d[1] / Math.hypot(...d)) };
       };
       const initial = await read();
+      await expandWorldControls(page);
       const pan = page.getByRole("button", { name: "Pan with one finger", exact: true });
       await expect(pan).toBeVisible(); await expect(pan).toHaveAttribute("aria-pressed", "false");
       const client = await context.newCDPSession(page);
@@ -33,7 +35,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
         await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
       };
       const reset = async () => {
-        await page.getByRole("button", { name: "Reset camera", exact: true }).tap();
+        await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera", exact: true }).tap();
         await expect.poll(async () => (await read()).zoom).toBe(initial.zoom);
         await expect.poll(async () => angles(await read()).polar).toBeCloseTo(angles(initial).polar, 3);
         await expect.poll(async () => angles(await read()).yaw).toBeCloseTo(angles(initial).yaw, 3);

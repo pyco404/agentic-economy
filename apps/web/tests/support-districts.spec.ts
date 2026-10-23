@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 for(const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:390,height:844}]){
  test(`outer support compounds remain connected and visible at ${viewport.width}px`,async({page})=>{
@@ -24,7 +25,7 @@ for(const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:3
    await expect.poll(async()=>JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBe(focus.zoom);
    await page.screenshot({path:`artifacts/support-${theme}-${viewport.width}.png`});
   }
-  await page.getByRole("button",{name:"Reset camera",exact:true}).click();
+  await expandWorldControls(page); await page.getByRole("button",{name:"Reset camera",exact:true}).click();
   await expect.poll(async()=>JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBe(initial.zoom);
   expect(JSON.parse((await city.getAttribute("data-composition"))!).support).toEqual(report);
   expect(await page.locator("canvas").count()).toBe(1);expect(errors).toEqual([]);

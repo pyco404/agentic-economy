@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 const routes = ["World", "Explore", "Communities", "Agent Studio", "Economy", "Treasury", "Launch"];
 for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
@@ -12,7 +13,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     const city = page.getByTestId("city-canvas"), canvas = page.locator("canvas");
     await expect.poll(async () => Number(await city.getAttribute("data-rendered-buildings"))).toBeGreaterThan(100);
     const initialCamera = await city.getAttribute("data-camera");
-    await page.getByRole("button", { name: "Rotate camera" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Rotate camera" }).click();
     await expect.poll(() => city.getAttribute("data-camera")).not.toBe(initialCamera);
     await canvas.evaluate((node) => { (window as any).__globalCanvas = node; });
     const camera = JSON.parse((await city.getAttribute("data-camera"))!);

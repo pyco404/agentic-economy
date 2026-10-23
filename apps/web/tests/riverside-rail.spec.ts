@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 
 test("live Riverside through railway preserves the bridge and persisted parcels", async ({ page, request }) => {
@@ -34,13 +35,13 @@ test("live Riverside through railway preserves the bridge and persisted parcels"
   await page.waitForTimeout(1500);
   // Observe actual movement at the depot's normal inspection zoom. It also avoids
   // spending the entire wait rasterizing distant districts on CPU-only WebGL.
-  await page.getByRole("button", { name: "View railway" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "View railway" }).press("Enter");
   await expect.poll(async () => (await state()).state, { timeout: 90000 }).toBe("surface");
   const first = await state(); await expect.poll(async () => (await state()).distance, { timeout: 90000 }).toBeGreaterThan(first.distance + 1);
   await page.screenshot({ path: "artifacts/riverside-browser-depot.png" });
-  await page.getByRole("button", { name: "Rotate camera" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "Rotate camera" }).press("Enter");
   await page.screenshot({ path: "artifacts/riverside-browser-depot-rotated.png" });
-  await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).press("Enter");
   await page.getByRole("button", { name: "Zoom out", exact: true }).press("Enter");
   await page.screenshot({ path: "artifacts/riverside-browser-wide.png" });
   expect(await canvas.evaluate((node) => node === (window as any).__railCanvas)).toBe(true);

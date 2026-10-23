@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { WORLD_CAMERA } from "../src/world/framing";
 import { expect, test } from "@playwright/test";
 import { agentIdentity } from "../src/api/agentIdentity";
@@ -21,7 +22,7 @@ test("isometric orbit, pan, zoom, reset and single-line labels", async ({ page }
   await page.mouse.move(x + 60, y + 20, { steps: 5 }); await page.mouse.up({ button: "right" });
   for (let i = 0; i < 3; i++) { await page.mouse.wheel(0, -150); await page.mouse.wheel(0, 150); }
   await canvas.focus(); await page.keyboard.press("v"); await page.waitForTimeout(800);
-  await page.getByRole("button", { name: "Reset camera" }).click();
+  await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
   await expect.poll(polar).toBeCloseTo(Math.acos(WORLD_CAMERA.eye[1] / Math.hypot(...WORLD_CAMERA.eye)), 2);
   await page.screenshot({ path: "artifacts/isometric-restored-desktop.png" });
   await expect.poll(async () => Number(await city.getAttribute("data-agent-labels"))).toBeGreaterThan(0);
@@ -37,7 +38,7 @@ test("isometric orbit, pan, zoom, reset and single-line labels", async ({ page }
   await page.locator(".building-list button").first().click();
   await expect(page.getByRole("complementary", { name: "Building details", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Close building details" }).click();
-  await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).press("Enter");
   // Reset preserves the original smooth focus interpolation. Wait for its target,
   // rather than pressing a label while camera motion changes the visible subset.
   await expect.poll(async () => {
@@ -88,7 +89,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
     await touch("touchEnd", []);
     await expect.poll(async () => (await camera()).position[0]).not.toBe(initial.position[0]);
     expect(Math.hypot(...(await camera()).target.map((value:number,i:number)=>value-initial.target[i]))).toBeLessThan(1e-9);
-    await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).press("Enter");
     await expect.poll(polarForCamera).toBeCloseTo(Math.acos(WORLD_CAMERA.eye[1] / Math.hypot(...WORLD_CAMERA.eye)), 3);
     // Reacquire uncovered targets after reset: live labels move between gestures.
     const secondStart=await canvasStart();expect(secondStart).not.toBeNull();({x,y}=secondStart!);
@@ -109,7 +110,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
     const p = await camera(), d = p.position.map((v: number, i: number) => v - p.target[i]);
     expect(Math.acos(d[1] / Math.hypot(...d))).toBeLessThanOrEqual(1.20001);
     expect(Math.acos(d[1] / Math.hypot(...d))).toBeGreaterThanOrEqual(.24999);
-    await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).press("Enter");
     await expect.poll(async () => Math.hypot(...(await camera()).target.map((v: number, i: number) => v - initial.target[i]))).toBeLessThan(.05);
     await expect.poll(async () => (await camera()).zoom).toBe(initial.zoom);
     const reset = await camera(), delta = reset.position.map((v: number, i: number) => v - reset.target[i]);
@@ -118,14 +119,14 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
       return Math.acos(diff[1] / Math.hypot(...diff));
     }).toBeCloseTo(Math.acos(WORLD_CAMERA.eye[1] / Math.hypot(...WORLD_CAMERA.eye)), 2);
     expect(delta.every(Number.isFinite)).toBe(true);
-    await page.getByRole("button", { name: "Pan with one finger", exact: true }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Pan with one finger", exact: true }).press("Enter");
     await touch("touchStart", [{ x, y, id: 1 }]);
     for (let step = 1; step <= 8; step++) await touch("touchMove", [{ x: x + step * 4, y, id: 1 }]);
     await touch("touchEnd", []);
     await expect.poll(async () => (await camera()).target[0]).not.toBe(initial.target[0]);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
-    await page.getByRole("button", { name: "Pan with one finger", exact: true }).press("Enter");
-    await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Pan with one finger", exact: true }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).press("Enter");
     await expect.poll(async () => Math.hypot(...(await camera()).target.map((v: number, i: number) => v-initial.target[i]))).toBeLessThan(.05);
     await page.screenshot({ path: `artifacts/restored-world-${viewport.width}.png` });
     expect(errors).toEqual([]);

@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import{test,expect}from'@playwright/test';
 const origin=process.env.WESTERN_RIVER_PREVIEW_URL;
 for(const width of[1440,390])test(`western river retains parcels, clear railways and valid boat activity at ${width}px`,async({page})=>{
@@ -12,7 +13,7 @@ for(const width of[1440,390])test(`western river retains parcels, clear railways
  const docks=nav.boats.docks;expect(docks).toHaveLength(7);expect(new Set(docks.map((d:any)=>d.component)).size).toBe(1);expect(docks.filter((d:any)=>d.x<-2).length).toBeGreaterThanOrEqual(3);expect(docks.some((d:any)=>d.x<-20)).toBe(true);
  const traveled=(n:any)=>n.boats.actors.reduce((s:number,a:any)=>s+a.traveled,0);await expect.poll(async()=>traveled(await navigation()),{timeout:45000}).toBeGreaterThan(traveled(nav)+1);
  const rail=JSON.parse((await city.getAttribute('data-railway'))!),mirror=JSON.parse((await city.getAttribute('data-mirrored-railway'))!);expect(rail.issues).toEqual([]);expect(mirror.issues).toEqual([]);expect(mirror.mode).toBe('mirrored');expect(rail.tunnel.hiddenSeconds).toBe(120);
- const camera=JSON.parse((await city.getAttribute('data-camera'))!);await page.getByRole('button',{name:'Rotate camera',exact:true}).click();await expect.poll(()=>city.getAttribute('data-camera')).not.toBe(JSON.stringify(camera));await page.getByRole('button',{name:'Reset camera',exact:true}).click();await expect.poll(async()=>JSON.parse((await city.getAttribute('data-camera'))!).zoom).toBe(camera.zoom);
+ const camera=JSON.parse((await city.getAttribute('data-camera'))!);await expandWorldControls(page); await page.getByRole('button',{name:'Rotate camera',exact:true}).click();await expect.poll(()=>city.getAttribute('data-camera')).not.toBe(JSON.stringify(camera));await expandWorldControls(page); await page.getByRole('button',{name:'Reset camera',exact:true}).click();await expect.poll(async()=>JSON.parse((await city.getAttribute('data-camera'))!).zoom).toBe(camera.zoom);
  if(width===1440){const service=JSON.parse((await city.getAttribute('data-rail-service'))!);expect(service.emergesAt-service.hiddenAt).toBeCloseTo(120);for(const[time,state]of[[service.hiddenAt+1,'underground'],[service.emergesAt+.5,'emerging-tunnel'],[service.emergesAt+8,'surface']]as const){await city.evaluate((n,time)=>n.dispatchEvent(new CustomEvent('city-rail-review',{detail:{time,rate:0}})),time);await expect.poll(async()=>JSON.parse((await city.getAttribute('data-rail-service'))!).state).toBe(state);}}
  const after=await(await page.request.get(snapshotURL)).json();expect(identity(after)).toEqual(before);expect(writes).toEqual([]);expect(errors).toEqual([]);await expect(page.locator('canvas')).toHaveCount(1);
 });

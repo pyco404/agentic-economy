@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 import { defaultWorldFrame, WORLD_CAMERA } from "../src/world/framing";
 import { generateWorld, WORLD_SEED } from "../src/world/layout";
@@ -41,7 +42,7 @@ for (const viewport of viewports) {
     await expectHome(); // Static scenery and transport readiness never reframe the camera.
     await page.screenshot({ path: `artifacts/camera-approved-${viewport.width}x${viewport.height}.png` });
     await canvas.evaluate((node) => { (window as CameraWindow).__cameraCanvas = node; });
-    await page.getByRole("button", { name: "Rotate camera" }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Rotate camera" }).press("Enter");
     await expect.poll(async () => (await camera()).position[0]).not.toBe(home.position[0]);
     const manual = await camera();
     await page.setViewportSize({ width: viewport.width + 10, height: viewport.height });
@@ -52,7 +53,7 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.getByRole("button", { name: "Zoom in", exact: true }).press("Enter");
     await expect.poll(async () => (await camera()).zoom).toBeGreaterThan(home.zoom);
-    await page.getByRole("button", { name: "Reset camera" }).press("Enter");
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).press("Enter");
     await expect.poll(async () => Math.hypot(...(await camera()).target.map((n: number, i: number) => n - home.target[i]))).toBeLessThan(.05);
     expect((await camera()).zoom).toBe(home.zoom);
     direction(await camera()).forEach((n: number, i: number) => expect(n).toBeCloseTo(direction(home)[i]!, 5));

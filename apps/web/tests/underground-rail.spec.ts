@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test, type Page } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 
@@ -43,10 +44,10 @@ test("connected railway renders every transition and repeats forward without rem
     expect((await state(page)).cars.filter((c: any) => c.visible)).toHaveLength(visible);
     expect((await state(page)).trackVisible).toBe(true);
   }
-  await page.getByRole("button", { name: "Toggle ambient scenery" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "Toggle ambient scenery" }).press("Enter");
   expect((await state(page)).trackVisible).toBe(true);
-  await page.getByRole("button", { name: "Toggle ambient scenery" }).press("Enter");
-  await page.getByRole("button", { name: "View railway" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "Toggle ambient scenery" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "View railway" }).press("Enter");
   // The overview fits the viewport; OrbitControls may clamp to its world-aware
   // minimum zoom. A desktop constant is not valid for every canvas aspect.
   await expect.poll(async () => JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBeLessThanOrEqual(1.1);
@@ -86,7 +87,7 @@ test("mobile railway overview and route navigation retain the active train servi
   const city = page.getByTestId("city-canvas"), service = await state(page);
   await review(page, { time: service.hiddenAt + 5, rate: 1 });
   const time = Number(await city.getAttribute("data-rail-seconds"));
-  await page.getByRole("button", { name: "View railway" }).press("Enter");
+  await expandWorldControls(page); await page.getByRole("button", { name: "View railway" }).press("Enter");
   await page.getByRole("link", { name: "About Agentic Economy" }).press("Enter");
   await page.getByRole("button", { name: "Close page and view city" }).press("Enter");
   expect(Number(await city.getAttribute("data-rail-seconds"))).toBeGreaterThanOrEqual(time);

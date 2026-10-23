@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 
 for (const viewport of [{ name: "desktop", width: 1440, height: 1000 },
@@ -34,10 +35,10 @@ for (const viewport of [{ name: "desktop", width: 1440, height: 1000 },
     await expect(page.getByRole("button", { name: "Exit immersive mode" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Zoom in", exact: true })).toBeVisible();
     await page.screenshot({ path: `artifacts/world-${viewport.name}-immersive.png` });
-    await page.getByRole("button", { name: "Rotate camera" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Rotate camera" }).click();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "A city in motion." })).toBeVisible();
-    await page.getByRole("button", { name: "Reset camera" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
     if (viewport.name === "mobile") {
       await page.getByRole("button", { name: "Expand city activity" }).click();
     }
@@ -48,7 +49,7 @@ for (const viewport of [{ name: "desktop", width: 1440, height: 1000 },
     await page.waitForTimeout(2500);
     await page.screenshot({ path: `artifacts/world-${viewport.name}-inspection.png` });
     await page.getByRole("button", { name: "Close building details" }).click();
-    await page.getByRole("button", { name: "Reset camera" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
     await page.getByRole("button", { name: "Zoom out", exact: true }).evaluate((button) => {
       for (let i = 0; i < 12; i++) (button as HTMLButtonElement).click();
     });

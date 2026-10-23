@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test, type Page } from "@playwright/test";
 
 async function ready(page: Page) {
@@ -40,7 +41,7 @@ test("world chrome cannot be highlighted while orbiting, panning or zooming", as
   const filter = page.locator(".activity-panel select");
   await filter.focus(); await page.keyboard.press("End"); await page.keyboard.press("Enter");
   await expect(filter).toBeFocused();
-  await page.getByRole("button", { name: "Reset camera" }).click();
+  await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
   await page.screenshot({ path: "artifacts/world-selection-desktop.png" });
 });
 

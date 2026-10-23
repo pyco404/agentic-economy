@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import {
   test,
   expect,
@@ -172,7 +173,7 @@ test.describe("real PostgreSQL backend integration", () => {
     ).toContainText(String(bakery.params.seed));
     await expect(page.getByTestId("building-stock")).toBeVisible();
     await page.getByRole("button", { name: "Close building details" }).click();
-    await page.getByRole("button", { name: "Reset camera" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
     await page.waitForTimeout(1500);
     await page.screenshot({ path: "artifacts/backend-genesis-desktop.png" });
     await page.getByRole("link", { name: "Agent Studio", exact: true }).click();
@@ -329,7 +330,7 @@ test.describe("real PostgreSQL backend integration", () => {
     );
     expect(calls).toBeGreaterThan(0);
     expect(calls).toBeLessThan(1000);
-    await page.getByRole("button", { name: "Toggle economy overlay" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Toggle economy overlay" }).click();
     await page.screenshot({ path: "artifacts/living-economy-overview.png" });
     await page.screenshot({ path: "artifacts/backend-genesis-desktop.png" });
     await page
@@ -341,7 +342,7 @@ test.describe("real PostgreSQL backend integration", () => {
     await page.getByLabel("Filter building type").selectOption("economic");
     await expect(page.locator(".building-list button").first()).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Reset camera" }).click();
+    await expandWorldControls(page); await page.getByRole("button", { name: "Reset camera" }).click();
     await page.waitForTimeout(1500);
     await page.screenshot({ path: "artifacts/living-economy-mobile.png" });
     expect(

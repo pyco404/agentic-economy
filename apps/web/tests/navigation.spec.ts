@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 const read = async (city: import("@playwright/test").Locator) => JSON.parse(await city.getAttribute("data-navigation") ?? "{}");
@@ -27,7 +28,7 @@ test("ten-minute real-time connected movement observation",async({page})=>{
     samples.push({wallSeconds:(Date.now()-start)/1000,...await read(city),agentSample:await city.getAttribute("data-rendered-agent"),rail:JSON.parse(await city.getAttribute("data-rail-service")??"{}")});
     await writeFile("artifacts/navigation-ten-minute.json",JSON.stringify(samples,null,2));
     if(samples.length%6===1)console.log("movement observation",Math.round((Date.now()-start)/1000),"seconds",samples.at(-1).boats.actors.map((a:any)=>({id:a.id,completed:a.completed,traveled:Math.round(a.traveled)})));
-    if(samples.length%12===0){await page.getByRole("button",{name:"Rotate camera",exact:true}).click();}
+    if(samples.length%12===0){await expandWorldControls(page); await page.getByRole("button",{name:"Rotate camera",exact:true}).click();}
     await page.waitForTimeout(10000);
   }
   samples.push({wallSeconds:(Date.now()-start)/1000,...await read(city)});

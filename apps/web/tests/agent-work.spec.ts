@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { writeFile } from "node:fs/promises";
 import {expect,test} from '@playwright/test';
 import { WorldAgentsResponse, ReceiptPage, ActivityPage } from '../src/api/shared';
@@ -48,7 +49,7 @@ test('observe a real assignment, travel, workplace animation and verified receip
  await writeFile(evidence,JSON.stringify({id,taskId,destination:place,working,receipt,events},null,2));
  await test.info().attach('authoritative-work-cycle.json',{path:evidence,contentType:'application/json'});
  // A manual camera gesture must safely leave Follow mode.
- await page.getByRole('button',{name:'Rotate camera'}).click();await expect(page.getByRole('button',{name:'Follow agent',exact:true})).toBeVisible();
+ await expandWorldControls(page); await page.getByRole('button',{name:'Rotate camera'}).click();await expect(page.getByRole('button',{name:'Follow agent',exact:true})).toBeVisible();
 });
 for(const width of [390,768])test(`work discovery and city links remain usable at ${width}px`,async({page})=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:width===390?844:1024});

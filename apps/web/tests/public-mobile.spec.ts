@@ -25,6 +25,7 @@ test('public mobile navigation, clean world controls and persistent city', async
     expect(await page.locator('body').innerText()).not.toMatch(forbidden);
     const wallet = page.locator('.topbar .wallet-button');
     await expect(wallet).toBeVisible();
+    await expect(page.locator('.camera-tools button:visible')).toHaveCount(3);
     if (width <= 850) {
       const toggle = page.getByRole('button', { name: 'Toggle navigation' });
       for (const control of [wallet, toggle, page.locator(".topbar .brand")]) {
@@ -36,8 +37,11 @@ test('public mobile navigation, clean world controls and persistent city', async
       await wallet.click();await expect(page.getByRole('dialog', {name:'Connect your wallet'})).toBeVisible();
       await page.getByRole('button', {name:'Close wallet selection'}).click();
       await expect(page.getByRole('button', { name: 'Rotate camera', exact:true })).not.toBeVisible();
-      const more=page.getByRole('button',{name:'More world controls'});
+      const more=page.locator('.world-tools-toggle');
+      await expect(more).toHaveAccessibleName('Expand controls');
       await more.click();await expect(more).toHaveAttribute('aria-expanded','true');
+      await expect(more).toHaveAccessibleName('Collapse controls');
+      await expect(page.locator('.camera-tools .lucide-layers')).toHaveCount(1);
       await expect(page.getByRole('button', {name:'Rotate camera',exact:true})).toBeVisible();
       const toolbar = page.getByRole('group', {name:'Camera controls',exact:true});
       const toolbarBox = (await toolbar.boundingBox())!;
@@ -57,7 +61,11 @@ test('public mobile navigation, clean world controls and persistent city', async
     } else {
       await expect(page.locator('.topbar .nav')).toBeVisible();
       await expect(page.getByRole('button',{name:'Toggle navigation'})).not.toBeVisible();
+      await expect(page.getByRole('button',{name:'Rotate camera',exact:true})).not.toBeVisible();
+      await page.getByRole('button',{name:'Expand controls',exact:true}).click();
+      await expect(page.locator('.camera-tools .lucide-layers')).toHaveCount(1);
       await expect(page.getByRole('button',{name:'Rotate camera',exact:true})).toBeVisible();
+      await page.getByRole('button',{name:'Collapse controls',exact:true}).click();
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth)).toBe(false);
   }

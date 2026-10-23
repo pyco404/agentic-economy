@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 import { OUTSKIRTS } from "../src/world/outskirts";
 for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`seeded outskirts preserve the live world at ${viewport.width}px`,async({page})=>{
@@ -23,7 +24,7 @@ for(const viewport of [{width:1440,height:1000},{width:390,height:844}])test(`se
   await city.evaluate((node,focus)=>node.dispatchEvent(new CustomEvent("city-rail-review",{detail:{focus}})),focus);
   await expect.poll(async()=>JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBe(focus.zoom);
   await page.screenshot({path:`artifacts/outskirts-reviewed-overview-${viewport.width}.png`});
-  await page.getByRole("button",{name:"Reset camera",exact:true}).click();
+  await expandWorldControls(page); await page.getByRole("button",{name:"Reset camera",exact:true}).click();
   await expect.poll(async()=>JSON.parse((await city.getAttribute("data-camera"))!).zoom).toBe(initial.zoom);
   expect(JSON.parse((await city.getAttribute("data-composition"))!).outskirts).toEqual(report.outskirts);
   expect(await page.locator("canvas").count()).toBe(1);expect(errors).toEqual([]);

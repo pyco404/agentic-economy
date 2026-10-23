@@ -1,3 +1,4 @@
+import { expandWorldControls } from "./world-controls";
 import { expect, test } from "@playwright/test";
 
 test("live agent labels identify citizens, reduce clutter and open actual agent inspection", async ({ page }) => {
@@ -41,12 +42,12 @@ test("ambient actors stay decorative, toggle without recreating WebGL and respec
   const counts = JSON.parse((await city.getAttribute("data-ambient-actors"))!);
   expect(counts).toEqual({ train: 2, cars: 6, boats: 3, plane: 1, helicopter: 1, balloon: 1 });
   await page.locator("canvas").evaluate((canvas) => { (window as any).__ambientCanvas = canvas; });
-  await page.getByRole("button", { name: "Toggle ambient scenery" }).click();
+  await expandWorldControls(page); await page.getByRole("button", { name: "Toggle ambient scenery" }).click();
   await page.waitForTimeout(100);
   const frozen = await city.getAttribute("data-ambient-time");
   await page.waitForTimeout(200);
   expect(await city.getAttribute("data-ambient-time")).toBe(frozen);
-  await page.getByRole("button", { name: "Toggle ambient scenery" }).click();
+  await expandWorldControls(page); await page.getByRole("button", { name: "Toggle ambient scenery" }).click();
   await expect.poll(async () => Number(await city.getAttribute("data-ambient-time"))).toBeGreaterThan(Number(frozen));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForTimeout(100);

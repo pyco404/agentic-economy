@@ -11,7 +11,7 @@ export const FUTURE_TOKEN_TICKER = "$AECO";
 /** HTTP API major version (path prefix /api/v1). */
 export const API_VERSION = "v1";
 /** Contract (schemas + OpenAPI + events) semantic version. Bump on any change. */
-export const CONTRACT_VERSION = "0.6.0";
+export const CONTRACT_VERSION = "0.7.0";
 /** WebSocket envelope protocol version (field `v` on every message). */
 export const WS_PROTOCOL_VERSION = 1;
 

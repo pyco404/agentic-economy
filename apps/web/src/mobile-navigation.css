@@ -4,7 +4,7 @@
   left: calc(12px + env(safe-area-inset-left, 0px)); right: calc(12px + env(safe-area-inset-right, 0px));
   max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
-  background: #fffaf0; color: #294b39; border: 1px solid #d7ceba; border-radius: 12px;
+  background: #fffaf0; color: #294b39; border: var(--border-width) solid #d7ceba; border-radius: 12px;
   box-shadow: 0 12px 36px #263a3026; padding: 16px 18px 18px; animation: navigation-appear 180ms ease both; }
 .mobile-navigation-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 18px; }
 .mobile-navigation-brand { display: flex; align-items: center; gap: 10px; font-size: 17px; letter-spacing: -.4px; }
@@ -12,14 +12,14 @@
 .mobile-navigation-brand b { font-weight: 600; }
 .mobile-navigation-brand small { display: block; margin-top: 6px; font-size: 6.5px; letter-spacing: 1.6px; color: #66775e; }
 .mobile-navigation-close { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0;
-  color: #355d45; border: 1px solid #dad3c1; border-radius: 8px; background: #f5f0e3; }
+  color: #355d45; border: var(--border-width) solid #dad3c1; border-radius: 8px; background: #f5f0e3; }
 .mobile-navigation-intro { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 0 13px; border-bottom: 1px solid #ddd6c4; color: #69785e; font-size: 10px; }
+  padding: 0 0 13px; border-bottom: var(--border-width) solid #ddd6c4; color: #69785e; font-size: 10px; }
 .mobile-navigation-mode { display: flex; align-items: center; gap: 6px; font-size: 9px; white-space: nowrap; }
 .mobile-navigation-mode i { width: 5px; height: 5px; border-radius: 50%; background: #819868; }
 .mobile-navigation-pages { display: flex; flex-direction: column; }
 .mobile-navigation-pages a { display: flex; align-items: center; gap: 12px; min-height: 53px; padding: 13px 6px;
-  border-bottom: 1px solid #e3dccb; font-size: 14px; font-weight: 500; color: #355540; }
+  border-bottom: var(--border-width) solid #e3dccb; font-size: 14px; font-weight: 500; color: #355540; }
 .mobile-navigation-pages a > svg:first-child { color: #6a8062; }
 .mobile-navigation-pages a > svg:last-child { margin-left: auto; color: #89957d; }
 .mobile-navigation-pages a:hover, .mobile-navigation-pages a[aria-current="page"] { background: #edf0df; color: #294d36; }
@@ -27,7 +27,7 @@
 .mobile-navigation-footer a { display: flex; align-items: center; gap: 9px; min-height: 44px; font-size: 12px; }
 .mobile-navigation-footer a > svg:last-child { margin-left: auto; }
 .mobile-navigation-footer p { margin: 12px 0 0; font-size: 10px; color: #6d795f; line-height: 1.6; }
-.mobile-navigation-panel a:focus-visible, .mobile-navigation-panel button:focus-visible { outline: 2px solid #527452; outline-offset: -2px; border-radius: 5px; }
+.mobile-navigation-panel a:focus-visible, .mobile-navigation-panel button:focus-visible { border-radius: 5px; }
 .mobile-navigation-close:hover { background: #eaf0dd; }
 @keyframes navigation-appear { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
 @media (min-width: 640px) { .mobile-navigation-panel { left: auto; right: 16px; top: 76px; width: 320px; max-height: calc(100dvh - 92px); } }
@@ -48,7 +48,10 @@
     flex: 0 0 44px; min-width: 44px; width: 44px; height: 44px; min-height: 44px; padding: 0;
   }
   .app .topbar .wallet-button span { display: none; }
-  .app .topbar .menu-button { border: 1px solid #d9ded1; border-radius: 6px; background: #f0ebdd; color: #294b39; }
+  .app .topbar .menu-button { border: var(--border-width) solid #d9ded1; border-radius: 6px; background: #f0ebdd; color: #294b39; }
 }
 
 .mobile-navigation-footer .project-links a { min-width: 44px; min-height: 44px; justify-content: center; }
+
+/* Keep the shared 1px keyboard indicator inside the clipped drawer. */
+.mobile-navigation-panel :focus-visible { outline-offset: calc(-1 * var(--border-width)); }

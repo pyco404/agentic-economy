@@ -2,7 +2,7 @@
 .my-drafts-heading, .my-drafts-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .my-drafts-heading h2 { margin: 0 0 12px; }
 .my-drafts-list { list-style: none; margin: 20px 0 0; padding: 0; }
-.my-drafts-list li { padding: 18px 0; border-top: 1px solid var(--line); }
+.my-drafts-list li { padding: 18px 0; border-top: var(--border-width) solid var(--line); }
 .my-drafts-identity { display: flex; gap: 12px; align-items: center; min-width: 0; overflow-wrap: anywhere; }
 .my-drafts-identity > img, .my-drafts-identity > span { width: 42px; height: 42px; object-fit: contain; flex-shrink: 0; }
 .my-drafts-identity > span { display: grid; place-items: center; color: #41664b; background: #eef2e4; border-radius: 8px; }

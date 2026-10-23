@@ -1,6 +1,6 @@
 /* Space direct form sections consistently, including collapsed optional content. */
 .launch-workspace form > fieldset > .launch-field { margin-block: 0 28px; }
-.launch-project-links { margin-block: 28px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #faf8ef; }
+.launch-project-links { margin-block: 28px; padding: 18px; border: var(--border-width) solid var(--line); border-radius: 12px; background: #faf8ef; }
 .launch-project-links h3 { margin: 0; font-size: 16px; color: #263d31; }
 .launch-project-links h3 span { font-weight: 400; color: #52634f; }
 .launch-project-links > p { margin: 8px 0 12px; font-size: 13px; line-height: 1.6; color: #52634f; }
@@ -15,7 +15,7 @@
 .launch-project-links .project-link-field input { width: 100%; margin: 0; }
 .launch-project-links input[aria-invalid="true"] { border-color: #914d35; }
 .launch-workspace fieldset.launch-quotes { margin-block: 28px; }
-.launch-project-links button:focus-visible { outline: 2px solid #33664d; outline-offset: 4px; border-radius: 4px; }
+.launch-project-links button:focus-visible { border-radius: 4px; }
 @media(max-width:600px) {
  .launch-workspace form > fieldset > .launch-field { margin-bottom: 24px; }
  .launch-project-links, .launch-workspace fieldset.launch-quotes { margin-block: 24px; }

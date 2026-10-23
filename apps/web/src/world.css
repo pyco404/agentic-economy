@@ -29,7 +29,7 @@
 .world-cta { padding: 10px 0 0; }
 .world-view-toggle { position: absolute; z-index: 5; top: 22px; right: 24px;
   display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
-  border: 1px solid #ded4c1; border-radius: 7px; background: #fffaf2ed; font-size: 11px; }
+  border: var(--border-width) solid #ded4c1; border-radius: 7px; background: #fffaf2ed; font-size: 11px; }
 .world-header .district-badge { display: flex; height: 44px; pointer-events: auto; }
 .world-main .activity-panel { top: 88px; right: 24px; bottom: auto; width: 264px;
   --activity-padding: 16px;
@@ -46,7 +46,6 @@
 @supports selector(::-webkit-scrollbar) {
   .world-main .activity-panel, .world-main .activity-panel:hover { scrollbar-width: auto; scrollbar-color: auto; }
 }
-.world-main .activity-panel:focus-visible { outline: 2px solid #527452; outline-offset: 3px; }
 .world-main .activity-panel .surface-title { position: sticky; top: calc(-1 * var(--activity-padding));
   z-index: 3; background: #fffaf2; padding-block: 8px; margin-top: -8px; margin-bottom: 10px; overflow-anchor: none; }
 .activity-filters { position: sticky; top: 28px; z-index: 2; padding-block: 5px 8px; background: #fffaf2; overflow-anchor: none; }
@@ -140,7 +139,7 @@
   .world-main .camera-tools .camera-tools-secondary.is-expanded {
     display: flex; flex-direction: column; position: absolute; left: calc(100% + 8px); bottom: 0;
     padding: 4px; max-height: min(60dvh, 360px); overflow-y: auto;
-    border: 1px solid #ddd4c2; border-radius: 9px; background: #fffaf0; box-shadow: 0 6px 20px #263a3020;
+    border: var(--border-width) solid #ddd4c2; border-radius: 9px; background: #fffaf0; box-shadow: 0 6px 20px #263a3020;
   }
   .world-main .camera-tools .camera-tools-secondary > span { display: none; }
 }

@@ -16,12 +16,12 @@
 .launch-summary dt { color: #7a8872; min-width: 0; }
 .launch-summary dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
 .launch-summary dd small { display: block; font-size: 11px; color: #7a8872; margin-top: 4px; }
-.launch-summary .launch-summary-total { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 16px; font-weight: 600; font-size: 15px; }
+.launch-summary .launch-summary-total { border-top: var(--border-width) solid var(--line); margin-top: 10px; padding-top: 16px; font-weight: 600; font-size: 15px; }
 .launch-summary-total dt { color: inherit; }
 .launch-fee-sharing { background: #eff1e6; padding: 12px 14px; border-radius: 10px; color: #526c50; font-size: 11px; line-height: 1.7; }
 .launch-review-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 22px 0 12px; }
 .launch-action-link { display: inline-flex; justify-content: center; align-items: center; padding: 14px 22px; border-radius: 8px; text-decoration: none; }
-.launch-technical { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; }
+.launch-technical { margin-top: 24px; padding-top: 14px; border-top: var(--border-width) solid var(--line); font-size: 12px; }
 .launch-technical summary { cursor: pointer; color: #7a8872; }
 .launch-technical code { font-size: 11px; overflow-wrap: anywhere; }
 .launch-technical .launch-summary > div { align-items: start; }

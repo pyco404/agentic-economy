@@ -1,5 +1,5 @@
 .roadmap-page { max-width: 960px; margin: 0 auto; padding: 32px 0; color: #294b39; }
-.roadmap-intro { padding: 32px 40px; background: #fffaf0f5; border: 1px solid #ddd7c5; border-radius: 14px; }
+.roadmap-intro { padding: 32px 40px; background: #fffaf0f5; border: var(--border-width) solid #ddd7c5; border-radius: 14px; }
 .roadmap-intro h1 { font-family: "Libre Caslon Display", Georgia, serif; font-size: clamp(38px, 5vw, 64px); line-height: 1.08; font-weight: 400; margin: 18px 0; letter-spacing: -1px; }
 .roadmap-intro > p:not(.about-kicker) { max-width: 650px; font-size: 14px; line-height: 1.8; color: #5c6d58; }
 .roadmap-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 16px; }
@@ -9,14 +9,14 @@
 .roadmap-intro .roadmap-context { font-size: 12px; margin-bottom: 0; }
 .roadmap-phases { position: relative; margin-top: 24px; padding-left: 22px; }
 .roadmap-phases::before { content: ""; position: absolute; left: 0; top: 30px; bottom: 30px; width: 2px; background: #bbc9ab; }
-.roadmap-phases details { position: relative; margin-bottom: 14px; border: 1px solid #dcd8c7; border-radius: 12px; background: #fffaf0f5; transition: border-color 160ms ease, background-color 160ms ease; }
-.roadmap-phases details::before { content: ""; position: absolute; left: -28px; top: 27px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #b6c5a5; background: #f6f4e8; }
+.roadmap-phases details { position: relative; margin-bottom: 14px; border: var(--border-width) solid #dcd8c7; border-radius: 12px; background: #fffaf0f5; transition: border-color 160ms ease, background-color 160ms ease; }
+.roadmap-phases details::before { content: ""; position: absolute; left: -28px; top: 27px; width: 10px; height: 10px; border-radius: 50%; border: var(--border-width) solid #b6c5a5; background: #f6f4e8; }
 .roadmap-phases details[data-status="active"] { border-color: #87a278; background: #f4f7ebfa; }
 .roadmap-phases details[data-status="active"]::before { background: #41694c; border-color: #41694c; }
 .roadmap-phases details[data-status="core"]::before { background: #b4c6a4; }
 .roadmap-phases summary { display: flex; align-items: flex-start; gap: 16px; cursor: pointer; padding: 20px 22px; list-style: none; min-height: 48px; }
 .roadmap-phases summary::-webkit-details-marker { display: none; }
-.roadmap-phases summary:focus-visible { outline: 2px solid #41694c; outline-offset: 3px; border-radius: 12px; }
+.roadmap-phases summary:focus-visible { border-radius: 12px; }
 .roadmap-number { flex: 0 0 34px; padding: 7px 0; text-align: center; background: #e9eddf; border-radius: 7px; font-size: 13px; }
 .roadmap-phase-heading { min-width: 0; flex: 1; }
 .roadmap-heading-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px; }

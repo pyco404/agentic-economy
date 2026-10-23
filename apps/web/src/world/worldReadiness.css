@@ -18,9 +18,9 @@
 }
 .world-preparation-warning { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
   width: max-content; max-width: min(90%, 460px); padding: 10px 16px; border-radius: 8px;
-  background: #fffaf0; border: 1px solid #d7ddc7; color: #526b51; z-index: 5; font-size: 12px; }
+  background: #fffaf0; border: var(--border-width) solid #d7ddc7; color: #526b51; z-index: 5; font-size: 12px; }
 .world-summary-pending { position: absolute; top: 36px; left: 36px; max-width: min(420px, calc(100% - 72px));
-  padding: 16px 20px; background: #fffaf0eb; color: #315340; border: 1px solid #dce1cb; border-radius: 10px; }
+  padding: 16px 20px; background: #fffaf0eb; color: #315340; border: var(--border-width) solid #dce1cb; border-radius: 10px; }
 .world-summary-pending h1 { font: 30px Georgia, serif; margin: 0 0 12px; }
 .world-summary-pending p { font-size: 13px; margin: 0; }
 .world-summary-pending button { margin-top: 12px; }

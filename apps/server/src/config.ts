@@ -27,6 +27,7 @@ const Env = z.object({
   WORLD_SEED: z.string().min(1).default("agentic-economy-genesis"),
   TICK_MS: z.coerce.number().int().min(50).max(10_000).default(500),
   SNAPSHOT_EVERY_TICKS: z.coerce.number().int().min(1).default(20),
+  SOCIAL_SIMULATION_ENABLED: z.enum(["true", "false"]).default("false"),
   SIM_AUTOSTART: z.enum(["true", "false"]).default("true"),
   /** Publish the gzipped state view for API read replicas every N ticks (also on any tick that applied commands). */
   VIEW_EVERY_TICKS: z.coerce.number().int().min(1).default(2),
@@ -153,6 +154,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     worldSeed: e.WORLD_SEED,
     tickMs: e.TICK_MS,
     snapshotEveryTicks: e.SNAPSHOT_EVERY_TICKS,
+    socialSimulationEnabled: e.SOCIAL_SIMULATION_ENABLED === "true",
     simAutostart: e.SIM_AUTOSTART === "true",
     viewEveryTicks: e.VIEW_EVERY_TICKS,
     streamRetentionMinutes: e.STREAM_RETENTION_MINUTES,

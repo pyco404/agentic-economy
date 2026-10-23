@@ -1,3 +1,4 @@
+import type { SocietyState } from "./society.js";
 import type {
   AgentPermission,
   AgentStrategy,
@@ -20,6 +21,8 @@ import type {
 export interface SimState {
   /** 2 since contract 0.3.0 (agent identity). v1 snapshots are upgraded on load: see `sim/identity.ts`. */
   version: 2;
+  /** Optional, versioned social state in the existing fenced JSON snapshots. */
+  society?: SocietyState;
   worldSeed: string;
   /** Operator-installed synthetic city groups; never token registrations or observed holders. */
   syntheticCity?: { profile: string; startedTick: number; groups: Array<{ id: string; name: string; description: string }> };
@@ -169,7 +172,7 @@ export interface SimAction {
   id: string;
   agentId: string;
   tick: number;
-  kind: "move" | "claim_task" | "pickup" | "deliver" | "produce" | "trade" | "maintain" | "rest" | "wait" | "rejected";
+  kind: "move" | "claim_task" | "pickup" | "deliver" | "produce" | "trade" | "maintain" | "rest" | "wait" | "rejected" | "social";
   reason: string;
   utility: number;
   taskId: string | null;
@@ -228,6 +231,7 @@ export interface AecoSnapshot {
   holders: Array<{ wallet: string; balanceRaw: string }>;
 }
 export type SimCommand =
+  | { type: "society.configure"; enabled: boolean }
   | ({ type: "aeco.reconcile" } & AecoSnapshot)
   | {
       /** Pre-0.3.0 holder activation. No longer issued; still replayed from the log (creates a legacy agent). */

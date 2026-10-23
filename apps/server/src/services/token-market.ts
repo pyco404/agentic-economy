@@ -54,7 +54,7 @@ export class TokenMarketService{
   if(state){
    const priceSol=BigInt(state.baseReserveRaw)>0n?Number(state.quoteReserveRaw)/Number(state.baseReserveRaw)*10**state.decimals/1e9:null;
    const priceUsd=priceSol!==null&&usd?priceSol*usd.price:null;
-   Object.assign(blank,{status:'available',source:'solana_rpc',reason:null,pairAddress:state.address,quoteAsset:'SOL',fetchedAt:new Date(this.now()).toISOString(),priceSol,priceUsd,
+   Object.assign(blank,{chain:blank.chain??{source:'solana_rpc',network:'mainnet-beta',slot:state.slot,asOf:null,fetchedAt:new Date(this.now()).toISOString()},status:'available',source:'solana_rpc',reason:null,pairAddress:state.address,quoteAsset:'SOL',fetchedAt:new Date(this.now()).toISOString(),priceSol,priceUsd,
     marketCapUsd:priceUsd===null?null:priceUsd*Number(state.supplyRaw)/10**state.decimals,fdvUsd:priceUsd===null?null:priceUsd*Number(state.totalSupplyRaw)/10**state.decimals,
     liquidityUsd:usd&&state.venue!=='migration_pending'?(Number(state.realQuoteRaw)/1e9+(state.venue==='pumpswap'&&priceSol!==null?Number(state.realBaseRaw)/10**state.decimals*priceSol:0))*usd.price:null,
     graduation:state.venue==='pumpswap'?'graduated':state.venue==='migration_pending'?'curve_complete':'bonding_curve',graduationProgress:state.progressPct,

@@ -7,7 +7,7 @@ import type { ChainGateway } from './types.js';
  */
 export function heliusMarketChain(original: ChainGateway, reader: HeliusReader): ChainGateway {
   const indexed = new SolanaRpcChain('https://read-only.helius.invalid', undefined, { fetch: reader.fetch });
-  const preferred = new Set(['getGenesisHash', 'getCurveProgress', 'getBlockTime', 'getFeeRoutingState', 'getTransaction', 'verifyMarketPool']);
+  const preferred = new Set(['getGenesisHash', 'getCurveProgress', 'getBlockTime', 'getFeeRoutingState', 'getTransaction', 'verifyMarketPool', 'getMarketState', 'getMarketTradePage']);
   const fallback = async (method: keyof ChainGateway, args: unknown[]) => {
     if (await original.getGenesisHash?.() !== HELIUS_GENESIS[reader.network]) throw new Error('Fallback read network could not be verified');
     const fn = original[method];

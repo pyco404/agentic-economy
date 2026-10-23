@@ -1,3 +1,4 @@
+import { planGroundCover } from "./groundCover";
 import * as THREE from "three";
 import { shapeLandmass, type LandmassData } from "./landmass";
 import { generateFrontier, type FrontierStyle } from "./frontier";
@@ -72,6 +73,9 @@ export function prepareScenery(request: SceneryRequest, send: (message: SceneryM
   const clearedSupport = new Set(composition.clearedFrontierParts.map(index=>frontier.parts[index]));
   landmass.frontier.parts = landmass.frontier.parts.filter(p=>!clearedSupport.has(p));
   landmass.frontier.parts.push(...composition.parts.filter(p=>p.role!=="city-edge"&&footprint.contains(p.position[0],p.position[2])));
+  const cover = planGroundCover(chunks, landmass.frontier, seed, footprint, paths,
+    [...infrastructure, ...composition.parts], streets.tiles, request.catalog);
+  landmass.frontier.parts.push(...cover.parts);
   send({ kind: "scenery", revision, frontier, ambient, composition, landmass });
 }
 export type SceneryMessage = { kind: "roads"; revision: number; pathNetwork: ReturnType<typeof buildPathNetwork>; streets: ReturnType<typeof planStreets>; channel: Pick<LakeChannel,"start"|"end"|"width"|"crossings"> | null } |

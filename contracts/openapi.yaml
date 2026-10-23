@@ -127,17 +127,24 @@ paths:
   /api/v1/launchpad/dev-buy-quote:
     get:
       operationId: getDevBuyQuote
-      summary: Estimate an optional SOL Developer Buy from live Pump supply and fee configuration; never submits a transaction
+      summary: Estimate tokens from a maximum SOL Developer Buy budget using live supply and fees; never submits a transaction
       tags:
         - launches
       parameters:
         - name: bps
           in: query
-          required: true
+          required: false
           schema:
+            description: Historical percentage quote; do not combine with sol
             type: integer
             minimum: 0
             maximum: 350
+        - name: sol
+          in: query
+          required: false
+          schema:
+            description: Maximum SOL budget including buy-side fees; provide instead of bps
+            type: string
       responses:
         "200":
           description: OK
@@ -180,6 +187,10 @@ paths:
                       maxQuoteCost:
                         description: Lamports; the buy fails rather than spend more
                         $ref: "#/components/schemas/AmountString"
+                      budgetLamports:
+                        $ref: "#/components/schemas/AmountString"
+                      maxAllowedQuoteCost:
+                        $ref: "#/components/schemas/AmountString"
                       priceImpactBps:
                         type: integer
                         minimum: 0
@@ -213,6 +224,8 @@ paths:
                         maximum: 350
                       reason:
                         type: string
+                      budgetLamports:
+                        $ref: "#/components/schemas/AmountString"
                     required:
                       - status
                       - bps
@@ -4065,6 +4078,10 @@ components:
               maxLength: 200
               format: uri
             - type: "null"
+        devBuySol:
+          description: Optional maximum SOL spend including buy-side fees; blank means no buy
+          type: string
+          maxLength: 20
         devBuyBps:
           default: 0
           description: Optional Developer Buy in basis points of total supply (0–350 = 0%–3.5%)
@@ -4123,6 +4140,10 @@ components:
               maxLength: 200
               format: uri
             - type: "null"
+        devBuySol:
+          description: Optional maximum SOL spend including buy-side fees; blank means no buy
+          type: string
+          maxLength: 20
         devBuyBps:
           default: 0
           description: Optional Developer Buy in basis points of total supply (0–350 = 0%–3.5%)
@@ -4468,7 +4489,7 @@ components:
               properties:
                 bps:
                   type: integer
-                  minimum: 1
+                  minimum: 0
                   maximum: 350
                 quoteAsset:
                   type: string
@@ -4553,7 +4574,7 @@ components:
               properties:
                 bps:
                   type: integer
-                  minimum: 1
+                  minimum: 0
                   maximum: 350
                 quoteAsset:
                   type: string
@@ -5669,6 +5690,10 @@ components:
               maxLength: 200
               format: uri
             - type: "null"
+        devBuySol:
+          description: Optional maximum SOL spend including buy-side fees; blank means no buy
+          type: string
+          maxLength: 20
         devBuyBps:
           default: 0
           description: Optional Developer Buy in basis points of total supply (0–350 = 0%–3.5%)
@@ -5725,6 +5750,10 @@ components:
               maxLength: 200
               format: uri
             - type: "null"
+        devBuySol:
+          description: Optional maximum SOL spend including buy-side fees; blank means no buy
+          type: string
+          maxLength: 20
         devBuyBps:
           default: 0
           description: Optional Developer Buy in basis points of total supply (0–350 = 0%–3.5%)
@@ -7242,9 +7271,11 @@ components:
             devBuy:
               type: object
               properties:
+                budgetSol:
+                  type: string
                 bps:
                   type: integer
-                  minimum: 1
+                  minimum: 0
                   maximum: 350
                 tokenAmount:
                   $ref: "#/components/schemas/AmountString"
@@ -7411,9 +7442,11 @@ components:
             devBuy:
               type: object
               properties:
+                budgetSol:
+                  type: string
                 bps:
                   type: integer
-                  minimum: 1
+                  minimum: 0
                   maximum: 350
                 tokenAmount:
                   $ref: "#/components/schemas/AmountString"

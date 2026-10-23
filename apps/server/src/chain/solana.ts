@@ -20,12 +20,18 @@ export class SolanaRpcChain implements ChainGateway {
   readonly source = "solana_rpc" as const;
   private readonly conn: Connection;
 
-  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet";mainnetApproved?:boolean}, readOptions?: Pick<ConnectionConfig,"fetch">) {
+  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet";mainnetApproved?:boolean}, private readOptions?: Pick<ConnectionConfig,"fetch">) {
     this.conn = new Connection(rpcUrl, {commitment:"confirmed", ...readOptions});
   }
 
   getMarketState(mint:string){return new MarketReader(this.conn).state(mint);}
-  getMarketTradePage(mint:string,address:string,before?:string,until?:string,limit?:number){return new MarketReader(this.conn).page(mint,address,before,until,limit);}
+  getMarketTradePage(mint:string,address:string,before?:string,until?:string,limit?:number){return new MarketReader(this.conn,this.readMarketTransaction).page(mint,address,before,until,limit);}
+  /** Market-only raw JSON reads support legacy/v0/v1 without changing launch message handling. */
+  private readonly readMarketTransaction=async(signature:string):Promise<unknown>=>{
+    const response=await (this.readOptions?.fetch??fetch)(this.conn.rpcEndpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getTransaction',params:[signature,{encoding:'json',maxSupportedTransactionVersion:1,commitment:'finalized'}]}),signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error('Market transaction read unavailable');const text=await response.text();if(text.length>4000000)throw Error('Market transaction response too large');
+    const body=JSON.parse(text);if(body.error||!body.result)throw Error('Finalized market transaction unavailable; cursor retained');return body.result;
+  };
   getGenesisHash(){return this.conn.getGenesisHash();}
   async assertLaunchSubmissionAllowed(){
     if(this.launchOptions?.cluster==="mainnet-beta"){
@@ -125,7 +131,7 @@ export class SolanaRpcChain implements ChainGateway {
   }
 
   async getHolderCount(mint: string): Promise<{ slot: number; holders: number | null; exact: boolean }> {
-    const curve = bondingCurvePda(mint);
+    const reserves=new Set([bondingCurvePda(mint),sdk.canonicalPumpPoolPda(new PublicKey(mint)).toBase58()]);
     try {
       // Exact scan where the RPC indexes Token-2022 (public endpoints exclude it).
       // Token account layout: mint (0..32), owner (32..64), amount u64 LE (64..72).
@@ -139,7 +145,7 @@ export class SolanaRpcChain implements ChainGateway {
         const data = Buffer.from(account.data);
         if (data.length !== 40) throw new Error("Holder account slice is malformed");
         const owner = bs58.encode(data.subarray(0, 32));
-        if (owner !== curve && data.length >= 40 && data.readBigUInt64LE(32) > 0n) owners.add(owner);
+        if (!reserves.has(owner) && data.length >= 40 && data.readBigUInt64LE(32) > 0n) owners.add(owner);
       }
       return { slot: res.context.slot, holders: owners.size, exact: true };
     } catch (e) {
@@ -155,7 +161,7 @@ export class SolanaRpcChain implements ChainGateway {
     for (const info of infos) {
       const owner = info && "parsed" in info.data ? (info.data.parsed as { info?: { owner?: string } }).info?.owner : undefined;
       if (!owner) complete = false;
-      if (owner && owner !== curve) owners.add(owner);
+      if (owner && !reserves.has(owner)) owners.add(owner);
     }
     return { slot: largest.context.slot, holders: owners.size, exact: nonZero.length < 20 && complete };
   }

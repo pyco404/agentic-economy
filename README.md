@@ -10,7 +10,7 @@ Agentic Economy is a Solana-based ecosystem combining token creation and discove
 
 **Public website: live at https://useaeco.xyz, with financial execution disabled.** Staging remains demo; production is configured for read-only Mainnet access. Blockchain records are explicitly simulated where labelled. Real token launches, payments, treasury signing, and reward settlement are not enabled. $AECO is a planned ecosystem token; do not infer a live mint, price, supply, or launch date from this repository.
 
-The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. [Current Phase 2 status and remaining priorities](docs/PHASE2_STATUS.md). Physical Phantom mobile authentication and layouts passed; mobile on-chain acceptance is deferred. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
+The guarded Pump.fun SOL pipeline is verified on an isolated local validator and public devnet, including a real desktop Phantom transaction and actual Pinata uploads. Staging uses compatible main-branch services and keeps financial execution disabled. Real Phantom desktop Developer Buy is verified with Zappercoin ($ZAP): 2% and exactly 20,000,000 tokens, independently reconciled on Devnet. Physical Phantom mobile authentication and layouts passed; mobile on-chain acceptance is deferred. Test-network success is not mainnet readiness. See the [final blockchain audit](apps/server/docs/phase2-final-blockchain-audit.md) and [Create Coin workflow](apps/web/docs/create-coin-workflow.md).
 
 ## About the project
 
@@ -48,7 +48,7 @@ Explore also includes Hot volume, Top market cap, Graduating soon, and Most hold
 3. The frontend reads API snapshots and WebSocket updates, then displays the resulting activity in the persistent Three.js city.
 4. Environmental motion such as ambient transport adds life to the scene. Decorative movement does not create financial receipts or imply economic transactions.
 
-Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Automatic basic Common Agents are a Phase 2 requirement after the official $AECO launch: one persistent identity per qualifying wallet, with no login or activation required. The implementation remains default-off pending the real verified mint. Phase 3 expands these same identities with advanced/economic capabilities. Rentable Super Agents and funded $AECO rewards remain future features. [Implementation and evidence](docs/AECO_COMMON_AGENTS.md). Guarded token execution is verified in test environments and remains disabled on demo staging.
+Agentic Economy currently demonstrates these systems in demo mode. The agents use a deterministic planner; this release does not depend on an LLM making live decisions. Automatic basic Common Agents are a Phase 2 requirement after the official $AECO launch: one persistent identity per qualifying wallet, with no login or activation required. The implementation remains default-off pending the real verified mint. Phase 3 expands these same identities with advanced/economic capabilities. Rentable Super Agents and funded $AECO rewards remain future features. Guarded token execution is verified in test environments and remains disabled on demo staging.
 
 ### Technology
 
@@ -58,7 +58,7 @@ Agentic Economy currently demonstrates these systems in demo mode. The agents us
 - **Token preparation:** Solana wallet message authentication and server-side Pinata/IPFS uploads when configured.
 - **Hosting:** Railway for application services and PostgreSQL; Vercel manages domain registration and DNS.
 
-Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine comparison / gated Mainnet readiness](docs/GAMINE_LAUNCHPAD_INTEGRATION.md). Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval. Phase 2 also requires the owner-approved official $AECO Mainnet launch through useaeco.xyz and independent mint, supply, metadata, fee-routing, finality and Explore verification. Phase 2 additionally requires automatic $AECO ownership indexing, moving Common Agents and reconciled holder/agent counts. Phase 3 stays blocked until that launch and population acceptance succeed and Phase 2 is completed. [Production release checklist](docs/PRODUCTION_RELEASE_CHECKLIST.md).
+Mainnet public launching is Phase 2 scope and remains disabled pending production verification and explicit activation approval. Phase 2 also requires the owner-approved official $AECO Mainnet launch through useaeco.xyz and independent mint, supply, metadata, fee-routing, finality and Explore verification. Phase 2 additionally requires automatic $AECO ownership indexing, moving Common Agents and reconciled holder/agent counts. Phase 3 stays blocked until that launch and population acceptance succeed and Phase 2 is completed.
 
 ## What works on main
 
@@ -71,7 +71,7 @@ Current release preparation: [Phase 2 status](docs/PHASE2_STATUS.md) and [Gamine
 | Trading pairs | TOKEN/SOL only; optional Developer Buy of 0–3.5% paid in SOL | USDC launch code is retained but disabled and outside Phase 2; TOKEN/AECO is reserved for Phase 4 |
 | Treasury | Receipt/accounting views and reconciliation information | City Credits are simulation accounting units; reward points are not withdrawable tokens or promised payouts |
 
-[Phase 2 verification, 22 October](apps/server/docs/phase2-review-2026-10-22.md): actual public-Devnet SOL creator-fee collection and current staging Pinata uploads are verified. The replacement Helius key is now [verified active on staging](docs/security/HELIUS_ROTATION.md). Physical Phantom mobile authentication, image preview, folded/unfolded layouts and session restoration passed; mobile on-chain acceptance is deferred at the owner’s request.
+[Phase 2 verification, 22 October](apps/server/docs/phase2-review-2026-10-22.md): actual public-Devnet SOL creator-fee collection and current staging Pinata uploads are verified. The replacement Helius key has been verified active on staging. Physical Phantom mobile authentication, image preview, folded/unfolded layouts and session restoration passed; mobile on-chain acceptance is deferred at the owner’s request.
 
 Implemented code on main is **not necessarily deployed to staging**. See the release status below.
 
@@ -274,6 +274,6 @@ After verifying production remains isolated and the complete series passes valid
 
 Read-only Explore market data and creator-fee accounting: [Task 4 implementation, evidence and release gates](apps/server/docs/phase2-task4-market-accounting.md). Market availability and verified receipts are never simulated as live data; earned creator-fee settlement and production financial enablement remain gated.
 
-Current Phase 2 completion checklist: [verified milestones and remaining gates](docs/PHASE2_STATUS.md). Physical Phantom mobile on-chain acceptance is deferred; authentication/layout checks passed. Desktop Developer Buy and public-Devnet SOL creator-fee collection are complete.
+Physical Phantom mobile on-chain acceptance is deferred; authentication/layout checks passed. Desktop Developer Buy and public-Devnet SOL creator-fee collection are complete.
 
-Official-domain and deployment readiness: [current public-demo rollout and gates](docs/PUBLIC_WEBSITE_READINESS.md). Physical mobile on-chain acceptance is deferred at the owner’s request; temporary mobile services are stopped.
+Physical mobile on-chain acceptance is deferred at the owner’s request; temporary mobile services are stopped.

@@ -499,7 +499,6 @@ export default function App() {
                       <p>
                         A World That Works. Token creation and discovery meet a persistent living economy on Solana.
                       </p>
-                      <OfficialTokenAddress prominent />
                     </div>
                     <div className="district-badge">
                       <Leaf size={17} />

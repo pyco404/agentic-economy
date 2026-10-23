@@ -1,56 +1,35 @@
 import { useEffect, useState } from 'react';
-import { DEV_BUY_MAX_BPS, type DevBuyQuote } from '../api/shared';
-import { bpsFromPercent, formatSol, formatTokens, percentFromBps } from '../api/devBuy';
+import { solBudgetLamports, type DevBuyQuote } from '../api/shared';
+import { allocationPercent, budgetQuoteValid, formatSol, formatTokens, percentFromBps } from '../api/devBuy';
 import '../launch-dev-buy.css';
-
 export interface DevBuyAvailability { status: 'available' | 'unavailable'; reason: string | null }
-
-/** Optional Developer Buy: off by default, at most 3.5% of total supply, SOL pairs only. */
-export function LaunchDevBuy({ bps, onChange, availability, quoteAsset, symbol, quote, loading, error, disabled, onValidityChange }: {
-  bps: number; onChange: (bps: number) => void; availability: DevBuyAvailability | null; quoteAsset: string; symbol: string;
-  quote: DevBuyQuote | null; loading: boolean; error: string; disabled?: boolean; onValidityChange?: (valid: boolean) => void;
+/** User-selected maximum spend only. Never derives or pre-fills a purchase choice. */
+export function LaunchDevBuy({ amount, legacyBps=0, onChange, availability, quoteAsset, symbol, quote, loading, error, disabled, onValidityChange }: {
+ amount:string; legacyBps?:number; onChange:(amount:string)=>void; availability:DevBuyAvailability|null; quoteAsset:string; symbol:string;
+ quote:DevBuyQuote|null; loading:boolean; error:string; disabled?:boolean; onValidityChange?:(valid:boolean)=>void;
 }) {
-  const [text, setText] = useState(percentFromBps(bps));
-  const [expanded, setExpanded] = useState(false);
-  useEffect(() => { if (bpsFromPercent(text) !== bps) setText(percentFromBps(bps)); }, [bps]); // eslint-disable-line react-hooks/exhaustive-deps
-  const solPair = quoteAsset === 'SOL', available = availability?.status === 'available' && solPair, on = expanded || bps > 0;
-  const reason = !solPair ? 'Developer Buy is available for SOL pairs only.' : availability?.status === 'unavailable' ? availability.reason ?? 'Developer Buy is unavailable on this network.' : null;
-  const invalid = on && bpsFromPercent(text) === null;
-  useEffect(() => { onValidityChange?.(!invalid); }, [invalid, onValidityChange]);
-  const activeQuote = !invalid && quote?.status === 'available' && quote.bps === bps ? quote : null;
-  const set = (value: string) => { setText(value); const next = bpsFromPercent(value); if (next !== null) onChange(next); };
-  return <fieldset className="launch-dev-buy" aria-describedby="dev-buy-help" disabled={disabled}>
-    <legend>Developer Buy <span className="launch-dev-buy-optional">Optional</span></legend>
-    <p id="dev-buy-help" className="small muted">Optional. Buy part of your own token during launch, up to {DEV_BUY_MAX_BPS / 100}% of supply.</p>
-    <label className="launch-dev-buy-toggle">
-      <input type="checkbox" role="switch" checked={on} disabled={!available && !on} aria-describedby={reason ? 'dev-buy-reason' : undefined}
-        onChange={(e) => { setExpanded(e.target.checked); if (!e.target.checked) { setText('0'); onChange(0); } }}/>
-      <span>{on ? bps > 0 ? 'Developer Buy on' : 'Choose your allocation' : 'Developer Buy off'}</span>
-    </label>
-    {reason && <p id="dev-buy-reason" className="small launch-dev-buy-reason" role="note">{reason}{on && ' Turn it off to continue.'}</p>}
-    {on && <div className="launch-dev-buy-amount">
-      <div className="launch-dev-buy-inputs">
-        <label>Share of total supply
-          <span className="launch-dev-buy-percent"><input inputMode="decimal" value={text} aria-invalid={invalid} aria-describedby="dev-buy-range" onChange={(e) => set(e.target.value)}/><span aria-hidden="true">%</span></span>
-        </label>
-        <p id="dev-buy-range" className={invalid ? 'launch-field-error' : 'small muted'} role={invalid ? 'alert' : undefined}>
-          {invalid ? `Enter a value from 0% to ${DEV_BUY_MAX_BPS / 100}% (up to two decimals).` : `${percentFromBps(bps)}% of supply · maximum ${DEV_BUY_MAX_BPS / 100}%`}
-        </p>
-      </div>
-      <dl className="fee-list launch-dev-buy-estimate" aria-live="polite" aria-busy={loading}>
-        {bps === 0 && !invalid ? <>
-          <div><dt>Tokens received</dt><dd>0 {symbol.trim() || 'tokens'}</dd></div>
-          <div><dt>Estimated cost</dt><dd>0 SOL</dd></div>
-          <div><dt>Maximum cost</dt><dd>0 SOL</dd></div>
-          <div><dt>Price impact</dt><dd>0%</dd></div>
-        </> : activeQuote ? <>
-          <div><dt>Tokens received</dt><dd>{formatTokens(activeQuote.tokenAmount)} {symbol.trim() || 'tokens'}</dd></div>
-          <div><dt>Estimated cost</dt><dd>{formatSol(activeQuote.estimatedQuoteCost)}</dd></div>
-          <div><dt>Maximum cost</dt><dd>{formatSol(activeQuote.maxQuoteCost)}</dd></div>
-          <div><dt>Price impact</dt><dd>{(activeQuote.priceImpactBps / 100).toFixed(2)}%</dd></div>
-        </> : <div><dt>Estimate</dt><dd>{loading ? 'Calculating…' : error || (quote?.status === 'unavailable' ? quote.reason : 'Shown when Developer Buy is available')}</dd></div>}
-      </dl>
-      <details className="small muted"><summary>How Developer Buy works</summary><p>Exactly this many tokens are bought, or the whole transaction fails. Final costs are shown before wallet approval. The limit applies to this launch only.</p>{activeQuote&&<p>Estimated cost includes {formatSol(activeQuote.pumpFees)} in protocol fees.</p>}</details>
-    </div>}
-  </fieldset>;
+ const [expanded,setExpanded]=useState(false),on=expanded||!!amount||legacyBps>0;
+ const available=availability?.status==='available'&&quoteAsset==='SOL';
+ const invalid=solBudgetLamports(amount)===null;
+ useEffect(()=>{onValidityChange?.(!invalid&&legacyBps===0);},[invalid,legacyBps,onValidityChange]);
+ const active=budgetQuoteValid(quote,amount)&&quote?.status==='available'?quote:null;
+ const quoteError=!loading&&amount&&!active?(error||(quote?.status==='unavailable'?quote.reason:quote?.status==='available'?'This estimate does not meet your budget or the 3.5% limit. Refresh before continuing.':'')):'';
+ return <fieldset className="launch-dev-buy" disabled={disabled} aria-describedby="dev-buy-help">
+  <legend>Developer Buy <span className="launch-dev-buy-optional">Optional</span></legend>
+  <p id="dev-buy-help" className="small muted">Optionally buy part of your token during launch. Enter the amount of SOL you want to spend.</p>
+  <label className="launch-dev-buy-toggle"><input type="checkbox" role="switch" checked={on} disabled={!available&&!on} onChange={e=>{setExpanded(e.target.checked);if(!e.target.checked)onChange('');}}/><span>Enable Developer Buy</span></label>
+  {!available&&<p className="small muted" role="note">{availability?.reason||'Developer Buy is unavailable on this network.'}</p>}
+  {on&&<div className="launch-dev-buy-amount">
+   {legacyBps>0&&<p className="small" role="note">This draft has a saved {percentFromBps(legacyBps)}% purchase. Enter a SOL budget to replace it, or turn Developer Buy off. Existing launch attempts keep their original terms.</p>}
+   <label htmlFor="dev-buy-sol">Amount in SOL</label>
+   <div className="launch-dev-buy-sol"><input id="dev-buy-sol" type="text" inputMode="decimal" autoComplete="off" placeholder="0.00" value={amount} aria-invalid={invalid||!!quoteError} aria-describedby="dev-buy-range dev-buy-budget-help" onChange={e=>onChange(e.target.value)}/><span aria-hidden="true">SOL</span></div>
+   <p id="dev-buy-range" className={invalid?'launch-field-error':'small muted'} role={invalid?'alert':undefined}>{invalid?'Enter a positive SOL amount with up to nine decimal places.':'Leave blank to skip developer buy. Maximum allocation: 3.5% of supply.'}</p>
+   <p id="dev-buy-budget-help" className="small muted">Maximum spend includes buy-side fees. Platform charge, rent and network fees are separate.</p>
+   {!!amount&&!invalid&&<div aria-live="polite" aria-busy={loading}>{active?<dl className="fee-list launch-dev-buy-estimate">
+    <div><dt>Estimated tokens received</dt><dd>{formatTokens(active.tokenAmount)} {symbol.trim()||'tokens'}</dd></div>
+    <div><dt>Estimated share of supply</dt><dd>{allocationPercent(active.tokenAmount,active.totalSupply)}%</dd></div>
+    <div><dt>Estimated Developer Buy cost</dt><dd>{formatSol(active.estimatedQuoteCost)}</dd></div>
+   </dl>:<p className={quoteError?'launch-field-error':'small muted'} role={quoteError?'alert':undefined}>{loading?'Calculating…':quoteError||'Waiting for a current estimate…'}</p>}</div>}
+  </div>}
+ </fieldset>;
 }

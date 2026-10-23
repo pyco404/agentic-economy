@@ -14,14 +14,14 @@
 .launch-quote-change { border: 1px solid #d9b98a; background: #fbf3e4; border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
 
 .launch-dev-buy #dev-buy-help { margin: 4px 0 8px; font-size: 11px; line-height: 1.6; }
-.launch-dev-buy-estimate > div { border: 0; padding: 5px 0; }
+.launch-dev-buy .launch-dev-buy-estimate > div { border: 0; padding: 5px 0; }
 @media (max-width: 700px) {
  .launch-workspace .launch-dev-buy-estimate > div { flex-direction: row; gap: 12px; }
  .launch-workspace .launch-dev-buy-estimate dd { text-align: right; }
 }
 
 .launch-dev-buy-sol { display:flex; align-items:center; gap:12px; border:1px solid #d5d9c8; border-radius:8px; background:#fffdf6; padding-right:14px; margin-top:6px; }
-.surface .launch-dev-buy-sol input { width:100%; min-width:0; min-height:48px; margin:0; border:0; background:transparent; box-shadow:none; }
+.surface .launch-dev-buy .launch-dev-buy-sol input { width:100%; min-width:0; min-height:48px; margin:0; border:0; background:transparent; box-shadow:none; }
 .launch-dev-buy-sol:focus-within { outline:2px solid #426c51; outline-offset:2px; }
 .launch-dev-buy-sol > span { color:#34523e; font-size:13px; }
 .launch-preview-dev-buy small { display:block; font-weight:400; }

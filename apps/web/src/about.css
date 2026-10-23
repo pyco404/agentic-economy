@@ -205,5 +205,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .about-page *, .about-nav-link { transition: none !important; animation: none !important; } }
 
-/* Keep forest-green focus readable on the dark vision panel. */
-.about-vision-link:focus-visible { background: var(--surface); color: var(--green); }
+/* A light sage ring remains contrasting on the inverse forest surface. */
+.about-vision { --focus-color: #c1d6ba; }
+@media (forced-colors: active) { .about-vision { --focus-color: Highlight; } }

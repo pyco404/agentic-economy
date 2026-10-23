@@ -9,6 +9,7 @@
   --muted: #777768;
   --line: #e6ddcc;
   --border-width: 1px;
+  --focus-width: 2px;
   --focus-color: var(--green);
   --focus-offset: 2px;
   --cream: #f7f0e2;
@@ -49,29 +50,38 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
-/* One shared keyboard indicator. Text controls paint over their existing border,
-   rather than stacking an outline and a shadow around it. */
+/* Borders stay thin; keyboard navigation gets a persistent, contrasting ring. */
 :focus-visible {
-  outline: var(--border-width) solid var(--focus-color);
+  outline: var(--focus-width) solid var(--focus-color);
   outline-offset: var(--focus-offset);
 }
-:where(input, textarea, select) {
-  border-width: var(--border-width);
-}
-:where(input, textarea, select):focus-visible {
+:where(input, textarea, select) { border-width: var(--border-width); }
+:root[data-focus-modality] :is(input, textarea, select):focus {
   border-color: var(--focus-color);
-  outline-offset: calc(-1 * var(--border-width));
   box-shadow: none;
 }
-/* Composite controls use the outer frame as their only focus indicator. */
+:root[data-focus-modality="pointer"] :focus-visible { outline: none; }
+/* One focus owner for controls whose frame surrounds an input and an icon/unit. */
 :is(.search, .launch-dev-buy-sol, .launch-quote-card):focus-within {
   border-color: var(--focus-color);
-  outline: var(--border-width) solid var(--focus-color);
-  outline-offset: calc(-1 * var(--border-width));
   box-shadow: none;
 }
-:is(.search, .launch-dev-buy-sol, .launch-quote-card) input:focus-visible {
-  outline: none;
+:root:not([data-focus-modality="pointer"]) :is(.search, .launch-dev-buy-sol, .launch-quote-card):has(input:focus-visible),
+:root:not([data-focus-modality="pointer"]) .logo-dropzone:has(.logo-file-input:focus-visible) {
+  outline: var(--focus-width) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+}
+:is(.search, .launch-dev-buy-sol, .launch-quote-card) input:focus-visible { outline: none; }
+:where(a, button, input, textarea, select, summary, [tabindex]) {
+  scroll-margin: calc(var(--focus-width) + var(--focus-offset));
+}
+:where(.page-main, .slim-scroll, .mobile-navigation-panel, .wallet-dialog, .modal) {
+  scroll-padding: calc(var(--focus-width) + var(--focus-offset));
+}
+@media (forced-colors: active) {
+  :root { --focus-color: Highlight; }
+  :root[data-focus-modality] :is(input, textarea, select):focus,
+  :is(.search, .launch-dev-buy-sol, .launch-quote-card):focus-within { border-color: Highlight; }
 }
 button {
   border: 0;

@@ -52,6 +52,3 @@
 }
 
 .mobile-navigation-footer .project-links a { min-width: 44px; min-height: 44px; justify-content: center; }
-
-/* Keep the shared 1px keyboard indicator inside the clipped drawer. */
-.mobile-navigation-panel :focus-visible { outline-offset: calc(-1 * var(--border-width)); }

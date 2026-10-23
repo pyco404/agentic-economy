@@ -5,15 +5,21 @@ test("authoritative identities stay consistent across lists profiles and refresh
   await page.goto("/?source=backend#studio");
   // StrictMode may abort the first bootstrap fetch; take a fresh read-only snapshot from the observed API.
   const roster = (await (await page.request.get((await rosterResponse).url())).json()).agents as Array<{
-    id: string; displayName?: string; identity?: { kind: string; activatingWallet?: string };
+    id: string; displayName?: string; identity?: { kind: string; activatingWallet?: string; wallet?: string; syntheticName?: string };
   }>;
   await expect(page.getByRole("button", { name: "Token activation unavailable" })).toBeDisabled();
   const rows = page.locator(".agent-row b"); await expect(rows.first()).toBeVisible({ timeout: 60000 });
   const names = await rows.allTextContents();
   expect(new Set(names).size).toBe(names.length);
   const authoritative = roster.every((agent) => agent.identity && agent.displayName);
-  if (authoritative) expect(names).toEqual(roster.slice(0, 14).map((agent) => agent.displayName));
-  else expect(names.every((n) => /^[A-Z][A-Za-z]+_\d{3} · /.test(n) && !n.startsWith("0x") && !n.includes("..."))).toBe(true);
+  if (authoritative) expect(names).toEqual(roster.slice(0, 50).map(agent => {
+    if (agent.identity?.kind === "aeco_observed") {
+      const wallet = agent.identity.wallet!;
+      return `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+    }
+    return agent.identity?.syntheticName ?? agent.displayName;
+  }));
+  else expect(names).toEqual(roster.slice(0, 50).map(agent => agent.identity?.syntheticName ?? agent.id));
   await page.reload(); await expect(rows.first()).toHaveText(names[0]!);
   expect(await rows.allTextContents()).toEqual(names);
   await page.locator(".agent-row").first().click();

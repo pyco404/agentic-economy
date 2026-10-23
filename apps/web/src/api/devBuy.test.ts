@@ -1,6 +1,6 @@
-import { DraftFields } from './shared';
+import { DraftFields, solBudgetLamports, solFromLamports } from './shared';
 import { describe, expect, it } from 'vitest';
-import { bpsFromPercent, devBuyNeedsAcceptance, formatSol, formatTokens, formatUnits, percentFromBps } from './devBuy';
+import { allocationPercent, budgetQuoteValid, bpsFromPercent, devBuyNeedsAcceptance, formatSol, formatTokens, formatUnits, percentFromBps } from './devBuy';
 
 describe('Developer Buy input and formatting', () => {
   it('parses percentages to exact basis points, 0–3.5% with at most two decimals', () => {
@@ -32,4 +32,26 @@ describe('Developer Buy input and formatting', () => {
     expect(devBuyNeedsAcceptance('10344475', '10344474', '10344475')).toBe(false); // accepted this exact amount
     expect(devBuyNeedsAcceptance('10400000', '10344474', '10344475')).toBe(true); // raised again after acceptance
   });
+});
+
+describe('SOL budget input',()=>{
+ it('parses exact lamports, empty/off, tiny amounts and all nine decimals',()=>{
+  expect(solBudgetLamports('')).toBe(0n);expect(solBudgetLamports('0.000000001')).toBe(1n);
+  expect(solBudgetLamports('0.123456789')).toBe(123456789n);
+  expect(solBudgetLamports('1.000000001')).toBe(1000000001n);
+  expect(solFromLamports(123456789n)).toBe('0.123456789');
+  for(const bad of ['0','0.0','-1','1e-3','0x1',' 0.1','0.1234567890','NaN','Infinity','1.','01'])expect(solBudgetLamports(bad),bad).toBeNull();
+ });
+ it('persists only valid budgets and rejects conflicting legacy percentages',()=>{
+  expect(DraftFields.parse({devBuySol:'0.012345678'}).devBuySol).toBe('0.012345678');
+  expect(DraftFields.parse({devBuySol:''}).devBuyBps).toBe(0);
+  for(const fields of [{devBuySol:'-1'},{devBuySol:'0.1',devBuyBps:1}])expect(DraftFields.safeParse(fields).success).toBe(false);
+ });
+ it('independently rejects over-cap tokens, excessive costs, stale budget identity and missing limits',()=>{
+  const q={status:'available' as const,bps:0,quoteAsset:'SOL' as const,network:'devnet' as const,totalSupply:'1000000000000000',tokenDecimals:6 as const,tokenAmount:'35000000000000',capTokenAmount:'35000000000000',estimatedQuoteCost:'10000000',pumpFees:'10000',maxQuoteCost:'11000000',budgetLamports:'11000000',maxAllowedQuoteCost:'12000000',priceImpactBps:1,slot:1};
+  expect(budgetQuoteValid(q,'0.011')).toBe(true);
+  for(const patch of [{tokenAmount:'35000000000001'},{estimatedQuoteCost:'11000001'},{maxQuoteCost:'11000001'},{budgetLamports:'10000000'},{maxAllowedQuoteCost:undefined},{maxAllowedQuoteCost:'10999999'}])expect(budgetQuoteValid({...q,...patch},'0.011')).toBe(false);
+  expect(allocationPercent('35000000000000',q.totalSupply)).toBe('3.5');
+  expect(allocationPercent('1','100000000')).toBe('0.000001');
+ });
 });

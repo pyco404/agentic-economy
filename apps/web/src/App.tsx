@@ -28,6 +28,7 @@ import {
   RotateCw,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Users,
   Wind,
   TrainFront,
@@ -727,9 +728,6 @@ export default function App() {
                     >
                       <Minus size={19} />
                     </button>
-                    <button type="button" className="world-tools-toggle" aria-label="More world controls"
-                      aria-expanded={worldToolsExpanded} aria-controls="world-secondary-controls"
-                      onClick={() => setWorldToolsExpanded((open) => !open)}><Layers size={19} /></button>
                     <div id="world-secondary-controls" className={`camera-tools-secondary${worldToolsExpanded ? " is-expanded" : ""}`}>
                     <button className="touch-pan-control" aria-label="Pan with one finger"
                       aria-pressed={touchPan} title={touchPan ? "Pan mode on · tap to restore one-finger rotation" : "Pan with one finger · tap to enable"}
@@ -769,6 +767,11 @@ export default function App() {
                     {mobileWorld && !immersive && <button aria-label="Enter immersive mode"
                       title="Hide world interface" onClick={() => setImmersive(true)}><Maximize2 size={17} /></button>}
                     </div>
+                    <button type="button" className="world-tools-toggle" aria-label={worldToolsExpanded ? "Collapse controls" : "Expand controls"}
+                      aria-expanded={worldToolsExpanded} aria-controls="world-secondary-controls"
+                      onClick={() => setWorldToolsExpanded((open) => !open)}>
+                      {worldToolsExpanded ? <ChevronDown size={19} /> : <SlidersHorizontal size={19} />}
+                    </button>
                   </div>
                   <div className="world-bottom">
                     <div className="world-stat">

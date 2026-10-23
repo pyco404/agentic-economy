@@ -75,8 +75,7 @@
 .world-main .world-stat svg { width: 16px; height: 16px; }
 .world-main .pause-button { padding: 10px; min-height: 36px; white-space: nowrap; }
 .world-main .camera-tools { left: 24px; bottom: 28px; padding: 4px;
-  max-height: calc(100% - 220px); overflow-y: auto; overflow-x: hidden;
-  overscroll-behavior: contain; scrollbar-width: thin; }
+  max-height: calc(100% - 56px); }
 .world-main .camera-tools button { width: 36px; height: 36px; flex-shrink: 0; }
 .camera-tools .camera-tools-divider { flex-shrink: 0; height: var(--border-width);
   margin: 3px 5px; background: #e3e8d8; }
@@ -134,15 +133,12 @@
   .world-main.is-immersive .agent-detail { bottom: 28px; max-height: 42%; }
 }
 
-.camera-tools-secondary { display: contents; }
-.world-main .camera-tools .world-tools-toggle { display: none; }
+.camera-tools-secondary { display: none; min-height: 0; flex: 0 1 auto;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin;
+  padding: 3px; margin-inline: -3px; }
+.camera-tools-secondary.is-expanded { display: flex; flex-direction: column; gap: 1px; }
 @media (max-width: 850px) {
   .world-main .camera-tools button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
-  .world-main .camera-tools .world-tools-toggle { display: grid; place-items: center; }
-  .world-main .camera-tools .camera-tools-secondary { display: none; }
-  .world-main .camera-tools .camera-tools-secondary.is-expanded {
-    display: contents;
-  }
 }
 
 @media (max-width: 850px) { .world-main .world-footer .camera-hint { display: none; } }

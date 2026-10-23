@@ -30,7 +30,16 @@
 @media (max-width: 700px) {
   .official-token-address.is-prominent { width: 100%; max-width: 100%; gap: 6px; }
   .is-prominent .official-token-mint { flex: 1; font-size: 11px; }
-  .official-world-address { right: 12px; }
+  /* Compact visual pill with a full 44px copy hit area; keep it above the stats dock. */
+  .world-main:has(.official-world-address) { --world-dock-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+  .official-world-address { right: 12px; bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    max-width: min(208px, calc(100% - 84px)); padding: 0 6px 0 10px; }
+  .official-world-address .official-token-address { height: 34px; gap: 6px; }
+  .official-world-address .official-token-label { font-size: 14px; }
+  .official-world-address .official-token-label > span { display: none; }
+  .official-world-address .official-token-mint { max-width: 76px; }
+  .official-world-address .official-token-actions button { width: 60px; padding-inline: 4px; font-size: 10px; }
+  .official-world-address .official-token-actions button:hover { background: transparent; }
   .official-token-address:not(.is-prominent) .official-token-mint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .world-main:has(.official-world-address) .activity-panel { max-height: calc(100% - 322px); }
   .world-main:has(.official-world-address):not(.is-immersive) :is(.selection-panel, .agent-detail) { bottom: 138px; }

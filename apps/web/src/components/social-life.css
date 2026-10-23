@@ -1,0 +1,23 @@
+.agent-social-life { border-top: 1px solid #d9dece; margin-top: 18px; padding-top: 14px; color: #244232; }
+.agent-social-life h3 { margin: 0 0 8px; font: 400 23px/1.2 "Libre Caslon Display", Georgia, serif; }
+.agent-social-life p { font-size: 12px; line-height: 1.6; margin: 8px 0; }
+.agent-social-life .social-disclaimer, .social-timeline small { color: #52664e; font-size: 10px; }
+.social-current { background: #edf1e4; border-radius: 6px; padding: 10px; }
+.agent-social-life summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 12px; }
+.agent-social-life li { font-size: 11px; line-height: 1.6; }
+.social-timeline { list-style: none; margin: 0; padding: 0; }
+.social-timeline li { padding: 10px 0; border-top: 1px solid #d9dece; }
+.social-timeline small { display: block; margin-top: 4px; }
+.feed-item .activity-focus { display: flex; align-items: flex-start; gap: 9px; text-align: left;
+  width: 100%; min-height: 44px; padding: 3px 0; color: #244232; background: transparent; border: 0; }
+.activity-focus .activity-copy { min-width: 0; flex: 1; font-size: 11px; line-height: 1.6; }
+.activity-focus .social-kind { display: block; margin-top: 4px; font-size: 9px; color: #52664e; }
+.social-bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.social-bubble { position: absolute; left: 0; top: 0; max-width: 190px; padding: 8px 11px;
+  border: 1px solid #a8b79d; border-radius: 12px 12px 12px 3px; background: #fffaf2;
+  color: #244232; font: 500 11px/1.4 "DM Sans", sans-serif; pointer-events: auto; min-height: 44px; }
+.social-bubble[hidden] { display: none; }
+.social-bubble small { display: block; font-size: 9px; color: #52664e; }
+@media (max-width: 700px) { .social-bubble { max-width: 165px; } }
+
+.social-bubble.is-gathering { background: #edf1e4; border-color: #8c9e80; }

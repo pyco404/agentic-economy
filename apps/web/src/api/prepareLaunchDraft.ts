@@ -24,7 +24,7 @@ export async function prepareLaunchDraft(input: {
  // Same rules as the server, checked before anything is saved or uploaded (the server re-checks before Pinata).
  const issue=tokenFieldIssues(input.fields,true)[0];if(issue)throw new Error(issue.message);
  const parsed=DraftFieldsSchema.safeParse(input.fields);if(!parsed.success)throw new Error(parsed.error.issues[0]?.message??'Check your token details.');
- if(input.fields.devBuyBps>0&&!input.devBuyAvailable)throw new Error('Developer Buy is unavailable for this pair or network. Turn it off to continue.');
+ if((input.fields.devBuyBps>0||!!input.fields.devBuySol)&&!input.devBuyAvailable)throw new Error('Developer Buy is unavailable for this pair or network. Turn it off to continue.');
  let draft = input.draft;
  const keep = (value: SavedLaunchDraft) => { port.check(); draft = value; port.accept(value); return value; };
  if (!draft || JSON.stringify(draft.fields) !== JSON.stringify(input.fields)) {

@@ -14,3 +14,5 @@ export * from './launchpad.js';
 export * from './tokenRules.js';
 
 export * from './market.js';
+
+export * from "./society.js";

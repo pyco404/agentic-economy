@@ -145,6 +145,9 @@ export const EconomicEventType = z
     "community.registered",
     "building.placed",
     "launch.confirmed",
+    "social.encounter",
+    "social.gathering",
+    "social.consequence",
   ])
   .meta({ id: "EconomicEventType" });
 export type EconomicEventType = z.infer<typeof EconomicEventType>;

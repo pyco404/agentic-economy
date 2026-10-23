@@ -74,8 +74,12 @@
 .world-main .world-stat small { font-size: 8px; margin-top: 3px; color: #596651; }
 .world-main .world-stat svg { width: 16px; height: 16px; }
 .world-main .pause-button { padding: 10px; min-height: 36px; white-space: nowrap; }
-.world-main .camera-tools { left: 24px; bottom: 28px; padding: 4px; }
-.world-main .camera-tools button { width: 36px; height: 36px; }
+.world-main .camera-tools { left: 24px; bottom: 28px; padding: 4px;
+  max-height: calc(100% - 220px); overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain; scrollbar-width: thin; }
+.world-main .camera-tools button { width: 36px; height: 36px; flex-shrink: 0; }
+.camera-tools .camera-tools-divider { flex-shrink: 0; height: var(--border-width);
+  margin: 3px 5px; background: #e3e8d8; }
 .world-main .world-footer { bottom: 6px; left: 24px; right: 24px; pointer-events: none; }
 .world-footer button { pointer-events: auto; }
 .world-main .world-footer [data-testid="connection-status"] { font-size: 8px; padding: 2px 5px; }
@@ -137,11 +141,8 @@
   .world-main .camera-tools .world-tools-toggle { display: grid; place-items: center; }
   .world-main .camera-tools .camera-tools-secondary { display: none; }
   .world-main .camera-tools .camera-tools-secondary.is-expanded {
-    display: flex; flex-direction: column; position: absolute; left: calc(100% + 8px); bottom: 0;
-    padding: 4px; max-height: min(60dvh, 360px); overflow-y: auto;
-    border: var(--border-width) solid #ddd4c2; border-radius: 9px; background: #fffaf0; box-shadow: 0 6px 20px #263a3020;
+    display: contents;
   }
-  .world-main .camera-tools .camera-tools-secondary > span { display: none; }
 }
 
 @media (max-width: 850px) { .world-main .world-footer .camera-hint { display: none; } }

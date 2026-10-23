@@ -39,6 +39,14 @@ test('public mobile navigation, clean world controls and persistent city', async
       const more=page.getByRole('button',{name:'More world controls'});
       await more.click();await expect(more).toHaveAttribute('aria-expanded','true');
       await expect(page.getByRole('button', {name:'Rotate camera',exact:true})).toBeVisible();
+      const toolbar = page.getByRole('group', {name:'Camera controls',exact:true});
+      const toolbarBox = (await toolbar.boundingBox())!;
+      for (const control of await toolbar.locator('button:visible').all()) {
+        const box = (await control.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(toolbarBox.x);
+        expect(box.x + box.width).toBeLessThanOrEqual(toolbarBox.x + toolbarBox.width);
+        expect(box.width).toBe(44);expect(box.height).toBe(44);
+      }
       await more.press('Escape');await expect(more).toHaveAttribute('aria-expanded','false');
       await page.screenshot({path:info.outputPath(`world-${width}.png`)});
       await toggle.click();const dialog=page.getByRole('dialog',{name:'Navigation',exact:true});

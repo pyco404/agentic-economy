@@ -736,7 +736,7 @@ export default function App() {
                       onClick={() => setTouchPan((enabled) => !enabled)}>
                       <Move size={18} /><span>{touchPan ? "Orbit" : "Pan"}</span>
                     </button>
-                    <span />
+                    <span className="camera-tools-divider" aria-hidden="true" />
                     <button
                       aria-label="Rotate camera"
                       onClick={() => city.current?.rotate()}
@@ -749,6 +749,7 @@ export default function App() {
                     >
                       <LocateFixed size={18} />
                     </button>
+                    <span className="camera-tools-divider" aria-hidden="true" />
                     <button
                       aria-label="Toggle economy overlay"
                       aria-pressed={overlay}

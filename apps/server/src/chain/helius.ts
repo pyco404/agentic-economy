@@ -173,7 +173,8 @@ export class HeliusReader {
       let result: z.infer<typeof accountPage>;
       try { result = accountPage.parse(await this.rpc('getTokenAccounts', { mint, limit: 1000, ...(cursor ? { cursor } : {}), options: { showZeroBalance: false } })); }
       catch (e) { if (slot === undefined) throw e instanceof HeliusReadError ? e : new HeliusReadError('unavailable'); reason = 'Index page unavailable; count is a lower bound.'; break; }
-      if (slot !== undefined && result.last_indexed_slot !== slot) consistent = false;
+      // An empty terminal page contains no balances and cannot contradict the prior snapshot.
+      if (result.token_accounts.length && slot !== undefined && result.last_indexed_slot !== slot) consistent = false;
       slot = slot === undefined ? result.last_indexed_slot : Math.min(slot, result.last_indexed_slot);
       for (const account of result.token_accounts) {
         if (account.mint !== mint) throw new HeliusReadError('unavailable');

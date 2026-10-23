@@ -1,3 +1,5 @@
+import { quoteTokenBudget } from './dev-buy-budget.js';
+import { solFromLamports } from '@agentic-economy/shared';
 import {MAINNET_GENESIS,assertReviewedMainnetPrograms} from "./mainnet-policy.js";
 import bs58 from "bs58";
 import { isDeepStrictEqual } from "node:util";
@@ -225,20 +227,29 @@ export class SolanaRpcChain implements ChainGateway {
   }
 
   /** Exact quote for a new SOL curve from the live Global and fee config (deterministic: the curve is created in the same transaction). */
-  async quoteDevBuy(bps: number): Promise<DevBuyChainQuote> {
+  async quoteDevBuy(bps: number, budgetLamports?: bigint): Promise<DevBuyChainQuote> {
     const online = new sdk.OnlinePumpSdk(this.conn), [global, feeConfig, slot] = await Promise.all([online.fetchGlobal(), online.fetchFeeConfig(), this.conn.getSlot("confirmed")]);
-    const totalSupply = BigInt(global.tokenTotalSupply.toString()), tokenAmount = devBuyTokenAmount(totalSupply, bps), capTokenAmount = devBuyTokenAmount(totalSupply, DEV_BUY_MAX_BPS);
+    const totalSupply = BigInt(global.tokenTotalSupply.toString()), capTokenAmount = devBuyTokenAmount(totalSupply, DEV_BUY_MAX_BPS);
+    const BN = global.tokenTotalSupply.constructor;
+    const quoteCost = (amount:bigint) => amount === 0n ? 0n : BigInt(sdk.getBuySolAmountFromTokenAmount({global,feeConfig,mintSupply:null,bondingCurve:null,amount:new BN(amount.toString()),quoteMint:sdk.normalizeQuoteMint(undefined)}).toString());
+    let tokenAmount = devBuyTokenAmount(totalSupply,bps), maxAllowedQuoteCost:bigint|undefined;
+    if (budgetLamports !== undefined) {
+      const result = quoteTokenBudget(budgetLamports,capTokenAmount,quoteCost);
+      maxAllowedQuoteCost=result.maxBudget;
+      if(result.overCap) throw new ChainFeatureUnavailable('dev_buy_cap',`Developer Buy exceeds 3.5% of supply. Maximum permitted budget for this quote: ${solFromLamports(result.maxBudget)} SOL.`);
+      tokenAmount=result.tokenAmount;
+      if(tokenAmount===0n)throw new ChainFeatureUnavailable('dev_buy_dust','This SOL amount is too small to buy a token base unit after fees.');
+    }
     if (tokenAmount > BigInt(global.initialRealTokenReserves.toString())) throw new ChainFeatureUnavailable("dev_buy_unavailable", "Developer Buy exceeds the curve's initial reserves");
     if (tokenAmount === 0n) return { slot, totalSupply, tokenAmount, capTokenAmount, estimatedQuoteCost: 0n, pumpFees: 0n, maxQuoteCost: 0n, priceImpactBps: 0 };
-    const BN = global.tokenTotalSupply.constructor;
-    const cost = BigInt(sdk.getBuySolAmountFromTokenAmount({ global, feeConfig, mintSupply: null, bondingCurve: null, amount: new BN(tokenAmount.toString()), quoteMint: sdk.normalizeQuoteMint(undefined) }).toString());
+    const cost = quoteCost(tokenAmount);
     const vSol = BigInt(global.initialVirtualSolReserves.toString()), vTok = BigInt(global.initialVirtualTokenReserves.toString());
     const curveCost = (tokenAmount * vSol) / (vTok - tokenAmount) + 1n;
     // Spot price after vs before, in basis points: ((vSol+curveCost)/(vTok-amount)) / (vSol/vTok) - 1.
     const priceImpactBps = Number(((vSol + curveCost) * vTok * 10_000n) / (vSol * (vTok - tokenAmount)) - 10_000n);
     // The price is fixed by the configuration read here; 1% headroom only absorbs a fee-config change before signing.
-    const maxQuoteCost = cost + (cost * 100n + 9_999n) / 10_000n;
-    return { slot, totalSupply, tokenAmount, capTokenAmount, estimatedQuoteCost: cost, pumpFees: cost - curveCost, maxQuoteCost, priceImpactBps };
+    const maxQuoteCost = budgetLamports ?? cost + (cost * 100n + 9_999n) / 10_000n;
+    return { slot, totalSupply, tokenAmount, capTokenAmount, maxAllowedQuoteCost, estimatedQuoteCost: cost, pumpFees: cost - curveCost, maxQuoteCost, priceImpactBps };
   }
 
   async buildLaunchTransaction(input: BuildLaunchInput): Promise<BuiltLaunchTransaction> {

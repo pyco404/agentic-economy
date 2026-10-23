@@ -6,7 +6,7 @@ export interface DraftPort {
  patch(draft:SavedLaunchDraft,fields:DraftFields,signal:AbortSignal):Promise<SavedLaunchDraft>;
  get(id:string,signal:AbortSignal):Promise<SavedLaunchDraft>;
 }
-const conflict=()=>new Error('This draft changed elsewhere. Open My Drafts and resume it before editing again.');
+const conflict=()=>new Error('Your details changed elsewhere. Refresh to restore the latest saved details before continuing.');
 /** One editor/owner scope. Serializes autosave and explicit preparation; never accepts a stale or foreign response. */
 export class DraftWriter {
  private abort=new AbortController();private tail:Promise<unknown>=Promise.resolve();

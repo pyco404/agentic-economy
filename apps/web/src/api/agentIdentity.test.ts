@@ -3,11 +3,11 @@ import { agentIdentity, displayActivity, displayAgentName, type IdentityAgent } 
 const roster = Array.from({ length: 1100 }, (_, i) => ({ id: `agt_courier${String(i).padStart(6, "0")}`,
   name: "Integration Courier", ownerWallet: "11111111111111111111111111111111" }));
 describe("authoritative agent identities", () => {
-  it("gives duplicate house/legacy names readable stable aliases without wallet prefixes", () => {
+  it("uses stable canonical IDs for unclassified records without inventing names or wallets", () => {
     expect(new Set(roster.map(displayAgentName)).size).toBe(roster.length);
     for (const a of roster) {
       const identity = agentIdentity(a);
-      expect(identity.primary).toMatch(/^[A-Z][A-Za-z]+_\d{3}$/);
+      expect(identity.primary).toBe(a.id);
       expect(identity.displayName).not.toContain("0x");
       expect(identity.displayName).not.toContain("...");
       expect(identity.owner).toBeNull();

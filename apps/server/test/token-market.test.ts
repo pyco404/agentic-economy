@@ -43,3 +43,33 @@ it('serves schema-valid unavailable data for demo launches and rejects unknown/i
   expect((await env.app.inject({method:'GET',url:'/api/v1/token-markets/invalid-mint'})).statusCode).toBe(400);
  }finally{await env.close();}
 });
+
+it('does not classify a persisted Mainnet execution as a testing-network launch',async()=>{
+ const f=await fixture();f.launch.execution={network:'mainnet-beta',genesisHash:'5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d'} as NonNullable<TokenLaunch['execution']>;
+ await f.store.updateLaunch(f.launch,0);
+ const fetcher=vi.fn(async()=>Response.json([f.pair]));
+ expect(await new TokenMarketService(f.store,f.gateway,'mainnet-beta',fetcher).snapshot(f.mint)).toMatchObject({status:'available',priceUsd:0.000123,fdvUsd:999999});
+ expect(fetcher).toHaveBeenCalledOnce();
+});
+
+it('prices verified reserves independently of DEX Screener and excludes virtual backing from liquidity',async()=>{
+ const f=await fixture(),gateway={...f.gateway,getMarketState:async()=>({mint:f.mint,slot:100,decimals:6,supplyRaw:'1000000000000000',totalSupplyRaw:'1000000000000000',venue:'bonding_curve' as const,address:f.pool,progressPct:0,baseReserveRaw:'1000000000000000',quoteReserveRaw:'30000000000',realBaseRaw:'793100000000000',realQuoteRaw:'0'})};
+ const fetcher=vi.fn(async(url:string|URL|Request)=>String(url).includes('coinbase')?Response.json({price:'100',time:new Date().toISOString()}):Response.json([]));
+ const result=await new TokenMarketService(f.store,gateway,'mainnet-beta',fetcher).snapshot(f.mint);
+ expect(result).toMatchObject({source:'solana_rpc',status:'available',priceSol:0.00000003,liquidityUsd:0,graduationProgress:0});
+ expect(result.priceUsd).toBeCloseTo(0.000003,12);expect(result.marketCapUsd).toBeCloseTo(3000);expect(result.fdvUsd).toBeCloseTo(3000);
+ expect(result.volume24hUsd).toBeNull();expect(result.activityCoverage?.complete).toBe(false);
+});
+
+it('retains on-chain values when both supplementary providers fail',async()=>{
+ const f=await fixture(),gateway={...f.gateway,getMarketState:async()=>({mint:f.mint,slot:100,decimals:6,supplyRaw:'1000000000000000',totalSupplyRaw:'1000000000000000',venue:'pumpswap' as const,address:f.pool,progressPct:100,baseReserveRaw:'100000000000',quoteReserveRaw:'1000000000',realBaseRaw:'100000000000',realQuoteRaw:'500000000'})};
+ const result=await new TokenMarketService(f.store,gateway,'mainnet-beta',async()=>{throw Error('outage');}).snapshot(f.mint);
+ expect(result).toMatchObject({status:'available',source:'solana_rpc',graduation:'graduated',priceSol:0.00001,priceUsd:null,liquidityUsd:null});
+});
+
+it('does not block market responses on slow historical RPC reconciliation',async()=>{
+ const f=await fixture();let release!:()=>void;const gate=new Promise<void>(r=>{release=r;});
+ const gateway={...f.gateway,getMarketState:async()=>({mint:f.mint,slot:100,decimals:6,supplyRaw:'1000000000000000',totalSupplyRaw:'1000000000000000',venue:'bonding_curve' as const,address:f.pool,progressPct:1,baseReserveRaw:'1000000000000000',quoteReserveRaw:'30000000000',realBaseRaw:'790000000000000',realQuoteRaw:'1000000'}),getMarketTradePage:async()=>{await gate;return {trades:[],signatures:[],oldestTime:null,exhausted:true};}};
+ const service=new TokenMarketService(f.store,gateway,'mainnet-beta',async()=>Response.json([]));
+ try{const result=await service.snapshot(f.mint);expect(result).toMatchObject({status:'available',activityCoverage:{complete:false}});}finally{release();await service.stop();}
+});

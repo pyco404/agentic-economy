@@ -16,3 +16,6 @@ id.json
 
 # Local promotional-video production sources and rendered media.
 /video/
+
+# Internal planning, release notes and verification evidence retained locally.
+/docs/

@@ -7,13 +7,14 @@ export const AGENT_LABELS = { farZoom: 1.2, closeZoom: 3.6,
 export interface LabelAgent { id: string; name: string; ownerWallet?: string;
   identity?: AuthoritativeIdentity; displayName?: string; demoName?: boolean; x: number; z: number; elevation?: number; state: string;
   selected?: boolean; hovered?: boolean; important?: boolean; activity?: string; visualOnly?: boolean; }
+export interface LabelExclusion { left: number; top: number; width: number; height: number }
 export interface LabelCandidate extends LabelAgent { screenX: number; screenY: number; }
 
 export function agentLabelName(agent: Pick<LabelAgent, "id" | "name" | "ownerWallet" | "demoName" | "identity" | "displayName">) {
   return agentIdentity(agent).primary;
 }
 /** Bounded collision packing using estimated text bounds, never DOM measurements. */
-export function chooseAgentLabels(agents: LabelCandidate[], zoom: number, width: number, height: number) {
+export function chooseAgentLabels(agents: LabelCandidate[], zoom: number, width: number, height: number, blocked: readonly LabelExclusion[] = []) {
   const far = zoom < AGENT_LABELS.farZoom;
   const limit = Math.min(far ? AGENT_LABELS.farLimit : zoom < AGENT_LABELS.closeZoom
     ? AGENT_LABELS.mediumLimit : AGENT_LABELS.closeLimit, Math.max(2, Math.floor(width * height / 18000)));
@@ -26,6 +27,7 @@ export function chooseAgentLabels(agents: LabelCandidate[], zoom: number, width:
     if (placed.length >= limit) break;
     const identity = agentIdentity(agent);
     const labelWidth = Math.min(176, identity.primary.length * AGENT_LABELS.estimatedCharacterWidth + 14);
+    if (blocked.some(b => agent.screenX + labelWidth / 2 + 4 > b.left && agent.screenX - labelWidth / 2 - 4 < b.left + b.width && agent.screenY > b.top && agent.screenY - 24 < b.top + b.height)) continue;
     if (agent.screenX < labelWidth / 2 + 5 || agent.screenX > width - labelWidth / 2 - 5 ||
       agent.screenY < 20 || agent.screenY > height - 28) continue;
     if (placed.some((other) => Math.abs(other.screenX - agent.screenX) <
@@ -45,7 +47,7 @@ export function createAgentLabels(host: HTMLElement, select: (id: string) => voi
   const point = new THREE.Vector3();
   let last = -Infinity;
   return {
-    update(seconds: number, camera: THREE.OrthographicCamera, agents: LabelAgent[], width: number, height: number) {
+    update(seconds: number, camera: THREE.OrthographicCamera, agents: LabelAgent[], width: number, height: number, blocked: readonly LabelExclusion[] = []) {
       if (seconds - last < AGENT_LABELS.interval) return;
       last = seconds;
       const candidates = agents.map((agent) => {
@@ -54,7 +56,7 @@ export function createAgentLabels(host: HTMLElement, select: (id: string) => voi
         return { ...agent, screenX: (point.x + 1) * width / 2,
           screenY: (1 - point.y) * height / 2 - 9 };
       });
-      const shown = chooseAgentLabels(candidates, camera.zoom, width, height);
+      const shown = chooseAgentLabels(candidates, camera.zoom, width, height, blocked);
       const ids = new Set(shown.map((a) => a.id));
       for (const [id, node] of nodes) {
         node.hidden = !ids.has(id);

@@ -1,5 +1,6 @@
 import {expect,test,type Locator,type Page} from '@playwright/test';
 import {waitForApplicationReady} from './startup';
+import {installFocusModality} from '../src/focusModality';
 
 async function thinFrames(page:Page){
  const violations=await page.evaluate(()=>{
@@ -122,4 +123,19 @@ test('menu and wallet focus rings stay unclipped in short forced-colors layouts'
  await menu.screenshot({path:'artifacts/focus-short-forced-colors-menu.png'});await page.keyboard.press('Escape');
  await page.locator('.topbar .wallet-button').press('Enter');const close=page.getByRole('button',{name:'Close wallet selection'});
  await keyboardFocus(page,close);await expect(close).toHaveCSS('outline-width','2px');await contrastingRing(close);await unclippedRing(close);
+});
+
+test('typing after pointer focus stays minimal until keyboard navigation',async({page})=>{
+ await page.setContent('<input aria-label="Name"><textarea aria-label="Description"></textarea><button>Action</button><input type="checkbox" aria-label="Option">');
+ await page.addScriptTag({content:`window.disposeModality=(${installFocusModality.toString()})(document);`});
+ const mode=()=>page.locator('html').getAttribute('data-focus-modality');
+ for(const control of [page.getByLabel('Name',{exact:true}),page.getByLabel('Description',{exact:true})]){
+  await control.click();await control.pressSequentially('Moss Coin');expect(await mode()).toBe('pointer');
+  await control.press('Enter');expect(await mode()).toBe('pointer');await control.press('ArrowLeft');expect(await mode()).toBe('pointer');
+  await page.keyboard.press('Tab');expect(await mode()).toBe('keyboard');await page.keyboard.press('Shift+Tab');expect(await mode()).toBe('keyboard');
+  await control.press('Space');expect(await mode()).toBe('keyboard');
+ }
+ const button=page.getByRole('button',{name:'Action'});await button.click();expect(await mode()).toBe('pointer');await button.press('Enter');expect(await mode()).toBe('keyboard');
+ const checkbox=page.getByLabel('Option');await checkbox.click();await checkbox.press('Space');expect(await mode()).toBe('keyboard');
+ await page.evaluate(()=>{(window as any).disposeModality();});await button.click();await button.press('Tab');expect(await mode()).toBeNull();
 });

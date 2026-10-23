@@ -5,6 +5,10 @@ export function installFocusModality(doc: Document) {
  root.dataset.focusModality='keyboard';
  const pointer=()=>{root.dataset.focusModality='pointer';};
  const keyboard=(event:KeyboardEvent)=>{
+  const target=event.target;
+  const editing=target instanceof HTMLElement&&(target.isContentEditable||target instanceof HTMLTextAreaElement||target instanceof HTMLInputElement&&!['checkbox','radio','range','file','button','submit','reset','color'].includes(target.type));
+  // Typing and moving a text cursor do not change how focus was acquired.
+  if(event.key!=='Tab'&&editing)return;
   if(!event.altKey&&!event.ctrlKey&&!event.metaKey&&['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End','PageUp','PageDown','Enter',' ','Escape'].includes(event.key))root.dataset.focusModality='keyboard';
  };
  doc.addEventListener('pointerdown',pointer,true);

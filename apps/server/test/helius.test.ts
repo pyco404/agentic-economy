@@ -1,3 +1,5 @@
+import sdk from '../src/chain/pump-sdk.cjs';
+import {PublicKey as SolanaKey} from '@solana/web3.js';
 import { EventEmitter } from 'node:events';
 import type WebSocket from 'ws';
 import { describe, expect, it, vi } from 'vitest';
@@ -137,4 +139,9 @@ it('uses finalized mint-filtered subscriptions only as hints and closes them on 
 it('does not invalidate holder balances when only the empty terminal page advances its index slot',async()=>{
  const mint=key();let page=0;const f=setup(()=>++page===1?{last_indexed_slot:10,cursor:'last',token_accounts:[{address:key(),mint,owner:key(),amount:'1'}]}:{last_indexed_slot:11,token_accounts:[]});
  expect(await f.reader.holderCount(mint)).toMatchObject({slot:10,holders:1,exact:true,index:{complete:true}});
+});
+
+it('excludes canonical AMM liquidity inventory from holder owners after graduation',async()=>{
+ const mint=key(),owner=key(),pool=sdk.canonicalPumpPoolPda(new SolanaKey(mint)).toBase58();const f=setup(()=>({last_indexed_slot:10,token_accounts:[{address:key(),mint,owner:pool,amount:'100'},{address:key(),mint,owner,amount:'1'}]}));
+ expect(await f.reader.holderCount(mint)).toMatchObject({holders:1,exact:true,index:{owners:[{address:owner,amount:'1'}]}});
 });

@@ -24,7 +24,7 @@ export function communityHeadquarters(c: Pick<Community, 'headquartersBuildingId
 }
 export function communityActivitySummary(c: Community) {
   const parts = [];
-  if (c.stats.activeAgents > 0) parts.push(`${c.stats.activeAgents.toLocaleString()} active simulation ${c.stats.activeAgents === 1 ? 'agent' : 'agents'}`);
-  if (c.stats.verifiedTasks > 0) parts.push(`${c.stats.verifiedTasks.toLocaleString()} verified useful ${c.stats.verifiedTasks === 1 ? 'service' : 'services'}`);
+  if (c.stats.activeAgents > 0) parts.push(`${c.stats.activeAgents.toLocaleString()} active community ${c.stats.activeAgents === 1 ? 'agent' : 'agents'}`);
+  if (c.stats.verifiedTasks > 0) parts.push(`${c.stats.verifiedTasks.toLocaleString()} completed city ${c.stats.verifiedTasks === 1 ? 'activity' : 'activities'}`);
   return parts.join(' · ') || 'This community is just getting started.';
 }

@@ -14,3 +14,11 @@ export function readSignedLaunch(storage:Storage,origin:string,b:Binding,now=Dat
  return record;
 }
 export function eraseSignedLaunch(storage:Storage,origin:string,b:Binding){storage.removeItem(key(origin,b));}
+/** Retain evidence separately only after the server proves this exact message cannot execute. */
+export function archiveExpiredSignedLaunch(storage:Storage,origin:string,b:Binding,messageSha256:string){
+ const record=readSignedLaunch(storage,origin,b);
+ if(!record)return;
+ if(!/^[a-f0-9]{64}$/.test(messageSha256))throw new Error('Invalid expiry proof');
+ storage.setItem(`${key(origin,b)}:expired:${messageSha256}`,JSON.stringify(record));
+ storage.removeItem(key(origin,b));
+}

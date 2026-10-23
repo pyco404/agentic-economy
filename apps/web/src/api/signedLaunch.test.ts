@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {eraseSignedLaunch,readSignedLaunch,saveSignedLaunch,SIGNED_PAYLOAD_TTL} from './signedLaunch';
+import {archiveExpiredSignedLaunch,eraseSignedLaunch,readSignedLaunch,saveSignedLaunch,SIGNED_PAYLOAD_TTL} from './signedLaunch';
 const fakeStorage=()=>{const data=new Map<string,string>();return {getItem:(k:string)=>data.get(k)??null,setItem:(k:string,v:string)=>{data.set(k,v);},removeItem:(k:string)=>{data.delete(k);}} as Storage;};
 const binding={wallet:'owner',id:'lch_test',mint:'mint',network:'devnet' as const};
 const signed={...binding,signature:'s'.repeat(88),transaction:'signed-bytes'};
@@ -21,4 +21,15 @@ it('keeps Mainnet signed recovery isolated from test networks',()=>{
  saveSignedLaunch(s,'https://api.useaeco.xyz',{...signed,...mainnet},100);
  expect(readSignedLaunch(s,'https://api.useaeco.xyz',mainnet,101)).toMatchObject(mainnet);
  expect(readSignedLaunch(s,'https://api.useaeco.xyz',binding,101)).toBeNull();
+});
+it('archives expired approval evidence separately before clearing the active recovery copy',()=>{
+ const s=fakeStorage(),hash='a'.repeat(64);saveSignedLaunch(s,'api',signed);
+ archiveExpiredSignedLaunch(s,'api',binding,hash);
+ expect(JSON.parse(s.getItem(`aeco:signed:api:owner:lch_test:expired:${hash}`)!)).toMatchObject(signed);
+ expect(readSignedLaunch(s,'api',binding)).toBeNull();
+});
+it('retains active recovery evidence if the archive cannot be persisted',()=>{
+ const s=fakeStorage();saveSignedLaunch(s,'api',signed);
+ expect(()=>archiveExpiredSignedLaunch({...s,setItem:()=>{throw Error('quota');}},'api',binding,'a'.repeat(64))).toThrow('quota');
+ expect(readSignedLaunch(s,'api',binding)).toMatchObject(signed);
 });

@@ -1,3 +1,5 @@
+import { CityActivityInfo } from "./components/CityActivityInfo";
+import { activityCategory, cityPopulation } from "./api/activityPresentation";
 import { activityFocus, interestingActivity, isSocialActivity } from "./api/socialActivity";
 import { OfficialTokenAddress } from "./components/OfficialTokenAddress";
 import { ProjectLinks } from "./components/ProjectLinks";
@@ -417,6 +419,7 @@ export default function App() {
         {(page === "about" || page === "roadmap") && <div hidden={worldVisible} className="page-content about-shell">
           <div className="page-overlay-controls"><OverlayClose onClose={closePage} /></div>
           {page === "roadmap" ? <Roadmap /> : <About onNavigate={go} source={api.kind} mode={data?.mode} connected={!!data && !error && streamStatus === "connected"} />}
+          {data && <CityActivityInfo stats={data.stats} />}
           <footer className="page-footer"><span>Agentic Economy · A World That Works</span><ProjectLinks /><OfficialTokenAddress /></footer>
         </div>}
         {((page !== "about" && page !== "roadmap") || worldVisible) && (worldVisible && world && !data ? (
@@ -595,6 +598,7 @@ export default function App() {
                     <div id="world-activity-content" hidden={activityCollapsed}>
                     {explorer ? (
                       <>
+                        <CityActivityInfo stats={data.stats} />
                         <div className="activity-filters">
                           <label className="search small-search">
                             <Search size={15} />
@@ -651,12 +655,13 @@ export default function App() {
                       </>
                     ) : (
                       <>
+                        <CityActivityInfo stats={data.stats} />
                         <div className="activity-filters">
                           <div className="feed-label">
                             <i />
                             {api.kind === "demo"
                               ? "Offline fixture activity"
-                              : data.stats.simulation ? "Simulated city activity" : "City activity"}
+                              : "City activity"}
                           </div>
                           <select
                             className="world-filter"
@@ -670,7 +675,7 @@ export default function App() {
                               Production
                             </option>
                             <option value="task.verified">
-                              Simulated services
+                              City activities
                             </option>
                             <option value="building.placed">
                               Construction / headquarters
@@ -695,7 +700,7 @@ export default function App() {
                                 }}>
                                   <span className="feed-icon" data-kind={a.type}>{a.type === "task.verified" ? <CheckMark /> : <Activity size={14} />}</span>
                                   <span className="activity-copy">{displayActivity(a, data.agents)}
-                                    {isSocialActivity(a) && <span className="social-kind">Simulated social activity · View in city ↗</span>}
+                                    <span className="activity-category" title={activityCategory(a, data.communities, data.mode).detail}>{activityCategory(a, data.communities, data.mode).label}{activityFocus(a, data.agents, buildings) ? " · View in city ↗" : ""}</span>
                                   </span>
                                 </button>
                               </div>
@@ -776,7 +781,7 @@ export default function App() {
                     <div className="world-stat">
                       <Users size={18} />
                       <span>
-                        <b>{data.stats.aecoPopulation?.commonAgents.toLocaleString() ?? "—"}</b>
+                        <b>{cityPopulation(data.stats).commonAgents?.toLocaleString() ?? "—"}</b>
                         <small>Common agents</small>
                       </span>
                     </div>
@@ -796,16 +801,16 @@ export default function App() {
                     <div className="world-stat">
                       <Blocks size={18} />
                       <span>
-                        <b>{data.stats.communities||data.stats.simulation?.groups.length||0}</b>
-                        <small>{!data.stats.communities&&data.stats.simulation?"Simulation groups":"Communities"}</small>
+                        <b>{data.stats.communities}</b>
+                        <small>Communities</small>
                       </span>
                     </div>
                     <div className="world-stat">
                       <ShieldCheck size={18} />
                       <span>
-                        <b>{data.stats.verifiedTasks.toLocaleString()}</b>
+                        <b title="Completed virtual work tasks; excludes social stories and on-chain transactions.">{data.stats.verifiedTasks.toLocaleString()}</b>
                         <small>
-                          {isDemo ? "Demo services" : "Simulated services"}
+                          City activities
                         </small>
                       </span>
                     </div>
@@ -921,7 +926,7 @@ export default function App() {
                         )}
                         {selectedNow.inventory && (
                           <div>
-                            <dt>Stock (simulation)</dt>
+                            <dt>City inventory</dt>
                             <dd data-testid="building-stock">
                               {Object.entries(selectedNow.inventory)
                                 .map(
@@ -988,6 +993,7 @@ export default function App() {
                   {page === "economy" && <Economy data={data} onViewBuilding={viewWorkplace} onViewAgent={watchAgent} onHighlight={setWorkplaceHighlights}/>}{" "}
                   {page === "treasury" && <Treasury data={data} />}{" "}
                   {page === "launchpad" && <Launchpad />}
+                  <CityActivityInfo stats={data.stats} />
                   <footer className="page-footer">
                     <OfficialTokenAddress />
                     <span>Agentic Economy · A World That Works</span><ProjectLinks /><a href={routeUrl("about")} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); go("about"); }}>About the world <ArrowRight size={13} aria-hidden="true" /></a>
@@ -995,7 +1001,7 @@ export default function App() {
                       {isDemo
                         ? "Demo preview · No real financial actions"
                         : "Treasury payouts disabled"}{" "}
-                      · City Credits are simulated.
+                      · City Credits are virtual and non-withdrawable.
                     </span>
                   </footer>
                 </div>

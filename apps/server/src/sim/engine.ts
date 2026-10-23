@@ -1,3 +1,4 @@
+import { configureSociety, stepSociety, stepSocialAgent } from "./society.js";
 import { createHash } from "node:crypto";
 import { RESOURCES, type AgentPermission, type AgentStrategy, type GridPos, type Profession, type Resource, type TaskKind } from "@agentic-economy/shared";
 import { KIND_SPECS, Rng, deriveSeed, type WorldLayout } from "@agentic-economy/world-spec";
@@ -262,6 +263,15 @@ export class SimEngine {
     this.expireTasks();
     if (s.tick % MARKET_INTERVAL === 5) this.updatePrices();
 
+    const social = stepSociety(s, this.nav, this.out.events);
+    for (const id of social.changed) { const a = s.agents[id]!; this.out.moves.push({ id, cell: { ...a.cell }, activity: a.activity, target: a.target }); }
+    for (const { moment } of social.events) {
+      this.event(moment.phase === "consequence" ? "social.consequence" : moment.phase === "invitation" ? "social.gathering" : "social.encounter", moment.summary, {
+        agentId: moment.participants[0], buildingId: moment.buildingId ?? undefined, data: { social: moment, simulated: true },
+      });
+      for (const id of moment.participants) this.action(s.agents[id]!, "social", moment.summary, { buildingId: moment.buildingId, detail: { social: moment, simulated: true } });
+    }
+
     s.tick += 1;
     if (s.tick % TICKS_PER_DAY === 0) this.closeEpoch();
     s.rngState = this.rng.seedState;
@@ -319,6 +329,12 @@ export class SimEngine {
   private applyCommand(c: SimCommand) {
     const s = this.state;
     switch (c.type) {
+      case "society.configure": {
+        const ids = Object.keys(s.society?.profiles ?? {});
+        configureSociety(s, c.enabled);
+        for (const id of ids) { const a = s.agents[id]; if (a) this.out.moves.push({ id, cell: { ...a.cell }, activity: a.activity, target: a.target }); }
+        return;
+      }
       case "aeco.reconcile": {
         const slot = s.aecoPopulation?.slot;
         applyCommonAgents(s, c, this.nav);
@@ -726,6 +742,7 @@ export class SimEngine {
   private stepAgent(a: AgentSimState) {
     const s = this.state;
     if (a.status === "paused") return;
+    if (stepSocialAgent(s, a)) { this.out.moves.push({ id: a.id, cell: { ...a.cell }, activity: a.activity, target: a.target }); return; }
     if (a.identity.kind === "aeco_observed") {
       if (stepCommonAgent(a, s, this.nav) && s.tick % 4 === Number.parseInt(a.id.slice(-1), 16) % 4) this.out.moves.push({ id: a.id, cell: { ...a.cell }, activity: a.activity, target: a.target });
       return;

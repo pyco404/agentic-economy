@@ -28,6 +28,7 @@ export interface Part {
   role?: "city-edge" | "landmass-edge" | "roof" | "window" | "door" | "window-frame" | "window-reflection" | "tree-trunk" | "tree-crown"
     | "street-surface" | "street-sidewalk" | "street-marking" | "bridge-edge" | "field-row"
     | "rail-pier" | "rail-fill" | "rail-sleeper" | "rail-buffer"
+    | "ground-grass" | "ground-shrub"
     | "channel-bed" | "channel-water" | "channel-rock" | "channel-reed";
 }
 export const geometryLibrary = () => {

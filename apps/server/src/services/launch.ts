@@ -108,8 +108,6 @@ export class LaunchService {
     const readOnlyPreparation=!!owned&&preparedMintPreparationAllowed(this.config,wallet,owned.id);
     if(!readOnlyPreparation)this.assertEnabled();
     if(!readOnlyPreparation&&this.config.mode!=="demo"&&(!owned||!this.config.pumpLaunch.enabled))throw new AppError("feature_disabled","Launch execution requires an owned verified draft and an explicitly enabled safe network");
-    if(this.config.solana.cluster==="mainnet-beta" && !this.config.pumpLaunch.preparedMintDraftId)
-      throw new AppError("feature_disabled","The official mint must be bound to its wallet-owned draft before Mainnet preparation");
     if(!currentQuoteAllowed(quote))throw new AppError("feature_disabled","Only SOL is supported for new launches");
     if(owned){const existing=await this.store.getLaunch(owned.launchId);if(existing){
       const l=existing.launch;if(l.launcherWallet!==wallet||l.execution?.draftId!==owned.id||l.execution.draftVersion!==owned.version)throw new AppError("conflict","Launch attempt does not match this draft");
@@ -143,9 +141,9 @@ export class LaunchService {
       if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount||devQuote.tokenAmount*10_000n>devQuote.totalSupply*BigInt(DEV_BUY_MAX_BPS))throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
     }
     assertLaunchWalletAllowed(this.config, wallet);
-    const reserved = !!this.config.pumpLaunch.preparedMintDraftId && this.config.solana.cluster === "mainnet-beta";
-    if(reserved && (wallet!==OFFICIAL_TREASURIES.aecoDeployer || owned?.id!==this.config.pumpLaunch.preparedMintDraftId))
-      throw new AppError("forbidden","Only the operator-bound official draft may use this Mainnet launch release");
+    const reserved = this.config.solana.cluster === "mainnet-beta";
+    if(reserved && (!owned || !preparedMintPreparationAllowed(this.config,wallet,owned.id)))
+      throw new AppError("forbidden","Only the authenticated official launch intent may use this Mainnet mint");
     if(reserved && (!this.chain.buildUnsignedLaunchTransaction || !this.chain.mintAccountExists))
       throw new AppError("unavailable","The reserved mint cannot be prepared. Reconcile its existing state; do not substitute another mint.");
     if(reserved)await this.assertExpiredMintAbsent({mint:PLANNED_AECO_MINT});
@@ -236,13 +234,14 @@ export class LaunchService {
   private localMintPolicy(){return {mint:PLANNED_AECO_MINT,deployer:OFFICIAL_TREASURIES.aecoDeployer,
     platform:OFFICIAL_TREASURIES.platform,rewards:OFFICIAL_TREASURIES.agentRewards};}
 
-  /** Configuration changes cannot turn a saved ordinary intent into the official one. */
+  /** The saved intent binds mint, owner and draft; an optional operator override can only narrow access. */
   private assertLocalMintBinding(l:TokenLaunch){
     const review=l.execution?.localMintReview;
     if(review && (l.mint!==PLANNED_AECO_MINT || l.launcherWallet!==OFFICIAL_TREASURIES.aecoDeployer || l.execution?.network!=="mainnet-beta" ||
-      l.execution.draftId!==this.config.pumpLaunch.preparedMintDraftId))
+      !l.execution.draftId || review.launchId!==l.id || review.mint!==l.mint || review.launcherWallet!==l.launcherWallet ||
+      (this.config.pumpLaunch.preparedMintDraftId && l.execution.draftId!==this.config.pumpLaunch.preparedMintDraftId)))
       throw new AppError("forbidden","The official mint reservation changed. Keep this attempt for read-only reconciliation.");
-    if((l.mode==="production"||l.execution?.network==="mainnet-beta") && (!this.config.pumpLaunch.preparedMintDraftId||!review))
+    if((l.mode==="production"||l.execution?.network==="mainnet-beta") && !review)
       throw new AppError("forbidden","This saved attempt is outside the official mint reservation");
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseUnits, explorerTx } from "./tokenMarkets";
+import { baseUnits, explorerTx,marketNumber,marketSource } from "./tokenMarkets";
 
 describe("on-chain amount formatting", () => {
   it("converts raw base units exactly, without floating-point rounding", () => {
@@ -13,4 +13,10 @@ describe("on-chain amount formatting", () => {
     expect(explorerTx("sig", "devnet")).toBe("https://explorer.solana.com/tx/sig?cluster=devnet");
     expect(explorerTx("sig", "mainnet-beta")).toBe("https://explorer.solana.com/tx/sig");
   });
+});
+
+it('keeps zero values readable and labels per-metric sources accurately',()=>{
+ expect(marketNumber(0)).not.toBe('Unavailable');expect(marketNumber(null)).toBe('Unavailable');
+ expect(marketSource({source:'solana_rpc',metricSources:{volume24hUsd:'dexscreener'}} as never,'volume24hUsd')).toBe('DEX Screener');
+ expect(marketSource({source:'solana_rpc',metricSources:{priceUsd:'solana_rpc + coinbase'}} as never,'priceUsd')).toBe('Solana · Coinbase');
 });

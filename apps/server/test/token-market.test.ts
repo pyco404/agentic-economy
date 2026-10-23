@@ -73,3 +73,17 @@ it('does not block market responses on slow historical RPC reconciliation',async
  const service=new TokenMarketService(f.store,gateway,'mainnet-beta',async()=>Response.json([]));
  try{const result=await service.snapshot(f.mint);expect(result).toMatchObject({status:'available',activityCoverage:{complete:false}});}finally{release();await service.stop();}
 });
+
+it('reverifies a real Developer Buy launch against its persisted amount and cap instead of rejecting an unexpected buy',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const captured=JSON.parse(readFileSync(new URL('./fixtures/pump-launch-devbuy-local.json',import.meta.url),'utf8'),(_k,v)=>v&&typeof v==='object'&&'$bigint'in v?BigInt(v.$bigint):v);
+ // Captured isolated-validator execution evidence exercises the Mainnet market-service branch only.
+ const sc=sharingConfigPda(captured.mint),create=captured.tx.instructions.find((i:{discriminatorHex:string})=>i.discriminatorHex===PUMP_IX.createV2),data=Buffer.from(create.dataBase64,'base64');let offset=8;
+ const readString=()=>{const length=data.readUInt32LE(offset);offset+=4;const text=data.subarray(offset,offset+length).toString();offset+=length;return text;};
+ const [name,symbol,metadataUri]=[readString(),readString(),readString()],store=new MemoryStore(),launch={...structuredClone(launchFixture.launch),mode:'production',status:'confirmed',mint:captured.mint,launcherWallet:captured.launcher,signature:captured.tx.signature,communityId:'com_devbuy01',draft:{...launchFixture.launch.draft,name,symbol,metadataUri},fees:{...launchFixture.launch.fees,platformTreasury:captured.platform,creatorFeeSplit:{...launchFixture.launch.fees.creatorFeeSplit,platformTreasury:captured.platform,agentRewardsTreasury:captured.agent},developerBuy:{bps:350,quoteAsset:'SOL',totalSupply:captured.totalSupply,tokenAmount:captured.devBuy.tokenAmount,estimatedQuoteCost:captured.devBuy.maxQuoteCost,maxQuoteCost:captured.devBuy.maxQuoteCost,pumpFees:'0',priceImpactBps:0}},execution:{network:'mainnet-beta',quoteAsset:'SOL',genesisHash:'5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d',devBuy:{tokenAmount:captured.devBuy.tokenAmount,maxQuoteCost:captured.devBuy.maxQuoteCost}}} as unknown as TokenLaunch;
+ await store.createLaunch(launch);vi.spyOn(store,'allCommunities').mockResolvedValue([{id:launch.communityId,mint:launch.mint,launchId:launch.id,launchSignature:launch.signature} as Community]);
+ const f=await fixture(),gateway={...f.gateway,getTransaction:async()=>captured.tx,getFeeRoutingState:async()=>({tokenTotalSupply:BigInt(captured.totalSupply),bondingCurveCreator:sc,bondingCurveComplete:false,bondingCurveQuoteMint:WRAPPED_SOL_MINT,sharingConfig:{address:sc,version:2,status:'Active' as const,mint:launch.mint,admin:captured.launcher,adminRevoked:true,shareholders:[{address:captured.agent,shareBps:6000},{address:captured.platform,shareBps:4000}]}})},fetcher=async()=>Response.json([{...f.pair,baseToken:{address:launch.mint}}]);
+ expect((await new TokenMarketService(store,gateway,'mainnet-beta',fetcher).snapshot(launch.mint)).status).toBe('available');
+ launch.execution!.devBuy!.tokenAmount=(BigInt(captured.devBuy.tokenAmount)+1n).toString();await store.updateLaunch(launch,0);
+ expect((await new TokenMarketService(store,gateway,'mainnet-beta',fetcher).snapshot(launch.mint)).reason).toContain('evidence');
+});

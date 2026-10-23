@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { solBudgetLamports, DEV_BUY_MAX_BPS, OFFICIAL_TREASURIES, DevBuyQuoteQuery, DevBuyQuote, NewLaunchDraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, launchpadPaths } from '@agentic-economy/shared';
+import { solBudgetLamports, DEV_BUY_MAX_BPS, OFFICIAL_TREASURIES, DevBuyQuoteQuery, DevBuyQuote, NewLaunchDraftFields, SavedLaunchDraft, VerifyRequest, TokenLaunch, TxSignature, launchpadPaths } from '@agentic-economy/shared';
 import { ChainFeatureUnavailable } from '../chain/types.js';
 import type { AppContext } from '../context.js';
 import { hashToken } from '../services/auth.js';
@@ -104,12 +104,13 @@ export async function registerLaunchpad(app:FastifyInstance,ctx:AppContext){
  });
  const launchPath='/api/v1/launchpad/launches/:launchId';
  const launchId=(req:FastifyRequest)=>z.object({launchId:z.string().regex(/^lch_[A-Za-z0-9]+$/)}).parse(req.params).launchId;
- app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),id=launchId(req);return{launch:TokenLaunch.parse(await ctx.launches.refresh(owner,id)),recovery:await ctx.launches.recovery(owner,id)};});
+ app.get(launchPath,async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await wallet(req),id=launchId(req),query=z.object({signature:TxSignature.optional()}).strict().parse(req.query);return{launch:TokenLaunch.parse(await ctx.launches.refresh(owner,id)),recovery:await ctx.launches.recovery(owner,id),expiredReview:await ctx.launches.expiredReview(owner,id,query.signature)};});
+ app.get(launchPath+'/signing-window',async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.launches.signingWindow(await wallet(req),launchId(req));});
  app.get(launchPath+'/mint-review',async(req,reply)=>{reply.header('Cache-Control','no-store');return ctx.launches.localMintReview(await wallet(req),launchId(req));});
  app.post(launchPath+'/mint-review/renew',async(req)=>{const owner=await executionOwner(req),body=z.object({messageSha256:z.string().regex(/^[a-f0-9]{64}$/)}).strict().parse(req.body);return execution(()=>ctx.launches.renewLocalMintReview(owner,launchId(req),body.messageSha256));});
  app.post(launchPath+'/mint-signature/automatic',async(req,reply)=>{reply.header('Cache-Control','no-store');const owner=await executionOwner(req);z.object({}).strict().parse(req.body);return execution(()=>ctx.launches.automaticMintSignature(owner,launchId(req)));});
  app.post(launchPath+'/mint-signature',async(req)=>{const owner=await executionOwner(req);return execution(()=>ctx.launches.importLocalMintSignature(owner,launchId(req),req.body));});
- app.post(launchPath+'/submit',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644)}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.submit(owner,launchId(req),body.transaction)))};});
+ app.post(launchPath+'/submit',async(req)=>{const owner=await executionOwner(req),id=launchId(req),body=z.object({transaction:z.string().min(1).max(1644)}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.submit(owner,id,body.transaction))),expiredReview:await ctx.launches.expiredReview(owner,id)};});
  app.post(launchPath+'/resume',async(req)=>{const owner=await executionOwner(req),body=z.object({transaction:z.string().min(1).max(1644).optional()}).strict().parse(req.body);return{launch:TokenLaunch.parse(await execution(()=>ctx.launches.resume(owner,launchId(req),body.transaction)))};});
  // The parser is scoped to image/octet-stream uploads. Authenticate before buffering any body.
  app.addContentTypeParser('application/octet-stream',{parseAs:'buffer',bodyLimit:ctx.config.pinata.maxBytes},(_req,body,done)=>done(null,body));

@@ -109,6 +109,8 @@ export const TokenLaunch = z
       localMintReview:LocalMintReview.optional(),
       /** Immutable prior public reviews retained when the same reserved attempt is explicitly renewed. */
       localMintReviewHistory:z.array(LocalMintReview).optional(),
+      /** Validated wallet approvals that expired before broadcasting; retained across review renewal. */
+      expiredApprovals:z.array(z.object({signature:TxSignature,messageSha256:z.string().regex(/^[a-f0-9]{64}$/),at:z.iso.datetime()})).optional(),
       platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
       /** Requested Developer Buy: exact token amount (never above 3.5% of supply) and the maximum lamports it may cost. */
       devBuy:z.object({budgetSol:z.string().refine(s=>{const n=solBudgetLamports(s);return n!==null&&n>0n;}).optional(),bps:z.number().int().min(0).max(DEV_BUY_MAX_BPS),tokenAmount:AmountString,maxQuoteCost:AmountString}).optional(),
@@ -151,7 +153,9 @@ export const ConfirmLaunchRequest = z
   .meta({ id: "ConfirmLaunchRequest" });
 export type ConfirmLaunchRequest = z.infer<typeof ConfirmLaunchRequest>;
 
-export const LaunchResponse = z.object({ launch: TokenLaunch, recovery:z.object({signature:TxSignature,canResume:z.boolean()}).optional() }).meta({ id: "LaunchResponse" });
+export const ExpiredLaunchReview=z.object({messageSha256:z.string().regex(/^[a-f0-9]{64}$/),lastValidBlockHeight:z.number().int().nonnegative(),finalizedBlockHeight:z.number().int().nonnegative(),checkedSignature:TxSignature.optional()}).refine(v=>v.finalizedBlockHeight>v.lastValidBlockHeight);
+export const LaunchSigningWindow=z.object({messageSha256:z.string().regex(/^[a-f0-9]{64}$/),remainingBlocks:z.number().int().nonnegative(),checkedAt:z.iso.datetime()});
+export const LaunchResponse = z.object({ launch: TokenLaunch, recovery:z.object({signature:TxSignature,canResume:z.boolean()}).optional(),expiredReview:ExpiredLaunchReview.optional() }).meta({ id: "LaunchResponse" });
 export type LaunchResponse = z.infer<typeof LaunchResponse>;
 
 export const LaunchModeInfo = z.object({ mode: DataMode }).meta({ id: "LaunchModeInfo" });

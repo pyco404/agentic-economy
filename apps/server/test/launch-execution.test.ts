@@ -40,6 +40,8 @@ async function setup(){
  });
  chain.getGenesisHash=async()=>'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
  chain.getFinalizedBlockHeight=async()=>finalizedHeight;
+ chain.getConfirmedBlockHeight=async()=>finalizedHeight;
+ chain.isBlockhashValid=async()=>true;
  chain.mintAccountExists=vi.fn(async()=>false);
  chain.getSignatureStatus=vi.fn(async()=>null);
  chain.submitLaunchTransaction=vi.fn(async transaction=>{pendingSig=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);if(rpcFailure)throw new Error('RPC timed out');return pendingSig;});
@@ -49,6 +51,43 @@ async function setup(){
  return{call,prepare,signed,draft,chain,creator,user,setLanded:()=>{landed=true;},expire:()=>{finalizedHeight=101;},failRpc:()=>{rpcFailure=true;}};
 }
 describe('owned launch execution API (mock RPC, real transaction bytes/signatures)',()=>{
+ it('records a late wallet approval without broadcasting and returns exact-message expiry proof',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const transaction=f.signed(p.transaction),signature=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);
+  f.expire();const r=await f.call('POST',url+'/submit',{transaction});expect(r.statusCode).toBe(200);
+  expect(r.json().launch).toMatchObject({status:'expired',signature:null,execution:{expiredApprovals:[{signature}]}});
+  expect(r.json().expiredReview).toMatchObject({lastValidBlockHeight:100,finalizedBlockHeight:101,checkedSignature:signature});
+  const version=(await env!.ctx.store.getLaunch(p.launch.id))!.version;
+  expect((await f.call('POST',url+'/submit',{transaction})).json().launch.execution.expiredApprovals).toHaveLength(1);
+  expect((await f.call('GET',url+'?signature='+signature)).json().expiredReview.checkedSignature).toBe(signature);
+  expect((await env!.ctx.store.getLaunch(p.launch.id))!.version).toBe(version);
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();expect(await env!.ctx.launches.recovery(f.creator.publicKey.toBase58(),p.launch.id)).toBeUndefined();
+ });
+ it('keeps expiry unresolved on contradictory signature or mint history, including a browser-only signature',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const transaction=f.signed(p.transaction),signature=bs58.encode(VersionedTransaction.deserialize(Buffer.from(transaction,'base64')).signatures[0]!);f.expire();
+  await f.call('GET',url);f.chain.getSignatureStatus=vi.fn(async()=>({slot:1,err:null,confirmationStatus:'processed' as const}));
+  expect((await f.call('GET',url+'?signature='+signature)).statusCode).toBe(503);
+  expect((await f.call('POST',url+'/submit',{transaction})).statusCode).toBe(503);
+  f.chain.getSignatureStatus=async()=>null;vi.spyOn(f.chain,'listSignaturesForAddress').mockResolvedValue([signature]);
+  expect((await f.call('GET',url)).statusCode).toBe(503);expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('checks confirmed height and blockhash before opening a fresh wallet signing window',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}/signing-window`;
+  expect((await f.call('GET',url)).json()).toMatchObject({remainingBlocks:99});
+  f.chain.getConfirmedBlockHeight=async()=>80;expect((await f.call('GET',url)).statusCode).toBe(409);
+  f.chain.getConfirmedBlockHeight=async()=>1;f.chain.isBlockhashValid=async()=>false;expect((await f.call('GET',url)).statusCode).toBe(409);
+  f.chain.isBlockhashValid=async()=>{throw Error('RPC unavailable');};expect((await f.call('GET',url)).statusCode).toBe(503);
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('never broadcasts a closed blockhash while finalized expiry is still catching up',async()=>{
+  const f=await setup(),p=(await f.prepare()).json(),url=`/api/v1/launchpad/launches/${p.launch.id}`;
+  const transaction=f.signed(p.transaction);f.chain.isBlockhashValid=async()=>false;
+  const r=await f.call('POST',url+'/submit',{transaction});expect(r.statusCode).toBe(503);expect(r.json().error.message).toContain('approval window ended');
+  expect((await f.call('GET',url)).json().expiredReview).toBeUndefined();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+  f.expire();expect((await f.call('POST',url+'/submit',{transaction})).json().expiredReview).toBeDefined();
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
  it('prepares idempotently and confirms only chain evidence, registering one platform token and fee receipt',async()=>{
   const f=await setup(),first=await f.prepare();expect(first.statusCode).toBe(200);const p=first.json();expect(p.demoTransaction).toBe(false);expect((await env!.app.inject(`/api/v1/launches/${p.launch.id}`)).statusCode).toBe(404);expect(p.launch.execution).toMatchObject({draftId:f.draft.id,platformOrigin:'PLATFORM',initiator:'HUMAN',quoteAsset:'SOL',network:'devnet'});
   expect((await f.prepare()).json()).toEqual(p);expect(f.chain.buildLaunchTransaction).toHaveBeenCalledTimes(1);
@@ -423,6 +462,19 @@ describe('operator-bound prepared official mint (public keys and mock RPC only)'
   expect(a.transaction).toBe(b.transaction);expect(a.launch.id).toBe(first.launch.id);
   expect((await env!.ctx.store.getLaunch(first.launch.id))!.launch.execution!.localMintReviewHistory).toEqual([old]);
   expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();
+ });
+ it('retains expired-approval evidence when renewing the same reserved mint and unchanged metadata',async()=>{
+  const f=await reserved(),service=env!.ctx.launches,first=await f.prepareOfficial(),old=first.launch.execution!.localMintReview!;
+  const signature=bs58.encode(new Uint8Array(64).fill(7)),rec=(await env!.ctx.store.getLaunch(first.launch.id))!;
+  await env!.ctx.store.updateLaunch({...rec.launch,status:'expired',execution:{...rec.launch.execution!,expiredApprovals:[{signature,messageSha256:old.messageSha256,at:new Date().toISOString()}]}},rec.version);
+  f.expire();const proof=await service.expiredReview(f.owner,first.launch.id,signature);expect(proof?.checkedSignature).toBe(signature);
+  const builder=f.chain.buildUnsignedLaunchTransaction!;f.chain.buildUnsignedLaunchTransaction=vi.fn(async input=>({...await builder(input),lastValidBlockHeight:250}));
+  const renewed=await service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256);
+  expect(renewed.launch.mint).toBe(first.launch.mint);expect(renewed.launch.draft).toEqual(first.launch.draft);
+  expect(renewed.launch.execution!.expiredApprovals).toMatchObject([{signature,messageSha256:old.messageSha256}]);
+  expect(renewed.launch.execution!.localMintReviewHistory).toEqual([old]);expect(renewed.launch.signature).toBeNull();
+  expect(renewed.launch.fees.platformTreasury).toBe(first.launch.fees.platformTreasury);expect(renewed.launch.fees.creatorFeeSplit).toEqual(first.launch.fees.creatorFeeSplit);
+  expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
  });
  it('blocks renewal on mint/history/network uncertainty, a signed receipt, permission loss or disabled execution',async()=>{
   const f=await reserved(),first=await f.prepareOfficial(),old=first.launch.execution!.localMintReview!,service=env!.ctx.launches;

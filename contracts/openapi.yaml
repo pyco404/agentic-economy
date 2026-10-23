@@ -5226,6 +5226,27 @@ components:
             - signature
             - canResume
           additionalProperties: false
+        expiredReview:
+          type: object
+          properties:
+            messageSha256:
+              type: string
+              pattern: ^[a-f0-9]{64}$
+            lastValidBlockHeight:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            finalizedBlockHeight:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            checkedSignature:
+              $ref: "#/components/schemas/TxSignature"
+          required:
+            - messageSha256
+            - lastValidBlockHeight
+            - finalizedBlockHeight
+          additionalProperties: false
       required:
         - launch
       additionalProperties: false
@@ -5244,6 +5265,26 @@ components:
           required:
             - signature
             - canResume
+        expiredReview:
+          type: object
+          properties:
+            messageSha256:
+              type: string
+              pattern: ^[a-f0-9]{64}$
+            lastValidBlockHeight:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            finalizedBlockHeight:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            checkedSignature:
+              $ref: "#/components/schemas/TxSignature"
+          required:
+            - messageSha256
+            - lastValidBlockHeight
+            - finalizedBlockHeight
       required:
         - launch
     LaunchStatus:
@@ -7264,6 +7305,25 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/LocalMintReview"
+            expiredApprovals:
+              type: array
+              items:
+                type: object
+                properties:
+                  signature:
+                    $ref: "#/components/schemas/TxSignature"
+                  messageSha256:
+                    type: string
+                    pattern: ^[a-f0-9]{64}$
+                  at:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - signature
+                  - messageSha256
+                  - at
+                additionalProperties: false
             platformOrigin:
               type: string
               const: PLATFORM
@@ -7435,6 +7495,24 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/LocalMintReview"
+            expiredApprovals:
+              type: array
+              items:
+                type: object
+                properties:
+                  signature:
+                    $ref: "#/components/schemas/TxSignature"
+                  messageSha256:
+                    type: string
+                    pattern: ^[a-f0-9]{64}$
+                  at:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - signature
+                  - messageSha256
+                  - at
             platformOrigin:
               type: string
               const: PLATFORM

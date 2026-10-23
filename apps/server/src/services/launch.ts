@@ -219,6 +219,7 @@ export class LaunchService {
       next.renewal={previousMessageSha256:previous.messageSha256,previousLastValidBlockHeight:previous.lastValidBlockHeight,
         finalizedBlockHeight:renewal.finalizedHeight,checkedAt:at};
       launch.execution!.localMintReviewHistory=[...(old.execution!.localMintReviewHistory??[]),previous];
+      if(old.execution!.expiredApprovals)launch.execution!.expiredApprovals=old.execution!.expiredApprovals;
       launch.createdAt=old.createdAt;launch.history=[...old.history,{status:"awaiting_signature",at}];
       launch.errors=[...old.errors,{code:"mint_review_renewed",message:"Expired public signing review renewed on the same mint and attempt; fresh wallet approval is required.",at}];
       if(await this.submissions.get(wallet,old.id))throw new AppError("conflict","Signed evidence appeared. Reconcile this attempt before renewing.");
@@ -286,6 +287,8 @@ export class LaunchService {
     let history:string[];try{history=await this.chain.listSignaturesForAddress(l.mint,null,1);}catch{throw new AppError("unavailable","Mint transaction history is unavailable. Reconcile this attempt before renewing.");}
     if(history.length)
       throw new AppError("unavailable","The reserved mint has transaction history. Reconcile it before renewing.");
+    if(l.execution!.expiredApprovals?.some(a=>a.messageSha256===review.messageSha256)&&!await this.expiredReview(wallet,id))
+      throw new AppError('unavailable','Reconcile this expired wallet approval before refreshing the review');
     return this.prepareReview(wallet,l.draft,{id:l.execution!.draftId,version:l.execution!.draftVersion,launchId:l.id,devBuyBps:l.execution!.devBuy?.bps??0,...(l.execution!.devBuy?.budgetSol?{devBuyBps:0,devBuySol:l.execution!.devBuy.budgetSol}:{})},
       {asset:'SOL'},{record,finalizedHeight:height});
   }
@@ -293,6 +296,47 @@ export class LaunchService {
   automaticMintSigningAvailable(wallet?:string){
     return !!(wallet&&this.config.financialFeaturesEnabled&&this.config.pumpLaunch.enabled&&
       preparedMintPreparationAllowed(this.config,wallet)&&this.serverMintSigner?.configured());
+  }
+
+  /** Just-in-time, sign-only readiness; never builds, signs or submits a transaction. */
+  async signingWindow(wallet:string,id:string){
+    assertLaunchWalletAllowed(this.config,wallet);this.assertEnabled();
+    const record=await this.store.getLaunch(id),l=record?.launch;
+    if(!l||l.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
+    this.assertLocalMintBinding(l);
+    if(!this.config.pumpLaunch.enabled||l.status!=='awaiting_signature'||!l.execution||l.signature||await this.submissions.get(wallet,id))
+      throw new AppError('conflict','Check this saved attempt before requesting wallet approval');
+    await this.assertPreparedNetwork(l);
+    if(!this.chain.getConfirmedBlockHeight||!this.chain.isBlockhashValid)throw new AppError('unavailable','Signing-window verification is unavailable. Nothing was sent to your wallet.');
+    const tx=VersionedTransaction.deserialize(Buffer.from(l.execution.transaction,'base64'));
+    let height:number,valid:boolean;
+    try{[height,valid]=await Promise.all([this.chain.getConfirmedBlockHeight(),this.chain.isBlockhashValid(tx.message.recentBlockhash)]);}catch{throw new AppError('unavailable','Signing-window verification failed. Check this attempt again.');}
+    assertLaunchWalletAllowed(this.config,wallet,l.execution.network);this.assertEnabled();
+    if(!this.config.pumpLaunch.enabled)throw new AppError('feature_disabled','Wallet approval is disabled');
+    if(!valid||l.execution.lastValidBlockHeight-height<40)throw new AppError('conflict','This review is expired or close to expiry. Check its status, then refresh the transaction review before wallet approval.');
+    return{messageSha256:mintMessageHash(tx),remainingBlocks:l.execution.lastValidBlockHeight-height,checkedAt:this.now().toISOString()};
+  }
+
+  /** Authoritative no-execution proof. Missing RPC methods or contradictory history fail closed. */
+  async expiredReview(wallet:string,id:string,reportedSignature?:string){
+    const record=await this.store.getLaunch(id),l=record?.launch;
+    if(!l||l.launcherWallet!==wallet)throw new AppError('not_found','Launch not found');
+    if(l.status!=='expired'||!l.execution||l.signature||await this.submissions.get(wallet,id))return undefined;
+    await this.assertPreparedNetwork(l);
+    if(!this.chain.getFinalizedBlockHeight)throw new AppError('unavailable','Finalized expiry verification is unavailable');
+    let height:number;try{height=await this.chain.getFinalizedBlockHeight();}catch{throw new AppError('unavailable','Finalized expiry verification failed. Keep this attempt.');}
+    if(height<=l.execution.lastValidBlockHeight)return undefined;
+    await this.assertExpiredMintAbsent(l);
+    let history:string[];try{history=await this.chain.listSignaturesForAddress(l.mint,null,1);}catch{throw new AppError('unavailable','Mint history is unavailable. Keep this attempt for reconciliation.');}
+    if(history.length)throw new AppError('unavailable','The mint has transaction history. Keep this attempt for reconciliation.');
+    const hash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(l.execution.transaction,'base64')));
+    const approvals=(l.execution.expiredApprovals??[]).filter(a=>a.messageSha256===hash);
+    const signatures=new Set([...approvals.map(a=>a.signature),...(reportedSignature?[reportedSignature]:[])]);
+    for(const signature of signatures){
+      if(!this.chain.getSignatureStatus)throw new AppError('unavailable','Signature reconciliation is unavailable');
+      try{if(await this.chain.getSignatureStatus(signature)||await this.chain.getTransaction(signature))throw new Error();}catch{throw new AppError('unavailable','Signature history is uncertain. Keep this attempt for reconciliation.');}
+    }
+    return{messageSha256:hash,lastValidBlockHeight:l.execution.lastValidBlockHeight,finalizedBlockHeight:height,...(reportedSignature||approvals.at(-1)?.signature?{checkedSignature:reportedSignature??approvals.at(-1)!.signature}:{})};
   }
 
   /** Mint-only signature immediately before Phantom; never constructs, submits or broadcasts a new attempt. */
@@ -312,6 +356,7 @@ export class LaunchService {
     assertLaunchWalletAllowed(this.config,wallet,record.launch.execution?.network);
     this.assertEnabled();
     if(!this.automaticMintSigningAvailable(wallet))throw new AppError('feature_disabled','Automatic mint signing is unavailable');
+    await this.signingWindow(wallet,id);
     const artifact=await this.serverMintSigner.sign(review,wallet);
     // Existing import validation rechecks the persisted review, state, network and expiry after signing.
     return this.importLocalMintSignature(wallet,id,artifact);
@@ -372,13 +417,23 @@ export class LaunchService {
     await this.assertPreparedNetwork(l);
     if(await this.chain.getTransaction(checked.signature))return this.confirm(wallet,id,checked.signature);
     if(l.execution.quoteAsset!=="SOL")throw new AppError("feature_disabled","Only SOL submissions are enabled. Historical launches remain available for reconciliation.");
-    if(l.status==="expired")return l;
-    if(this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
+    if(!this.chain.isBlockhashValid)throw new AppError('unavailable','Blockhash verification is unavailable. Keep this signed approval for reconciliation.');
+    let valid:boolean;try{valid=await this.chain.isBlockhashValid(VersionedTransaction.deserialize(Buffer.from(l.execution.transaction,'base64')).message.recentBlockhash);}catch{throw new AppError('unavailable','Blockhash verification failed. Keep this signed approval; do not sign again.');}
+    if(l.status==="expired"||!valid||this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
       // A previously broadcast transaction may be missing from this RPC's history.
       // Keep uncertainty recoverable instead of asserting that no charge occurred.
       if(l.signature)return l;
       await this.assertExpiredMintAbsent(l);
-      const expired=this.transition(l,"expired");await this.store.updateLaunch(expired,record.version);return expired;
+      if(!this.chain.getFinalizedBlockHeight||await this.chain.getFinalizedBlockHeight()<=l.execution.lastValidBlockHeight)
+        throw new AppError('unavailable','The approval window ended. Waiting for finalized expiry checks; no broadcast was attempted. Keep this approval for reconciliation.');
+      if(!this.chain.getSignatureStatus)throw new AppError('unavailable','Signature reconciliation is unavailable');
+      let history:string[],status:unknown;
+      try{[history,status]=await Promise.all([this.chain.listSignaturesForAddress(l.mint,null,1),this.chain.getSignatureStatus(checked.signature)]);}catch{throw new AppError('unavailable','Transaction history is unavailable. Keep this signed approval; do not sign again.');}
+      if(history.length||status)throw new AppError('unavailable','Transaction history needs reconciliation. Do not refresh or sign again.');
+      const hash=mintMessageHash(VersionedTransaction.deserialize(Buffer.from(l.execution.transaction,'base64')));
+      if(l.execution.expiredApprovals?.some(a=>a.signature===checked.signature&&a.messageSha256===hash))return l;
+      const expired={...this.transition(l,"expired"),execution:{...l.execution,expiredApprovals:[...(l.execution.expiredApprovals??[]),{signature:checked.signature,messageSha256:hash,at:this.now().toISOString()}]}};
+      await this.store.updateLaunch(expired,record.version);return expired;
     }
     try{await this.chain.assertLaunchSubmissionAllowed?.();}catch(e){this.diagnose({stage:'submission_blocked',launchId:id,signature:checked.signature,code:e instanceof ChainFeatureUnavailable?e.code:'operator_gate'});throw new AppError('feature_disabled',e instanceof ChainFeatureUnavailable?e.message:'Launch submission is disabled by this verification environment');}
     assertLaunchWalletAllowed(this.config, wallet, l.execution.network);
@@ -430,6 +485,7 @@ export class LaunchService {
       }
     }
     if(l.execution&&!l.signature)await this.assertPreparedNetwork(l);
+    if(l.status==='expired')return l;
     if(l.execution&&!l.signature&&this.chain.getFinalizedBlockHeight&&(await this.chain.getFinalizedBlockHeight())>l.execution.lastValidBlockHeight){
       await this.assertExpiredMintAbsent(l);
       const expired=this.transition(l,"expired");

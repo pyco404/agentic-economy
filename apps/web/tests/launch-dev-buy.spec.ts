@@ -5,14 +5,16 @@ const origin = process.env.LAUNCH_WORKSPACE_URL;
 test.skip(!origin, 'Requires the isolated Launchpad API fixture; never runs against a live network.');
 
 /** Server-shaped quote (devnet configuration): exact base units and lamports as the API returns them. */
-const quote = (bps: number) => ({ status: 'available', bps, quoteAsset: 'SOL', network: 'devnet', totalSupply: '1000000000000000', tokenDecimals: 6,
-  tokenAmount: String(1_000_000_000_000_000n * BigInt(bps) / 10_000n), capTokenAmount: '35000000000000',
-  estimatedQuoteCost: bps === 350 ? '10242053' : '2857480', pumpFees: '126446', maxQuoteCost: bps === 350 ? '10344474' : '2886055', priceImpactBps: bps === 350 ? 685 : 192, slot: 512900000 });
+const quote=(sol:string)=>{
+ const budget=BigInt(sol.split('.')[0]||'0')*1_000_000_000n+BigInt((sol.split('.')[1]||'').padEnd(9,'0'));
+ if(budget>10_000_000n)return {status:'unavailable',bps:0,budgetLamports:budget.toString(),reason:'Developer Buy exceeds 3.5% of supply. Maximum permitted budget for this quote: 0.01 SOL.'};
+ return {status:'available',bps:0,quoteAsset:'SOL',network:'devnet',totalSupply:'1000000000000000',tokenDecimals:6,tokenAmount:(35_000_000_000_000n*budget/10_000_000n).toString(),capTokenAmount:'35000000000000',estimatedQuoteCost:(budget-1n).toString(),pumpFees:'1',maxQuoteCost:budget.toString(),budgetLamports:budget.toString(),maxAllowedQuoteCost:'10000000',priceImpactBps:1,slot:512900000};
+};
 
 async function open(page: Page, devBuy: 'available' | 'unavailable') {
   await page.route('**/api/v1/launchpad/capabilities', async (route) => { const response = await route.fetch();
     await route.fulfill({ response, json: { ...await response.json(), launchEnabled: true, devBuy: { status: devBuy, maxBps: 350, quoteAssets: ['SOL'], reason: devBuy === 'available' ? null : 'Developer Buy is available only where coin creation is enabled on a verified test network' } } }); });
-  await page.route(/\/api\/v1\/launchpad\/dev-buy-quote\?bps=\d+$/, (route) => route.fulfill({ json: quote(Number(new URL(route.request().url()).searchParams.get('bps'))) }));
+  await page.route(/\/api\/v1\/launchpad\/dev-buy-quote\?sol=/, (route) => route.fulfill({ json: quote(new URL(route.request().url()).searchParams.get('sol')!) }));
   await page.goto(origin + '/launchpad?source=backend'); await waitForApplicationReady(page);
   await expect(page.getByRole('heading', { name: 'Token details', exact: true })).toBeVisible({ timeout: 30000 });
 }
@@ -42,33 +44,35 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
 
     // Developer Buy: optional, off by default, capped at 3.5% of supply.
     const group = page.getByRole('group', { name: /Developer Buy/ }), toggle = group.getByRole('switch');
-    await expect(toggle).not.toBeChecked(); await expect(group).toContainText('Developer Buy off');
+    await expect(toggle).not.toBeChecked();
     await toggle.check();
-    const percent = group.getByRole('textbox', { name: 'Share of total supply', exact: true });
-    await expect(percent).toHaveValue('0');
-    await expect(group).toContainText('0 MOSS');
-    await expect(group.getByText('0 SOL', {exact:true})).toHaveCount(2);
-    await percent.fill('0.01');
-    await expect(group).toContainText('100,000 MOSS');
-    await percent.fill('2.75');
-    await expect(group).toContainText('27,500,000 MOSS');
-    await percent.fill('3.5');
-    await expect(group).toContainText('35,000,000 MOSS');
-    await expect(group).toContainText('0.010242053 SOL'); await expect(group).toContainText('0.010344474 SOL'); await expect(group).toContainText('6.85%');
-    await expect(percent).toHaveValue('3.5');
-    await expect(group.getByText('Estimated cost includes', { exact: false })).toBeHidden();
-    await expect(page.getByRole('region', { name: 'Live token preview' })).toContainText('3.5% of supply · ≈ 35,000,000 MOSS');
-    await percent.fill('3.6'); await expect(group.getByRole('alert')).toContainText('from 0% to 3.5%'); await expect(percent).toHaveAttribute('aria-invalid', 'true');
+    const amount=group.getByRole('textbox',{name:'Amount in SOL',exact:true});
+    await expect(amount).toHaveValue('');await expect(amount).toHaveAttribute('inputmode','decimal');
+    await amount.fill('0.001');await expect(group).toContainText('3,500,000 MOSS');
+    await amount.fill('0.01');await expect(group).toContainText('35,000,000 MOSS');
+    await expect(group).toContainText('3.5%');await expect(group).toContainText('0.009999999 SOL');
+    await expect(page.getByRole('region',{name:'Live token preview'})).toContainText('0.01 SOL maximum');
+    await expect(page.locator('.launch-save-status')).toHaveText('Saved');
+    await amount.fill('0.010000001');await expect(group.getByRole('alert')).toContainText('Maximum permitted budget');
     await expect(page.locator('form').getByRole('button',{name:'Create Coin',exact:true})).toBeDisabled();
+    await amount.fill('0.0000000001');await expect(amount).toHaveAttribute('aria-invalid','true');
+    await expect(group.getByRole('alert')).toContainText('nine decimal');
+    await amount.fill('0.000000001');await expect(group).toContainText('3.5 MOSS');
+    await amount.fill('');await expect(amount).toHaveAttribute('aria-invalid','false');
+    await toggle.uncheck();await expect(amount).toHaveCount(0);
+    await expect(page.getByRole('region',{name:'Live token preview'})).not.toContainText('Developer Buy');
+    await toggle.check();await expect(amount).toHaveValue('');
+    await amount.fill('0.001');await expect(group).toContainText('3,500,000 MOSS');
+    await expect(page.locator('.launch-save-status')).toHaveText('Saved');
+    // Restore the exact entered budget from the wallet-owned saved draft.
+    await page.getByRole('button',{name:'My Drafts',exact:true}).click();
+    await page.getByRole('button',{name:'Resume Moss Valley',exact:true}).click();
+    await expect(amount).toHaveValue('0.001');
     expect(writes).toEqual([]);
-    await percent.fill('1'); await expect(group).toContainText('10,000,000 MOSS');
-    await toggle.uncheck(); await expect(group).toContainText('Developer Buy off');
-    await expect(page.getByRole('region', { name: 'Live token preview' })).not.toContainText('Developer Buy');
-    await toggle.check(); await expect(percent).toHaveValue('0');
-    await percent.fill('0'); await expect(percent).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Live token preview' })).not.toContainText('Developer Buy');
-    await percent.fill('3.5');
 
+    await group.scrollIntoViewIfNeeded();
+    await group.screenshot({path:`artifacts/launch-sol-budget-card-${viewport.width}.png`});
+    await page.screenshot({path:`artifacts/launch-sol-budget-form-${viewport.width}.png`});
     if (viewport.width <= 820) {
       const close = page.getByRole('button', { name: 'Close page and view city', exact: true });
       const size = await close.boundingBox();

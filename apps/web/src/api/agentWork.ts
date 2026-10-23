@@ -5,8 +5,10 @@ export function currentAssignment(agent: Pick<AgentSummary, 'id' | 'work'>) {
   const task = agent.work?.task;
   return task?.claimedBy === agent.id && ['claimed', 'in_progress'].includes(task.status) ? task : null;
 }
-export function workDescription(agent: Pick<AgentSummary, 'id' | 'state' | 'work'>) {
+export function workDescription(agent: Pick<AgentSummary, 'id' | 'state' | 'work'> & Partial<Pick<AgentSummary, 'social'>>) {
   if (agent.state === 'paused') return 'Paused';
+  if (agent.social?.current) return `Simulated ${agent.social.current.kind} · ${agent.social.current.description}`;
+  if (agent.social?.destination && !currentAssignment(agent)) return `${agent.state === 'moving' ? 'Visiting' : 'At'} ${agent.social.destination.name} · ${agent.social.destination.purpose}`;
   if (!agent.work) return 'Work details unavailable on this backend';
   const task = currentAssignment(agent), destination = agent.work?.destination;
   if (!task || !destination) return agent.state === 'moving' ? 'Walking · no assigned job' : agent.state === 'resting' ? 'Resting · awaiting an assignment' : 'No active assignment';

@@ -33,7 +33,7 @@ for(const viewport of viewports)test(`current product content and persistent wor
  await open(page,'Explore');await expect(page.locator('.explore-spotlights section')).toHaveCount(6);
  await expect(page.locator('.source-pill')).toContainText('Recorded demo fixtures');await page.screenshot({path:`artifacts/product-explore-${viewport.width}.png`});
  await open(page,'Agent Studio');await expect(page.getByRole('heading',{name:'City agents',exact:true})).toBeVisible();
- await expect(page.locator('.agent-row').first()).toContainText(/Simulation citizen|Legacy simulation agent|Token-linked agent/);
+ await expect(page.locator('.agent-row').first()).toContainText(/City Resident|Virtual Agent|Token-linked agent/);
  await open(page,'Economy');await expect(page.locator('.page-heading')).toContainText('Wheat → Flour → Bread → Residents');
  await open(page,'Treasury');await expect(page.locator('main')).toContainText('Pending allocations are not collected balances or payouts');
  await open(page,'About');await expect(page.locator('#about-status')).toContainText('Verified on staging');await expect(page.locator('#about-status')).toContainText('Awaiting external verification');

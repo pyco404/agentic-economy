@@ -42,7 +42,7 @@ test('public mobile navigation, clean world controls and persistent city', async
       await more.press('Escape');await expect(more).toHaveAttribute('aria-expanded','false');
       await page.screenshot({path:info.outputPath(`world-${width}.png`)});
       await toggle.click();const dialog=page.getByRole('dialog',{name:'Navigation',exact:true});
-      await expect(dialog).toBeVisible();await expect(dialog.getByRole('link',{name:'World',exact:true})).toBeVisible();
+      await expect(dialog).toBeVisible();await expect(dialog.getByRole('link',{name:'World',exact:true})).toHaveCount(0);
       for (const link of await dialog.locator('a').all()) { const box=(await link.boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44);expect(box.width).toBeGreaterThanOrEqual(44); }
       await page.screenshot({path:info.outputPath(`navigation-${width}.png`)});
       await page.keyboard.press('Escape');await expect(toggle).toBeFocused();
@@ -54,10 +54,10 @@ test('public mobile navigation, clean world controls and persistent city', async
     expect(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth)).toBe(false);
   }
   await page.setViewportSize({width:344,height:882});
-  for (const [name,path] of [['Launch','/launchpad'],['Explore','/explore'],['Communities','/communities'],['Roadmap','/roadmap'],['About the world','/about'],['World','/']] as const) {
+  for (const [name,path] of [['Launch','/launchpad'],['Explore','/explore'],['Communities','/communities'],['Roadmap','/roadmap'],['About the world','/about']] as const) {
     await page.getByRole('button',{name:'Toggle navigation'}).click();
     await page.getByRole('dialog',{name:'Navigation',exact:true}).getByRole('link',{name,exact:true}).click();
-    await expect(page).toHaveURL(new RegExp(path==='/'?'/$':path+'$'));
+    await expect(page).toHaveURL(new RegExp(path+'$'));
     await expect(page.getByRole('dialog',{name:'Navigation',exact:true})).toHaveCount(0);
     expect(await page.locator('body').innerText()).not.toMatch(forbidden);
     expect(await page.locator('canvas').evaluate(node => node === (window as any).__publicMobileCanvas)).toBe(true);

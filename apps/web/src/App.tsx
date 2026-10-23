@@ -339,7 +339,7 @@ export default function App() {
           </button>
         </div>
       </header>
-      {menu && <MobileNavigation items={[{ id: "world", label: "World", icon: Building2 }, ...pages]} active={worldVisible ? "world" : page} onNavigate={go} onClose={closeMenu} />}
+      {menu && <MobileNavigation items={pages} active={worldVisible ? "world" : page} onNavigate={go} onClose={closeMenu} />}
       {visualBootstrap && !skipWorld && <div className="global-world-layer" data-testid="global-world" data-interactive={worldVisible}
         inert={!worldVisible} aria-hidden={!worldVisible}>
                   <City

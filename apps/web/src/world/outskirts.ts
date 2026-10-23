@@ -1,3 +1,4 @@
+import { grassCluster } from "./groundCover";
 import { bridgeSurface } from "./bridgeSurface";
 import { hashSeed, random, type ChunkVisual } from "./layout";
 import type { Part } from "./geometry";
@@ -146,8 +147,10 @@ export function planOutskirts(chunks: ChunkVisual[], frontier: FrontierData, see
     } else {
       const variety=Math.floor(rng()*4);
       if(variety===0&&flat) {
-        box("#e2d8ba",0,.025,0,5.7,.04,4.8);
-        for(const dx of [-1.8,-.6,.6,1.8])box("#bcc798",dx,.09,0,.22,.1,4.4);
+        for (let i = 0; i < 5; i++) {
+          const px = x + (rng() - .5) * 4.6, pz = z + (rng() - .5) * 4.6;
+          parts.push(...grassCluster(px, pz, ground(px,pz)!.height, seed));
+        }
       } else if(variety===1) {
         tree(-1.7,-1.3,"shrub",.85);
         tree(1.4,.8,"ornamental",.8+rng()*.25);

@@ -32,3 +32,10 @@ describe("world agent labels", () => {
     expect(chooseAgentLabels([agent("outside", -50)], 5, 800, 600)).toEqual([]);
   });
 });
+
+// Speech takes precedence over nearby name tags without adding more world overlays.
+it('keeps name labels out of active speech bounds', () => {
+  const agent = { id: 'agt_socialSpeaker', name: 'Neighbour', x: 1, z: 1, state: 'idle', selected: true, screenX: 300, screenY: 300 };
+  expect(chooseAgentLabels([agent], 3, 1000, 800, [{ left: 250, top: 250, width: 190, height: 80 }])).toHaveLength(0);
+  expect(chooseAgentLabels([agent], 3, 1000, 800)).toHaveLength(1);
+});

@@ -12,7 +12,7 @@ const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
 test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
 for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,false],[true,false,false],[true,true,false],[true,true,true],[false,false,true]]) test(`safe-network signing UI handles rejection and verified confirmation (${expiryRecovery?(useLocalMint?'expiry recovery vanity':'expiry recovery random'):automaticMintSigning?'automatic server mint':useLocalMint?'local mint handoff':'normal mint'}; mock RPC, real signatures)`,async({page})=>{
  // The reserved-mint case additionally reloads the complete world twice for locked renewal.
- test.setTimeout(useLocalMint?720000:360000);await page.setViewportSize({width:390,height:844});
+ test.setTimeout(useLocalMint?720000:360000);await page.setViewportSize({width:Number(process.env.LAUNCH_ACCEPTANCE_WIDTH??390),height:844});
  const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let executionEnabled=true;let renewals=0;let renewFixture:(()=>Promise<void>)|undefined;let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='',submittedPayload='';let resumptions=0;const prepareKeys:string[]=[];
  let launch:Record<string,unknown>|undefined,prepared='';let randomSigner:Keypair|undefined;
  let expiryProofAvailable=false,signingWindowAvailable=true,lateApproval=true;

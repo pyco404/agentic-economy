@@ -6,6 +6,7 @@ import {
   AGENT_TREASURY_CREATOR_FEE_BPS,
   OFFICIAL_TREASURIES,
   DEV_BUY_MAX_BPS,
+  solBudgetLamports,
   LAUNCH_FEE_LAMPORTS,
   PLATFORM_TREASURY_CREATOR_FEE_BPS,
   type Community,
@@ -97,11 +98,11 @@ export class LaunchService {
       throw new AppError("feature_disabled", "Coin creation is unavailable in this environment.");
   }
 
-  async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
+  async prepare(wallet: string, draft: LaunchDraft, owned?:{id:string;version:number;launchId:string;devBuyBps?:number;devBuySol?:string}, quote: LaunchQuote = { asset: "SOL" }): Promise<PrepareLaunchResponse> {
     return this.prepareReview(wallet,draft,owned,quote);
   }
 
-  private async prepareReview(wallet:string,draft:LaunchDraft,owned:{id:string;version:number;launchId:string;devBuyBps?:number}|undefined,quote:LaunchQuote,
+  private async prepareReview(wallet:string,draft:LaunchDraft,owned:{id:string;version:number;launchId:string;devBuyBps?:number;devBuySol?:string}|undefined,quote:LaunchQuote,
     renewal?:{record:LaunchRecord;finalizedHeight:number}) : Promise<PrepareLaunchResponse> {
     assertLaunchWalletAllowed(this.config, wallet);
     const readOnlyPreparation=!!owned&&preparedMintPreparationAllowed(this.config,wallet,owned.id);
@@ -120,20 +121,26 @@ export class LaunchService {
     }}
     if(Buffer.byteLength(draft.name)>32||Buffer.byteLength(draft.symbol)>13||Buffer.byteLength(draft.metadataUri)>200)throw new AppError("bad_request","Token name, symbol or metadata URI exceeds protocol byte limits");
     // Developer Buy comes only from the server-owned draft; quoted from the live chain, never from the client.
-    const devBuyBps=owned?.devBuyBps??0;
+    let devBuyBps=owned?.devBuyBps??0;
+    const budget=owned?.devBuySol ? solBudgetLamports(owned.devBuySol) : undefined;
+    if(budget===null||budget===0n||(budget!==undefined&&devBuyBps!==0))throw new AppError('bad_request','Invalid or conflicting Developer Buy SOL budget');
     let devQuote:DevBuyChainQuote|null=null;
-    if(devBuyBps!==0){
+    if(devBuyBps!==0||budget!==undefined){
       if(!Number.isInteger(devBuyBps)||devBuyBps<0||devBuyBps>DEV_BUY_MAX_BPS)throw new AppError("bad_request",`Developer Buy must be between 0% and ${DEV_BUY_MAX_BPS/100}% of total supply`);
       if(!owned||quote.asset!=="SOL"||!this.chain.quoteDevBuy||!this.chain.devBuySupport)throw new AppError("feature_disabled","Developer Buy is available only for SOL launches on an enabled test network");
       try{
         const support=await this.chain.devBuySupport(readOnlyPreparation);
         if(!support.available)throw new ChainFeatureUnavailable("dev_buy_unavailable",support.reason??"Developer Buy is unavailable on this network");
-        devQuote=await this.chain.quoteDevBuy(devBuyBps);
+        devQuote=await this.chain.quoteDevBuy(devBuyBps,budget);
+        if(budget!==undefined){
+          if(devQuote.maxQuoteCost!==budget||devQuote.estimatedQuoteCost>budget)throw new AppError('bad_request','Developer Buy quote exceeds your SOL budget');
+          devBuyBps=Number(devQuote.tokenAmount*10_000n/devQuote.totalSupply);
+        }
       }catch(e){
         if(e instanceof ChainFeatureUnavailable)throw new AppError("feature_disabled",e.message,{code:e.code});
         throw new AppError("unavailable","Developer Buy pricing is temporarily unavailable. Retry the same attempt; nothing has been submitted.");
       }
-      if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount)throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
+      if(devQuote.tokenAmount<=0n||devQuote.tokenAmount>devQuote.capTokenAmount||devQuote.tokenAmount*10_000n>devQuote.totalSupply*BigInt(DEV_BUY_MAX_BPS))throw new AppError("bad_request","Developer Buy exceeds 3.5% of total supply");
     }
     assertLaunchWalletAllowed(this.config, wallet);
     const reserved = !!this.config.pumpLaunch.preparedMintDraftId && this.config.solana.cluster === "mainnet-beta";
@@ -177,7 +184,7 @@ export class LaunchService {
         developerBuy:devQuote?{bps:devBuyBps,quoteAsset:"SOL" as const,totalSupply:devQuote.totalSupply.toString(),tokenAmount:devQuote.tokenAmount.toString(),
           estimatedQuoteCost:built.devBuy?.quoteSpent??devQuote.estimatedQuoteCost.toString(),pumpFees:devQuote.pumpFees.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString(),priceImpactBps:devQuote.priceImpactBps}:null},
       ...(owned&&built.genesisHash&&built.lastValidBlockHeight!==null?{execution:{draftId:owned.id,draftVersion:owned.version,transaction:built.transaction,lastValidBlockHeight:built.lastValidBlockHeight,genesisHash:built.genesisHash,network:this.config.solana.cluster,quoteAsset:quote.asset,...(quote.asset==="USDC"?{quoteMint:quote.mint}:{}),platformOrigin:"PLATFORM" as const,initiator:"HUMAN" as const,
-        ...(devQuote?{devBuy:{bps:devBuyBps,tokenAmount:devQuote.tokenAmount.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString()}}:{})}}:{}),
+        ...(devQuote?{devBuy:{bps:devBuyBps,...(owned?.devBuySol?{budgetSol:owned.devBuySol}:{}),tokenAmount:devQuote.tokenAmount.toString(),maxQuoteCost:devQuote.maxQuoteCost.toString()}}:{})}}:{}),
       signature: null,
       slot: null,
       communityId: null,
@@ -278,7 +285,7 @@ export class LaunchService {
     let history:string[];try{history=await this.chain.listSignaturesForAddress(l.mint,null,1);}catch{throw new AppError("unavailable","Mint transaction history is unavailable. Reconcile this attempt before renewing.");}
     if(history.length)
       throw new AppError("unavailable","The reserved mint has transaction history. Reconcile it before renewing.");
-    return this.prepareReview(wallet,l.draft,{id:l.execution!.draftId,version:l.execution!.draftVersion,launchId:l.id,devBuyBps:l.execution!.devBuy?.bps??0},
+    return this.prepareReview(wallet,l.draft,{id:l.execution!.draftId,version:l.execution!.draftVersion,launchId:l.id,devBuyBps:l.execution!.devBuy?.bps??0,...(l.execution!.devBuy?.budgetSol?{devBuyBps:0,devBuySol:l.execution!.devBuy.budgetSol}:{})},
       {asset:'SOL'},{record,finalizedHeight:height});
   }
 

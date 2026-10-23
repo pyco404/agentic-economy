@@ -65,8 +65,8 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
     await amount.fill('0.001');await expect(group).toContainText('3,500,000 MOSS');
     await expect(page.locator('.launch-save-status')).toHaveText('Saved');
     // Restore the exact entered budget from the wallet-owned saved draft.
-    await page.getByRole('button',{name:'My Drafts',exact:true}).click();
-    await page.getByRole('button',{name:'Resume Moss Valley',exact:true}).click();
+    await expect(page.getByRole('button',{name:'My Drafts',exact:true})).toHaveCount(0);
+    await page.reload();await waitForApplicationReady(page);
     await expect(amount).toHaveValue('0.001');
     expect(writes).toEqual([]);
 

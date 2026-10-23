@@ -1,0 +1,32 @@
+.official-token-address { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+  min-width: 0; max-width: 100%; color: #244232; position: relative; font-size: 11px; }
+.official-token-label { font-weight: 600; }
+.official-token-mint { min-width: 0; font-size: 11px; line-height: 1.6; }
+.official-token-actions { display: flex; align-items: center; gap: 12px; }
+.official-token-actions button, .official-token-actions a { display: inline-flex; align-items: center;
+  justify-content: center; gap: 6px; min-height: 44px; color: #244232; pointer-events: auto; }
+.official-token-actions button { min-width: 44px; padding: 0 10px; border: 1px solid #c8cfbe; border-radius: 6px; background: #f0f3e8; }
+.official-token-actions a { text-decoration: underline; text-underline-offset: 3px; }
+.official-token-feedback { flex-basis: 100%; color: #455744; font-size: 11px; }
+.official-token-feedback:empty { display: none; }
+.official-token-address.is-prominent { margin-top: 14px; padding: 12px 14px; background: #fffaf2;
+  border: 1px solid #d7d9c9; border-radius: 9px; pointer-events: auto; }
+.official-token-address h2 { flex-basis: 100%; margin: 0; font: 400 19px/1.25 "Libre Caslon Display", Georgia, serif; }
+.is-prominent .official-token-mint { flex-basis: 100%; overflow-wrap: anywhere; }
+.page-footer { flex-wrap: wrap; gap: 12px; }
+.page-footer > .official-token-address { flex-basis: 100%; }
+.official-world-footer { position: relative; z-index: 2; background: #fffaf2; border-top: 1px solid #ded5c3;
+  padding: 4px 24px; height: 56px; overflow-y: auto; }
+.app:has(> .official-world-footer) .world-main { height: calc(100dvh - 120px); }
+@media (max-width: 700px) {
+  .official-token-address:not(.is-prominent) { column-gap: 8px; }
+  .official-token-address:not(.is-prominent) .official-token-mint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .official-token-address:not(.is-prominent) .official-token-actions { gap: 8px; }
+  .official-token-address:not(.is-prominent) .official-token-actions button span { display: none; }
+  .official-world-footer { height: 88px; padding: 4px 14px; }
+  .official-world-footer .official-token-label { flex-basis: 100%; }
+  .app:has(> .official-world-footer) .world-main { height: calc(100dvh - 152px); }
+  .world-main:has(.is-prominent) .activity-panel { top: 302px; max-height: calc(100% - 404px); }
+}
+
+.official-world-footer .official-token-feedback { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

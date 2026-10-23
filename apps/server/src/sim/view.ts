@@ -1,3 +1,4 @@
+import { socialSummary } from "./society.js";
 import {
   RESOURCES,
   type Agent,
@@ -56,6 +57,7 @@ export function toAgentSummary(s: SimState, a: AgentSimState): AgentSummary {
     ownerWallet: a.ownerWallet,
     status: a.status,
     state: a.status === "paused" ? "paused" : a.activity,
+    social: socialSummary(s, a.id),
     work: {
       tick: s.tick, task: task ? toTask(task) : null,
       destination: destination ? { id: destination.id, name: destination.name, kind: destination.kind, entrance: { ...destination.entrance } } : null,
@@ -78,6 +80,8 @@ export function toAgent(s: SimState, a: AgentSimState): Agent {
   const failed = a.perf.tasksFailed;
   return {
     ...toAgentSummary(s, a),
+    socialHistory: s.society?.profiles[a.id]?.memories,
+    relationships: s.society?.profiles[a.id]?.relationships,
     strategy: a.strategy,
     permissions: a.permissions,
     createdTick: a.createdTick,

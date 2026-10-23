@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DESCRIPTION_MAX, DraftReview, LaunchpadCapabilities, PUMP_NAME_MAX, PUMP_SYMBOL_MAX, SavedLaunchDraft, launchpadPaths, tokenFieldIssues, utf8Length, type DraftFields as Fields, type SavedLaunchDraft as Draft, type TokenFieldIssue } from '../api/shared';
-import { useDevBuyQuote } from '../api/devBuy';
+import { budgetQuoteValid, useDevBuyQuote } from '../api/devBuy';
 import { LaunchDevBuy, type DevBuyAvailability } from './LaunchDevBuy';
 import { jsonRequest, launchpadApiOrigin, launchpadRequest, useWalletSession } from '../api/walletSession';
 import { DraftWriter, draftFingerprint, hasDraftContent } from '../api/draftWriter';
@@ -51,10 +51,10 @@ export function LaunchWorkspace() {
  const selected = useRef<{file: File; key: string}|null>(null), keys = useRef(new Map<string,string>());
  const base = launchpadPaths.drafts;
  const devBuyQuoteEnabled=devBuyAvailability?.status==='available'&&fields.quoteAsset==='SOL';
- const devQuote=useDevBuyQuote(fields.devBuyBps,devBuyQuoteEnabled&&devBuyValid);
+ const devQuote=useDevBuyQuote(fields.devBuySol??'',devBuyQuoteEnabled&&devBuyValid);
  // Launch-readiness issues, computed with the same shared rules the server enforces. "Required" waits for an attempt.
  const issues=tokenFieldIssues(fields,true).filter(i=>attempted||i.code!=='required');
- const devBuyBlocked=fields.devBuyBps>0&&!devBuyQuoteEnabled;
+ const devBuyBlocked=(fields.devBuyBps>0||!!fields.devBuySol)&&(!devBuyQuoteEnabled||devQuote.loading||!budgetQuoteValid(devQuote.quote,fields.devBuySol??''));
  const fieldIssues=(field:TokenFieldIssue['field'])=>issues.filter(i=>i.field===field);
  const keyFor = (scope:string) => {let key=keys.current.get(scope);if(!key){key=crypto.randomUUID();keys.current.set(scope,key);}return key;};
  const activeKey=(wallet:string)=>`aeco:launchpad:active:${launchpadApiOrigin()}:${wallet}`;
@@ -129,7 +129,7 @@ export function LaunchWorkspace() {
   setAttempted(true);
   // Nothing is saved or uploaded while any detail is invalid.
   if(restoring||form.current.quoteAsset!=='SOL'||tokenFieldIssues(form.current,true).length||!DraftFieldsSchema.safeParse(form.current).success||devBuyBlocked||!devBuyValid){setError('Fix the highlighted details before creating your coin.');return;}
-  setReviewedDevBuyMax(!devQuote.loading&&devQuote.quote?.status==='available'&&devQuote.quote.bps===form.current.devBuyBps?devQuote.quote.maxQuoteCost:null);
+  setReviewedDevBuyMax(!devQuote.loading&&devQuote.quote?.status==='available'&&budgetQuoteValid(devQuote.quote,form.current.devBuySol??'')?devQuote.quote.maxQuoteCost:null);
   void run(async(signal,check)=>{
    if(uploads===null)throw new Error('Token preparation is still loading. Please try again in a moment.');
    if(!preparationEnabled)throw new Error('Coin creation is unavailable in this demo. You can preview your coin and save a draft.');
@@ -164,13 +164,13 @@ export function LaunchWorkspace() {
       {fieldIssues('description').length>0&&<p className="launch-field-error" role="alert">{fieldIssues('description')[0]!.message}</p>}</div>
      <LaunchProjectLinks key={logoScope} fields={fields} onChange={edit}/>
      <LaunchQuotePicker value={fields.quoteAsset} symbol={fields.symbol} onChange={quote=>{if(quote==='SOL')edit('quoteAsset',quote);}}/>
-     <LaunchDevBuy onValidityChange={setDevBuyValid} bps={fields.devBuyBps} onChange={bps=>edit('devBuyBps',bps)} availability={devBuyAvailability} quoteAsset={fields.quoteAsset} symbol={fields.symbol} quote={devQuote.quote} loading={devQuote.loading} error={devQuote.error}/>
+     <LaunchDevBuy onValidityChange={setDevBuyValid} amount={fields.devBuySol??''} legacyBps={fields.devBuyBps} onChange={amount=>{setFields(previous=>({...previous,devBuySol:amount,devBuyBps:0}));setReview(null);setError('');}} availability={devBuyAvailability} quoteAsset={fields.quoteAsset} symbol={fields.symbol} quote={devQuote.quote} loading={devQuote.loading} error={devQuote.error}/>
      <LaunchLogoUpload key={logoScope} selectionOnly disabled={busy||executionBusy||flowActive} onValidationChange={setLogoValidating} automaticMetadata={false} name={fields.name} symbol={fields.symbol} description={fields.description} quoteAsset={fields.quoteAsset}
       imageUrl={removed?'':draft?.image?.ipfsUri??''} trustedImage={removed?null:draft?.image??null} scope={logoScope} maxBytes={maxBytes}
       onFileChange={file=>{setImageReselect(false);if(current.current)localSet(imageKey(current.current.id),file?'local':removed?'removed':null);setLocalFile(file);selected.current=file?{file,key:crypto.randomUUID()}:null;setReview(null);setError('');setMessage('');}}
       onImage={()=>{setRemoved(true);setImageReselect(false);if(current.current)localSet(imageKey(current.current.id),'removed');setReview(null);}}/>
      {imageReselect&&<p className="small muted" role="note">Your previous image was local to the browser. Please select it again before creating your coin.</p>}
-     <button className="primary wide" type="submit" disabled={!!owner&&(uploads===null||!preparationEnabled||executionBusy||flowActive||logoValidating||!devBuyValid||restoring)}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':created?'Coin created':phase??(busy?'Preparing…':logoValidating?'Checking logo…':executionBusy?'Preparing transaction…':flowActive?'Continue below':'Create Coin')}</button>
+     <button className="primary wide" type="submit" disabled={!!owner&&(uploads===null||!preparationEnabled||executionBusy||flowActive||logoValidating||!devBuyValid||devBuyBlocked||restoring)}>{!owner?'Connect wallet':uploads===null?'Loading token preparation…':created?'Coin created':phase??(busy?'Preparing…':logoValidating?'Checking logo…':executionBusy?'Preparing transaction…':flowActive?'Continue below':'Create Coin')}</button>
     </fieldset>
    </form>
    {owner&&!flowActive&&uploads!==null&&!preparationEnabled&&<p className="small muted" role="note">Coin creation is unavailable in this demo. Your preview and saved drafts remain available; no images are uploaded.</p>}

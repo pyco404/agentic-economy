@@ -135,3 +135,12 @@ it('upserts new publicly observed Common Agents and removes full exits from the 
   const exited = applyServerEvent(added, { ...event, seq: 102, tick: event.tick + 1, data: { moves: [{ ...event.data.moves[0]!, state: 'paused' }] } });
   expect(exited.agents.some(a => a.id === agent.id)).toBe(false);
 });
+
+it('clears stale social presence when a complete agent update disables the simulation', () => {
+  const d = demoDashboard(), agent = d.agents[0]!;
+  agent.social = { tick: 500, personality: { temperament: 'sociable', interest: 'music', routine: 'evening square' }, mood: 'content', socialNeed: 10, current: null, destination: null };
+  const replacement = { ...agent }; delete replacement.social;
+  const next = applyServerEvent(d, { v: 1, type: 'agent.moved', seq: 200, tick: 501, ts: '2026-10-23T00:00:00Z',
+    data: { moves: [{ id: agent.id, pos: agent.pos, state: agent.state, target: null, speed: 2, agent: replacement }] } });
+  expect(next.agents.find(a => a.id === agent.id)!.social).toBeUndefined();
+});

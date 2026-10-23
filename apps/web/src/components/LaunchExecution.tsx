@@ -9,6 +9,11 @@ import {ApiResponseError,SessionExpired,launchpadApiOrigin,jsonRequest,launchpad
 import {devBuyNeedsAcceptance,formatSol,formatTokens,allocationPercent} from '../api/devBuy';
 const encoded=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
 const decoded=(value:string)=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
+const messageHash=async(transaction:string)=>{
+ const {VersionedTransaction}=await import('@solana/web3.js');
+ const message=VersionedTransaction.deserialize(decoded(transaction)).message.serialize();
+ return [...new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(message).buffer))].map(b=>b.toString(16).padStart(2,'0')).join('');
+};
 /** New execution needs enabled review; existing saved attempts also support read-only recovery. */
 export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=false,automaticMintSigning=false,executionAllowed=true,preparationAllowed=executionAllowed,onBusyChange,onLockChange,onEdit,onConfirmed,onNewCoin}:{draft:SavedLaunchDraft;
  /** The Developer Buy maximum the creator saw in the form; a higher prepared maximum needs explicit acceptance. */
@@ -91,8 +96,8 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  useEffect(()=>{if(preparationAllowed&&autoPrepare&&!restoring&&!launch&&!error&&!automatic.current){automatic.current=true;prepareRef.current();}},[preparationAllowed,autoPrepare,restoring,launch,error]);
  const check=()=>void run(async()=>{const id=launch?.id||savedId.current;if(!id)throw new Error('No saved launch attempt was found.');receivedRef.current(await launchpadRequest(`/api/v1/launchpad/launches/${encodeURIComponent(id)}`,LaunchResponse));});
  const renewMintReview=()=>void run(async()=>{
-  if(!preparationAllowed||!launch?.execution?.localMintReview||submissionUncertain||canResume||launch.signature)throw new Error('Reconcile this saved attempt before renewing its review.');
-  const r=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/mint-review/renew`,PrepareLaunchResponse,jsonRequest('POST',{messageSha256:launch.execution.localMintReview.messageSha256}));
+  if(!preparationAllowed||!launch?.execution||!expiredReview||submissionUncertain||canResume||(launch.signature&&expiredReview.checkedSignature!==launch.signature))throw new Error('Reconcile this saved attempt before refreshing its transaction.');
+  const r=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/refresh-transaction`,PrepareLaunchResponse,jsonRequest('POST',{messageSha256:await messageHash(launch.execution.transaction)}));
   setLocalMintSignature(null);setAcceptedMax(null);remember(r.launch);
  });
  const downloadMintReview=()=>void run(async()=>{
@@ -115,10 +120,28 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
   const latest=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}`,LaunchResponse);await receivedRef.current(latest);
   if(latest.launch.status==='expired')return;
   if(latest.launch.status!=='awaiting_signature'||latest.launch.signature||latest.recovery?.canResume||unresolvedSubmission.current)throw new Error('This saved attempt is not ready for a new signature. Check its status before continuing.');
-  const execution=latest.launch.execution!;
+  let current=latest.launch;
+  // The review can stay open indefinitely. Start the signing window only on this explicit action.
+  if(current.execution?.walletApprovalIssued===false&&(!current.execution.localMintReview||automaticMintSigning)){
+   setSigningStage('Refreshing transaction…');
+   const refreshed=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/refresh-transaction`,PrepareLaunchResponse,jsonRequest('POST',{messageSha256:await messageHash(current.execution.transaction)}));
+   if(refreshed.launch.mint!==current.mint||refreshed.launch.id!==current.id||JSON.stringify(refreshed.launch.draft)!==JSON.stringify(current.draft))throw new Error('The saved launch changed. Nothing was sent to your wallet.');
+   const changed=JSON.stringify(refreshed.launch.fees)!==JSON.stringify(current.fees);
+   current=refreshed.launch;remember(current);setLocalMintSignature(null);
+   if(changed){setAcceptedMax(null);throw new Error('The estimates were updated. Review the refreshed costs, then approve in wallet when ready.');}
+  }
+  const execution=current.execution!;
   const localReview=execution.localMintReview;
   let mintTransaction=execution.transaction;
-  if(localReview){
+  if(execution.walletApprovalIssued!==undefined&&(!localReview||automaticMintSigning)){
+   setSigningStage('Preparing wallet approval…');
+   const result=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/wallet-transaction`,z.object({transaction:z.string().max(1644),messageSha256:z.string()}),jsonRequest('POST',{messageSha256:await messageHash(execution.transaction)}));
+   if(result.messageSha256!==await messageHash(execution.transaction)||await messageHash(result.transaction)!==result.messageSha256)throw new Error('Mint signing changed the reviewed transaction. Nothing was sent to your wallet.');
+   const {VersionedTransaction}=await import('@solana/web3.js');
+   const tx=VersionedTransaction.deserialize(decoded(result.transaction));
+   if(tx.signatures.length!==2||tx.signatures[0]!.some(b=>b!==0)||tx.signatures[1]!.every(b=>b===0))throw new Error('Expected a mint-only signature before Phantom approval.');
+   mintTransaction=result.transaction;
+  }else if(localReview){
    if(automaticMintSigning){
     setSigningStage('Preparing wallet approval…');
     const result=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/mint-signature/automatic`,z.object({transaction:z.string().max(1644),messageSha256:z.string()}),jsonRequest('POST',{}));
@@ -177,7 +200,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  const interrupted=submissionUncertain&&!confirmed;
  const expiryPending=interrupted&&error.includes('approval window ended');
  const pending=!!launch&&['submitted','recovery_needed'].includes(launch.status);
- const safeRetry=executionAllowed&&!localReview&&!submissionUncertain&&terminal;
+ const safeRetry=executionAllowed&&!localReview&&!submissionUncertain&&launch?.status==='failed';
  const canEdit=onEdit&&!localReview&&!busy&&!submissionUncertain&&launch&&((!launch.signature&&['awaiting_signature','expired'].includes(launch.status))||launch.status==='failed');
  const short=(value:string)=>`${value.slice(0,6)}…${value.slice(-6)}`;
  const copyMint=async()=>{if(!launch)return;try{await navigator.clipboard.writeText(launch.mint);setCopyMessage('Mint copied');}catch{setCopyMessage('Could not copy. Select the full mint in Technical details.');}};
@@ -187,7 +210,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  </div>;
  return <section className={`launch-execution${confirmed?' launch-result-success':''}`} aria-label="Launch execution">
   <p className="launch-stage-label">{confirmed||pending||interrupted||terminal?'3 · Result':'2 · Review'}</p>
-  <h3 aria-live="polite">{confirmed?'Coin created successfully':expiryPending?'Checking your expired approval':interrupted?'We lost connection while checking your launch':pending?'Launch in progress':terminal?'This launch attempt did not complete':'Review before wallet approval'}</h3>
+  <h3 aria-live="polite">{confirmed?'Coin created successfully':expiryPending?'Checking your expired approval':interrupted?'We lost connection while checking your launch':pending?'Launch in progress':launch?.status==='expired'&&expiredReview?'Transaction expired':terminal?'This launch attempt did not complete':'Review before wallet approval'}</h3>
   {!launch?<>{(busy||restoring)&&<p role="status">Preparing your launch transaction…</p>}{preparationAllowed&&!busy&&!restoring&&!error&&<button className="secondary wide" onClick={prepare}>Prepare transaction</button>}</>:<>
    {token}
    {!executionAllowed&&!confirmed&&<p className="small muted">{preparationAllowed?'Review preparation only. Wallet approval remains locked.':'Status checks only. Wallet approval is unavailable in this environment.'}</p>}
@@ -200,10 +223,10 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
     <div className="launch-review-actions"><a className="primary launch-action-link" href={routeUrl('explore',launch.mint)}>View in Explore</a><button className="secondary" onClick={()=>void copyMint()}>Copy mint</button>{executionAllowed&&onNewCoin&&<button className="text-button" onClick={onNewCoin}>Create another coin</button>}</div>
     {copyMessage&&<p className="small" role="status">{copyMessage}</p>}
    </>:pending||interrupted||terminal?<>
-    <p role="status">{expiryPending?'Your approval window ended. We’re verifying expiry before a new review can be prepared. Do not approve another transaction yet.':interrupted?'Your wallet approval may still have succeeded. Check the launch status before trying again.':pending?'We’re checking your transaction and confirming the result on-chain.':expiredReview?'The approval window expired without an on-chain launch. No token was created or launch charge collected. Refresh the review to continue with the same mint.':'No completed launch was verified for this attempt. You can prepare a new attempt once its status is resolved.'}</p>
+    <p role="status">{expiryPending?'Your approval window ended. We’re verifying expiry before a new review can be prepared. Do not approve another transaction yet.':interrupted?'Your wallet approval may still have succeeded. Check the launch status before trying again.':pending?'We’re checking your transaction and confirming the result on-chain.':expiredReview?(launch.signature?'This transaction expired without a completed launch. Your token details are safe. Review a refreshed transaction to continue.':'This transaction expired before submission. Your token details are safe. Review a refreshed transaction to continue.'):'No completed launch was verified for this attempt. You can prepare a new attempt once its status is resolved.'}</p>
     {launch.status==='recovery_needed'&&<p className="small muted">Your transaction needs an additional verification check. Keep this attempt; do not launch or pay again.</p>}
-    {terminal&&!submissionUncertain&&<p className="small muted">{localReview?'Check this attempt before renewing its expired signing review. The mint and previous review stay saved.':'A new attempt is available. Any network fees from an earlier failed transaction may still apply.'}</p>}
-    {localReview&&launch.status==='expired'&&!submissionUncertain&&!canResume&&!launch.signature&&preparationAllowed&&<button className="secondary" disabled={busy} onClick={renewMintReview}>{automaticMintSigning?'Refresh transaction review':'Refresh signing review'}</button>}
+    {launch.status==='failed'&&!submissionUncertain&&<p className="small muted">{localReview?'Check this attempt before renewing its expired signing review. The mint and previous review stay saved.':'A new attempt is available. Any network fees from an earlier failed transaction may still apply.'}</p>}
+    {expiredReview&&launch.status==='expired'&&!submissionUncertain&&!canResume&&preparationAllowed&&<button className="secondary" disabled={busy} onClick={renewMintReview}>Refresh transaction</button>}
     <div className="launch-review-actions"><button className={safeRetry?'secondary':'primary'} disabled={busy} onClick={check}>Check launch status</button>
      {safeRetry&&<button className="primary" disabled={busy} onClick={()=>{requestKey.current='';savedId.current='';setLaunch(null);automatic.current=false;try{localStorage.removeItem(scope);}catch{/* Local hint only. */}}}>Prepare new attempt</button>}
      {canEdit&&<button className="text-button" onClick={onEdit}>Back to edit</button>}
@@ -225,7 +248,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
      {localMintReady&&<p className="small" role="status">Mint signature verified. Phantom approval is still required.</p>}
     </details>}
     {executionAllowed&&launch.status==='awaiting_signature'&&!submissionUncertain&&<button className="primary wide" disabled={busy||needsAcceptance||!localMintReady} onClick={sign}>{busy?signingStage||'Preparing…':'Approve in wallet'}</button>}
-    {busy&&signingStage==='Awaiting wallet approval…'&&<p className="small muted">Approval has a short validity window. If it expires, refresh this review and approve the new transaction.</p>}
+    {busy&&signingStage==='Awaiting wallet approval…'&&<p className="small muted">Take the time you need to review. If this transaction expires, your details stay saved and you can refresh it for a new approval.</p>}
     {signingStage&&<p className="small" role="status">{signingStage}</p>}
     {canEdit&&<button className="text-button" onClick={onEdit}>Back to edit</button>}
    </>}

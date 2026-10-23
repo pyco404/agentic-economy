@@ -10,11 +10,11 @@ import {buildPumpLaunch,pumpLaunchInstructions,validateSignedPumpLaunch,buildUns
 import {sharingConfigPda} from '../../server/src/chain/pump';
 const site=process.env.LAUNCH_WORKSPACE_URL,api=process.env.AGENT_WORK_API_URL;
 test.skip(!site||!api,'Requires isolated auth/draft API with mocked Pinata; never run live uploads implicitly.');
-for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,false],[true,false,false],[true,true,false],[true,true,true]]) test(`safe-network signing UI handles rejection and verified confirmation (${expiryRecovery?'expiry recovery':automaticMintSigning?'automatic server mint':useLocalMint?'local mint handoff':'normal mint'}; mock RPC, real signatures)`,async({page})=>{
+for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,false],[true,false,false],[true,true,false],[true,true,true],[false,false,true]]) test(`safe-network signing UI handles rejection and verified confirmation (${expiryRecovery?(useLocalMint?'expiry recovery vanity':'expiry recovery random'):automaticMintSigning?'automatic server mint':useLocalMint?'local mint handoff':'normal mint'}; mock RPC, real signatures)`,async({page})=>{
  // The reserved-mint case additionally reloads the complete world twice for locked renewal.
  test.setTimeout(useLocalMint?720000:360000);await page.setViewportSize({width:390,height:844});
  const creator=Keypair.generate(),wallet=creator.publicKey.toBase58();let executionEnabled=true;let renewals=0;let renewFixture:(()=>Promise<void>)|undefined;let reject=true,signs=0,preparations=0,submissions=0,resolveSubmission=false;let submittedSignature='',submittedPayload='';let resumptions=0;const prepareKeys:string[]=[];
- let launch:Record<string,unknown>|undefined,prepared='';
+ let launch:Record<string,unknown>|undefined,prepared='';let randomSigner:Keypair|undefined;
  let expiryProofAvailable=false,signingWindowAvailable=true,lateApproval=true;
  let automaticSigner:ServerMintSigner|undefined,automaticSigns=0,automaticReplyMode:'ok'|'unavailable'|'changed'='ok';
  let localReview:MintSigningReview|undefined,localArtifact:Awaited<ReturnType<typeof coSignReviewedMint>>|undefined,localPolicy:MintSigningPolicy|undefined,imports=0;
@@ -35,30 +35,48 @@ for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,fa
   if(launch){await route.fulfill({json:{launch,transaction:prepared,demoTransaction:false,lastValidBlockHeight:100000}});return;}
   preparations++;const id=new URL(route.request().url()).pathname.split('/').at(-2)!;
   const d=await page.request.get(`${api}/api/v1/launchpad/drafts/${id}`).then(r=>r.json());
-  const mint=Keypair.generate(),platform=Keypair.generate().publicKey.toBase58(),agent=Keypair.generate().publicKey.toBase58();
+  const mint=Keypair.generate();randomSigner=mint;const platform=Keypair.generate().publicKey.toBase58(),agent=Keypair.generate().publicKey.toBase58();
   const input={launcherWallet:wallet,mint:mint.publicKey.toBase58(),mintSecretKey:mint.secretKey,name:d.fields.name,symbol:d.fields.symbol,uri:d.metadata.ipfsUri,platformTreasury:platform,agentRewardsTreasury:agent};
   const instructions=await pumpLaunchInstructions(input),table=new AddressLookupTableAccount({key:Keypair.generate().publicKey,state:{deactivationSlot:2n**64n-1n,lastExtendedSlot:0,lastExtendedSlotStartIndex:0,addresses:[...new Map(instructions.flatMap(i=>[i.programId,...i.keys.filter(k=>!k.isSigner).map(k=>k.pubkey)]).map(k=>[k.toBase58(),k])).values()]}});
   const blockhash=Keypair.generate().publicKey.toBase58();
-  prepared=useLocalMint?(await buildUnsignedPumpLaunch(input,blockhash,[table])).transaction:(await buildPumpLaunch(input,blockhash,[table])).transaction;
+  prepared=(await buildUnsignedPumpLaunch(input,blockhash,[table])).transaction;
   if(useLocalMint){localReview={version:1,launchId:'lch_BrowserExecutionTest',network:'devnet',genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',mint:input.mint,launcherWallet:wallet,platformTreasury:platform,agentRewardsTreasury:agent,name:input.name,symbol:input.symbol,uri:input.uri,recentBlockhash:blockhash,lastValidBlockHeight:100000,maxTotalDebitLamports:'66510000',messageSha256:createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex'),unsignedTransaction:prepared,lookupTables:[{key:table.key.toBase58(),addresses:table.state.addresses.map(a=>a.toBase58())}]};
   localPolicy={network:'devnet',mint:input.mint,deployer:wallet,platform,rewards:agent};localArtifact=await coSignReviewedMint(localReview,localPolicy,localReview.messageSha256,mint.secretKey);automaticSigner=new ServerMintSigner(localPolicy,()=>JSON.stringify(Array.from(mint.secretKey)));}
-  const now=new Date().toISOString();launch={id:'lch_BrowserExecutionTest',mode:'devnet',status:'awaiting_signature',launcherWallet:wallet,draft:{...d.fields,metadataUri:d.metadata.ipfsUri,imageUri:d.image.gatewayUrl},mint:input.mint,feeSharingConfig:sharingConfigPda(input.mint),fees:{platformLaunchFeeLamports:'50000000',platformTreasury:platform,estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16500000',launcherCreatorFeeBps:0,creatorFeeSplit:{agentRewardsTreasury:agent,agentRewardsBps:6000,platformTreasury:platform,platformBps:4000},notes:[]},execution:{draftId:id,draftVersion:d.version,transaction:prepared,lastValidBlockHeight:100000,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',network:'devnet',quoteAsset:'SOL',...(useLocalMint?{localMintReview:localReview}:{}),platformOrigin:'PLATFORM',initiator:'HUMAN'},signature:null,slot:null,communityId:null,errors:[],history:[{status:'awaiting_signature',at:now}],createdAt:now,updatedAt:now};
-  if(useLocalMint)renewFixture=async()=>{
-   const previous=localReview!,hash=Keypair.generate().publicKey.toBase58();
+  const now=new Date().toISOString();launch={id:'lch_BrowserExecutionTest',mode:'devnet',status:'awaiting_signature',launcherWallet:wallet,draft:{...d.fields,metadataUri:d.metadata.ipfsUri,imageUri:d.image.gatewayUrl},mint:input.mint,feeSharingConfig:sharingConfigPda(input.mint),fees:{platformLaunchFeeLamports:'50000000',platformTreasury:platform,estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16500000',launcherCreatorFeeBps:0,creatorFeeSplit:{agentRewardsTreasury:agent,agentRewardsBps:6000,platformTreasury:platform,platformBps:4000},notes:[]},execution:{...(!useLocalMint||automaticMintSigning?{walletApprovalIssued:false}:{}),draftId:id,draftVersion:d.version,transaction:prepared,lastValidBlockHeight:100000,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',network:'devnet',quoteAsset:'SOL',...(useLocalMint?{localMintReview:localReview}:{}),platformOrigin:'PLATFORM',initiator:'HUMAN'},signature:null,slot:null,communityId:null,errors:[],history:[{status:'awaiting_signature',at:now}],createdAt:now,updatedAt:now};
+  renewFixture=async()=>{
+   const previous=localReview,hash=Keypair.generate().publicKey.toBase58();
    prepared=(await buildUnsignedPumpLaunch(input,hash,[table])).transaction;
-   localReview={...previous,recentBlockhash:hash,lastValidBlockHeight:previous.lastValidBlockHeight+100000,unsignedTransaction:prepared,
-    messageSha256:createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex'),
-    renewal:{previousMessageSha256:previous.messageSha256,previousLastValidBlockHeight:previous.lastValidBlockHeight,finalizedBlockHeight:previous.lastValidBlockHeight+1,checkedAt:new Date().toISOString()}};
-   localArtifact=await coSignReviewedMint(localReview,localPolicy!,localReview.messageSha256,mint.secretKey);
-   launch={...launch!,status:'awaiting_signature',execution:{...(launch!.execution as object),transaction:prepared,lastValidBlockHeight:localReview.lastValidBlockHeight,localMintReview:localReview,localMintReviewHistory:[...((launch!.execution as {localMintReviewHistory?:MintSigningReview[]}).localMintReviewHistory??[]),previous]}};
+   const prior=launch!.execution as {lastValidBlockHeight:number;localMintReviewHistory?:MintSigningReview[]};
+   if(previous){
+    localReview={...previous,recentBlockhash:hash,lastValidBlockHeight:prior.lastValidBlockHeight+100000,unsignedTransaction:prepared,
+     messageSha256:createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex'),
+     renewal:{previousMessageSha256:previous.messageSha256,previousLastValidBlockHeight:previous.lastValidBlockHeight,finalizedBlockHeight:previous.lastValidBlockHeight+1,checkedAt:new Date().toISOString()}};
+    localArtifact=await coSignReviewedMint(localReview,localPolicy!,localReview.messageSha256,mint.secretKey);
+   }
+   launch={...launch!,status:'awaiting_signature',execution:{...prior,...(!useLocalMint||automaticMintSigning?{walletApprovalIssued:false}:{}),transaction:prepared,lastValidBlockHeight:prior.lastValidBlockHeight+100000,
+    ...(previous?{localMintReview:localReview,localMintReviewHistory:[...(prior.localMintReviewHistory??[]),previous]}:{})}};
   };
   await route.fulfill({status:503,json:{error:{message:'Preparation response lost. Retry safely.'}}});
  });
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/mint-review',route=>route.fulfill({json:localReview}));
- await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/mint-review/renew',async route=>{expect(route.request().postDataJSON().messageSha256).toBe(localReview!.messageSha256);renewals++;await renewFixture!();await route.fulfill({json:{launch,transaction:prepared,lastValidBlockHeight:localReview!.lastValidBlockHeight,demoTransaction:false}});});
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/refresh-transaction',async route=>{
+  expect(route.request().postDataJSON().messageSha256).toBe(createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex'));
+  if(launch!.status==='expired')renewals++;await renewFixture!();
+  await route.fulfill({json:{launch,transaction:prepared,lastValidBlockHeight:(launch!.execution as {lastValidBlockHeight:number}).lastValidBlockHeight,demoTransaction:false}});
+ });
+ await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/wallet-transaction',async route=>{
+  if(!signingWindowAvailable){await route.fulfill({status:409,json:{error:{message:'This signing window is close to expiry'}}});return;}
+  launch={...launch!,execution:{...(launch!.execution as object),walletApprovalIssued:true}};
+  if(automaticReplyMode==='unavailable'){await route.fulfill({status:503,json:{error:{message:'Signing is temporarily unavailable'}}});return;}
+  let tx=VersionedTransaction.deserialize(Buffer.from(prepared,'base64'));
+  const messageSha256=createHash('sha256').update(tx.message.serialize()).digest('hex');
+  if(useLocalMint){const signed=await automaticSigner!.sign(localReview,wallet);tx=VersionedTransaction.deserialize(Buffer.from(signed.transaction,'base64'));}else tx.sign([randomSigner!]);
+  if(automaticReplyMode==='changed')tx.message.recentBlockhash=Keypair.generate().publicKey.toBase58();else automaticSigns++;
+  await route.fulfill({json:{transaction:Buffer.from(tx.serialize()).toString('base64'),messageSha256}});
+ });
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/mint-signature/automatic',async route=>{expect(route.request().postDataJSON()).toEqual({});if(automaticReplyMode==='unavailable'){await route.fulfill({status:503,json:{error:{message:'Signing is temporarily unavailable'}}});return;}const signed=await automaticSigner!.sign(localReview,wallet);if(automaticReplyMode==='changed'){const tx=VersionedTransaction.deserialize(Buffer.from(signed.transaction,'base64'));tx.message.recentBlockhash=Keypair.generate().publicKey.toBase58();await route.fulfill({json:{transaction:Buffer.from(tx.serialize()).toString('base64'),messageSha256:signed.messageSha256}});return;}automaticSigns++;await route.fulfill({json:{transaction:signed.transaction,messageSha256:signed.messageSha256}});});
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/mint-signature',async route=>{imports++;const checked=await verifyMintSigningArtifact(localReview,localPolicy!,route.request().postDataJSON());await route.fulfill({json:{transaction:checked.transaction,messageSha256:checked.messageSha256}});});
- const expiry=()=>expiryProofAvailable?{messageSha256:localReview!.messageSha256,lastValidBlockHeight:localReview!.lastValidBlockHeight,finalizedBlockHeight:localReview!.lastValidBlockHeight+1,...(submittedSignature?{checkedSignature:submittedSignature}:{})}:undefined;
+ const expiry=()=>expiryProofAvailable?{messageSha256:createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex'),lastValidBlockHeight:(launch!.execution as {lastValidBlockHeight:number}).lastValidBlockHeight,finalizedBlockHeight:(launch!.execution as {lastValidBlockHeight:number}).lastValidBlockHeight+1,...(submittedSignature?{checkedSignature:submittedSignature}:{})}:undefined;
  await page.route('**/api/v1/launchpad/launches/lch_BrowserExecutionTest/signing-window',async route=>{
   if(!signingWindowAvailable){await route.fulfill({status:409,json:{error:{message:'This signing window is close to expiry'}}});return;}
   const tx=VersionedTransaction.deserialize(Buffer.from(prepared,'base64'));await route.fulfill({json:{messageSha256:createHash('sha256').update(tx.message.serialize()).digest('hex'),remainingBlocks:99,checkedAt:new Date().toISOString()}});
@@ -81,21 +99,21 @@ for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,fa
  await execution.screenshot({path:'artifacts/launch-review-card-mobile.png'});await page.screenshot({path:'artifacts/launch-review-mobile.png',fullPage:true});
  await page.reload();await waitForApplicationReady(page);await expect(execution).toContainText('0.05 SOL');await expect(page.getByLabel('Token name',{exact:true})).toBeHidden();expect(preparations).toBe(1);
  if(expiryRecovery){
-  const original={mint:launch!.mint,draft:launch!.draft},firstHash=localReview!.messageSha256;
+  const original={mint:launch!.mint,draft:launch!.draft},firstHash=createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex');
   launch={...launch!,status:'expired'};expiryProofAvailable=true;
   await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();
-  await expect(execution.getByRole('heading',{name:'This launch attempt did not complete'})).toBeVisible();expect(signs).toBe(0);expect(automaticSigns).toBe(0);
-  await execution.getByRole('button',{name:'Refresh transaction review',exact:true}).click();expiryProofAvailable=false;
-  expect(localReview!.messageSha256).not.toBe(firstHash);expect(signs).toBe(0);expect(renewals).toBe(1);
+  await expect(execution.getByRole('heading',{name:'Transaction expired'})).toBeVisible();expect(signs).toBe(0);expect(automaticSigns).toBe(0);
+  await execution.getByRole('button',{name:'Refresh transaction',exact:true}).click();await expect(execution.getByRole('heading',{name:'Review before wallet approval'})).toBeVisible();expiryProofAvailable=false;
+  expect(createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex')).not.toBe(firstHash);expect(signs).toBe(0);expect(renewals).toBe(1);
   signingWindowAvailable=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();await expect(execution.getByRole('alert')).toBeVisible();expect(signs).toBe(0);expect(submissions).toBe(0);
   signingWindowAvailable=true;reject=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();
-  await expect(execution.getByRole('heading',{name:'This launch attempt did not complete'})).toBeVisible();
-  await expect(execution).toContainText('No token was created or launch charge collected');await expect(execution).not.toContainText('We lost connection');
-  expect(signs).toBe(1);expect(submissions).toBe(1);const expiredPayload=submittedPayload,expiredSignature=submittedSignature,expiredHash=localReview!.messageSha256;
+  await expect(execution.getByRole('heading',{name:'Transaction expired'})).toBeVisible();
+  await expect(execution).toContainText('Your token details are safe');await expect(execution).not.toContainText('We lost connection');
+  expect(signs).toBe(1);expect(submissions).toBe(1);const expiredPayload=submittedPayload,expiredSignature=submittedSignature,expiredHash=createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex');
   expect(await page.evaluate(()=>Object.keys(sessionStorage).some(k=>k.includes(':expired:')))).toBe(true);
-  await page.reload();await waitForApplicationReady(page);await expect(execution.getByRole('button',{name:'Refresh transaction review',exact:true})).toBeVisible();expect(signs).toBe(1);expect(submissions).toBe(1);
-  await execution.getByRole('button',{name:'Refresh transaction review',exact:true}).click();expiryProofAvailable=false;submittedSignature='';
-  await expect(execution.getByRole('heading',{name:'Review before wallet approval'})).toBeVisible();expect(localReview!.messageSha256).not.toBe(expiredHash);expect(launch!.mint).toBe(original.mint);expect(launch!.draft).toEqual(original.draft);expect(signs).toBe(1);expect(renewals).toBe(2);
+  await page.reload();await waitForApplicationReady(page);await expect(execution.getByRole('button',{name:'Refresh transaction',exact:true})).toBeVisible();expect(signs).toBe(1);expect(submissions).toBe(1);
+  await execution.getByRole('button',{name:'Refresh transaction',exact:true}).click();await expect(execution.getByRole('heading',{name:'Review before wallet approval'})).toBeVisible();expiryProofAvailable=false;submittedSignature='';
+  await expect(execution.getByRole('heading',{name:'Review before wallet approval'})).toBeVisible();expect(createHash('sha256').update(VersionedTransaction.deserialize(Buffer.from(prepared,'base64')).message.serialize()).digest('hex')).not.toBe(expiredHash);expect(launch!.mint).toBe(original.mint);expect(launch!.draft).toEqual(original.draft);expect(signs).toBe(1);expect(renewals).toBe(2);
   lateApproval=false;await page.getByRole('button',{name:'Approve in wallet',exact:true}).click();
   await expect(execution.getByRole('heading',{name:'Coin created successfully'})).toBeVisible();expect(signs).toBe(2);expect(submissions).toBe(2);expect(submittedPayload).not.toBe(expiredPayload);expect(submittedSignature).not.toBe(expiredSignature);expect(preparations).toBe(1);expect(resumptions).toBe(0);
   await page.getByRole('button',{name:'Check launch status',exact:true}).count();await execution.screenshot({path:'artifacts/vanity-expiry-recovered.png'});return;
@@ -104,8 +122,8 @@ for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,fa
   executionEnabled=false;await page.reload();await waitForApplicationReady(page);
   await expect(execution).toContainText('Review preparation only');
   await expect(execution.getByRole('button',{name:'Approve in wallet',exact:true})).toHaveCount(0);
-  launch={...launch!,status:'expired'};await execution.getByText('Technical details',{exact:true}).click();await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
-  await execution.getByRole('button',{name:'Refresh signing review',exact:true}).click();
+  launch={...launch!,status:'expired'};expiryProofAvailable=true;await execution.getByText('Technical details',{exact:true}).click();await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
+  await execution.getByRole('button',{name:'Refresh transaction',exact:true}).click();await expect(execution.getByRole('heading',{name:'Review before wallet approval'})).toBeVisible();expiryProofAvailable=false;
   await expect(execution).toContainText('Launch summary');expect(renewals).toBe(1);expect(signs).toBe(0);expect(submissions).toBe(0);
   await expect(execution.getByRole('button',{name:'Approve in wallet',exact:true})).toHaveCount(0);
   executionEnabled=true;await page.reload();await waitForApplicationReady(page);
@@ -149,7 +167,7 @@ for(const [useLocalMint,automaticMintSigning,expiryRecovery] of [[false,false,fa
  await expect(execution.getByRole('button',{name:'Prepare new attempt',exact:true})).toHaveCount(0);
  launch={...launch!,signature:submittedSignature,errors:[{code:'submission_expired_unobserved',message:'Finalized history and mint checks passed',at:new Date().toISOString()}]};await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
  await expect(execution.getByRole('heading',{name:'This launch attempt did not complete'})).toBeVisible();
- await expect(execution.getByRole('button',{name:'Prepare new attempt',exact:true})).toHaveCount(useLocalMint?0:1);
+ await expect(execution.getByRole('button',{name:'Prepare new attempt',exact:true})).toHaveCount(0);
  await page.screenshot({path:'artifacts/launch-expired-mobile.png',fullPage:true});await expect(execution.getByRole('button',{name:'Resume same transaction',exact:true})).toHaveCount(0);expect(submissions).toBe(1);expect(signs).toBe(2);
  launch={...launch!,status:'submitted'};await execution.getByRole('button',{name:'Check launch status',exact:true}).click();
  await expect(execution.getByRole('heading',{name:'Launch in progress',exact:true})).toBeVisible();

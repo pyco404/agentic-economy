@@ -98,6 +98,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 820, height: 118
 test('Developer Buy keeps the optional input visible when execution is unavailable', async ({ page }) => {
   test.setTimeout(120000);
   await page.route('**/api/v1/auth/browser/session',route=>route.fulfill({json:{wallet:'11111111111111111111111111111111',sessionExpiresAt:new Date(Date.now()+3600000).toISOString()}}));
+  // Keep the mocked session valid through automatic draft persistence too.
+  const saved={id:'3d850366-84c9-438b-847f-17bcb084e531',wallet:'11111111111111111111111111111111',version:0,image:null,metadata:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  await page.route('**/api/v1/launchpad/drafts',route=>route.fulfill({json:route.request().method()==='GET'?{items:[]}:{...saved,fields:route.request().postDataJSON()}}));
+  await page.route('**/api/v1/launchpad/drafts/'+saved.id,route=>route.fulfill({json:{...saved,version:1,fields:route.request().postDataJSON().fields}}));
   await open(page, 'unavailable');
   const group = page.getByRole('group', { name: /Developer Buy/ });
   await expect(group.getByRole('switch')).toHaveCount(0);

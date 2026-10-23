@@ -145,3 +145,16 @@ it('excludes canonical AMM liquidity inventory from holder owners after graduati
  const mint=key(),owner=key(),pool=sdk.canonicalPumpPoolPda(new SolanaKey(mint)).toBase58();const f=setup(()=>({last_indexed_slot:10,token_accounts:[{address:key(),mint,owner:pool,amount:'100'},{address:key(),mint,owner,amount:'1'}]}));
  expect(await f.reader.holderCount(mint)).toMatchObject({holders:1,exact:true,index:{owners:[{address:owner,amount:'1'}]}});
 });
+
+it('keeps routine polling on the existing verified RPC and reserves Helius reads for fallback',async()=>{
+ const f=setup(()=>101),original={source:'solana_rpc',getGenesisHash:vi.fn(async()=>HELIUS_GENESIS.devnet),getBlockTime:vi.fn(async()=>100)} as unknown as ChainGateway;
+ const chain=heliusMarketChain(original,f.reader);expect(await chain.getBlockTime!(10)).toBe(100);expect(f.fetcher).not.toHaveBeenCalled();
+ vi.mocked(original.getBlockTime!).mockRejectedValue(Error('RPC outage'));expect(await chain.getBlockTime!(10)).toBe(101);
+ vi.mocked(original.getBlockTime!).mockResolvedValue(null);expect(await chain.getBlockTime!(10)).toBe(101);
+});
+
+it('caches holder enumeration for five minutes without inventing a new observation timestamp',async()=>{
+ const mint=key(),f=setup(()=>({last_indexed_slot:10,token_accounts:[]})),first=await f.reader.holderCount(mint),calls=vi.mocked(f.fetcher).mock.calls.length;
+ f.advance(61000);expect(await f.reader.holderCount(mint)).toEqual(first);expect(f.fetcher).toHaveBeenCalledTimes(calls);
+ f.advance(240000);const next=await f.reader.holderCount(mint);expect(next.index.fetchedAt).not.toBe(first.index.fetchedAt);
+});

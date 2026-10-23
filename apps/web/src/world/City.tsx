@@ -1,3 +1,4 @@
+import { createSocialBubbles, type SpeechAgent } from "./socialBubbles";
 import { visibleAgentSubset } from "./agentVisibility";
 import { WorldReadiness, type WorldPhase } from "./worldReadiness";
 import { bridgeSurface } from "./bridgeSurface";
@@ -62,6 +63,7 @@ export interface AgentVisual extends Pick<LabelAgent, "identity" | "displayName"
   paused: boolean;
   state?: AgentSummary["state"];
   work?: AgentWork;
+  social?: AgentSummary["social"];
 }
 export interface CityHandle {
   railway: () => void;
@@ -395,6 +397,7 @@ export const City = forwardRef<CityHandle, CityProps>(
       let hoveredAgentId: string | null = null;
       const labels = createAgentLabels(container, (id) => current.current.onAgentSelect(id),
         (id) => { hoveredAgentId = id; });
+      const bubbles = createSocialBubbles(container, (id) => current.current.onAgentSelect(id));
       const pulseGeometry = new THREE.RingGeometry(0.8, 1, 24).rotateX(
         -Math.PI / 2,
       );
@@ -909,7 +912,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           activeAgentIds = new Set(liveAgents.keys());
           roster = agentData;
         }
-        const labelAgents: LabelAgent[] = [];
+        const labelAgents: SpeechAgent[] = [];
         const importantAgents = new Set(p.importantAgentIds);
         displayAgentIds = [];
         let count = 0,
@@ -980,11 +983,16 @@ export const City = forwardRef<CityHandle, CityProps>(
             pose.phase =
               (pose.phase + Math.min(distance, 0.2) * 12) % (Math.PI * 2);
           }
-          const workAgent = { id: a.id, state: a.paused ? "paused" as const : (a.state ?? "idle"), work: a.work };
+          const workAgent = { id: a.id, state: a.paused ? "paused" as const : (a.state ?? "idle"), work: a.work, social: a.social };
           const poseKind = !walking && !p.demo ? workPose(workAgent, position.x, position.y) : null;
-          const interacting = !!poseKind && !a.paused;
+          const social = !p.demo && !a.paused ? a.social?.current : null;
+          const interacting = (!!poseKind || !!social) && !a.paused;
+          if (social && !walking) {
+            const partner = liveAgents.get(social.partnerIds[0] ?? '');
+            if (partner) pose.heading = Math.atan2(partner.x - x, partner.z - z);
+          }
           const carrying = !p.demo && Object.values(a.work?.cargo ?? {}).some(q => (q ?? 0) > 0);
-          if (interacting && !p.paused) pose.phase += dt * 1.8;
+          if (interacting && !p.paused && !motionPreference.matches) pose.phase += dt * 1.8;
           gait.set(a.id, pose);
           if (
             !frustum.containsPoint(
@@ -1010,6 +1018,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             interacting,
             poseKind ?? undefined,
             agentElevation,
+            social?.reaction,
           );
           labelAgents.push({ id: a.id, name: a.name, ownerWallet: a.ownerWallet,
             identity: a.identity, displayName: a.displayName,
@@ -1018,7 +1027,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             state: a.paused ? "paused" : walking ? "walking" : interacting ? "interacting" : "idle",
             activity: p.demo ? a.state : workDescription(workAgent), visualOnly: p.demo,
             selected: p.selectedAgentId === a.id, hovered: hoveredAgentId === a.id,
-            important: importantAgents.has(a.id) });
+            important: importantAgents.has(a.id), social: a.social });
           if (carrying) {
             agentMatrix.makeTranslation(
               streetPoint.x + Math.sin(pose.heading) * 0.29,
@@ -1031,7 +1040,8 @@ export const City = forwardRef<CityHandle, CityProps>(
           count++;
         }
         citizens.finish(count);
-        labels.update(t, camera, actorsReady ? labelAgents : [], container.clientWidth, container.clientHeight);
+        const bubbleIds = bubbles.update(t, camera, actorsReady && p.interactive && !p.paused ? labelAgents : [], container.clientWidth, container.clientHeight, p.tickMs ?? 500);
+        labels.update(t, camera, actorsReady ? labelAgents.filter(a => !bubbleIds.has(a.id)) : [], container.clientWidth, container.clientHeight, bubbles.bounds());
         container.dataset.agentVisualStates = JSON.stringify(labelAgents.reduce<Record<string, number>>((states, agent) => {
           states[agent.state] = (states[agent.state] ?? 0) + 1; return states;
         }, {}));
@@ -1190,7 +1200,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         controls.removeEventListener("start", stopAutomaticFocus);
         container.removeEventListener("city-reveal-review", previewReveal);
         observer.disconnect();
-        labels.dispose();
+        labels.dispose(); bubbles.dispose();
         if (ambient) { scene.remove(ambient.group); disposeGroup(ambient.group, shared); }
         window.removeEventListener("resize", resize);
         renderer.domElement.removeEventListener("pointerdown", down);

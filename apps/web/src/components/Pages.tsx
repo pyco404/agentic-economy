@@ -37,7 +37,7 @@ import {
   type HolderEligibility,
 } from "../api/shared";
 export const readable = (s: string) =>
-  s.replaceAll("_", " ").replaceAll(".", " ");
+  s === "production_shift" ? "Work shift" : s.replaceAll("_", " ").replaceAll(".", " ");
 const credits = (n: number) =>
   (n / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 });
 export function Notice({ children }: { children: React.ReactNode }) {
@@ -297,15 +297,15 @@ export function Studio({
       <PageHeading
         eyebrow="AUTONOMY, WITH INTENTION"
         title="Meet your next city worker."
-        description="Inspect rule-based agents, their assignments and verified simulation work today. Holder-access Common Agents and a separate rentable Super-Agent class are planned; neither entitlement system is live."
+        description="Meet city agents, inspect their assignments and explore completed virtual work. Common Agents represent qualifying $AECO holders; advanced economic entitlements and Super-Agent rentals remain future features."
       />
-      <Notice>Common Agents are planned for qualifying holdings; Super Agents are a separate future class rented by locking $AECO. Multiple holder-based positions and rentals are not enabled in today’s demo.</Notice>
+      <Notice>Qualifying $AECO holder wallets receive Common Agents automatically, without registration. Super Agents are a separate future class; rentals and economic entitlements are not enabled.</Notice>
       <div className="two-column">
         <form className="surface" onSubmit={submit}>
           <h2>Agent configuration</h2>
           <p className="small draft-storage" role="note">{nameSaved && communitySaved && professionSaved && riskSaved && temperamentSaved && objectiveSaved && budgetSaved ? "Configuration fields are retained in this browser tab. Eligibility and activation must be checked again; no agent has been created by saving this draft." : "Browser storage unavailable. Configuration stays in this running app; refreshing may lose changes."}</p>
           <p className="small">One token mint · one token-linked agent · one verified activating wallet. Token holdings alone do not establish ownership.</p>
-          {!demo && <p role="status" className="small">Holder-based Common-Agent activation is not enabled here. Existing simulation agents and their authoritative work remain available to inspect.</p>}
+          {!demo && <p role="status" className="small">Common Agents appear automatically from verified $AECO holdings. This form does not activate holder rights or financial permissions. You can inspect existing agents and their city work.</p>}
           {demo && <p className="small">Offline demo creates house agents only. No wallet or token ownership is assigned.</p>}
           <label>
             Agent name
@@ -398,7 +398,7 @@ export function Studio({
             </select>
           </label>
           <label>
-            Daily simulated budget · {budget} City Credits
+            Daily city budget · {budget} City Credits
             <input
               type="range"
               min={0}
@@ -440,7 +440,7 @@ export function Studio({
                 <span className="avatar">{a.name.slice(0, 1)}</span>
                 <span>
                   <b>{displayAgentName(a)}</b>
-                  <small>{data.identitySource === "backend" ? `${a.name} · ` : ""}{readable(a.profession)} · {a.identity.kind === "aeco_observed" ? "Common Agent" : a.identity.kind === "token_linked" ? "Token-linked agent" : a.identity.kind === "house" ? "Simulation citizen" : "Legacy simulation agent"}</small><small>{workDescription(a)}</small>
+                  <small>{data.identitySource === "backend" ? `${a.name} · ` : ""}{readable(a.profession)} · {a.identity.kind === "aeco_observed" ? "Common Agent" : a.identity.kind === "token_linked" ? "Token-linked agent" : a.identity.kind === "house" ? "City Resident" : "Virtual Agent"}</small><small>{workDescription(a)}</small>
                 </span>
                 <span
                   className={`status ${a.status === "paused" ? "paused" : ""}`}
@@ -462,7 +462,7 @@ export function Studio({
             </div>
           )}
           <Notice>
-            City Credits are simulated and non-withdrawable. Agents cannot sign
+            City Credits are virtual and non-withdrawable. Agents cannot sign
             transactions or spend from your wallet.
           </Notice>
         </aside>
@@ -478,7 +478,7 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
         title="From fields to front doors."
         description="Wheat → Flour → Bread → Residents. Follow production, assigned work and deliveries through the city."
       />
-      <Notice>Credits are simulation units, not withdrawable tokens. Funded, performance-based $AECO conversion and advanced agent businesses are planned; no conversion rate or payout is guaranteed.</Notice>
+      <Notice>City Credits are virtual world units, not withdrawable tokens. Funded, performance-based $AECO conversion and advanced agent businesses are planned; no conversion rate or payout is guaranteed.</Notice>
       <div className="production-flow">
         {[
           {
@@ -502,7 +502,7 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
           {
             icon: Users,
             label: "Residents",
-            place: "Demand sink",
+            place: "City households",
             amount: data.stats.goodsConsumed.bread ?? 0,
           },
         ].map(({ icon: Icon, label, place, amount }, i) => (
@@ -525,7 +525,7 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
         <section className="surface scroll-panel economy-panel" aria-labelledby="resource-market-title">
           <h2 id="resource-market-title">Resource market</h2>
           <p className="muted small">
-            Prices in simulated City Credits per unit
+            Prices in City Credits per unit
           </p>
           <div className="table-wrap panel-scroll-content slim-scroll" role="region" aria-label="Resource market rows" tabIndex={0}>
             <table>
@@ -556,8 +556,8 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
           </div>
         </section>
         <section className="surface scroll-panel economy-panel" aria-labelledby="work-queue-title">
-          <h2 id="work-queue-title">Useful work queue</h2>
-          <div className="panel-scroll-content slim-scroll" role="region" aria-label="Useful work entries" tabIndex={0}>
+          <h2 id="work-queue-title">City work queue</h2>
+          <div className="panel-scroll-content slim-scroll" role="region" aria-label="City work entries" tabIndex={0}>
           {observableTasks(data.tasks,data.agents).map((t) => (
             <div className="task-row" key={t.id}>
               <Truck size={18} />
@@ -565,7 +565,7 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
                 <b>{readable(t.kind)}</b>
                 <JobFacts task={t} data={data} onViewBuilding={onViewBuilding} onViewAgent={onViewAgent}/>
               </span>
-              <span className="tag">{t.status}</span>
+              <span className="tag">{t.status === "verified" ? "Completed" : readable(t.status)}</span>
             </div>
           ))}
           {!data.tasks.length && (
@@ -575,7 +575,7 @@ export function Economy({ data, onViewBuilding, onViewAgent, onHighlight }: { da
         </section>
       </div>
       <Notice>
-        These figures describe a simulated economy. City Credits have no SOL
+        These figures describe the virtual city economy. City Credits have no SOL
         conversion or withdrawal mechanism. Contribution points do not guarantee
         a real payout.
       </Notice>
@@ -590,7 +590,7 @@ export function Treasury({ data }: { data: Dashboard }) {
       <PageHeading
         eyebrow="TRANSPARENCY BY DESIGN"
         title="Every stream, accounted for."
-        description="Launch charges and eligible creator fees are separate. Simulation receipts, verified collection evidence and future allocations stay separate. Pending allocations are not collected balances or payouts; real settlements and rewards are disabled."
+        description="Launch charges and eligible creator fees are separate. City World receipts, verified on-chain collection evidence and future allocations stay separate. Pending allocations are not collected balances or payouts; real settlements and rewards are disabled."
       />
       {data.mode === "demo" && (
         <Notice>
@@ -828,7 +828,7 @@ export function AgentPanel({
               <dd>{credits(displayed?.credits??agent.credits)} CC</dd>
             </div>
             <div>
-              <dt>Verified tasks</dt>
+              <dt>Completed city activities</dt>
               <dd>{displayed?.verifiedTasks??agent.verifiedTasks}</dd>
             </div>
             <div>
@@ -866,7 +866,7 @@ export function AgentPanel({
               checks protect agent controls.
             </p>
           )}
-          <p className="small">Resource preferences: {agent.strategy.preferredResources.join(", ")||"Any permitted resource"} · earned {credits(agent.performance.creditsEarned)} simulated CC</p>
+          <p className="small">Resource preferences: {agent.strategy.preferredResources.join(", ")||"Any permitted resource"} · earned {credits(agent.performance.creditsEarned)} virtual City Credits</p>
           <h3>Decision log</h3>
           {[
             ...new Map(

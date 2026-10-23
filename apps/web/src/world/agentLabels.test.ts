@@ -1,41 +1,49 @@
-import { describe, expect, it } from "vitest";
-import { agentLabelName, chooseAgentLabels, type LabelCandidate } from "./agentLabels";
+import { describe, expect, it } from 'vitest';
+import { agentLabelName, chooseAgentLabels, uniqueAgentLabelNames, fullAgentIdentity, type LabelCandidate } from './agentLabels';
+const agent = (id: string, x = 200, y = 200): LabelCandidate => ({ id, name: id, x: 0, z: 0, state: 'idle', screenX: x, screenY: y });
 
-const agent = (id: string, x = 200, y = 200): LabelCandidate => ({ id, name: id, demoName: true,
-  x: 0, z: 0, state: "idle", screenX: x, screenY: y });
-describe("world agent labels", () => {
-  it("never infers wallet activation from an owner field or uses 0x house names", () => {
-    const name = agentLabelName({ id: "agt_kestrel1", name: "Kestrel", ownerWallet: "CMYx1234566Wec" });
-    expect(name).toMatch(/^[A-Z][A-Za-z]+_\d{3}$/);
-    expect(name).not.toContain("0x"); expect(name).not.toContain("...");
+describe('authoritative city labels', () => {
+  it('uses canonical IDs when identity is missing, never a made-up name or an unverified owner', () => {
+    expect(agentLabelName({ id: 'agt_missing', name: 'Agent', ownerWallet: 'CMYx1234566Wec' })).toBe('agt_missing');
   });
-  it("uses the same authoritative display name on world labels as in profiles", () => {
-    expect(agentLabelName({ id: "agt_house", name: "old name", displayName: "Fern_506",
-      identity: { kind: "house", syntheticName: "Fern_506" } })).toBe("Fern_506");
-    expect(agentLabelName({ id: "agt_legacy", name: "old name", displayName: "Bow_1940",
-      identity: { kind: "legacy", syntheticName: "Bow_1940", legacyOwnerWallet: "1".repeat(32) } })).toBe("Bow_1940");
-    expect(agentLabelName({ id: "agt_wallet", name: "old name", displayName: "CMYxA...B6Wec",
-      identity: { kind: "token_linked", activatingWallet: "CMYxA" + "1".repeat(23) + "B6Wec",
-        tokenMint: "1".repeat(32), activationId: "act_verified" } })).toBe("CMYxA...B6Wec");
+  it('preserves existing resident names and validated backend wallet expansions', () => {
+    expect(agentLabelName({ id: 'agt_house', name: 'old', identity: { kind: 'house', syntheticName: 'Fern_108' } })).toBe('Fern_108');
+    const wallet = 'CMYxA' + '1'.repeat(23) + 'B6Wec';
+    const identity = { kind: 'aeco_observed' as const, wallet, tokenMint: '1'.repeat(32), network: 'mainnet-beta' as const, balanceRaw: '1', decimals: 6, observedSlot: 1 };
+    expect(agentLabelName({ id: 'agt_common', name: 'Common Agent', displayName: 'CMYxA...B6Wec', identity })).toBe('CMYxA...B6Wec');
+    expect(agentLabelName({ id: 'agt_common', name: 'Common Agent', displayName: 'Fake...Name', identity })).toBe('CMYx...6Wec');
+    expect(fullAgentIdentity({ ...agent('agt_common'), identity })).toContain(wallet);
   });
-  it("keeps selected and hovered labels at far zoom and suppresses ordinary names", () => {
-    const result = chooseAgentLabels([agent("ordinary"), { ...agent("selected"), selected: true },
-      { ...agent("hovered", 400), hovered: true }], 0.5, 800, 600);
-    expect(result.map((a) => a.id)).toEqual(["selected", "hovered"]);
+  it('resolves colliding wallet abbreviations and resident names without changing an existing label', () => {
+    const common = (id: string, middle: string) => ({ ...agent(id), identity: { kind: 'aeco_observed' as const, wallet: `ABCD${middle.repeat(24)}WXYZ`, tokenMint: '1'.repeat(32), network: 'mainnet-beta' as const, balanceRaw: '1', decimals: 6, observedSlot: 1 } });
+    const a = common('agt_z', '1'), b = common('agt_a', '2'), names = uniqueAgentLabelNames([a]);
+    const before = names.get(a.id); uniqueAgentLabelNames([b, a], names);
+    expect(names.get(a.id)).toBe(before); expect(names.get(b.id)).not.toBe(before);
+    const saved = new Map(names); uniqueAgentLabelNames([a, b].reverse(), names); expect(names).toEqual(saved);
+    const residents = [1, 2].map(n => ({ ...agent(`agt_resident${n}`), identity: { kind: 'house' as const, syntheticName: 'Fern_108' } }));
+    expect(new Set(uniqueAgentLabelNames(residents).values()).size).toBe(2);
   });
-  it("prioritizes selection over overlapping labels and bounds density", () => {
-    const agents = Array.from({ length: 100 }, (_, i) => agent(`Citizen${i}`, 80 + i % 10 * 130, 80 + Math.floor(i / 10) * 60));
-    expect(chooseAgentLabels(agents, 2, 1440, 1000).length).toBeLessThanOrEqual(18);
-    expect(chooseAgentLabels(agents, 5, 1440, 1000).length).toBeGreaterThan(18);
-    const result = chooseAgentLabels([agent("nearby"), { ...agent("selected"), selected: true }], 2, 800, 600);
-    expect(result.map((a) => a.id)).toEqual(["selected"]);
-    expect(chooseAgentLabels([agent("outside", -50)], 5, 800, 600)).toEqual([]);
+  it('keeps a useful distant sample and prioritizes hovered/selected agents', () => {
+    const result = chooseAgentLabels([agent('ordinary', 600), { ...agent('selected'), selected: true }, { ...agent('hovered', 450), hovered: true }], .5, 1000, 800);
+    expect(result[0]!.id).toBe('hovered'); expect(result.some(a => a.id === 'selected')).toBe(true);
+    expect(result.length).toBeLessThanOrEqual(6);
   });
-});
-
-// Speech takes precedence over nearby name tags without adding more world overlays.
-it('keeps name labels out of active speech bounds', () => {
-  const agent = { id: 'agt_socialSpeaker', name: 'Neighbour', x: 1, z: 1, state: 'idle', selected: true, screenX: 300, screenY: 300 };
-  expect(chooseAgentLabels([agent], 3, 1000, 800, [{ left: 250, top: 250, width: 190, height: 80 }])).toHaveLength(0);
-  expect(chooseAgentLabels([agent], 3, 1000, 800)).toHaveLength(1);
+  it('labels all 65 well-spaced close agents and bounds dense/far scenes', () => {
+    const agents = Array.from({ length: 65 }, (_, i) => agent(`agt_${i}`, 90 + i % 8 * 165, 100 + Math.floor(i / 8) * 80));
+    expect(chooseAgentLabels(agents, 5, 1440, 1000)).toHaveLength(65);
+    expect(chooseAgentLabels(agents, 2, 1440, 1000).length).toBeLessThanOrEqual(32);
+    const packed = chooseAgentLabels(agents.map(a => ({ ...a, screenX: 300, screenY: 300 })), 5, 800, 600);
+    expect(packed.length).toBeLessThan(8);
+    for (const a of packed) for (const b of packed) if (a.id !== b.id) expect(Math.abs(a.labelX - b.labelX) >= (a.width + b.width) / 2 || Math.abs(a.labelY - b.labelY) >= Math.max(a.height, b.height)).toBe(true);
+    expect(chooseAgentLabels([agent('outside', -50)], 5, 800, 600)).toHaveLength(0);
+  });
+  it('avoids UI and speech bounds, repositions close labels and keeps mobile focus within the viewport', () => {
+    const a = { ...agent('agt_focused', 20, 30), hovered: true };
+    const [focused] = chooseAgentLabels([a], 5, 344, 700);
+    expect(focused).toBeDefined(); expect(focused!.labelX - focused!.width / 2).toBeGreaterThanOrEqual(0);
+    expect(focused!.labelY - focused!.height).toBeGreaterThanOrEqual(0);
+    expect(chooseAgentLabels([agent('blocked')], 2, 800, 600, [{ left: 100, top: 100, width: 300, height: 300 }])).toHaveLength(0);
+    const crowded = chooseAgentLabels([agent('first'), agent('second', 205)], 5, 800, 600);
+    expect(crowded).toHaveLength(2); expect(crowded[1]!.labelY).not.toBe(crowded[0]!.labelY);
+  });
 });

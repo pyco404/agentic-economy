@@ -1,3 +1,4 @@
+import type { SocialPresence } from "../api/shared";
 import type { WorkPose } from "../api/agentWork";
 import * as THREE from "three";
 
@@ -41,6 +42,7 @@ export function createCitizens(capacity: number) {
       interacting = false,
       work?: WorkPose,
       elevation = 0,
+      reaction?: SocialPresence["reaction"],
     ) {
       const bob = moving ? Math.abs(Math.sin(phase)) * 0.045 : interacting ? Math.sin(phase) * 0.01 : 0;
       const step = moving ? Math.sin(phase) * 0.48 : 0;
@@ -73,7 +75,11 @@ export function createCitizens(capacity: number) {
       // Sleeves share the torso batch; small faceted hands share the head batch.
       // Shoulder pivots keep wrists attached as arms swing or reach around a crate.
       for (let side = 0; side < 2; side++) {
-        const tilt = carrying ? -1.05 : interacting ? (work === "farm" ? -.95 : work === "bakery" ? -.8 : work === "maintenance" ? -.2 : -.5) + Math.sin(phase * (work === "mill" ? 1.4 : 1) + (work === "bakery" ? 0 : side)) * (work === "farm" ? .3 : .18)
+        const socialTilt = reaction === 'cheer' ? -2.3 + Math.sin(phase) * .18
+          : reaction === 'wave' && side === 1 ? -2 + Math.sin(phase * 2) * .2
+            : reaction === 'talk' && side === 1 ? -.8 + Math.sin(phase) * .2
+              : reaction === 'consider' && side === 1 ? -1.1 : null;
+        const tilt = !moving && socialTilt !== null ? socialTilt : carrying ? -1.05 : interacting ? (work === "farm" ? -.95 : work === "bakery" ? -.8 : work === "maintenance" ? -.2 : -.5) + Math.sin(phase * (work === "mill" ? 1.4 : 1) + (work === "bakery" ? 0 : side)) * (work === "farm" ? .3 : .18)
           : (side === 0 ? -1 : 1) * step * 0.75;
         const shoulder = 0.88 + bob;
         const offset = side === 0 ? -0.23 : 0.23;

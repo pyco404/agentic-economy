@@ -5,7 +5,12 @@ const value=z.number().finite().nonnegative().nullable();
 export const TokenMarket=z.object({
  mint:PublicKey,status:z.enum(['available','unavailable','stale']),reason:z.string().nullable(),
  network:z.enum(['mainnet-beta','devnet','localnet','demo']),fetchedAt:z.iso.datetime().nullable(),sourceAsOf:z.iso.datetime().nullable(),
- source:z.literal('dexscreener').nullable(),sourceUrl:z.string().url().nullable(),pairAddress:PublicKey.nullable(),quoteAsset:z.enum(['SOL','USDC']).nullable(),
+ source:z.enum(['dexscreener','solana_rpc']).nullable(),sourceUrl:z.string().url().nullable(),pairAddress:PublicKey.nullable(),quoteAsset:z.enum(['SOL','USDC']).nullable(),
+ fdvUsd:value.optional(),priceSol:value.optional(),volume24hSol:value.optional(),transactions24h:z.number().int().nonnegative().nullable().optional(),
+ metricSources:z.record(z.string(),z.string()).optional(),
+ valuationBasis:z.string().optional(),liquidityBasis:z.string().optional(),volumeBasis:z.string().optional(),
+ usdReference:z.object({source:z.literal('coinbase'),price:z.number().positive(),asOf:z.iso.datetime({offset:true})}).nullable().optional(),
+ activityCoverage:z.object({complete:z.boolean(),durable:z.boolean(),through:z.iso.datetime().nullable(),reason:z.string().nullable()}).optional(),
  priceUsd:value,volume24hUsd:value,marketCapUsd:value,liquidityUsd:value,priceChange24h:z.number().finite().nullable(),
  holderIndex:z.object({source:z.literal('helius_das'),indexedSlot:z.number().int().nonnegative(),fetchedAt:z.iso.datetime(),complete:z.boolean(),scannedAccounts:z.number().int().nonnegative(),owners:z.array(z.object({address:PublicKey,amount:AmountString})).max(25),reason:z.string().nullable()}).optional(),
  indexedMetadata:z.object({source:z.literal('helius_das'),mint:PublicKey,name:z.string().nullable(),symbol:z.string().nullable(),fetchedAt:z.iso.datetime()}).nullable().optional(),
@@ -20,7 +25,7 @@ export type TokenMarket=z.infer<typeof TokenMarket>;
 export const TokenHistory=z.object({mint:PublicKey,pairAddress:PublicKey.nullable(),source:z.literal('geckoterminal'),fetchedAt:z.iso.datetime().nullable(),reason:z.string().nullable(),candles:z.array(z.object({time:z.number().int().nonnegative(),open:value,high:value,low:value,close:value,volume:value})).max(48)}).meta({id:'TokenHistory'});
 export type TokenHistory=z.infer<typeof TokenHistory>;
 /** A bonding-curve trade decoded from Pump's own TradeEvent. Amounts are raw base units; never estimated. */
-export const TokenTrade=z.object({signature:TxSignature,slot:z.number().int().nonnegative(),blockTime:z.iso.datetime().nullable(),side:z.enum(['buy','sell']),user:PublicKey,
+export const TokenTrade=z.object({eventIndex:z.number().int().nonnegative().optional(),venue:z.enum(['bonding_curve','pumpswap']).optional(),signature:TxSignature,slot:z.number().int().nonnegative(),blockTime:z.iso.datetime().nullable(),side:z.enum(['buy','sell']),user:PublicKey,
  tokenAmount:AmountString,tokenDecimals:z.literal(6),quoteAmount:AmountString,quoteAsset:z.enum(['SOL','USDC']),quoteDecimals:z.union([z.literal(9),z.literal(6)]),creatorFee:AmountString}).meta({id:'TokenTrade'});
 export type TokenTrade=z.infer<typeof TokenTrade>;
 /** Recent trades read from Solana. `complete: false` means some transactions or logs could not be read; trades shown are still verified. */

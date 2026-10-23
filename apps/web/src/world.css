@@ -74,7 +74,7 @@
 .world-main .activity-panel .feed, .world-main .activity-panel .building-list {
   max-height: none; overflow: visible; padding-right: 0; scrollbar-width: none; }
 .activity-panel .feed::-webkit-scrollbar, .activity-panel .building-list::-webkit-scrollbar { display: none; }
-.world-main .world-bottom { left: 50%; right: auto; bottom: 28px; transform: translateX(-50%);
+.world-main .world-bottom { left: 50%; right: auto; bottom: var(--world-dock-bottom, 28px); transform: translateX(-50%);
   width: max-content; max-width: calc(100% - 168px); min-height: 58px; padding: 10px 14px;
   gap: 16px; background: #fffaf2ed; backdrop-filter: none; border-radius: 10px; }
 .world-main .world-stat { flex: 0 1 auto; padding-left: 16px; gap: 8px; }
@@ -122,7 +122,7 @@
   .world-main .activity-panel { top: 178px; right: 12px; width: min(260px, calc(100% - 88px));
     --activity-padding: 12px; max-height: calc(100% - 280px); }
   .world-main .feed .feed-item:nth-child(n + 3) { display: flex; }
-  .world-main .world-bottom { left: 72px; right: 12px; transform: none; bottom: 28px;
+  .world-main .world-bottom { left: 72px; right: 12px; transform: none; bottom: var(--world-dock-bottom, 28px);
     width: auto; max-width: none; gap: 6px; padding: 10px; min-height: 56px; }
   .world-main .world-stat { flex: 1; min-width: 0; padding-left: 8px; }
   .world-main .world-stat b { font-size: 16px; }

@@ -6,7 +6,7 @@ import {routeUrl} from "../navigation/routes";
 import {useEffect,useRef,useState} from 'react';
 import {LaunchResponse,PrepareLaunchResponse,LocalMintReview,type SavedLaunchDraft,type TokenLaunch} from '../api/shared';
 import {ApiResponseError,SessionExpired,launchpadApiOrigin,jsonRequest,launchpadRequest,useWalletSession} from '../api/walletSession';
-import {devBuyNeedsAcceptance,formatSol,formatTokens,percentFromBps} from '../api/devBuy';
+import {devBuyNeedsAcceptance,formatSol,formatTokens,allocationPercent} from '../api/devBuy';
 const encoded=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
 const decoded=(value:string)=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
 /** New execution needs enabled review; existing saved attempts also support read-only recovery. */
@@ -166,9 +166,9 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
    </>:<>
     {draft.fields.description&&<p className="launch-review-description">{draft.fields.description}</p>}
     <div className="launch-review-heading"><h4>Launch summary</h4><span className="launch-network-label">{launch.execution?.network}</span></div>
-    <dl className="launch-summary"><div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Estimated network fee</dt><dd>{Number(launch.fees.estimatedNetworkFeesLamports)/1e9} SOL</dd></div><div><dt>Estimated account rent</dt><dd>{Number(launch.fees.estimatedAccountRentLamports)/1e9} SOL</dd></div>
-     {dev&&<div><dt>Developer Buy <span className="muted">({percentFromBps(dev.bps)}%)</span></dt><dd>{formatSol(dev.estimatedQuoteCost)}<small>{formatTokens(dev.tokenAmount)} {launch.draft.symbol}</small></dd></div>}
-     <div className="launch-summary-total"><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')} SOL{dev&&<small>At most {total(dev.maxQuoteCost)} SOL</small>}</dd></div>
+    <dl className="launch-summary"><div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Estimated network fee</dt><dd>{formatSol(launch.fees.estimatedNetworkFeesLamports)}</dd></div><div><dt>Estimated account rent</dt><dd>{formatSol(launch.fees.estimatedAccountRentLamports)}</dd></div>
+     {dev&&<div><dt>Developer Buy <span className="muted">({allocationPercent(dev.tokenAmount,dev.totalSupply)}%)</span></dt><dd>{formatSol(dev.estimatedQuoteCost)}<small>Up to {formatSol(dev.maxQuoteCost)} · ≈ {formatTokens(dev.tokenAmount)} {launch.draft.symbol}</small></dd></div>}
+     <div className="launch-summary-total"><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')}{dev&&<small>Maximum authorized debit: {total(dev.maxQuoteCost)}</small>}</dd></div>
     </dl>
     <p className="launch-fee-sharing">Creator fees: 60% Agent Rewards / 40% Platform / 0% Launcher</p>
     <p className="small muted">{launch.execution?.network==='devnet'?'Devnet test SOL only. ':''}A failed transaction may still incur network fees.</p>
@@ -185,8 +185,8 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
    </>}
    <details className="launch-technical"><summary>Technical details</summary>
     <dl className="launch-summary"><div><dt>Launch protocol</dt><dd><a href="https://pump.fun" target="_blank" rel="noopener noreferrer">Pump.fun · external protocol ↗</a></dd></div><div><dt>Attempt status</dt><dd>{launch.status.replaceAll('_',' ')}</dd></div><div><dt>Network</dt><dd>{launch.execution?.network}</dd></div><div><dt>Mint</dt><dd><code className="ui-select-text">{launch.mint}</code></dd></div><div><dt>Creator wallet</dt><dd><code className="ui-select-text">{launch.launcherWallet}</code></dd></div><div><dt>Platform treasury</dt><dd><code className="ui-select-text">{launch.fees.platformTreasury}</code></dd></div>
-     <div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Estimated network fee</dt><dd>{Number(launch.fees.estimatedNetworkFeesLamports)/1e9} SOL</dd></div><div><dt>Estimated account rent</dt><dd>{Number(launch.fees.estimatedAccountRentLamports)/1e9} SOL</dd></div><div><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')} SOL{dev&&<small>At most {total(dev.maxQuoteCost)} SOL</small>}</dd></div>
-     {dev&&<div><dt>Developer Buy allocation</dt><dd>{formatTokens(dev.tokenAmount)} {launch.draft.symbol} ({percentFromBps(dev.bps)}%)</dd></div>}
+     <div><dt>Platform charge</dt><dd>0.05 SOL</dd></div><div><dt>Estimated network fee</dt><dd>{formatSol(launch.fees.estimatedNetworkFeesLamports)}</dd></div><div><dt>Estimated account rent</dt><dd>{formatSol(launch.fees.estimatedAccountRentLamports)}</dd></div><div><dt>Total estimated SOL</dt><dd>{total(dev?.estimatedQuoteCost??'0')}{dev&&<small>Maximum authorized debit: {total(dev.maxQuoteCost)}</small>}</dd></div>
+     {dev&&<div><dt>Developer Buy allocation</dt><dd>{formatTokens(dev.tokenAmount)} {launch.draft.symbol} ({allocationPercent(dev.tokenAmount,dev.totalSupply)}%)</dd></div>}
      {launch.signature&&<div><dt>Transaction signature</dt><dd><code className="ui-select-text">{launch.signature}</code></dd></div>}
      {dev&&<><div><dt>Developer Buy maximum</dt><dd>{formatSol(dev.maxQuoteCost)}</dd></div><div><dt>Includes protocol fees</dt><dd>{formatSol(dev.pumpFees)}</dd></div><div><dt>Price impact</dt><dd>{(dev.priceImpactBps/100).toFixed(2)}%</dd></div></>}
      {launch.devBuyResult&&<div><dt>Verified Developer Buy cost</dt><dd>{formatSol(launch.devBuyResult.quoteSpent)}</dd></div>}

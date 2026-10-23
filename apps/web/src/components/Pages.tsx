@@ -429,7 +429,7 @@ export function Studio({
             <h2>City agents</h2>
             <span className="tag">{data.agents.length}</span>
           </div>
-          <div className="agent-list">
+          <div className="agent-list slim-scroll">
             {data.agents.slice(agentPage * 50, (agentPage + 1) * 50).map((a) => (
               <button
                 key={a.id}

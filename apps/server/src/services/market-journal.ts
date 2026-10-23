@@ -64,16 +64,26 @@ export class MarketJournal{
  async activity(network:string,mint:string,addresses:string[]):Promise<Activity>{
   const none:Activity={complete:false,durable:!!this.pool,through:null,reason:'Trade history is reconciling; incomplete totals are not displayed.',volumeSol:null,buys:null,sells:null,transactions:null,trades:[]};
   if(!await this.ready())return {...none,durable:false,reason:'Durable trade indexing awaits database migration approval.'};
-  const cursors:Cursor[]=this.pool?(await this.pool.query('SELECT doc FROM token_market_cursors WHERE network=$1 AND mint=$2 AND address=ANY($3)',[network,mint,addresses])).rows.map(r=>r.doc):addresses.flatMap(a=>{const c=this.cursors.get([network,mint,a].join(':'));return c?[c]:[];});
+  const cutoff=new Date(this.now()-86400000);
+  // One SQL statement gives cursor coverage, rows and totals the SAME MVCC snapshot.
+  // A page committing between separate reads must never turn partial totals into a complete window.
+  const observed=this.pool?(await this.pool.query(`
+   WITH totals AS (
+    SELECT coalesce(sum(quote_raw),0)::text AS volume,count(*) FILTER(WHERE side='buy')::int AS buys,
+     count(*) FILTER(WHERE side='sell')::int AS sells,count(DISTINCT signature)::int AS transactions
+    FROM token_market_trades WHERE network=$1 AND mint=$2 AND block_time>=$4
+   ), recent AS (
+    SELECT doc FROM token_market_trades WHERE network=$1 AND mint=$2 ORDER BY block_time DESC,slot DESC,event_index DESC LIMIT 20
+   ) SELECT totals.*,
+    (SELECT json_agg(doc) FROM token_market_cursors WHERE network=$1 AND mint=$2 AND address=ANY($3)) AS cursors,
+    (SELECT json_agg(doc) FROM recent) AS trades FROM totals`,[network,mint,addresses,cutoff])).rows[0]:null;
+  const cursors:Cursor[]=observed?observed.cursors??[]:addresses.flatMap(a=>{const c=this.cursors.get([network,mint,a].join(':'));return c?[c]:[];});
   const through=cursors.length?Math.min(...cursors.map(c=>c.through??0)):0;
   const complete=cursors.length===addresses.length&&cursors.every(c=>c.complete&&!c.before&&(c.floor??Infinity)<=this.now()-86400000)&&this.now()-through<180000;
-  const cutoff=new Date(this.now()-86400000);
-  if(this.pool){
-   const rows=await this.pool.query('SELECT doc FROM token_market_trades WHERE network=$1 AND mint=$2 ORDER BY slot DESC,event_index DESC LIMIT 20',[network,mint]);
-   const trades=rows.rows.map(r=>r.doc as MarketTrade);
+  if(observed){
+   const trades:MarketTrade[]=observed.trades??[];
    if(!complete)return {...none,through:through?new Date(through).toISOString():null,trades};
-   const q=await this.pool.query("SELECT coalesce(sum(quote_raw),0)::text AS volume,count(*) FILTER(WHERE side='buy')::int AS buys,count(*) FILTER(WHERE side='sell')::int AS sells,count(DISTINCT signature)::int AS transactions FROM token_market_trades WHERE network=$1 AND mint=$2 AND block_time>=$3",[network,mint,cutoff]);
-   return {...none,complete:true,reason:null,through:new Date(through).toISOString(),volumeSol:Number(q.rows[0].volume)/1e9,buys:q.rows[0].buys,sells:q.rows[0].sells,transactions:q.rows[0].transactions,trades};
+   return {...none,complete:true,reason:null,through:new Date(through).toISOString(),volumeSol:Number(observed.volume)/1e9,buys:observed.buys,sells:observed.sells,transactions:observed.transactions,trades};
   }
   const all=[...this.trades].filter(([key])=>key.startsWith(network+':'+mint+':')).map(([,t])=>t),window=all.filter(t=>t.blockTime!*1000>=cutoff.getTime());
   if(!complete)return {...none,trades:all.sort((a,b)=>b.slot-a.slot).slice(0,20)};

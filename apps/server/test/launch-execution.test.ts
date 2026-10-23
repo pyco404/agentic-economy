@@ -321,7 +321,7 @@ describe('initial Mainnet deployer-only policy (mock RPC; no real transactions)'
   expect(launchWalletAllowed(cfg,OFFICIAL_TREASURIES.aecoDeployer)).toBe(true);
   expect(()=>assertLaunchWalletAllowed(cfg,OFFICIAL_TREASURIES.aecoDeployer)).not.toThrow();
   // Wallet permission alone must not allocate a random first Mainnet mint.
-  await expect(env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT),{id:f.draft.id,version:0,launchId:'lch_deployerpolicy'})).rejects.toMatchObject({code:'feature_disabled'});
+  await expect(env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT),{id:f.draft.id,version:0,launchId:'lch_deployerpolicy'})).rejects.toMatchObject({code:'forbidden'});
   expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();
   cfg.financialFeaturesEnabled=false;
   await expect(env!.ctx.launches.prepare(OFFICIAL_TREASURIES.aecoDeployer,LaunchDraft.parse(DRAFT))).rejects.toMatchObject({code:'feature_disabled'});
@@ -345,6 +345,20 @@ describe('operator-bound prepared official mint (public keys and mock RPC only)'
   const owner=OFFICIAL_TREASURIES.aecoDeployer,draft=LaunchDraft.parse(DRAFT),owned={id:f.draft.id,version:0,launchId:'lch_reservedofficial'};
   return {...f,cfg,owner,owned,tokenDraft:draft,prepareOfficial:()=>env!.ctx.launches.prepare(owner,draft,owned)};
  }
+ it('binds the official mint automatically to one durable intent without an operator draft ID',async()=>{
+  const f=await reserved();f.cfg.pumpLaunch.preparedMintDraftId=null;f.cfg.financialFeaturesEnabled=false;f.cfg.pumpLaunch.enabled=false;
+  const first=await f.prepareOfficial();
+  expect(first.launch.mint).toBe(PLANNED_AECO_MINT);expect(first.launch.execution!.draftId).toBe(f.owned.id);
+  expect(first.launch.execution!.localMintReview!.launchId).toBe(first.launch.id);
+  expect((await f.prepareOfficial()).transaction).toBe(first.transaction);
+  await expect(env!.ctx.launches.localMintReview(f.owner,first.launch.id)).resolves.toEqual(first.launch.execution!.localMintReview);
+  const results=await Promise.allSettled([1,2].map(i=>env!.ctx.launches.prepare(f.owner,f.tokenDraft,{...f.owned,id:crypto.randomUUID(),launchId:`lch_otherintent${i}`})));
+  expect(results.every(r=>r.status==='rejected')).toBe(true);
+  expect((await env!.ctx.store.getLaunch(first.launch.id))!.launch.execution!.draftId).toBe(f.owned.id);
+  await expect(env!.ctx.launches.submit(f.owner,first.launch.id,first.transaction)).rejects.toMatchObject({code:'feature_disabled'});
+  await expect(env!.ctx.launches.importLocalMintSignature(f.owner,first.launch.id,{})).rejects.toMatchObject({code:'feature_disabled'});
+  expect(f.chain.buildLaunchTransaction).not.toHaveBeenCalled();expect(f.chain.submitLaunchTransaction).not.toHaveBeenCalled();
+ });
  it('persists the exact public mint without a mint secret and restores the immutable unsigned review',async()=>{
   const f=await reserved(),p=await f.prepareOfficial();
   expect(p.launch.mint).toBe(PLANNED_AECO_MINT);expect(p.launch.execution?.localMintReview).toMatchObject({mint:PLANNED_AECO_MINT,launcherWallet:f.owner,network:'mainnet-beta',maxTotalDebitLamports:'61607640'});
@@ -405,8 +419,8 @@ describe('operator-bound prepared official mint (public keys and mock RPC only)'
   await expect(service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256)).rejects.toThrow();
   f.chain.listSignaturesForAddress=async()=>[];f.chain.getGenesisHash=async()=>'wrong';
   await expect(service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256)).rejects.toMatchObject({code:'unavailable'});
-  f.chain.getGenesisHash=async()=>MAINNET_GENESIS;f.cfg.financialFeaturesEnabled=false;f.cfg.pumpLaunch.preparedMintDraftId=null;
-  await expect(service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256)).rejects.toMatchObject({code:'feature_disabled'});f.cfg.financialFeaturesEnabled=true;f.cfg.pumpLaunch.preparedMintDraftId=f.owned.id;
+  f.chain.getGenesisHash=async()=>MAINNET_GENESIS;f.cfg.financialFeaturesEnabled=false;f.cfg.treasuries.platform=Keypair.generate().publicKey.toBase58();
+  await expect(service.renewLocalMintReview(f.owner,first.launch.id,old.messageSha256)).rejects.toMatchObject({code:'feature_disabled'});f.cfg.financialFeaturesEnabled=true;f.cfg.treasuries.platform=OFFICIAL_TREASURIES.platform;
   await expect(service.renewLocalMintReview(f.creator.publicKey.toBase58(),first.launch.id,old.messageSha256)).rejects.toMatchObject({code:'forbidden'});
   const submissions=(service as unknown as {submissions:SignedLaunchStore}).submissions;
   await submissions.put({wallet:f.owner,launchId:first.launch.id,mint:first.launch.mint,genesisHash:MAINNET_GENESIS,signature:bs58.encode(new Uint8Array(64).fill(1)),transaction:first.transaction});

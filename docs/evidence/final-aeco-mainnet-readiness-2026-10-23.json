@@ -1,0 +1,497 @@
+{
+  "reviewDate": "2026-10-23",
+  "scope": "Final owner-operated official-mint readiness; no Mainnet execution or city changes",
+  "production": [
+    {
+      "service": "Postgres",
+      "serviceId": "f8976aa7-a1e9-43b1-ba54-a7760d27fd4c",
+      "deploymentId": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+      "status": "SUCCESS",
+      "sha": null,
+      "active": [
+        {
+          "id": "691c3d26-ab6d-43d4-b8f3-86fef0a05a17",
+          "status": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "service": "agentic-economy-web",
+      "serviceId": "b14eb48d-b9b6-4b25-990c-9229d378c2a2",
+      "deploymentId": "323069f4-0509-4672-a345-b4197d20c0dc",
+      "status": "SUCCESS",
+      "sha": "a9dc15584ea3ff4d83c4a2bb608e44809b67c99e",
+      "active": [
+        {
+          "id": "323069f4-0509-4672-a345-b4197d20c0dc",
+          "status": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "service": "agentic-economy",
+      "serviceId": "c2b39851-a41b-4eab-9223-d2f6394b007f",
+      "deploymentId": "70a4ec19-b292-4810-9aee-aef5d46d58e0",
+      "status": "SUCCESS",
+      "sha": "a9dc15584ea3ff4d83c4a2bb608e44809b67c99e",
+      "active": [
+        {
+          "id": "70a4ec19-b292-4810-9aee-aef5d46d58e0",
+          "status": "SUCCESS"
+        }
+      ]
+    }
+  ],
+  "policy": {
+    "checkedAt": "2026-10-23T01:31:16.209551+00:00",
+    "mode": "production",
+    "cluster": "mainnet-beta",
+    "preparedMintDraftBound": false,
+    "holderDiscoveryEnabled": false,
+    "liveMintConfigured": false,
+    "financialGates": {
+      "PUMP_LAUNCH_ENABLED": "false",
+      "MAINNET_LAUNCH_APPROVED": "false",
+      "FEE_ROUTING_VERIFIED": "false"
+    },
+    "productionAutoDeployTriggers": 0,
+    "frontendApi": "https://api.useaeco.xyz",
+    "frontendWss": "wss://api.useaeco.xyz/api/v1/ws",
+    "authOrigin": "https://useaeco.xyz",
+    "productionModified": false,
+    "officialCorsOrigins": [
+      "https://useaeco.xyz",
+      "https://www.useaeco.xyz"
+    ],
+    "additionalExistingReviewOriginCount": 1
+  },
+  "mintUnused": {
+    "network": "mainnet-beta",
+    "genesis": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+    "slot": 460256022,
+    "addresses": {
+      "mint": "ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco",
+      "curve": "3GW9ytH8ZuhZezxcB6N2vRcmeHHbJyEgJySYbAaY3QWn",
+      "sharing": "ExTMc85krcyYrSSuDRkbEcidyWPWXJwGhnthwgsEtsGH"
+    },
+    "allThreeAccountsAbsent": true,
+    "finalizedMintHistoryEmpty": true,
+    "walletBalanceChecked": false,
+    "transactionsSigned": 0,
+    "transactionsBroadcast": 0,
+    "checkedAt": "2026-10-23T01:28:49.116454+00:00"
+  },
+  "programsAndLookup": {
+    "network": "mainnet-beta",
+    "readOnly": true,
+    "officialMint": "ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco",
+    "officialMintUnused": true,
+    "walletBalanceChecked": false,
+    "slot": 460254214,
+    "programs": [
+      {
+        "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+        "reviewedSlot": "458921440",
+        "observedSlot": "458921440",
+        "matchesReviewedIdentity": true
+      },
+      {
+        "program": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ",
+        "reviewedSlot": "456132171",
+        "observedSlot": "456132171",
+        "matchesReviewedIdentity": true
+      },
+      {
+        "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+        "reviewedSlot": "458921517",
+        "observedSlot": "458921517",
+        "matchesReviewedIdentity": true
+      },
+      {
+        "program": "MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e",
+        "reviewedSlot": "452655053",
+        "observedSlot": "452655053",
+        "matchesReviewedIdentity": true
+      }
+    ],
+    "allProgramsMatchReviewed": true,
+    "lookupTable": {
+      "address": "33wnSGm8hPBd9omoa252NAY8JX5PWJngkTNJgzdvdEZr",
+      "valid": true,
+      "active": true,
+      "frozen": true,
+      "entries": 42,
+      "containsPlatform": false,
+      "containsAgentRewards": false
+    },
+    "transactionsSigned": 0,
+    "transactionsBroadcast": 0,
+    "checkedAt": "2026-10-23T01:22:23.832808+00:00"
+  },
+  "exactAllocationChecks": {
+    "checkedAt": "2026-10-23T01:27:17.162Z",
+    "network": "mainnet-beta",
+    "slot": 460254668,
+    "source": "Fresh finalized public Global/FeeConfig; installed official SDK 4.1.0; existing application arithmetic",
+    "totalSupplyRaw": "1000000000000000",
+    "tokenDecimalsProtocol": 6,
+    "totalSupplyTokens": "1000000000",
+    "choicesVerified": 351,
+    "rangePercent": [
+      0,
+      3.5
+    ],
+    "stepPercent": 0.01,
+    "defaultBps": 0,
+    "maximumAllocationRaw": "35000000000000",
+    "allAllocationsExactInteger": true,
+    "quotesMonotonic": true,
+    "protocolFeesNonnegative": true,
+    "costCapUsesExactCeiling": true,
+    "platformChargeLamports": "50000000",
+    "creatorSharesBps": {
+      "agentRewards": 6000,
+      "platform": 4000,
+      "launcher": 0
+    },
+    "ownerSelectedPercent": null,
+    "ownerDraftModified": false,
+    "finalWalletDebitEstablished": false,
+    "actualLaunchSimulationPerformed": false,
+    "walletBalanceChecked": false,
+    "transactionsSigned": 0,
+    "transactionsBroadcast": 0
+  },
+  "liveSecurity": {
+    "checkedAt": "2026-10-23T01:28:07.979Z",
+    "rows": [
+      {
+        "check": "cors",
+        "origin": "https://useaeco.xyz",
+        "status": 200,
+        "allowedOrigin": "https://useaeco.xyz"
+      },
+      {
+        "check": "cors",
+        "origin": "https://untrusted.example.invalid",
+        "status": 200,
+        "allowedOrigin": null
+      },
+      {
+        "check": "invalid_origin_despite_forged_body",
+        "status": 403
+      },
+      {
+        "check": "unauthenticated_private_record",
+        "path": "/api/v1/launchpad/launches/lch_policyprobe/mint-review",
+        "status": 401
+      },
+      {
+        "check": "unauthenticated_private_record",
+        "path": "/api/v1/launchpad/drafts",
+        "status": 401
+      },
+      {
+        "check": "unauthenticated_private_record",
+        "path": "/api/v1/launchpad/launches/lch_policyprobe",
+        "status": 401
+      }
+    ],
+    "productionConfigChanged": false,
+    "tokenDraftsCreated": 0,
+    "signaturesRequested": 0,
+    "transactionsBroadcast": 0
+  },
+  "deployerGate": {
+    "checkedAt": "2026-10-23T01:22:56.105Z",
+    "network": "mainnet-beta",
+    "authenticatedOrdinaryWallet": "6sFTu8W769FGVpJ7nMDKqARoBXHyGMyohd7eRc37CpLv",
+    "realSignature": "disposable authentication message only",
+    "deployerOnlyRejections": [
+      {
+        "path": "/api/v1/launches/prepare",
+        "status": 403,
+        "code": "forbidden"
+      },
+      {
+        "path": "/api/v1/launchpad/drafts/00000000-0000-4000-8000-000000000001/launch",
+        "status": 403,
+        "code": "forbidden"
+      },
+      {
+        "path": "/api/v1/launchpad/drafts/00000000-0000-4000-8000-000000000001/metadata",
+        "status": 403,
+        "code": "forbidden"
+      },
+      {
+        "path": "/api/v1/launchpad/launches/lch_policyprobe/mint-review/renew",
+        "status": 403,
+        "code": "forbidden"
+      },
+      {
+        "path": "/api/v1/launchpad/launches/lch_policyprobe/submit",
+        "status": 403,
+        "code": "forbidden"
+      },
+      {
+        "path": "/api/v1/launchpad/launches/lch_policyprobe/resume",
+        "status": 403,
+        "code": "forbidden"
+      },
+      {
+        "path": "/api/v1/launchpad/launches/lch_policyprobe/mint-signature",
+        "status": 403,
+        "code": "forbidden"
+      }
+    ],
+    "launchEnabled": false,
+    "tokenLaunches": 0,
+    "blockchainTransactionsSigned": 0,
+    "transactionsBroadcast": 0
+  },
+  "runtimeIsolation": {
+    "checkedAt": "2026-10-23T01:24:20.658981+00:00",
+    "runtime": {
+      "mode": "production",
+      "cluster": "mainnet-beta",
+      "database": "aeco_production",
+      "launch": "false",
+      "approval": "false",
+      "routing": "false",
+      "platform": "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+      "rewards": "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi"
+    },
+    "approvedBackendProviderReuseVerified": true,
+    "runningProviderValuesMatchConfigured": true,
+    "frontendProviderKeysAbsent": true,
+    "fetchedEntryAssetsContainNoProviderKey": true,
+    "entryAssetsChecked": [
+      "/assets/index-C_M-9HiF.js"
+    ],
+    "heliusRpc": {
+      "mainnet-beta": {
+        "httpStatus": 200,
+        "genesisMatched": true
+      },
+      "devnet": {
+        "httpStatus": 200,
+        "genesisMatched": true
+      }
+    },
+    "publicGatewayConfiguration": {
+      "staging": "https://gateway.pinata.cloud",
+      "production": "https://gateway.pinata.cloud"
+    },
+    "pinataRotation": "PENDING",
+    "configurationChangedByVerification": false,
+    "dnsChanged": false
+  },
+  "databasePreflight": {
+    "checkedAt": "2026-10-23T01:25:20.656578+00:00",
+    "readOnly": true,
+    "schema": {
+      "database": "aeco_production",
+      "migrations": [
+        {
+          "name": "001_init.sql",
+          "checksum": "3c389d7aee4b18676a8fbecaab3120a89f917182266e62fb82f632c1d87a0c42"
+        },
+        {
+          "name": "002_coordination.sql",
+          "checksum": "c13371f5105664f5b52041b437b47c1364ee7ada39e2d35700c51052e6af5b2c"
+        },
+        {
+          "name": "003_agent_identity.sql",
+          "checksum": "7f9ac94fafac52c197ab69844fa60304d474f33ae6a066ea77143f326bfef3d7"
+        },
+        {
+          "name": "004_launchpad_workspace.sql",
+          "checksum": "ca4aa60f3414149589c75525c9f1f4e35638ab5b239c874e0988ef3c12def277"
+        }
+      ],
+      "launches": 0,
+      "treasuryEntries": 0
+    },
+    "pendingMigrations": [],
+    "mode": "production",
+    "financialFlags": {
+      "PUMP_LAUNCH_ENABLED": "false",
+      "MAINNET_LAUNCH_APPROVED": "false",
+      "FEE_ROUTING_VERIFIED": "false"
+    },
+    "aecoDiscoveryEnabled": false,
+    "liveAecoMint": null,
+    "officialTreasuriesUnchanged": true,
+    "authDomain": "useaeco.xyz",
+    "authURI": "https://useaeco.xyz"
+  },
+  "tls": {
+    "checkedAt": "2026-10-23T01:27:45.042234+00:00",
+    "certificates": [
+      {
+        "host": "useaeco.xyz",
+        "valid": true,
+        "tls": "TLSv1.3",
+        "dnsNames": [
+          "useaeco.xyz"
+        ],
+        "notAfter": "Jan 20 13:45:37 2027 GMT"
+      },
+      {
+        "host": "www.useaeco.xyz",
+        "valid": true,
+        "tls": "TLSv1.3",
+        "dnsNames": [
+          "www.useaeco.xyz"
+        ],
+        "notAfter": "Jan 20 13:45:05 2027 GMT"
+      },
+      {
+        "host": "api.useaeco.xyz",
+        "valid": true,
+        "tls": "TLSv1.3",
+        "dnsNames": [
+          "api.useaeco.xyz"
+        ],
+        "notAfter": "Jan 20 13:04:06 2027 GMT"
+      }
+    ]
+  },
+  "dependencyAssessment": {
+    "checkedAt": "2026-10-23T01:59:19.866711+00:00",
+    "auditCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 6,
+      "critical": 0
+    },
+    "unchangedFromPriorReview": true,
+    "runtimeAssessment": {
+      "bigintBuffer": "Native build disabled; existing deployment and current test runs use JavaScript fallback.",
+      "uuid": "Jayson uses v4; affected v3/v5/v6 caller-provided buffers have no application caller.",
+      "streamJsonBundled": false,
+      "toml": "Bundled via Anchor workspace loader; application has no workspace/TOML parser call or public TOML input route."
+    },
+    "applicationDirectAffectedCallsFound": false,
+    "thirdPartyAudit": false,
+    "cleanDependencyAudit": false,
+    "conclusion": "No demonstrated publicly exposed affected function in the reviewed launch paths; residual transitive advisories remain tracked. No package upgrade or financial activation."
+  },
+  "tests": {
+    "backendLaunchSigningFeesAndCommonAgents": 122,
+    "backendAuthOwnershipMediaAndProvider": 57,
+    "frontendLaunchUnit": 29,
+    "frontendAllPercentageChoicesAndFormatting": 4,
+    "backendBuild": true,
+    "typecheck": true,
+    "lint": true,
+    "browserDevBuy390px": {
+      "result": "passed before interruption",
+      "durationMinutes": 2.2,
+      "mockQuotes": true
+    },
+    "browserReservedMintHandoff": {
+      "result": "passed",
+      "testDurationMinutes": 4.0,
+      "totalRunMinutes": 4.4,
+      "network": "isolated fixture only",
+      "realPhantom": false,
+      "externalPinataUpload": false,
+      "mainnetBroadcasts": 0,
+      "covers": [
+        "locked unsigned renewal",
+        "public review download",
+        "keypair-shaped file rejected locally",
+        "valid public mint signature import",
+        "wallet rejection",
+        "interrupted submission",
+        "exact-message retry",
+        "uncertain-outcome new-attempt blocking",
+        "refresh restoration",
+        "confirmed Explore navigation"
+      ]
+    },
+    "externalServicesInAutomatedExecutionTests": "mock RPC/media, real disposable signatures; not a real Phantom/Mainnet launch",
+    "browserTimingDiagnosis": "Original six-minute total budget expired after full-world reloads. Diagnostic confirmed the signing disclosure and all ancestors visible, nonzero height. Only the reserved-mint overall test budget was increased; per-action visibility/click and all cryptographic/recovery assertions remain."
+  },
+  "historicalPersistenceEvidence": [
+    "mint-review-persistence-2026-10-22.json",
+    "world-alignment-backup-restore-2026-10-22.json"
+  ],
+  "commonAgentReadiness": {
+    "automaticMapping": "network/mint/qualifying-wallet; positive balance; one persistent identity per wallet; no login/control grant",
+    "fixtures400DistinctWallets": true,
+    "test10000Identities": true,
+    "postgresRestartRehearsalAlreadyPassed": true,
+    "liveOfficialMintIndexingEnabled": false,
+    "liveMainnetPopulationVerified": false,
+    "activationPrerequisite": "Independently finalized official platform launch and verified complete holder scan/exclusions",
+    "plannedPublicMint": "ZjUr8cr2fxQoBrv8zh4n752yQmcTFVgr3z5MgZeAeco"
+  },
+  "remainingLaunchTimeGates": [
+    "Owner selects a saved wallet-owned draft for one-time reserved public mint binding",
+    "Owner-entered metadata/artwork and chosen 0\u20133.5% allocation receive complete fresh Mainnet simulation and exact debit review",
+    "Explicit owner activation and transaction approval; then owner-local mint co-signature and separate Phantom deployer signature"
+  ],
+  "ownerMetadataPrefilled": false,
+  "officialPrivateKeyAccessed": false,
+  "officialMintRegenerated": false,
+  "ownerWalletBalanceChecked": false,
+  "mainnetTransactionsSignedOrBroadcast": 0,
+  "newProductionDeploymentRequests": 0,
+  "thirdPartySecurityAuditClaimed": false,
+  "productionSourceConfigWorldDraftLaunchOrTreasuryChanged": false,
+  "productionAuthenticationTestWrites": "Disposable authentication challenges/sessions created and logged out for the live security probes; no owner authentication configuration or credentials changed.",
+  "healthAndContract": {
+    "checkedAt": "2026-10-23T02:12:16.534Z",
+    "httpStatus": 200,
+    "health": {
+      "status": "ok",
+      "mode": "production",
+      "role": "all",
+      "contractVersion": "0.6.0",
+      "tick": 91936,
+      "simRunning": true,
+      "store": "postgres",
+      "financialFeaturesEnabled": false,
+      "simLeader": {
+        "localLeader": true,
+        "epoch": 5,
+        "lastTick": 91936,
+        "heartbeatAgeMs": 35
+      }
+    }
+  },
+  "treasuryAccountTypes": {
+    "network": "mainnet-beta",
+    "readOnly": true,
+    "slot": 460269072,
+    "recipients": [
+      {
+        "address": "HmmnNqZbfUZ2YK4mWVLXEGTsAU2NUUAvFzLFxgdgKUT2",
+        "exists": false,
+        "owner": null,
+        "executable": false,
+        "systemWalletOrUninitialized": true
+      },
+      {
+        "address": "GEDMCV4WXHCAnySqH4CWNh3NYBrDfAUb3t4BBVBWVnJi",
+        "exists": false,
+        "owner": null,
+        "executable": false,
+        "systemWalletOrUninitialized": true
+      }
+    ],
+    "deployerQueried": false,
+    "balancesReported": false,
+    "transactions": 0,
+    "checkedAt": "2026-10-23T02:14:47.318531+00:00"
+  },
+  "verdict": {
+    "ownerPreparation": "GO, with documented residual security risk",
+    "mainnetExecutionNow": "NO-GO: not activated or authorized",
+    "newImplementationBlockerFound": false,
+    "financialActivation": false
+  }
+}

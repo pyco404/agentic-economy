@@ -84,7 +84,7 @@
 .app:has(> .page-reopen) .world-footer { right: 180px; }
 @media (max-width: 1100px), (hover: none) and (pointer: coarse) {
   .app:has(> .page-reopen) .world-main:not(.is-immersive) .world-bottom {
-    bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+    bottom: var(--world-dock-bottom, calc(28px + env(safe-area-inset-bottom, 0px))); }
   .page-reopen { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
   .app:has(> .page-reopen) .world-main .activity-panel { max-height: calc(100% - 254px - env(safe-area-inset-bottom, 0px)); }
 }
@@ -99,7 +99,7 @@
   /* A compact stats row at the bottom, with Show page in its own row above. */
   .app .world-main .world-bottom,
   .app:has(> .page-reopen) .world-main:not(.is-immersive) .world-bottom {
-    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    bottom: var(--world-dock-bottom, calc(28px + env(safe-area-inset-bottom, 0px)));
     height: 48px; min-height: 48px; padding: 4px 8px; border-radius: 8px;
   }
   .app .world-main .world-stat { padding-left: 6px; gap: 4px; }

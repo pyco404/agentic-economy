@@ -75,7 +75,7 @@ export function useWorld(api: ApiAdapter, paused: boolean) {
           setNotice(
             event.data.simRunning
               ? ""
-              : "Simulation paused; displaying the last published state.",
+              : "City activity paused; displaying the latest available state.",
           );
         setData((d) => (d ? applyServerEvent(d, event) : d));
         setDiagnostics({ sequence: ws.sequence, replayed: ws.replayCount });

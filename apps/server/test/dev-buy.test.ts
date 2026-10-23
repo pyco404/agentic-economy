@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AddressLookupTableAccount, Keypair, PublicKey, VersionedTransaction, type AccountInfo } from '@solana/web3.js';
+import { AddressLookupTableAccount, Keypair, PublicKey, TransactionMessage, VersionedTransaction, type AccountInfo } from '@solana/web3.js';
 import bs58 from 'bs58';
 import sharp from 'sharp';
 import { DEV_BUY_MAX_BPS, devBuyTokenAmount } from '@agentic-economy/shared';
@@ -125,6 +125,8 @@ describe('Developer Buy and token rules through the Launchpad API', () => {
     const logo = (id: string, version: number) => env!.app.inject({ method: 'POST', url: `/api/v1/launchpad/drafts/${id}/logo?version=${version}`, headers: { origin, cookie, 'content-type': 'application/octet-stream', 'idempotency-key': `devbuy-logo-${++n}` }, payload: png });
     return { creator, call, logo, chain: env.ctx.chain as MockChain & ChainGateway };
   };
+  // Arithmetic/API fixtures still need valid versioned wire bytes for unsigned review parsing.
+  const reviewTransaction=()=>Buffer.from(new VersionedTransaction(new TransactionMessage({payerKey:Keypair.generate().publicKey,recentBlockhash:Keypair.generate().publicKey.toBase58(),instructions:[]}).compileToV0Message()).serialize()).toString('base64');
   const supported = (chain: ChainGateway, quote: Partial<DevBuyChainQuote> = {}) => {
     chain.devBuySupport = async () => ({ available: true, reason: null });
     chain.quoteDevBuy = async (bps) => ({ slot: 9, totalSupply: SUPPLY, tokenAmount: devBuyTokenAmount(SUPPLY, bps), capTokenAmount: CAP, estimatedQuoteCost: 10_242_053n, pumpFees: 126_446n, maxQuoteCost: 10_344_474n, priceImpactBps: 685, ...quote });
@@ -139,7 +141,7 @@ describe('Developer Buy and token rules through the Launchpad API', () => {
     expect(quote).toMatchObject({status:'available',budgetLamports:'1000001',maxQuoteCost:'1000001',estimatedQuoteCost:'1000000'});
     for(const sol of ['0','-1','0.0000000001','1e3'])expect((await call('GET',`/api/v1/launchpad/dev-buy-quote?sol=${sol}`)).statusCode).toBe(400);
     expect((await call('GET','/api/v1/launchpad/dev-buy-quote?sol=0.1&bps=1')).statusCode).toBe(400);
-    const build=vi.spyOn(chain,'buildLaunchTransaction').mockResolvedValue({transaction:Buffer.alloc(8).toString('base64'),lastValidBlockHeight:100,demo:false,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'20643360',devBuy:{tokenAmount:'1000000',quoteSpent:'1000000'}});
+    const build=vi.spyOn(chain,'buildLaunchTransaction').mockResolvedValue({transaction:reviewTransaction(),lastValidBlockHeight:100,demo:false,genesisHash:'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG',estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'20643360',devBuy:{tokenAmount:'1000000',quoteSpent:'1000000'}});
     d=(await logo(d.id,d.version)).json();d=(await call('POST',`/api/v1/launchpad/drafts/${d.id}/metadata`,{version:d.version})).json();
     const prepared=await call('POST',`/api/v1/launchpad/drafts/${d.id}/launch`,{version:d.version});
     expect(prepared.statusCode,prepared.body).toBe(200);expect(prepared.json().launch.execution.devBuy).toMatchObject({budgetSol:'0.001000001',bps:0,maxQuoteCost:'1000001'});
@@ -197,7 +199,7 @@ describe('Developer Buy and token rules through the Launchpad API', () => {
   it('prepares the exact capped amount from the server-owned draft and shows the simulated cost', async () => {
     const { call, logo, chain } = await session(true); supported(chain);
     let input: BuildLaunchInput | undefined;
-    vi.spyOn(chain, 'buildLaunchTransaction').mockImplementation(async (p) => { input = p; return { transaction: Buffer.alloc(8).toString('base64'), lastValidBlockHeight: 100, demo: false, genesisHash: 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG', estimatedNetworkFeesLamports: '10000', estimatedAccountRentLamports: '20643360', devBuy: { tokenAmount: '35000000000000', quoteSpent: '10242053' } }; });
+    vi.spyOn(chain, 'buildLaunchTransaction').mockImplementation(async (p) => { input = p; return { transaction: reviewTransaction(), lastValidBlockHeight: 100, demo: false, genesisHash: 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG', estimatedNetworkFeesLamports: '10000', estimatedAccountRentLamports: '20643360', devBuy: { tokenAmount: '35000000000000', quoteSpent: '10242053' } }; });
     let d = (await call('POST', '/api/v1/launchpad/drafts', { name: 'Moss', symbol: 'MOSS', devBuyBps: 350 })).json();
     d = (await logo(d.id, d.version)).json(); d = (await call('POST', `/api/v1/launchpad/drafts/${d.id}/metadata`, { version: d.version })).json();
     const r = await call('POST', `/api/v1/launchpad/drafts/${d.id}/launch`, { version: d.version });

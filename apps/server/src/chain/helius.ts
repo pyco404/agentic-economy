@@ -163,7 +163,7 @@ export class HeliusReader {
   }
   async holderCount(mint: string): Promise<HeliusHolderObservation> {
     PublicKey.parse(mint);
-    const old = this.holders.get(mint); if (old && this.now() - old.at < 60_000) return old.value;
+    const old = this.holders.get(mint); if (old && this.now() - old.at < 300_000) return old.value;
     const job = this.holderJobs.get(mint); if (job) return job;
     const next = this.scanHolders(mint).then(value => { if (this.holders.size >= 100) this.holders.delete(this.holders.keys().next().value!); this.holders.set(mint, { at: this.now(), value }); return value; }).finally(() => this.holderJobs.delete(mint));
     this.holderJobs.set(mint, next); return next;
@@ -198,7 +198,7 @@ export class HeliusReader {
     return { slot: slot ?? 0, holders: consistent ? owners.size : null, exact, index: { source: 'helius_das', indexedSlot: slot ?? 0, fetchedAt: new Date(this.now()).toISOString(), complete: exact, scannedAccounts: accounts.size, owners: [...owners].sort(([a], [b]) => a.localeCompare(b)).slice(0, 25).map(([address, value]) => ({ address, amount: value.toString() })), reason } };
   }
   async metadata(mint: string): Promise<IndexedMetadata | null> {
-    const old = this.assets.get(mint); if (old && this.now() - old.at < 300_000) return old.value;
+    const old = this.assets.get(mint); if (old && this.now() - old.at < 900_000) return old.value;
     let value: IndexedMetadata | null = null;
     try {
       const result = z.object({ id: PublicKey, content: z.object({ json_uri: z.string().max(2048).optional(), metadata: z.object({ name: z.string().max(256).optional(), symbol: z.string().max(64).optional() }).optional() }).optional() }).parse(await this.rpc('getAsset', { id: PublicKey.parse(mint) }));

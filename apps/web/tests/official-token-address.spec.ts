@@ -8,8 +8,7 @@ for (const width of [1440, 820, 344, 690]) test(`official CA remains readable an
   await page.goto('/?source=fixtures');
   await expect(page.getByTestId('application-startup')).toHaveAttribute('data-startup-state', 'ready', { timeout: 180000 });
   const hero = page.locator('.world-header .official-token-address');
-  await expect(hero.getByRole('heading')).toHaveCount(0);
-  await expect(hero.locator('code')).toHaveText(officialToken.mint);
+  await expect(hero).toHaveCount(0);
   const pill = page.locator('.official-world-address');
   await expect(pill).toBeVisible();
   await expect(page.locator('.official-world-footer')).toHaveCount(0);
@@ -25,11 +24,7 @@ for (const width of [1440, 820, 344, 690]) test(`official CA remains readable an
       && bounds!.y < box.y + box.height && bounds!.y + bounds!.height > box.y;
     expect(overlaps, `CA pill overlaps ${selector}`).toBe(false);
   }
-  if (width > 700) {
-    const row = await hero.boundingBox();
-    expect(row!.height).toBeLessThanOrEqual(44);
-  }
-  for (const address of [hero, pill]) {
+  for (const address of [pill]) {
     await expect(address.getByRole('link')).toHaveCount(0);
     await address.getByRole('button', { name: 'Copy official $AECO contract address' }).click();
     await expect(address.getByRole('status')).toHaveText('Contract address copied.');

@@ -1028,8 +1028,8 @@ export default function App() {
             </>
           )
         ))}
+        {worldVisible && <div className="official-world-address"><OfficialTokenAddress /></div>}
       </main>
-      {worldVisible && <footer className="official-world-footer"><OfficialTokenAddress /></footer>}
     </div>
   );
 }

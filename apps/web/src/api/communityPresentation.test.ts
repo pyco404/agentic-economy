@@ -31,6 +31,6 @@ describe('community identity and registered world connections',()=>{
  });
  it('keeps inactive communities useful without inventing participation',()=>{
   expect(communityActivitySummary({...c,stats:{...c.stats,activeAgents:0,verifiedTasks:0}})).toBe('This community is just getting started.');
-  expect(communityActivitySummary({...c,stats:{...c.stats,activeAgents:2,verifiedTasks:40}})).toBe('2 active simulation agents · 40 verified useful services');
+  expect(communityActivitySummary({...c,stats:{...c.stats,activeAgents:2,verifiedTasks:40}})).toBe('2 active community agents · 40 completed city activities');
  });
 });

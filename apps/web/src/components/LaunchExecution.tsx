@@ -10,9 +10,9 @@ import {devBuyNeedsAcceptance,formatSol,formatTokens,allocationPercent} from '..
 const encoded=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
 const decoded=(value:string)=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
 /** New execution needs enabled review; existing saved attempts also support read-only recovery. */
-export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=false,executionAllowed=true,preparationAllowed=executionAllowed,onBusyChange,onLockChange,onEdit,onConfirmed,onNewCoin}:{draft:SavedLaunchDraft;
+export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=false,automaticMintSigning=false,executionAllowed=true,preparationAllowed=executionAllowed,onBusyChange,onLockChange,onEdit,onConfirmed,onNewCoin}:{draft:SavedLaunchDraft;
  /** The Developer Buy maximum the creator saw in the form; a higher prepared maximum needs explicit acceptance. */
- reviewedMaxDevBuyCost?:string|null;autoPrepare?:boolean;executionAllowed?:boolean;preparationAllowed?:boolean;onBusyChange?:(busy:boolean)=>void;onLockChange?:(locked:boolean)=>void;onEdit?:()=>void;onConfirmed?:(created:boolean)=>void;onNewCoin?:()=>void}){
+ reviewedMaxDevBuyCost?:string|null;autoPrepare?:boolean;automaticMintSigning?:boolean;executionAllowed?:boolean;preparationAllowed?:boolean;onBusyChange?:(busy:boolean)=>void;onLockChange?:(locked:boolean)=>void;onEdit?:()=>void;onConfirmed?:(created:boolean)=>void;onNewCoin?:()=>void}){
  const session=useWalletSession(),[launch,setLaunch]=useState<TokenLaunch|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[restoring,setRestoring]=useState(true),[submissionUncertain,setSubmissionUncertain]=useState(false),[signingStage,setSigningStage]=useState('');
  const [acceptedMax,setAcceptedMax]=useState<string|null>(null),[canResume,setCanResume]=useState(false);
  const [copyMessage,setCopyMessage]=useState('');
@@ -96,9 +96,25 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
   if(latest.launch.status!=='awaiting_signature'||latest.launch.signature||latest.recovery?.canResume||unresolvedSubmission.current)throw new Error('This saved attempt is not ready for a new signature. Check its status before continuing.');
   const execution=latest.launch.execution!;
   const localReview=execution.localMintReview;
-  if(localReview&&(!localMintSignature||localMintSignature.id!==launch.id||localMintSignature.hash!==localReview.messageSha256))throw new Error('Complete local mint signing for this exact saved attempt before Phantom approval');
+  let mintTransaction=execution.transaction;
+  if(localReview){
+   if(automaticMintSigning){
+    setSigningStage('Preparing wallet approval…');
+    const result=await launchpadRequest(`/api/v1/launchpad/launches/${launch.id}/mint-signature/automatic`,z.object({transaction:z.string().max(1644),messageSha256:z.string()}),jsonRequest('POST',{}));
+    if(result.messageSha256!==localReview.messageSha256)throw new Error('The signing review changed. Check this same launch before approving.');
+    const {VersionedTransaction}=await import('@solana/web3.js');
+    const expected=VersionedTransaction.deserialize(decoded(execution.transaction)),actual=VersionedTransaction.deserialize(decoded(result.transaction));
+    if(encoded(expected.message.serialize())!==encoded(actual.message.serialize()))throw new Error('Mint signing changed the reviewed transaction. Nothing was sent to your wallet.');
+    if(actual.signatures.length!==2||actual.signatures[0]!.some(b=>b!==0)||actual.signatures[1]!.every(b=>b===0))throw new Error('Expected a mint-only signature before Phantom approval.');
+    mintTransaction=result.transaction;
+   }else{
+    if(!localMintSignature||localMintSignature.id!==launch.id||localMintSignature.hash!==localReview.messageSha256)throw new Error('Complete local mint signing for this exact saved attempt before Phantom approval');
+    mintTransaction=localMintSignature.transaction;
+   }
+  }
+  if(!alive.current)return;
   setSigningStage('Awaiting wallet approval…');
-  const signed=await session.signLaunch(decoded(localReview?localMintSignature!.transaction:execution.transaction),execution.network);
+  const signed=await session.signLaunch(decoded(mintTransaction),execution.network);
   if(!alive.current)return;
   const {VersionedTransaction}=await import('@solana/web3.js');
   const signature=VersionedTransaction.deserialize(signed).signatures[0];
@@ -127,7 +143,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
  const needsAcceptance=devBuyNeedsAcceptance(dev?.maxQuoteCost??null,reviewedMaxDevBuyCost,acceptedMax);
  const total=(extra:string)=>launch?formatSol((BigInt(launch.fees.platformLaunchFeeLamports)+BigInt(launch.fees.estimatedNetworkFeesLamports)+BigInt(launch.fees.estimatedAccountRentLamports)+BigInt(extra)).toString()):'';
  const localReview=launch?.execution?.localMintReview;
- const localMintReady=!localReview||(localMintSignature?.id===launch?.id&&localMintSignature.hash===localReview.messageSha256);
+ const localMintReady=automaticMintSigning||!localReview||(localMintSignature?.id===launch?.id&&localMintSignature.hash===localReview.messageSha256);
  const confirmed=launch?.status==='confirmed';
  const terminal=!!launch&&['failed','expired'].includes(launch.status);
  const interrupted=submissionUncertain&&!confirmed;
@@ -173,7 +189,7 @@ export function LaunchExecution({draft,reviewedMaxDevBuyCost=null,autoPrepare=fa
     <p className="launch-fee-sharing">Creator fees: 60% Agent Rewards / 40% Platform / 0% Launcher</p>
     <p className="small muted">{launch.execution?.network==='devnet'?'Devnet test SOL only. ':''}A failed transaction may still incur network fees.</p>
     {launch.status==='awaiting_signature'&&needsAcceptance&&<div className="launch-quote-change" role="alert"><p className="small">{reviewedMaxDevBuyCost===null?'Review the Developer Buy amounts before approving.':`The Developer Buy maximum changed from ${formatSol(reviewedMaxDevBuyCost)} to ${formatSol(dev!.maxQuoteCost)}.`}</p><button className="secondary" onClick={()=>setAcceptedMax(dev!.maxQuoteCost)}>Accept these amounts</button></div>}
-    {localReview&&launch.status==='awaiting_signature'&&!submissionUncertain&&<details className="launch-technical"><summary>Prepared mint signing</summary>
+    {localReview&&!automaticMintSigning&&launch.status==='awaiting_signature'&&!submissionUncertain&&<details className="launch-technical"><summary>Prepared mint signing</summary>
      <p className="small">This reserved mint is signed locally first. Download the public review and use the approved local signing tool. Import only its public signature file. Never select or upload your mint keypair. Renewed reviews require fresh approval of the new hash and the preceding hash shown in the download.</p>
      <button className="secondary" disabled={busy} onClick={downloadMintReview}>Download public review</button>
      <label>Public mint-signature file<input type="file" accept="application/json,.json" disabled={busy||!executionAllowed} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)importMintSignature(file);}}/></label>

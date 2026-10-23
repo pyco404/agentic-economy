@@ -53,6 +53,22 @@ describe("worker world preparation", () => {
     prepare({...changed,revision:5,seed:2,style:"coastal"},()=>{});expect(reused.at(-1)).toBeUndefined();
     prepare({...changed,revision:6,seed:2,style:"coastal",catalog:[{cx:0,cy:0},{cx:1,cy:0}]},()=>{});expect(reused.at(-1)).toBeUndefined();
   });
+  it("adds low cover only on dry retained ground, outside real roads, crop cells and support pads", () => {
+    const scenery = messages.find(m => m.kind === "scenery")!, roads = messages.find(m => m.kind === "roads")!;
+    if (scenery.kind !== "scenery" || roads.kind !== "roads") throw new Error("Missing scene");
+    const cover = scenery.landmass.frontier.parts.filter(p => p.role === "ground-grass" || p.role === "ground-shrub");
+    expect(cover.length).toBeGreaterThan(100);
+    for (const part of cover) {
+      const [x, , z] = part.position;
+      expect(scenery.landmass.cells.has(`${Math.floor(x / 8)}:${Math.floor(z / 8)}`)).toBe(true);
+      expect(roads.streets.tiles.has(`${Math.floor(x / .25)}:${Math.floor(z / .25)}`)).toBe(false);
+      const c = chunks.find(c => c.x === Math.floor(x / 32) && c.z === Math.floor(z / 32));
+      if (c) expect(c.terrain?.[(Math.floor(z) - c.z * 32) * 32 + Math.floor(x) - c.x * 32]).toBe("g");
+      for (const site of (scenery.composition.support?.sites ?? []).filter(s => ["aviation", "transport", "service", "agriculture"].includes(s.theme)))
+        expect(Math.abs(x - site.x) >= site.width / 2 || Math.abs(z - site.z) >= site.depth / 2).toBe(true);
+      expect(part.buildingId).toBeUndefined();
+    }
+  });
   it("keeps final instancing, materials and coordinates identical to the original combined batches", () => {
     const road = messages.find((m) => m.kind === "roads")!, prepared = messages.find((m) => m.kind === "chunk")!;
     if (road.kind !== "roads" || prepared.kind !== "chunk") throw new Error("Missing prepared geometry");

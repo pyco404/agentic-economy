@@ -36,3 +36,10 @@ it('caches a fresh real USD reference and rejects stale, future, malformed and z
  expect(await r.read()).toMatchObject({price:103.5,source:'coinbase'});await r.read();expect(fetcher).toHaveBeenCalledOnce();
  for(const data of [{price:'0',time:new Date(now).toISOString()},{price:'1',time:new Date(now-120001).toISOString()},{price:'1',time:new Date(now+31000).toISOString()},{price:'NaN',time:new Date(now).toISOString()}])expect(await new SolUsdReference(async()=>Response.json(data),()=>now).read()).toBeNull();
 });
+
+it('refreshes new trades while older history is still being reconciled',async()=>{
+ const j=new MarketJournal(undefined,()=>now);await j.sync('mainnet','mint',['pool'],async()=>({trades:[trade()],signatures:['sig'],oldestTime:now/1000-10,exhausted:false}));
+ const read=vi.fn(async(_address:string,before?:string)=>before?{trades:[],signatures:['older'],oldestTime:now/1000-100,exhausted:false}:{trades:[{...trade('new'),slot:2}],signatures:['new'],oldestTime:now/1000-1,exhausted:true});
+ await j.sync('mainnet','mint',['pool'],read);
+ const activity=await j.activity('mainnet','mint',['pool']);expect(activity.complete).toBe(false);expect(activity.trades[0]?.signature).toBe('new');expect(activity.volumeSol).toBeNull();expect(read).toHaveBeenCalledTimes(2);
+});

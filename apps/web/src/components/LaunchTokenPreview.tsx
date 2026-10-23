@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {NewLaunchDraftFields,type DevBuyQuote,type DraftFields} from '../api/shared';
-import {formatTokens,percentFromBps} from '../api/devBuy';
+import {allocationPercent,budgetQuoteValid,formatSol,formatTokens,percentFromBps} from '../api/devBuy';
 import './launch-token-preview.css';
 import {TokenSocialLinks} from './TokenSocialLinks';
 /** Local artwork is a blob URL only; rendering this card never prepares remote assets. */
@@ -13,7 +13,7 @@ export function LaunchTokenPreview({fields,file,imageUrl,devBuyQuote=null}:{fiel
   <div className="launch-preview-identity"><div className="launch-preview-art">{local||imageUrl?<img src={local||imageUrl} alt="Live token artwork"/>:<span aria-hidden="true">{symbol.slice(0,2)}</span>}</div><div><h3>{name}</h3><p className="launch-preview-symbol">{symbol}</p></div></div>
   <p className="launch-preview-description">{fields.description.trim()||'Your description will appear here.'}</p>
   <div className="launch-preview-pair"><span>Trading pair</span><strong>{symbol}/{fields.quoteAsset}</strong></div>
-  {fields.devBuyBps>0&&<div className="launch-preview-dev-buy"><span>Developer Buy</span><strong>{percentFromBps(fields.devBuyBps)}% of supply{devBuyQuote?.status==='available'&&devBuyQuote.bps===fields.devBuyBps?` · ≈ ${formatTokens(devBuyQuote.tokenAmount)} ${symbol}`:''}</strong></div>}
+  {(!!fields.devBuySol||fields.devBuyBps>0)&&<div className="launch-preview-dev-buy"><span>Developer Buy</span><strong>{fields.devBuySol?`${fields.devBuySol} SOL maximum`:`${percentFromBps(fields.devBuyBps)}% saved allocation`}{devBuyQuote?.status==='available'&&budgetQuoteValid(devBuyQuote,fields.devBuySol??'')?<small> ≈ {formatTokens(devBuyQuote.tokenAmount)} {symbol} · {allocationPercent(devBuyQuote.tokenAmount,devBuyQuote.totalSupply)}% · {formatSol(devBuyQuote.estimatedQuoteCost)} estimated</small>:null}</strong></div>}
   <TokenSocialLinks {...Object.fromEntries((['website','twitter','telegram'] as const).map(key=>[key,NewLaunchDraftFields.shape[key].safeParse(fields[key]).success?fields[key]:null]))}/>
   <p className="small muted">Preview only. New images stay on this device until you choose Create Coin.</p>
  </section>;

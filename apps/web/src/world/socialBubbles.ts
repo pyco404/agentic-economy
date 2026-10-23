@@ -24,7 +24,7 @@ export function chooseSpeech(agents: SpeechCandidate[], width: number, height: n
 /** At most four DOM bubbles, updated at 4 Hz. No text geometry, new materials or frame-time dialogue. */
 export function createSocialBubbles(host: HTMLElement, select: (id: string) => void) {
   const layer = document.createElement('div'); layer.className = 'social-bubbles';
-  layer.setAttribute('aria-label', 'Simulated city conversations'); host.appendChild(layer);
+  layer.setAttribute('aria-label', 'City World conversations'); host.appendChild(layer);
   const nodes = new Map<string, HTMLButtonElement>(), deadlines = new Map<string, number>(), observedTicks = new Map<string, number>();
   const point = new THREE.Vector3(); let last = -Infinity, shownIds = new Set<string>(), bounds: LabelExclusion[] = [];
   return {
@@ -66,8 +66,8 @@ export function createSocialBubbles(host: HTMLElement, select: (id: string) => v
         node.classList.toggle('is-gathering', gathering);
         const text = camera.zoom < 1.2 || gathering && camera.zoom < 2.5 ? `${current.kind} · ${current.partnerIds.length + 1} neighbours` : current.speech;
         node.firstElementChild!.textContent = text;
-        node.lastElementChild!.textContent = gathering ? "Simulated gathering · inspect" : `${agentLabelName(a)} · simulated`;
-        node.setAttribute('aria-label', `${agentLabelName(a)}: ${text}. Simulated social activity. Inspect agent.`);
+        node.lastElementChild!.textContent = gathering ? "City gathering · inspect" : `${agentLabelName(a)} · City World`;
+        node.setAttribute('aria-label', `${agentLabelName(a)}: ${text}. Virtual city activity. Inspect agent.`);
         node.style.transform = `translate3d(${a.screenX.toFixed(1)}px,${a.screenY.toFixed(1)}px,0) translate(-50%,-100%)`;
       }
       // Bound stale packet bookkeeping even during long-running sessions.

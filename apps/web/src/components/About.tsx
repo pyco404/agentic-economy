@@ -15,9 +15,9 @@ interface Props {
 }
 const systems = [
   { title: "The World", icon: Building2, text: "A persistent procedural city makes buildings, infrastructure, resources and supported activity visible." },
-  { title: "Autonomous agents", icon: Blocks, text: "Common Agents represent qualifying $AECO holders and take part in basic simulated city activities. Separate simulation citizens keep the city working." },
-  { title: "Communities", icon: Users, text: "Groups participate through agents, headquarters and useful economic activity in one shared environment." },
-  { title: "Economic activity", icon: Workflow, text: "City work and services shape the shared world. City Credits are simulated and cannot be withdrawn or spent from your wallet." },
+  { title: "Autonomous agents", icon: Blocks, text: "Common Agents represent qualifying $AECO holders and take part in basic virtual city activities. Other virtual city residents keep the city working." },
+  { title: "Communities", icon: Users, text: "Groups participate through agents, headquarters and virtual city activity in one shared environment." },
+  { title: "Economic activity", icon: Workflow, text: "Virtual city work and activities shape the shared world. City Credits are virtual and cannot be withdrawn or spent from your wallet." },
   { title: "Solana infrastructure", icon: Network, text: "Tokens are created through our TOKEN/SOL Launchpad with personal wallet approval. $AECO is live on Mainnet, and the Launchpad is open to authenticated wallets." },
 ] as const;
 
@@ -38,7 +38,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       <div className="about-hero-copy">
         <p className="about-kicker"><Leaf size={14} aria-hidden="true" />About Agentic Economy</p>
         <h1 id="about-title">A world<br />that works<span>.</span></h1>
-        <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. $AECO is live, and each qualifying holder wallet automatically receives one persistent Common Agent for basic simulated city activities, without registration or wallet connection. Phase 3 expands these same agents with advanced behavior and economic capabilities. Super Agents are a separate class planned for Phase 5.</p>
+        <p className="about-deck">Agentic Economy is a Solana-based digital economy combining token launches, a persistent living city, and agents that perform useful work. $AECO is live, and each qualifying holder wallet automatically receives one persistent Common Agent for basic virtual city activities, without registration or wallet connection. Phase 3 expands these same agents with advanced behavior and economic capabilities. Super Agents are a separate class planned for Phase 5.</p>
         <div className="about-actions">{link("world", "Explore the World", true)}{link("communities", "Discover Communities")}{link("roadmap", "View Roadmap")}</div>
         <p className="about-hero-footnote">A World That Works. $AECO connects holders to our shared city.<br />Public TOKEN/SOL launching is live. Treasury payouts remain disabled.</p><ProjectLinks /><p className="small"><a href={project.website} target="_blank" rel="noopener noreferrer">Official website · useaeco.xyz</a></p>
       </div>
@@ -64,7 +64,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
         {systems.map(({ title, icon: Icon, text }, i) => <li key={title}><span className="about-system-icon"><Icon size={23} strokeWidth={1.4} aria-hidden="true" /></span>
           <span className="about-system-number">0{i + 1}</span><h3>{title}</h3><p>{text}</p></li>)}
       </ol>
-      <div className="about-truth-note"><ShieldCheck size={19} aria-hidden="true" /><p><strong>A living city, with clear limits.</strong> Common Agents currently move and perform basic simulated activities. Scenery and movement do not represent investment returns or payments.</p></div>
+      <div className="about-truth-note"><ShieldCheck size={19} aria-hidden="true" /><p><strong>A living city, with clear limits.</strong> Common Agents currently move and perform basic virtual city activities. Scenery and movement do not represent investment returns or payments.</p></div>
     </section>
 
     <section id="about-agents" className="about-paper" aria-labelledby="about-agents-title">
@@ -72,7 +72,7 @@ export function About({ onNavigate, source, connected, mode }: Props) {
       <AgentClasses />
       <p className="about-caption">The future model allows several Common-Agent positions and one or more Super-Agent rentals at the same time. These are roadmap entitlements, not enabled production activation.</p>
       <details className="ecosystem-page-note"><summary>Common-Agent holding example — planned</summary><p>Eligible holdings of $AECO, $DOG, and $CAT could qualify for three Common-Agent positions, subject to at least $20 per qualifying token and the additional AECO holding requirement once finalized. DOG and CAT are illustrative tickers, not verified platform listings.</p></details>
-      <p className="about-identity-note">$AECO-linked Common Agents are distinct from the city’s synthetic simulation citizens. Additional purchases do not create duplicates. A full exit pauses your Common Agent; returning holders restore the same identity. Appearance does not grant wallet control or financial permissions.</p>
+      <p className="about-identity-note">$AECO-linked Common Agents are distinct from the city’s other virtual residents. Additional purchases do not create duplicates. A full exit pauses your Common Agent; returning holders restore the same identity. Appearance does not grant wallet control or financial permissions.</p>
     </section>
 
     <section id="about-communities" className="about-paper about-participation" aria-labelledby="about-participation-title">
@@ -103,9 +103,9 @@ export function About({ onNavigate, source, connected, mode }: Props) {
 
     <section id="about-technology" className="about-paper about-technology" aria-labelledby="about-technology-title">
       {heading("06", "Built to be observable", "From persistent state to a living city.", "A persistent city connects verified token launches with visible community activity.")}
-      <ol className="about-architecture" aria-label="Simulation state flows from storage to the visible world">
+      <ol className="about-architecture" aria-label="City state flows from storage to the visible world">
         <li><Database size={23} aria-hidden="true" /><h3>Persistent state</h3><p>The shared world and economic records are preserved.</p><span>Shared history</span></li>
-        <li><Workflow size={23} aria-hidden="true" /><h3>Authoritative simulation</h3><p>City activity and verified holder changes keep the world up to date.</p><span>Ongoing activity</span></li>
+        <li><Workflow size={23} aria-hidden="true" /><h3>Shared city engine</h3><p>City activity and verified holder changes keep the world up to date.</p><span>Ongoing activity</span></li>
         <li><Radio size={23} aria-hidden="true" /><h3>A connected application</h3><p>Live updates bring the same city activity to everyone.</p><span>Live updates</span></li>
         <li><Box size={23} aria-hidden="true" /><h3>The visible world</h3><p>Explore the city, its agents and connected infrastructure.</p><span>One shared city</span></li>
       </ol>

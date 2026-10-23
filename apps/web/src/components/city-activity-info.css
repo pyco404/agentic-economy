@@ -1,0 +1,10 @@
+.city-activity-info { color: #294b39; font-size: 12px; text-align: left; min-width: 0; }
+.city-activity-info > summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; padding: 10px 4px; }
+.city-activity-info-body { background: #fffaf2; border: 1px solid #dddac9; border-radius: 10px; padding: 16px; overflow-wrap: anywhere; }
+.city-activity-info-body p { font-size: 12px; line-height: 1.6; margin: 0 0 12px; color: #36513f; }
+.city-activity-info-body p:last-child { margin-bottom: 0; }
+.city-activity-info-body dl { margin: 12px 0; }
+.city-activity-info-body dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #dddac9; }
+.city-activity-info-body dd { margin: 0; text-align: right; }
+.activity-category { display: block; font-size: 10px; line-height: 1.5; color: #36513f; margin-top: 4px; }
+.page-content > .city-activity-info { margin-top: 24px; }

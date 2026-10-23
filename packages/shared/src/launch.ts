@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CommunityId, DataMode, LaunchId, PublicKey, TxSignature, AmountString } from "./primitives.js";
 import { DEV_BUY_MAX_BPS, PUMP_NAME_MAX, PUMP_SYMBOL_MAX, PUMP_URI_MAX } from "./constants.js";
-import { utf8Length, tokenFieldIssues } from "./tokenRules.js";
+import { solBudgetLamports, utf8Length, tokenFieldIssues } from "./tokenRules.js";
 
 /** Token metadata supplied by the launcher. Limits mirror Pump.fun create_v2. */
 export const LaunchDraft = z
@@ -52,7 +52,7 @@ export const FeeBreakdown = z
     launcherCreatorFeeBps: z.literal(0),
     /** Optional Developer Buy in the same atomic transaction; amounts in token base units and lamports. */
     developerBuy: z.object({
-      bps: z.number().int().min(1).max(DEV_BUY_MAX_BPS), quoteAsset: z.literal("SOL"), totalSupply: AmountString, tokenAmount: AmountString,
+      bps: z.number().int().min(0).max(DEV_BUY_MAX_BPS), quoteAsset: z.literal("SOL"), totalSupply: AmountString, tokenAmount: AmountString,
       estimatedQuoteCost: AmountString, pumpFees: AmountString, maxQuoteCost: AmountString, priceImpactBps: z.number().int().nonnegative(),
     }).nullable().optional(),
     creatorFeeSplit: z.object({
@@ -111,7 +111,7 @@ export const TokenLaunch = z
       localMintReviewHistory:z.array(LocalMintReview).optional(),
       platformOrigin:z.literal("PLATFORM"),initiator:z.literal("HUMAN"),
       /** Requested Developer Buy: exact token amount (never above 3.5% of supply) and the maximum lamports it may cost. */
-      devBuy:z.object({bps:z.number().int().min(1).max(DEV_BUY_MAX_BPS),tokenAmount:AmountString,maxQuoteCost:AmountString}).optional(),
+      devBuy:z.object({budgetSol:z.string().refine(s=>{const n=solBudgetLamports(s);return n!==null&&n>0n;}).optional(),bps:z.number().int().min(0).max(DEV_BUY_MAX_BPS),tokenAmount:AmountString,maxQuoteCost:AmountString}).optional(),
     }).optional(),
     /** Developer Buy as executed, from the confirmed transaction (not the request). */
     devBuyResult: z.object({tokenAmount:AmountString,quoteSpent:AmountString,allocationBps:z.string().describe("Exact share of total supply in basis points, as a decimal string"),signature:TxSignature}).nullable().optional(),

@@ -3,7 +3,8 @@ import { officialToken } from '../src/content/project';
 
 for (const width of [1440, 820, 344, 690]) test(`official CA remains readable and copyable at ${width}px`, async ({ page, context }) => {
   test.setTimeout(240000);
-  await page.setViewportSize({ width, height: 1000 });
+  const height = width <= 700 ? 780 : 1000;
+  await page.setViewportSize({ width, height });
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/?source=fixtures');
   await expect(page.getByTestId('application-startup')).toHaveAttribute('data-startup-state', 'ready', { timeout: 180000 });
@@ -13,9 +14,18 @@ for (const width of [1440, 820, 344, 690]) test(`official CA remains readable an
   await expect(pill).toBeVisible();
   await expect(page.locator('.official-world-footer')).toHaveCount(0);
   const bounds = await pill.boundingBox();
-  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(1000);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
   expect(bounds!.width).toBeLessThan(310);
-  expect(await page.locator('.world-main').evaluate(el => Math.round(el.getBoundingClientRect().bottom))).toBe(1000);
+  expect(await page.locator('.world-main').evaluate(el => Math.round(el.getBoundingClientRect().bottom))).toBe(height);
+  if (width <= 700) {
+    const stats = (await page.locator('.world-bottom').boundingBox())!;
+    expect(stats.y - (bounds!.y + bounds!.height)).toBeGreaterThanOrEqual(12);
+    expect(bounds!.width).toBeLessThanOrEqual(208);
+    expect(bounds!.height).toBeLessThanOrEqual(36);
+    const copy = (await pill.getByRole('button').boundingBox())!;
+    expect(copy.height).toBeGreaterThanOrEqual(44);
+    expect(copy.width).toBeGreaterThanOrEqual(44);
+  }
   for (const selector of ['.world-bottom', '.camera-tools', '.activity-panel', '.topbar']) {
     const control = page.locator(selector);
     if (!await control.isVisible()) continue;

@@ -34,6 +34,9 @@ const Env = z.object({
   STREAM_RETENTION_MINUTES: z.coerce.number().int().min(1).default(60),
   /** How often a standby simulation worker retries acquiring leadership. */
   LEADER_RETRY_MS: z.coerce.number().int().min(100).default(2_000),
+  TOKEN_MARKET_INDEX_ENABLED: z.enum(["true","false"]).default("true"),
+  TOKEN_MARKET_REFRESH_MS: z.coerce.number().int().min(30000).max(3600000).default(60000),
+  TOKEN_MARKET_PAGE_SIZE: z.coerce.number().int().min(1).max(20).default(8),
   INDEXER_INTERVAL_MS: z.coerce.number().int().min(1_000).default(30_000),
   SOLANA_RPC_URL: z.string().url().optional(),
   SOLANA_CLUSTER: z.enum(["devnet", "mainnet-beta", "localnet"]).default("devnet"),
@@ -155,6 +158,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     streamRetentionMinutes: e.STREAM_RETENTION_MINUTES,
     leaderRetryMs: e.LEADER_RETRY_MS,
     indexerIntervalMs: e.INDEXER_INTERVAL_MS,
+    tokenMarket: {indexEnabled:e.TOKEN_MARKET_INDEX_ENABLED==='true',refreshMs:e.TOKEN_MARKET_REFRESH_MS,pageSize:e.TOKEN_MARKET_PAGE_SIZE},
     solana: { rpcUrl: e.SOLANA_RPC_URL ?? null, cluster: e.SOLANA_CLUSTER },
     treasuryReadRpcUrl: e.TREASURY_READ_RPC_URL ?? null,
     heliusApiKey: e.HELIUS_API_KEY ?? null,

@@ -1,4 +1,5 @@
 import { configureSociety, stepSociety, stepSocialAgent } from "./society.js";
+import { applyDecision, configureAutonomy, stepAutonomy, type AutonomousEvent } from "./autonomy.js";
 import { createHash } from "node:crypto";
 import { RESOURCES, type AgentPermission, type AgentStrategy, type GridPos, type Profession, type Resource, type TaskKind } from "@agentic-economy/shared";
 import { KIND_SPECS, Rng, deriveSeed, type WorldLayout } from "@agentic-economy/world-spec";
@@ -218,6 +219,7 @@ export class SimEngine {
     public state: SimState,
     layout: WorldLayout,
     private readonly planner: Planner = new UtilityPlanner(),
+    private readonly localAutonomy = false,
   ) {
     if(state.worldSeed!==layout.seed)throw new Error('Simulation snapshot seed does not match this process layout; await the matching release');
     this.nav = new NavGrid(layout.width, layout.height, layout.terrain);
@@ -253,6 +255,7 @@ export class SimEngine {
     const cmds = this.pending.sort((a, b) => a.seq - b.seq);
     this.pending = [];
     for (const c of cmds) this.applyCommand(c.command);
+    if (this.localAutonomy) this.autonomousEvents(stepAutonomy(s));
 
     if (s.tick % MARKET_INTERVAL === 0) this.payResidentWages();
     if (s.tick % TASK_GEN_INTERVAL === 0) this.generateTasks();
@@ -279,6 +282,15 @@ export class SimEngine {
   }
 
   /* ---------------------------------------------------------- commands */
+
+  private autonomousEvents(events: AutonomousEvent[]) {
+    for (const { moment, rejected } of events) {
+      this.event(moment.phase === 'invitation' ? 'social.gathering' : moment.phase === 'consequence' ? 'social.consequence' : 'social.encounter', moment.summary,
+        { agentId: moment.participants[0], buildingId: moment.buildingId ?? undefined, data: { social: moment, simulated: true, source: 'local_mock', rejected: !!rejected } });
+      for (const id of moment.participants) this.action(this.state.agents[id]!, rejected ? 'rejected' : 'social', moment.summary,
+        { buildingId: moment.buildingId, detail: { social: moment, simulated: true, source: 'local_mock' } });
+    }
+  }
 
   /** Shared by every create command. Idempotent: a replayed command for an existing agent is ignored. */
   private spawnAgent(
@@ -329,6 +341,12 @@ export class SimEngine {
   private applyCommand(c: SimCommand) {
     const s = this.state;
     switch (c.type) {
+      case 'autonomy.configure':
+        if (this.localAutonomy) configureAutonomy(s, c.participants);
+        return;
+      case 'autonomy.decide':
+        if (this.localAutonomy) this.autonomousEvents(applyDecision(s, this.nav, c));
+        return;
       case "society.configure": {
         const ids = Object.keys(s.society?.profiles ?? {});
         configureSociety(s, c.enabled);
@@ -742,6 +760,10 @@ export class SimEngine {
   private stepAgent(a: AgentSimState) {
     const s = this.state;
     if (a.status === "paused") return;
+    if (this.localAutonomy && s.autonomy?.profiles[a.id]) {
+      this.out.moves.push({ id: a.id, cell: { ...a.cell }, activity: a.activity, target: a.target });
+      return;
+    }
     if (stepSocialAgent(s, a)) { this.out.moves.push({ id: a.id, cell: { ...a.cell }, activity: a.activity, target: a.target }); return; }
     if (a.identity.kind === "aeco_observed") {
       if (stepCommonAgent(a, s, this.nav) && s.tick % 4 === Number.parseInt(a.id.slice(-1), 16) % 4) this.out.moves.push({ id: a.id, cell: { ...a.cell }, activity: a.activity, target: a.target });
@@ -1001,7 +1023,7 @@ export class SimEngine {
       agentId: a.id,
       communityId: a.communityId,
       buildingId: to.id,
-      data: { taskId: t.id, receiptId: receipt.id, points, reward: t.rewardCredits },
+      data: { taskId: t.id, taskKind: t.kind, receiptId: receipt.id, points, reward: t.rewardCredits },
     });
   }
 

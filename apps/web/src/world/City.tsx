@@ -5,7 +5,8 @@ import { bridgeSurface } from "./bridgeSurface";
 import { graphReport } from "./navigation";
 import { landmassParts, landmassGalleries, landmassCuts } from "./landmass";
 import { pedestrianNavigation } from "./agentMotion";
-import { workDescription, workPose } from "../api/agentWork";
+import { currentAssignment, visibleWork, workDescription, workPose } from "../api/agentWork";
+import { createWorkEffects } from "./workEffects";
 import type { AgentWork, AgentSummary } from "../api/shared";
 import { cityPalette } from "./palette";
 import { clearAccidentalWorldSelection } from "./selection";
@@ -382,6 +383,9 @@ export const City = forwardRef<CityHandle, CityProps>(
         lastLOD = false;
       let waterElapsed = 0, lastWorkReport = -1;
       const citizens = createCitizens(512);
+      const workEffects = createWorkEffects();
+      const workEffectAgents = new Set<string>();
+      scene.add(workEffects.mesh);
       citizens.meshes.forEach((mesh) => scene.add(mesh));
       const gait = new Map<string, { heading: number; phase: number }>();
       const agentMatrix = new THREE.Matrix4(),
@@ -921,6 +925,8 @@ export const City = forwardRef<CityHandle, CityProps>(
         displayAgentIds = [];
         let count = 0,
           cargoCount = 0;
+        workEffects.begin();
+        workEffectAgents.clear();
         if (performance.now() - lastAgentSelection > 250 || !renderAgents.length) {
           renderAgents = visibleAgentSubset(agentData.filter(a => a.identity?.kind !== "aeco_observed" || !a.paused),
             a => {
@@ -962,7 +968,7 @@ export const City = forwardRef<CityHandle, CityProps>(
                   : (history.get(a.id) ?? []);
               samples.push(target.clone());
               history.set(a.id, samples.slice(-9));
-              const journey = observedJourney(pathNetwork, position, target, p.tickMs ?? 500);
+              const journey = observedJourney(pathNetwork, position, target, p.tickMs ?? 500, !!currentAssignment(a));
               motion.set(a.id, {
                 from: position.clone(),
                 target,
@@ -995,7 +1001,8 @@ export const City = forwardRef<CityHandle, CityProps>(
               (pose.phase + Math.min(distance, 0.2) * 12) % (Math.PI * 2);
           }
           const workAgent = { id: a.id, state: a.paused ? "paused" as const : (a.state ?? "idle"), work: a.work, social: a.social };
-          const poseKind = !walking && !p.demo ? workPose(workAgent, position.x, position.y) : null;
+          const work = !p.demo ? visibleWork(workAgent, position.x, position.y) : null;
+          const poseKind = !walking ? work?.pose ?? null : null;
           const social = !p.demo && !a.paused ? a.social?.current : null;
           const interacting = (!!poseKind || !!social) && !a.paused;
           if (social && !walking) {
@@ -1003,11 +1010,15 @@ export const City = forwardRef<CityHandle, CityProps>(
             if (partner) pose.heading = Math.atan2(partner.x - x, partner.z - z);
           }
           const carrying = !p.demo && Object.values(a.work?.cargo ?? {}).some(q => (q ?? 0) > 0);
-          if (interacting && !p.paused && !motionPreference.matches) pose.phase += dt * 1.8;
+          // Distant work keeps its equipment silhouette, with lower animation
+          // cadence; close inspection receives the complete hand/tool motion.
+          if (interacting && !p.paused && !motionPreference.matches) pose.phase += dt * (camera.zoom < .8 ? .45 : 1.8);
           gait.set(a.id, pose);
           // Keep partially visible bodies at the viewport edge; names use the same bounds.
           agentBounds.center.set(streetPoint.x, .6 + agentElevation, streetPoint.y); agentBounds.radius = 1;
           if (!frustum.intersectsSphere(agentBounds)) continue;
+          if (poseKind && workEffects.add(poseKind, streetPoint.x, streetPoint.y, pose.heading,
+            pose.phase, agentElevation)) workEffectAgents.add(a.id);
           citizens.set(
             count,
             streetPoint.x,
@@ -1033,7 +1044,7 @@ export const City = forwardRef<CityHandle, CityProps>(
             demoName: a.demoName ?? p.demo, x: streetPoint.x, z: streetPoint.y,
             elevation: agentElevation,
             state: a.paused ? "paused" : walking ? "walking" : interacting ? "interacting" : "idle",
-            activity: p.demo ? a.state : workDescription(workAgent), visualOnly: p.demo,
+            activity: p.demo ? a.state : work?.stage === 'arriving' ? `Arriving at ${a.work!.destination!.name}` : workDescription(workAgent), visualOnly: p.demo,
             selected: p.selectedAgentId === a.id, hovered: hoveredAgentId === a.id,
             important: importantAgents.has(a.id), social: a.social });
           if (carrying) {
@@ -1048,13 +1059,14 @@ export const City = forwardRef<CityHandle, CityProps>(
           count++;
         }
         citizens.finish(count);
+        workEffects.finish();
         bubbles.update(t, camera, actorsReady && p.interactive && !p.paused ? labelAgents.filter(a => !a.selected && !a.hovered) : [], container.clientWidth, container.clientHeight, p.tickMs ?? 500);
         labels.update(t, camera, actorsReady ? labelAgents : [], container.clientWidth, container.clientHeight, bubbles.bounds());
         container.dataset.agentVisualStates = JSON.stringify(labelAgents.reduce<Record<string, number>>((states, agent) => {
           states[agent.state] = (states[agent.state] ?? 0) + 1; return states;
         }, {}));
         if(t-lastWorkReport>.25) {lastWorkReport=t;container.dataset.agentWork = JSON.stringify(agentData.map(a => ({ id:a.id, taskId:a.work?.task?.id ?? null,
-          destination:a.work?.destination?.id ?? null, state:a.state, tick:a.work?.tick,
+          destination:a.work?.destination?.id ?? null, state:a.state, tick:a.work?.tick, effect:workEffectAgents.has(a.id),
           x:agentPositions.get(a.id)?.x, z:agentPositions.get(a.id)?.y,
           working:!!workPose({id:a.id,state:(a.state??"idle"),work:a.work},agentPositions.get(a.id)?.x??Infinity,agentPositions.get(a.id)?.y??Infinity) })));
         }
@@ -1119,6 +1131,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         if (pulses.instanceColor) pulses.instanceColor.needsUpdate = true;
         pulses.computeBoundingSphere();
         container.dataset.activeEffects = String(pulseCount);
+        container.dataset.workPieces = String(workEffects.mesh.count);
         container.dataset.drawCalls = String(renderer.info.render.calls);
         container.dataset.geometryBuilds = String(geometryBuilds);
         container.dataset.deliveryMarkers = String(cargoCount);
@@ -1226,6 +1239,7 @@ export const City = forwardRef<CityHandle, CityProps>(
           disposeGroup(c.group, shared);
         });
         citizens.dispose();
+        workEffects.dispose();
         scene.remove(trails);
         trailGeometry.dispose();
         trailMaterial.dispose();

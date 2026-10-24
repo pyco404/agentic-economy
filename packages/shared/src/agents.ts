@@ -90,6 +90,7 @@ export const AgentSummary = z
 export type AgentSummary = z.infer<typeof AgentSummary>;
 
 export const Agent = AgentSummary.extend({
+  cognition: z.object({ preferences: z.array(z.string().max(80)).max(6), goal: z.object({ description: z.string().max(80), buildingId: BuildingId.nullable(), status: z.enum(['active','completed','declined']) }).nullable() }).optional(),
   socialHistory: z.array(SocialMoment).max(12).optional(),
   relationships: z.array(SocialRelationship).max(12).optional(),
   strategy: AgentStrategy,

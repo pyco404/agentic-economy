@@ -1,4 +1,4 @@
-import type {MarketState,MarketPage} from './market-types.js';
+import type {MarketState,MarketPage,MarketReadOptions} from './market-types.js';
 import type { HeliusHolderObservation, IndexedMetadata } from './helius.js';
 import type { PumpTrade } from "./pump-events.js";
 import type { SharingConfigState } from "./pump.js";
@@ -91,7 +91,7 @@ export interface ChainGateway {
   readonly source: "mock_chain" | "solana_rpc";
   getGenesisHash?():Promise<string>;
   getMarketState?(mint:string):Promise<MarketState>;
-  getMarketTradePage?(mint:string,address:string,before?:string,until?:string,limit?:number):Promise<MarketPage>;
+  getMarketTradePage?(mint:string,address:string,before?:string,until?:string,limit?:number,options?:MarketReadOptions):Promise<MarketPage>;
   /** Optional operator gate, checked before recording a new submission. Never broadcasts. */
   assertLaunchSubmissionAllowed?():Promise<void>;
   /** History-aware signature observation; a non-null status must block unseen-transaction expiry. */

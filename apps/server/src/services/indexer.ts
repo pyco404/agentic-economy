@@ -98,7 +98,7 @@ export class IndexerWorker {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
   private runs = 0;
-  readonly metrics = { runs: 0, errors: 0, inserted: 0, acquisitions: 0, driftChecks: 0 };
+  readonly metrics = { runs: 0, errors: 0, inserted: 0, acquisitions: 0, driftChecks: 0, lastSuccess:0, consecutiveFailures:0 };
 
   constructor(
     private readonly indexer: TreasuryIndexer,
@@ -128,10 +128,10 @@ export class IndexerWorker {
         this.metrics.driftChecks += 1;
         await this.indexer.checkRoutingDrift();
       }
-      this.metrics.runs += 1;
+      this.metrics.runs += 1;this.metrics.lastSuccess=Date.now();this.metrics.consecutiveFailures=0;
       return true;
     } catch (e) {
-      this.metrics.errors += 1;
+      this.metrics.errors += 1;this.metrics.consecutiveFailures++;
       this.log.error({ err: String(e) }, "indexer iteration failed");
       if (this.lease?.lost) this.lease = null;
       return this.isActive;

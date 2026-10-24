@@ -60,3 +60,12 @@ it("recovers a long observed journey along roads at a bounded walking speed with
  expect(journey.duration).toBe(9750);expect(journey.path.length).toBe(40);
  network.delete('20:0');expect(observedJourney(network,new THREE.Vector2(.5,.5),new THREE.Vector2(39.5,.5),500)).toBeNull();
 });
+
+it('catches up assigned workers before a short shift ends, without inventing movement across terrain', () => {
+ const network:PathNetwork=new Map(Array.from({length:40},(_,i)=>[`${i}:0`,new THREE.Vector2(i+.5,.5)]));
+ const journey=observedJourney(network,new THREE.Vector2(.5,.5),new THREE.Vector2(39.5,.5),500,true)!;
+ expect(journey.duration).toBe(1000);expect(journey.path).toHaveLength(40);
+ for(let t=0;t<=1;t+=.025){const p=samplePath(journey.path,t,new THREE.Vector2());expect(network.has(`${Math.floor(p.x)}:${Math.floor(p.y)}`)).toBe(true);}
+ expect(samplePath(journey.path,1,new THREE.Vector2()).x).toBe(39.5);
+ network.delete('20:0');expect(observedJourney(network,new THREE.Vector2(.5,.5),new THREE.Vector2(39.5,.5),500,true)).toBeNull();
+});

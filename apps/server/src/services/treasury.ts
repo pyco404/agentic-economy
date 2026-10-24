@@ -47,7 +47,8 @@ export class TreasuryService {
     private readonly config: AppConfig,
     private readonly now: () => Date = () => new Date(),
     helius?: HeliusReader,
-  ) { this.officialWallets = new OfficialTreasuryMonitor(helius ? 'https://read-only.helius.invalid' : config.treasuryReadRpcUrl, helius ? helius.withFallback(config.treasuryReadRpcUrl) : fetch, now); }
+    readFetch:typeof fetch=fetch,
+  ) { this.officialWallets = new OfficialTreasuryMonitor(helius ? 'https://read-only.helius.invalid' : config.treasuryReadRpcUrl, helius ? helius.withFallback(config.treasuryReadRpcUrl,readFetch) : readFetch, now); }
 
   private entry(p: {
     stream: TreasuryEntry["stream"];

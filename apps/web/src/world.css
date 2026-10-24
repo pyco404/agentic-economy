@@ -8,7 +8,7 @@
 }
 .agent-world-label { position: absolute; left: 0; top: 0; max-width: 176px; padding: 2px 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto;
-  background: transparent; color: #fff0b7; font: 650 10.5px/1.2 "DM Sans", sans-serif;
+  background: transparent; color: #fff0b7; font: 650 9px/1.2 "DM Sans", sans-serif;
   letter-spacing: 0.15px; text-shadow: -1px -1px 0 #343a2e, 1px -1px 0 #343a2e,
     -1px 1px 0 #343a2e, 1px 1px 0 #343a2e, 0 2px 3px #263326;
   transition: transform 34ms linear; border-radius: 2px; }

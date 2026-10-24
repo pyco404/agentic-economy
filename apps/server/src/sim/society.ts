@@ -142,7 +142,7 @@ function conclude(s: SimState, current: SocialPresence, output: SocialOutput[]) 
 }
 
 /** Called only from the fenced engine, every five ticks. Spatial bins avoid an all-pairs scan. */
-export function stepSociety(s: SimState, nav: NavGrid, workEvents: Array<{ type: string; buildingId: string | null; agentId: string | null }> = []): { events: SocialOutput[]; changed: string[]; comparisons: number } {
+export function stepSociety(s: SimState, nav: NavGrid, workEvents: Array<{ type: string; buildingId: string | null; agentId: string | null; data?: Record<string, unknown> }> = []): { events: SocialOutput[]; changed: string[]; comparisons: number } {
   const result = { events: [] as SocialOutput[], changed: [] as string[], comparisons: 0 };
   const society = s.society;
   if (!society?.enabled || s.tick % SOCIAL_BUDGET.interval) return result;
@@ -183,7 +183,7 @@ export function stepSociety(s: SimState, nav: NavGrid, workEvents: Array<{ type:
   if (starts) society.nextEncounterTick = s.tick + SOCIAL_BUDGET.encounterSpacing;
   society.cursor = (society.cursor + SOCIAL_BUDGET.agentsPerStep) % Math.max(1, s.agentOrder.length);
   advanceGatherings(s, nav, result.events);
-  for (const e of workEvents.filter(e => e.type === 'maintenance.completed' && e.buildingId).slice(0, 1)) {
+  for (const e of workEvents.filter(e => e.type === 'task.verified' && e.data?.taskKind === 'maintenance' && e.buildingId).slice(0, 1)) {
     const building = s.buildings[e.buildingId!]!;
     const m = moment(s, 'construction', 'consequence', e.agentId ? [e.agentId] : [], building.id, building.entrance,
       `Repairs at ${building.name} are finished; the neighbourhood has a maintained workplace again.`);

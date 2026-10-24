@@ -33,3 +33,17 @@ for(const width of [1440,390])test(`attributed Explore metrics, existing section
 test('demo Explore never fetches mainnet markets or displays invented values',async({page})=>{
  const requests:string[]=[];page.on('request',r=>{if(r.url().includes('/token-markets/'))requests.push(r.url());});await page.goto('/?source=fixtures#explore');await waitForApplicationReady(page);await expect(page.locator('.discovery-card').first()).toBeVisible();await page.locator('.discovery-card').first().click();await expect(page.getByRole('region',{name:'Token market data'})).toContainText('Unavailable');expect(requests).toEqual([]);
 });
+test('incomplete combined-venue coverage stays unavailable and explained during backfill',async({page})=>{
+ test.setTimeout(180000);await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/v1/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.includes('/token-markets/')){
+   const mint=path.split('/')[4]!;
+   if(path.endsWith('/history'))return route.fulfill({json:{mint,pairAddress:mint,source:'geckoterminal',fetchedAt:null,reason:'Unavailable',candles:[]}});
+   if(path.endsWith('/trades'))return route.fulfill({json:{mint,network:'mainnet-beta',status:'unavailable',reason:'Trade history is reconciling',source:null,slot:null,complete:false,fetchedAt:null,trades:[]}});
+   return route.fulfill({json:{...fixtureMarket(mint),quoteAsset:'SOL',source:'solana_rpc',sourceUrl:null,volume24hUsd:null,buys24h:null,sells24h:null,transactions24h:null,activityCoverage:{complete:false,durable:true,through:null,reason:'Trade history is reconciling; incomplete totals are not displayed.'}}});
+  }
+  const response=await route.fetch();let body;try{body=await response.json();}catch{return route.fulfill({response});}if(body&&typeof body==='object'){if('mode'in body)body.mode='production';if(body.launch)body.launch.mode='production';}return route.fulfill({response,json:body});
+ });
+ await page.goto('/?source=backend#explore');await waitForApplicationReady(page);await page.locator('.discovery-card').first().click();const panel=page.getByRole('region',{name:'Token market data'});await expect(panel).toBeVisible();await expect(panel.locator('.market-metrics > div').filter({hasText:'Trading volume'})).toContainText('Unavailable');await expect(panel).toContainText('Transactions: Unavailable');await panel.getByText('Market data sources',{exact:true}).click();await expect(panel).toContainText('incomplete totals are not displayed');await expect(panel).not.toContainText('24-hour on-chain history reconciled.');
+});

@@ -30,12 +30,17 @@
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0",
-    "vitest": "^3.2.4",
+    "vitest": "~4.1.12",
     "@playwright/test": "^1.58.0",
     "eslint": "^9.39.0",
     "@eslint/js": "^9.39.0",
     "typescript-eslint": "^8.46.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "tweetnacl": "^1.0.3"
+  },
+  "overrides": {
+    "@solana/web3.js@1.98.4": {
+      "jayson": "5.0.0"
+    }
   }
 }

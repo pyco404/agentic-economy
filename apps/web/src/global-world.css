@@ -16,6 +16,7 @@
 .app main { z-index: 2; }
 .world-main { pointer-events: none; }
 .world-main > :not(.world-header) { pointer-events: auto; }
+.world-main > .district-label { pointer-events: none; }
 .world-main .world-header { pointer-events: none; }
 .world-main .world-header button, .world-main .world-header select { pointer-events: auto; }
 .app .page-main { height: calc(100dvh - 64px); min-height: 0; overflow-y: auto; background: transparent; }

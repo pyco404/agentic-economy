@@ -12,7 +12,7 @@
   width: 100%; min-height: 44px; padding: 3px 0; color: #244232; background: transparent; border: 0; }
 .activity-focus .activity-copy { min-width: 0; flex: 1; font-size: 11px; line-height: 1.6; }
 .activity-focus .social-kind { display: block; margin-top: 4px; font-size: 9px; color: #52664e; }
-.social-bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.social-bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
 .social-bubble { position: absolute; left: 0; top: 0; max-width: 190px; padding: 8px 11px;
   border: 1px solid #a8b79d; border-radius: 12px 12px 12px 3px; background: #fffaf2;
   color: #244232; font: 500 11px/1.4 "DM Sans", sans-serif; pointer-events: auto; min-height: 44px; }

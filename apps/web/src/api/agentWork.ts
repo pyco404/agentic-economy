@@ -5,6 +5,16 @@ export function currentAssignment(agent: Pick<AgentSummary, 'id' | 'work'>) {
   const task = agent.work?.task;
   return task?.claimedBy === agent.id && ['claimed', 'in_progress'].includes(task.status) ? task : null;
 }
+/** A view of an existing assignment, never a new task or inferred completion. */
+export function visibleWork(agent: Pick<AgentSummary, 'id' | 'state' | 'work'>, x: number, z: number) {
+  const task = currentAssignment(agent), place = agent.work?.destination;
+  if (!task || !place || agent.state === 'paused') return null;
+  const pose = workPose(agent, x, z);
+  const stage = agent.state === 'working' ? pose ? 'working' : 'arriving'
+    : agent.state === 'delivering' ? 'delivering' : 'traveling';
+  return { agentId: agent.id, taskId: task.id, workplaceId: place.id,
+    tick: agent.work!.tick, stage, pose };
+}
 export function workDescription(agent: Pick<AgentSummary, 'id' | 'state' | 'work'> & Partial<Pick<AgentSummary, 'social'>>) {
   if (agent.state === 'paused') return 'Paused';
   if (agent.social?.current) return `City World · ${agent.social.current.description}`;
@@ -20,7 +30,7 @@ export function workDescription(agent: Pick<AgentSummary, 'id' | 'state' | 'work
 /** Only animate presence work at the server's registered entrance, after arrival. */
 export function workPose(agent: Pick<AgentSummary, 'id' | 'state' | 'work'>, x: number, z: number): WorkPose | null {
   const task = currentAssignment(agent), place = agent.work?.destination;
-  if (agent.state !== 'working' || !task || !place || Math.hypot(x-place.entrance.x-.5,z-place.entrance.y-.5) > .18) return null;
+  if (agent.state !== 'working' || !task || !place || place.id !== task.toBuildingId || Math.hypot(x-place.entrance.x-.5,z-place.entrance.y-.5) > .18) return null;
   if (task.kind === 'maintenance') return 'maintenance';
   if (task.kind !== 'production_shift' || task.status !== 'in_progress') return null;
   return place.kind === 'farm' ? 'farm' : place.kind === 'mill' ? 'mill' : place.kind === 'bakery' ? 'bakery' : place.kind === 'warehouse' ? 'warehouse' : 'workshop';

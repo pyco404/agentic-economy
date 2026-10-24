@@ -10,6 +10,8 @@ export function AgentSocialLife({ agent, observed, agents }: { agent: Agent; obs
     <h3>Life in the city</h3><p className="social-disclaimer">City World relationships and activities · no payments or rewards.</p>
     <p><strong>{social.personality.temperament}</strong> · enjoys {social.personality.interest} · {social.mood}</p>
     <p>Routine: {social.personality.routine}.</p>
+    {agent.cognition && <><p>Preferences: {agent.cognition.preferences.join(', ')}.</p>
+      {agent.cognition.goal && <p>Goal: {agent.cognition.goal.description} · {agent.cognition.goal.status}</p>}</>}
     {social.current && <p className="social-current">“{social.current.speech}”</p>}
     {social.destination && <p>{social.destination.purpose} · {social.destination.name}</p>}
     {!!agent.relationships?.length && <details><summary>Neighbours & relationships</summary><ul>{agent.relationships.map(r => <li key={r.agentId}>

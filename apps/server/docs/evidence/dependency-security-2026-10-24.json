@@ -1,0 +1,938 @@
+{
+  "checkedAt": "2026-10-24",
+  "timezone": "Africa/Lagos",
+  "scope": "All five pnpm workspace projects, including dev/optional/transitive dependencies; preserved legacy npm lock audited separately.",
+  "historicalAcceptedProductionBaseline": {
+    "high": 6,
+    "moderate": 4,
+    "critical": 0,
+    "note": "Historical production-only scope; not the current full-workspace audit."
+  },
+  "before": {
+    "pnpm": {
+      "info": 0,
+      "low": 4,
+      "moderate": 11,
+      "high": 6,
+      "critical": 2
+    },
+    "uniqueGhsa": 18,
+    "productionDerivedFromBeforeFindings": {
+      "high": 6,
+      "moderate": 8,
+      "low": 4
+    },
+    "legacyNpmLock": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 2,
+      "total": 3
+    }
+  },
+  "after": {
+    "pnpm": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0
+    },
+    "productionPnpm": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0
+    },
+    "uniqueGhsa": 1,
+    "legacyNpmLock": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "resolvedPnpmEntries": 22,
+    "countingNote": "pnpm reports 23 package/version advisory entries before and 1 after. Several fast-uri versions and the Vitest/mocker pair share advisory IDs. There were 18 unique GHSA IDs before, 1 after. npm uses different aggregate counting; do not add its totals to pnpm."
+  },
+  "updates": [
+    {
+      "package": "fast-uri",
+      "from": [
+        "3.1.8",
+        "4.2.2"
+      ],
+      "to": [
+        "3.1.9",
+        "4.2.3"
+      ],
+      "method": "scoped same-major overrides"
+    },
+    {
+      "package": "toml",
+      "from": "3.0.0",
+      "to": "5.0.1",
+      "method": "security-required Anchor-only override; no patched 3.x release"
+    },
+    {
+      "package": "jayson",
+      "from": "4.3.0",
+      "to": "5.0.0",
+      "method": "security-required web3 v1-only override; existing browser/client API preserved"
+    },
+    {
+      "package": "vitest and @vitest/*",
+      "from": "3.2.7",
+      "to": "4.1.12",
+      "method": "minimum maintained patched major, not latest major 5"
+    }
+  ],
+  "advisories": [
+    {
+      "package": "bigint-buffer",
+      "advisory": "GHSA-3gc7-fjrx-p6mg",
+      "url": "https://github.com/advisories/GHSA-3gc7-fjrx-p6mg",
+      "title": "bigint-buffer Vulnerable to Buffer Overflow via toBigIntLE() Function",
+      "severity": "high",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "1.1.5"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=1.1.5"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=1.1.6"
+      ],
+      "registryEntries": [
+        1103747
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer"
+      ],
+      "category": "Backend SDK dependency; browser native code unavailable",
+      "reachabilityBefore": "SPL buffer-layout-utils can call integer conversions, but native builds were already disabled and production contained no bigint native addon. The memory-corruption advisory concerns the native converter, not the pure-JS implementation.",
+      "action": "No patched upstream release exists. Retain allowBuilds.bigint-buffer=false and force only dist/browser.js in the production backend bundle; fail the build if dist/node.js is included.",
+      "newVersion": "1.1.5 (unpatched upstream; mitigated)",
+      "residual": "One high registry advisory remains. No demonstrated native-overflow exposure in the guarded build; alternative build paths, future dependency changes and upstream supply-chain risk still require review.",
+      "resolvedInLockfile": false,
+      "publishedPatchVerification": {
+        "registryLatest": "1.1.5",
+        "version1_1_6Published": false,
+        "githubPatchedVersions": "None",
+        "note": "npm audit advertises >=1.1.6, but that release is not published; do not claim an available fix."
+      }
+    },
+    {
+      "package": "uuid",
+      "advisory": "GHSA-w5hq-g745-h8pq",
+      "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+      "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "8.3.2"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<11.1.1"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=11.1.1"
+      ],
+      "registryEntries": [
+        1119441
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/web3.js>jayson>uuid",
+        "apps__server>@pump-fun/pump-sdk>@solana/web3.js>jayson>uuid",
+        "apps__server>@solana/web3.js>jayson>uuid",
+        "apps__web>@solana/web3.js>jayson>uuid"
+      ],
+      "category": "Backend/browser RPC dependency; vulnerable functions unused",
+      "reachabilityBefore": "Jayson uses UUID v4 for RPC request IDs. The advisory requires v3/v5/v6 with caller-provided output buffers; those calls are absent from application authentication and launch paths. Application IDs use node:crypto.",
+      "action": "Jayson 5.0.0 uses platform cryptography for request IDs and removes uuid@8 from its dependency closure. Existing safe uuid@14 elsewhere is retained.",
+      "newVersion": "8.3.2 removed from Jayson dependency closure",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "stream-json",
+      "advisory": "GHSA-528h-pc64-c93x",
+      "url": "https://github.com/advisories/GHSA-528h-pc64-c93x",
+      "title": "stream-json: pick/ignore/filter/replace filters are O(depth²) on nested input — small crafted JSON blocks the event loop for seconds→minutes (DoS)",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "1.9.1"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=3.4.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.4.1"
+      ],
+      "registryEntries": [
+        1164823
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@solana/web3.js>jayson>stream-json",
+        "apps__web>@solana/web3.js>jayson>stream-json"
+      ],
+      "category": "Transitive RPC server tooling; unused by the production RPC client",
+      "reachabilityBefore": "Only Jayson streaming server utilities require this package. Solana web3 uses Jayson browser client; no application streaming-JSON server endpoint exists. Before-review and rebuilt self-contained server source maps contain no stream-json source.",
+      "action": "Jayson 5.0.0 removes stream-json instead of forcing an incompatible ESM parser into old CommonJS paths.",
+      "newVersion": "1.9.1 removed",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "toml",
+      "advisory": "GHSA-82x6-q7mm-w9cf",
+      "url": "https://github.com/advisories/GHSA-82x6-q7mm-w9cf",
+      "title": "toml-node: Uncontrolled Recursion",
+      "severity": "high",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.0.0"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<4.2.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=4.2.0"
+      ],
+      "registryEntries": [
+        1164824
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>toml"
+      ],
+      "category": "Bundled Anchor workspace tooling; parser not exposed by application routes",
+      "reachabilityBefore": "Anchor workspace loader imports TOML and parses local Anchor.toml only on workspace access. Application Pump construction uses explicit SDK IDLs, not user-provided TOML or anchor.workspace.",
+      "action": "Scoped override on Anchor 0.31.1 replaces toml 3.0.0 with 5.0.1. CommonJS parse(string/Buffer) behavior and prototype safety are regression-tested. Node >=20 is compatible with the project Node >=22 requirement.",
+      "newVersion": "5.0.1",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "toml",
+      "advisory": "GHSA-v5mp-jgw5-2x6j",
+      "url": "https://github.com/advisories/GHSA-v5mp-jgw5-2x6j",
+      "title": "toml-node: Prototype Pollution Leads to `Object.prototype` Corruption via `__proto__` Key-Path Desynchronization",
+      "severity": "high",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.0.0"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<4.1.2"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=4.1.2"
+      ],
+      "registryEntries": [
+        1164825
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>toml"
+      ],
+      "category": "Bundled Anchor workspace tooling; parser not exposed by application routes",
+      "reachabilityBefore": "Anchor workspace loader imports TOML and parses local Anchor.toml only on workspace access. Application Pump construction uses explicit SDK IDLs, not user-provided TOML or anchor.workspace.",
+      "action": "Scoped override on Anchor 0.31.1 replaces toml 3.0.0 with 5.0.1. CommonJS parse(string/Buffer) behavior and prototype safety are regression-tested. Node >=20 is compatible with the project Node >=22 requirement.",
+      "newVersion": "5.0.1",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "vitest",
+      "advisory": "GHSA-82fw-gwwq-j7x9",
+      "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9",
+      "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.2.7"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=2.1.0 <4.1.11"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=4.1.11"
+      ],
+      "registryEntries": [
+        1193683
+      ],
+      "directParentPaths": [
+        ".>vitest",
+        "apps__web>vitest"
+      ],
+      "category": "Development/test tooling; not in production runtime",
+      "reachabilityBefore": "Vitest runs trusted local test files in CLI run mode. Its development mock server is not hosted publicly. Production frontend is Caddy/static assets; backend bundle contains no Vitest source.",
+      "action": "Use minimum patched maintained branch ~4.1.12; do not jump to latest major 5. Matching Vitest packages are 4.1.12.",
+      "newVersion": "4.1.12",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "@vitest/mocker",
+      "advisory": "GHSA-82fw-gwwq-j7x9",
+      "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9",
+      "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.2.7"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=2.1.0 <4.1.11"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=4.1.11"
+      ],
+      "registryEntries": [
+        1193684
+      ],
+      "directParentPaths": [
+        ".>vitest>@vitest/mocker",
+        "apps__web>vitest>@vitest/mocker"
+      ],
+      "category": "Development/test tooling; not in production runtime",
+      "reachabilityBefore": "Advisories require access to mock-registration development endpoints, which are not part of hosted production or ordinary CLI test runs. Keep development servers loopback-only.",
+      "action": "Upgrade through Vitest 4.1.12; no incompatible standalone mocker override.",
+      "newVersion": "4.1.12",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "tinypool",
+      "advisory": "GHSA-5gmw-xhrv-c9v3",
+      "url": "https://github.com/advisories/GHSA-5gmw-xhrv-c9v3",
+      "title": "Tinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution",
+      "severity": "critical",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "1.1.1"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=2.1.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=2.1.1"
+      ],
+      "registryEntries": [
+        1241260
+      ],
+      "directParentPaths": [
+        ".>vitest>tinypool",
+        "apps__web>vitest>tinypool"
+      ],
+      "category": "Development/test tooling; not in production runtime",
+      "reachabilityBefore": "Prototype-pollution gadgets require prior pollution plus a worker-pool operation. Tinypool was a Vitest-only dependency and absent from the deployed server/frontend runtime.",
+      "action": "Vitest 4.1.12 no longer depends on tinypool, removing the vulnerable dependency instead of forcing a major worker-pool override.",
+      "newVersion": "1.1.1 removed",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "tinypool",
+      "advisory": "GHSA-85c8-ppgw-ccpr",
+      "url": "https://github.com/advisories/GHSA-85c8-ppgw-ccpr",
+      "title": "Tinypool: Prototype Pollution Gadget to RCE in run() options",
+      "severity": "critical",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "1.1.1"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<2.1.2"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=2.1.2"
+      ],
+      "registryEntries": [
+        1241261
+      ],
+      "directParentPaths": [
+        ".>vitest>tinypool",
+        "apps__web>vitest>tinypool"
+      ],
+      "category": "Development/test tooling; not in production runtime",
+      "reachabilityBefore": "Prototype-pollution gadgets require prior pollution plus a worker-pool operation. Tinypool was a Vitest-only dependency and absent from the deployed server/frontend runtime.",
+      "action": "Vitest 4.1.12 no longer depends on tinypool, removing the vulnerable dependency instead of forcing a major worker-pool override.",
+      "newVersion": "1.1.1 removed",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "stream-json",
+      "advisory": "GHSA-hqr4-qq8f-hg3x",
+      "url": "https://github.com/advisories/GHSA-hqr4-qq8f-hg3x",
+      "title": "stream-json: JSONC parser and verifier re-scan the whole accumulated comment on every input chunk",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "1.9.1"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=3.5.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.5.1"
+      ],
+      "registryEntries": [
+        1241262
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@solana/web3.js>jayson>stream-json",
+        "apps__web>@solana/web3.js>jayson>stream-json"
+      ],
+      "category": "Transitive RPC server tooling; unused by the production RPC client",
+      "reachabilityBefore": "Only Jayson streaming server utilities require this package. Solana web3 uses Jayson browser client; no application streaming-JSON server endpoint exists. Before-review and rebuilt self-contained server source maps contain no stream-json source.",
+      "action": "Jayson 5.0.0 removes stream-json instead of forcing an incompatible ESM parser into old CommonJS paths.",
+      "newVersion": "1.9.1 removed",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "stream-json",
+      "advisory": "GHSA-mjw6-4jj6-33hc",
+      "url": "https://github.com/advisories/GHSA-mjw6-4jj6-33hc",
+      "title": "stream-json has a prototype pollution issue: Assembler writes this.current[this.key] on plain objects",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "1.9.1"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<3.6.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.6.0"
+      ],
+      "registryEntries": [
+        1241263
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@coral-xyz/borsh>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/buffer-layout-utils>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-group>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/spl-token-metadata>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/spl-token>@solana/web3.js>jayson>stream-json",
+        "apps__server>@pump-fun/pump-sdk>@solana/web3.js>jayson>stream-json",
+        "apps__server>@solana/web3.js>jayson>stream-json",
+        "apps__web>@solana/web3.js>jayson>stream-json"
+      ],
+      "category": "Transitive RPC server tooling; unused by the production RPC client",
+      "reachabilityBefore": "Only Jayson streaming server utilities require this package. Solana web3 uses Jayson browser client; no application streaming-JSON server endpoint exists. Before-review and rebuilt self-contained server source maps contain no stream-json source.",
+      "action": "Jayson 5.0.0 removes stream-json instead of forcing an incompatible ESM parser into old CommonJS paths.",
+      "newVersion": "1.9.1 removed",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "@vitest/mocker",
+      "advisory": "GHSA-qxg6-89mg-rqv8",
+      "url": "https://github.com/advisories/GHSA-qxg6-89mg-rqv8",
+      "title": "Vitest: Code injection via unauthenticated manual mock registration",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.2.7"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=2.1.0-beta.7 <4.1.12"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=4.1.12"
+      ],
+      "registryEntries": [
+        1242767
+      ],
+      "directParentPaths": [
+        ".>vitest>@vitest/mocker",
+        "apps__web>vitest>@vitest/mocker"
+      ],
+      "category": "Development/test tooling; not in production runtime",
+      "reachabilityBefore": "Advisories require access to mock-registration development endpoints, which are not part of hosted production or ordinary CLI test runs. Keep development servers loopback-only.",
+      "action": "Upgrade through Vitest 4.1.12; no incompatible standalone mocker override.",
+      "newVersion": "4.1.12",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "toml",
+      "advisory": "GHSA-4qx8-w7c3-pj3p",
+      "url": "https://github.com/advisories/GHSA-4qx8-w7c3-pj3p",
+      "title": "toml-node: Quadratic-complexity DoS via many array-of-tables headers in toml.parse()",
+      "severity": "high",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.0.0"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=5.0.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=5.0.1"
+      ],
+      "registryEntries": [
+        1242862
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>toml"
+      ],
+      "category": "Bundled Anchor workspace tooling; parser not exposed by application routes",
+      "reachabilityBefore": "Anchor workspace loader imports TOML and parses local Anchor.toml only on workspace access. Application Pump construction uses explicit SDK IDLs, not user-provided TOML or anchor.workspace.",
+      "action": "Scoped override on Anchor 0.31.1 replaces toml 3.0.0 with 5.0.1. CommonJS parse(string/Buffer) behavior and prototype safety are regression-tested. Node >=20 is compatible with the project Node >=22 requirement.",
+      "newVersion": "5.0.1",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "toml",
+      "advisory": "GHSA-9j65-hcg3-gc64",
+      "url": "https://github.com/advisories/GHSA-9j65-hcg3-gc64",
+      "title": "toml-node: Quadratic-complexity DoS via long dotted keys or table paths in toml.parse()",
+      "severity": "high",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.0.0"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=5.0.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=5.0.1"
+      ],
+      "registryEntries": [
+        1242863
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>toml"
+      ],
+      "category": "Bundled Anchor workspace tooling; parser not exposed by application routes",
+      "reachabilityBefore": "Anchor workspace loader imports TOML and parses local Anchor.toml only on workspace access. Application Pump construction uses explicit SDK IDLs, not user-provided TOML or anchor.workspace.",
+      "action": "Scoped override on Anchor 0.31.1 replaces toml 3.0.0 with 5.0.1. CommonJS parse(string/Buffer) behavior and prototype safety are regression-tested. Node >=20 is compatible with the project Node >=22 requirement.",
+      "newVersion": "5.0.1",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "toml",
+      "advisory": "GHSA-9qmh-m7c6-f92p",
+      "url": "https://github.com/advisories/GHSA-9qmh-m7c6-f92p",
+      "title": "toml-node: Uncontrolled resource consumption (CPU DoS) via unbounded-length integer literals in toml.parse()",
+      "severity": "high",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.0.0"
+      ],
+      "vulnerableRangesFromRegistry": [
+        "<=5.0.0"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=5.0.1"
+      ],
+      "registryEntries": [
+        1242864
+      ],
+      "directParentPaths": [
+        "apps__server>@pump-fun/pump-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/agent-payments-sdk>@coral-xyz/anchor>toml",
+        "apps__server>@pump-fun/pump-sdk>@pump-fun/pump-swap-sdk>@coral-xyz/anchor>toml"
+      ],
+      "category": "Bundled Anchor workspace tooling; parser not exposed by application routes",
+      "reachabilityBefore": "Anchor workspace loader imports TOML and parses local Anchor.toml only on workspace access. Application Pump construction uses explicit SDK IDLs, not user-provided TOML or anchor.workspace.",
+      "action": "Scoped override on Anchor 0.31.1 replaces toml 3.0.0 with 5.0.1. CommonJS parse(string/Buffer) behavior and prototype safety are regression-tested. Node >=20 is compatible with the project Node >=22 requirement.",
+      "newVersion": "5.0.1",
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "fast-uri",
+      "advisory": "GHSA-w74x-v6f9-j3xg",
+      "url": "https://github.com/advisories/GHSA-w74x-v6f9-j3xg",
+      "title": "fast-uri vulnerable to URI scheme spoofing via percent-encoded scheme decoding",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.1.8",
+        "4.2.2"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=3.0.0 <3.1.9",
+        ">=4.0.0 <4.2.3"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.1.9",
+        ">=4.2.3"
+      ],
+      "registryEntries": [
+        1243097,
+        1243098
+      ],
+      "directParentPaths": [
+        "apps__server>fastify>@fastify/ajv-compiler>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>fast-uri"
+      ],
+      "category": "Production backend AJV/schema serialization dependency",
+      "reachabilityBefore": "Fastify schema compilation/serialization uses fast-uri. Application schemas are trusted static code; arbitrary external schemas are not registered. Wallet origins and project/upload URLs use WHATWG URL plus explicit validation, not fast-uri security decisions. No exposed exploit route was demonstrated.",
+      "action": "Patch each existing major independently: 3.1.8 to 3.1.9 and 4.2.2 to 4.2.3.",
+      "newVersion": [
+        "3.1.9",
+        "4.2.3"
+      ],
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "fast-uri",
+      "advisory": "GHSA-xhq7-xmqj-769h",
+      "url": "https://github.com/advisories/GHSA-xhq7-xmqj-769h",
+      "title": "fast-uri vulnerable to improper path equivalence in relative reference normalization",
+      "severity": "low",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.1.8",
+        "4.2.2"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=3.0.0 <3.1.9",
+        ">=4.0.0 <4.2.3"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.1.9",
+        ">=4.2.3"
+      ],
+      "registryEntries": [
+        1243100,
+        1243101
+      ],
+      "directParentPaths": [
+        "apps__server>fastify>@fastify/ajv-compiler>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>fast-uri"
+      ],
+      "category": "Production backend AJV/schema serialization dependency",
+      "reachabilityBefore": "Fastify schema compilation/serialization uses fast-uri. Application schemas are trusted static code; arbitrary external schemas are not registered. Wallet origins and project/upload URLs use WHATWG URL plus explicit validation, not fast-uri security decisions. No exposed exploit route was demonstrated.",
+      "action": "Patch each existing major independently: 3.1.8 to 3.1.9 and 4.2.2 to 4.2.3.",
+      "newVersion": [
+        "3.1.9",
+        "4.2.3"
+      ],
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "fast-uri",
+      "advisory": "GHSA-wjr9-j795-jxcr",
+      "url": "https://github.com/advisories/GHSA-wjr9-j795-jxcr",
+      "title": "fast-uri vulnerable to host confusion via unchecked WHATWG host canonicalization",
+      "severity": "moderate",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.1.8",
+        "4.2.2"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=3.1.3 <3.1.9",
+        ">=4.0.1 <4.2.3"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.1.9",
+        ">=4.2.3"
+      ],
+      "registryEntries": [
+        1243103,
+        1243104
+      ],
+      "directParentPaths": [
+        "apps__server>fastify>@fastify/ajv-compiler>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>fast-uri"
+      ],
+      "category": "Production backend AJV/schema serialization dependency",
+      "reachabilityBefore": "Fastify schema compilation/serialization uses fast-uri. Application schemas are trusted static code; arbitrary external schemas are not registered. Wallet origins and project/upload URLs use WHATWG URL plus explicit validation, not fast-uri security decisions. No exposed exploit route was demonstrated.",
+      "action": "Patch each existing major independently: 3.1.8 to 3.1.9 and 4.2.2 to 4.2.3.",
+      "newVersion": [
+        "3.1.9",
+        "4.2.3"
+      ],
+      "residual": null,
+      "resolvedInLockfile": true
+    },
+    {
+      "package": "fast-uri",
+      "advisory": "GHSA-333x-w4r6-6crp",
+      "url": "https://github.com/advisories/GHSA-333x-w4r6-6crp",
+      "title": "fast-uri vulnerable to scheme injection via an unescaped first-segment colon in suffix references",
+      "severity": "low",
+      "cves": [],
+      "affectedInstalledVersions": [
+        "3.1.8",
+        "4.2.2"
+      ],
+      "vulnerableRangesFromRegistry": [
+        ">=3.0.0 <3.1.9",
+        ">=4.0.0 <4.2.3"
+      ],
+      "patchedRangesFromRegistry": [
+        ">=3.1.9",
+        ">=4.2.3"
+      ],
+      "registryEntries": [
+        1243106,
+        1243107
+      ],
+      "directParentPaths": [
+        "apps__server>fastify>@fastify/ajv-compiler>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>ajv>fast-uri",
+        "apps__server>fastify>@fastify/ajv-compiler>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>@fastify/fast-json-stringify-compiler>fast-json-stringify>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv-formats>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>ajv>fast-uri",
+        "apps__server>fastify>fast-json-stringify>fast-uri"
+      ],
+      "category": "Production backend AJV/schema serialization dependency",
+      "reachabilityBefore": "Fastify schema compilation/serialization uses fast-uri. Application schemas are trusted static code; arbitrary external schemas are not registered. Wallet origins and project/upload URLs use WHATWG URL plus explicit validation, not fast-uri security decisions. No exposed exploit route was demonstrated.",
+      "action": "Patch each existing major independently: 3.1.8 to 3.1.9 and 4.2.2 to 4.2.3.",
+      "newVersion": [
+        "3.1.9",
+        "4.2.3"
+      ],
+      "residual": null,
+      "resolvedInLockfile": true
+    }
+  ],
+  "productionBundleEvidence": {
+    "bigintSources": [
+      "../../../node_modules/.pnpm/bigint-buffer@1.1.5/node_modules/bigint-buffer/dist/browser.js"
+    ],
+    "nativeBigintEntryIncluded": false,
+    "streamJsonIncluded": false,
+    "testToolingIncluded": false,
+    "buildGuard": "apps/server/scripts/bundle.mjs asserts pure-JS converter present and native converter absent; native build remains disallowed in pnpm-workspace.yaml."
+  },
+  "compatibilityNotes": [
+    "Pump SDK 4.1.0, backend Solana web3 1.99.0, frontend Solana web3 1.98.4 and frontend Vite 7.3.7 remain unchanged.",
+    "Three existing tests re-wrapped mock spies. Vitest 4 reuses spies, so those wrappers now capture getMockImplementation() to prevent recursion; no production recovery code or assertions were weakened.",
+    "Existing optional ws@7.5.13 peer mismatch (utf-8-validate ^5 versus installed 6) predates this update. Native accelerators stay disabled/external and pure-JS fallback remains available.",
+    "Legacy apps/web/package-lock.json is preserved and refreshed, with the same Jayson override for npm metadata. Production/build source of truth remains root pnpm-lock.yaml."
+  ],
+  "pinataCredentialRotation": {
+    "status": "completed as confirmed by Pikoo",
+    "independentlyReadOrChangedCredentials": false,
+    "confirmationDate": "2026-10-24"
+  },
+  "validation": {
+    "status": "passed across all workspace suites and the isolated pre-migrated persistence suite",
+    "unitAndIntegrationTests": {
+      "passed": 709,
+      "skipped": 4,
+      "filesPassed": 126,
+      "workspaces": {
+        "web": {
+          "files": 69,
+          "passed": 286
+        },
+        "shared": {
+          "files": 5,
+          "passed": 34
+        },
+        "worldSpec": {
+          "files": 1,
+          "passed": 7
+        },
+        "server": {
+          "files": 51,
+          "passed": 382,
+          "skipped": 4
+        }
+      },
+      "skipReason": "Four existing deferred TOKEN/USDC launch tests remain disabled; current supported pairing is TOKEN/SOL."
+    },
+    "browserTests": {
+      "passed": 11,
+      "config": "apps/web/playwright.phase2-security.config.ts (local Chrome override only)",
+      "coverage": [
+        "desktop/tablet/folded/unfolded Developer Buy SOL input, nine decimals and 3.5% cap",
+        "real Ed25519 disposable-wallet authentication and Phantom-style transaction approval",
+        "normal random mint, legacy offline fallback and automatic server mint co-signing",
+        "wallet rejection and exact transaction-message/signature verification",
+        "expired blockhash review/refresh, same-mint preservation and new wallet approval",
+        "interrupted submission, durable recovery and duplicate submission prevention"
+      ],
+      "externalRpcOrPinataCalls": "mocked only; no real network transaction or upload"
+    },
+    "typecheck": [
+      "pnpm typecheck: all four workspace packages passed",
+      "backend rechecked after Vitest fixture adaptations: passed"
+    ],
+    "lint": {
+      "root": "passed",
+      "web": "passed with two pre-existing LaunchWorkspace.tsx cleanup-ref warnings"
+    },
+    "builds": {
+      "sharedWorldServerTypeScript": "passed",
+      "productionServerBundle": "passed; existing deploy.test.ts additionally starts the bundle without root node_modules and checks readiness/shutdown",
+      "frontend": "passed",
+      "hostedConfiguration": "validated with VITE_DATA_MODE=api and official production API/WSS public URLs",
+      "warnings": "Existing Zod PURE-annotation and Vite bundle-size warnings only"
+    },
+    "dependencyInstall": "pnpm install --frozen-lockfile --ignore-scripts passed",
+    "initialRunFindings": [
+      "Vitest 4 reuses existing spies; two recovery tests recursively wrapped their own spy. Capturing getMockImplementation() fixes the test wrappers without changing recovery code or assertions. The same pattern was corrected in a disabled legacy USDC test.",
+      "The signed-receipt PostgreSQL suite requires a pre-migrated schema, while other suites deliberately reset it. All 50 other backend files were rerun successfully; existing migrations were then applied only to the fresh private database and the guarded persistence file passed separately."
+    ],
+    "databaseIsolation": {
+      "engine": "PostgreSQL 16",
+      "cluster": "fresh private /tmp cluster, Unix socket permissions 0700, TCP disabled",
+      "existingLocalOrProductionDatabasesTouched": false,
+      "migrations": "Existing 001–005 only, applied to new disposable test databases",
+      "signedRecovery": "verified across an actual child process restart; exact payload and wallet isolation preserved",
+      "temporaryClusterStopped": true
+    },
+    "physicalWalletAcceptance": "Not repeated; physical mobile on-chain acceptance remains deferred as previously accepted."
+  },
+  "restrictionsPreserved": {
+    "productionDeploymentPerformed": false,
+    "productionDatabaseMigrationsPerformed": false,
+    "productionConfigurationChanged": false,
+    "walletOrTreasuryCredentialsChanged": false,
+    "financialLogicChanged": false,
+    "publicLaunchPermissionsChanged": false,
+    "treasuryPayoutsRemainDisabled": true,
+    "mainnetOrDevnetRpcBroadcasts": false,
+    "productionWalletSigning": false,
+    "disposableOfflineSignaturesTested": true
+  },
+  "nextActions": [
+    "Obtain separate approval before deploying the tested dependency updates. Current production has not received these changes.",
+    "Monitor bigint-buffer / Solana buffer-layout-utils for a genuine patched upstream release; retain the forced pure-JS build guard until then.",
+    "This review is not an independent penetration test or a guarantee against unknown vulnerabilities."
+  ],
+  "sourceReferences": [
+    "https://github.com/advisories/GHSA-3gc7-fjrx-p6mg",
+    "https://registry.npmjs.org/bigint-buffer",
+    "https://registry.npmjs.org/jayson/5.0.0",
+    "https://registry.npmjs.org/toml/5.0.1",
+    "https://registry.npmjs.org/vitest/4.1.12",
+    "https://github.com/advisories/GHSA-82fw-gwwq-j7x9"
+  ],
+  "remainingRisks": [
+    "bigint-buffer 1.1.5 remains an unpatched upstream package and a high audit finding. The native-overflow implementation is absent from the guarded production bundle; native builds remain disabled. This mitigation is not an upstream patch or a claim of zero risk.",
+    "Jayson and TOML security overrides exceed their parents original semver ranges. Used APIs, signatures, instruction bytes, uploads and recovery pass regression checks, but upstream vendor certification is not claimed; review/remove overrides when parent dependencies adopt fixed versions.",
+    "No production deployment was performed. Live production does not receive the fixes or stronger bundle mitigation until separately approved.",
+    "NPM advisory/source reachability review is not an independent penetration test, container-OS CVE scan or physical-wallet acceptance test."
+  ]
+}

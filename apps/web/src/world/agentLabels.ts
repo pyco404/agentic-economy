@@ -1,14 +1,12 @@
 import * as THREE from "three";
 import { agentIdentity, type IdentityAgent, type AuthoritativeIdentity } from "../api/agentIdentity";
 
-export const AGENT_LABELS = { farZoom: 1.2, closeZoom: 3.6,
-  farLimit: 6, mediumLimit: 32, closeLimit: 160, interval: 1 / 30,
-  headHeight: 1.7, occlusionHeight: 1.12, gap: 6, estimatedCharacterWidth: 6.2 } as const;
+export const AGENT_LABELS = { interval: 1 / 30, headHeight: 1.7, bodyRadius: 1, gap: 6, estimatedCharacterWidth: 6.2 } as const;
 export interface LabelAgent { id: string; name: string; ownerWallet?: string | null;
   identity?: AuthoritativeIdentity; displayName?: string; demoName?: boolean; x: number; z: number; elevation?: number; state: string;
   selected?: boolean; hovered?: boolean; important?: boolean; activity?: string; visualOnly?: boolean; }
 export interface LabelExclusion { left: number; top: number; width: number; height: number }
-export interface LabelCandidate extends LabelAgent { screenX: number; screenY: number; labelName?: string }
+export interface LabelCandidate extends LabelAgent { screenX: number; screenY: number; labelName?: string; screenBounds?: LabelExclusion }
 export const agentLabelName = (agent: Pick<LabelAgent, "id" | "name" | "ownerWallet" | "demoName" | "identity" | "displayName">) => agentIdentity(agent).primary;
 export const fullAgentIdentity = (a: LabelAgent) => {
   const i = agentIdentity(a), wallet = 'observedWallet' in i ? i.observedWallet : i.owner;
@@ -32,84 +30,86 @@ export function uniqueAgentLabelNames(agents: IdentityAgent[], remembered = new 
   }
   return remembered;
 }
-const relevance = (a: LabelCandidate) => (a.hovered ? 2000 : 0) + (a.selected ? 1000 : 0) +
-  (a.important ? 100 : 0) + (['working', 'interacting', 'delivering'].includes(a.state) ? 10 : 0);
 const intersects = (a: LabelExclusion, b: LabelExclusion) => a.left < b.left + b.width + AGENT_LABELS.gap && a.left + a.width + AGENT_LABELS.gap > b.left && a.top < b.top + b.height + 3 && a.top + a.height + 3 > b.top;
+export interface LabelOffset { dx: number; dy: number }
 
-/** Screen-space packing with small anchored offsets; close zoom is limited by readable space,
- * rather than an arbitrary 48-agent ceiling. Hover/selection always outrank routine labels. */
-export function chooseAgentLabels(agents: LabelCandidate[], zoom: number, width: number, height: number, blocked: readonly LabelExclusion[] = []) {
-  const close = zoom >= AGENT_LABELS.closeZoom;
-  const limit = Math.min(zoom < AGENT_LABELS.farZoom ? AGENT_LABELS.farLimit : close ? AGENT_LABELS.closeLimit : AGENT_LABELS.mediumLimit,
-    Math.max(2, Math.floor(width * height / (close ? 3200 : 12000))));
-  const eligible = [...agents].sort((a, b) => relevance(b) - relevance(a) ||
-    Math.hypot(a.screenX - width / 2, a.screenY - height / 2) - Math.hypot(b.screenX - width / 2, b.screenY - height / 2) || a.id.localeCompare(b.id));
+/** Always show every rendered on-screen identity. Choose a small offset once, then retain it
+ * across camera/motion/priority changes. Crowding may overlap labels, never remove them. */
+export function chooseAgentLabels(agents: LabelCandidate[], width: number, height: number,
+  blocked: readonly LabelExclusion[] = [], remembered = new Map<string, LabelOffset>()) {
+  // Spatial buckets keep initial crowd placement local rather than comparing every pair.
+  const grid = new Map<string, LabelExclusion[]>(), cell = 96;
+  const keys = (box: LabelExclusion) => {
+    const result: string[] = [];
+    for (let x = Math.floor((box.left - AGENT_LABELS.gap) / cell); x <= Math.floor((box.left + box.width + AGENT_LABELS.gap) / cell); x++)
+      for (let y = Math.floor((box.top - 3) / cell); y <= Math.floor((box.top + box.height + 3) / cell); y++) result.push(`${x}:${y}`);
+    return result;
+  };
+  const occupy = (box: LabelExclusion) => { for (const key of keys(box)) { const bucket = grid.get(key) ?? []; bucket.push(box); grid.set(key, bucket); } };
+  blocked.forEach(occupy);
   const placed: (LabelCandidate & { width: number; height: number; labelX: number; labelY: number })[] = [];
-  const occupied: LabelExclusion[] = [...blocked];
-  for (const agent of eligible) {
-    const focused = !!(agent.selected || agent.hovered);
-    if (placed.length >= limit && !focused) continue;
-    if (agent.screenX < 0 || agent.screenX > width || agent.screenY < 0 || agent.screenY > height) continue;
-    const labelWidth = Math.min(width - 16, focused ? 300 : 240, (agent.labelName ?? agentLabelName(agent)).length * AGENT_LABELS.estimatedCharacterWidth + (focused ? 180 : 14));
-    const labelHeight = focused ? 76 : Math.max(20, Math.ceil((agent.labelName ?? agentLabelName(agent)).length * AGENT_LABELS.estimatedCharacterWidth / Math.max(1, labelWidth - 12)) * 14 + 4);
-    const offsets = focused ? [[0, 0], [0, 92], [-150, 0], [150, 0], [-150, 92], [150, 92], [0, -92]] : close ? [[0, 0], [0, -24], [-36, -24], [36, -24], [0, -48], [-60, -48], [60, -48]] : [[0, 0]];
-    for (const [dx, dy] of offsets) {
-      const x = Math.max(labelWidth / 2 + 6, Math.min(width - labelWidth / 2 - 6, agent.screenX + dx!));
-      const y = focused ? Math.max(labelHeight + 4, Math.min(height - 12, agent.screenY + dy!)) : agent.screenY + dy!;
-      if (y < labelHeight + 4 || y > height - 12) continue;
-      const box = { left: x - labelWidth / 2, top: y - labelHeight, width: labelWidth, height: labelHeight };
-      if (occupied.some(other => intersects(box, other))) continue;
-      placed.push({ ...agent, width: labelWidth, height: labelHeight, labelX: x, labelY: y }); occupied.push(box); break;
+  for (const agent of [...agents].sort((a, b) => a.id.localeCompare(b.id))) {
+    const body = agent.screenBounds ?? { left: agent.screenX, top: agent.screenY, width: 0, height: 0 };
+    if (body.left + body.width < 0 || body.left > width || body.top + body.height < 0 || body.top > height) continue;
+    const focused = !!(agent.selected || agent.hovered), name = agent.labelName ?? agentLabelName(agent);
+    const labelWidth = Math.max(1, Math.min(width - 12, focused ? 300 : 240, name.length * AGENT_LABELS.estimatedCharacterWidth + (focused ? 180 : 14)));
+    const labelHeight = focused ? 76 : Math.max(20, Math.ceil(name.length * AGENT_LABELS.estimatedCharacterWidth / Math.max(1, labelWidth - 12)) * 14 + 4);
+    const position = ({ dx, dy }: LabelOffset) => {
+      const x = Math.max(labelWidth / 2 + 6, Math.min(width - labelWidth / 2 - 6, agent.screenX + dx));
+      const y = Math.max(labelHeight + 4, Math.min(height - 4, agent.screenY + dy));
+      return { left: x - labelWidth / 2, top: y - labelHeight, width: labelWidth, height: labelHeight };
+    };
+    let offset = remembered.get(agent.id);
+    if (!offset) {
+      const choices = [{ dx: 0, dy: 0 }, { dx: 0, dy: -14 }, { dx: -24, dy: -28 }, { dx: 24, dy: -28 }, { dx: 0, dy: -42 }];
+      offset = choices.find(candidate => { const box = position(candidate); return !keys(box).some(key => grid.get(key)?.some(other => intersects(box, other))); })
+        ?? choices[placed.length % choices.length]!;
+      remembered.set(agent.id, offset);
     }
+    const box = position(offset); occupy(box);
+    placed.push({ ...agent, width: labelWidth, height: labelHeight, labelX: box.left + box.width / 2, labelY: box.top + box.height });
   }
   return placed;
 }
 
 export function createAgentLabels(host: HTMLElement, select: (id: string) => void,
-  hover: (id: string | null) => void, occluded: (point: THREE.Vector3, camera: THREE.OrthographicCamera) => boolean = () => false) {
+  hover: (id: string | null) => void) {
   const layer = document.createElement("div"); layer.className = "agent-world-labels"; layer.setAttribute("aria-label", "Agents in view"); host.appendChild(layer);
   const nodes = new Map<string, HTMLButtonElement>(), names = new Map<string, string>();
-  const cache = new Map<string, { at: number; x: number; z: number; camera: string; hidden: boolean }>();
+  const offsets = new Map<string, LabelOffset>();
+  let roster: Set<string> | undefined;
   const point = new THREE.Vector3(); let last = -Infinity, lastLayout = -Infinity, lastReport = -Infinity, ui: LabelExclusion[] = [];
   return {
-    identities(agents: IdentityAgent[]) { uniqueAgentLabelNames(agents, names); },
+    identities(agents: IdentityAgent[]) { uniqueAgentLabelNames(agents, names); roster = new Set(agents.map(a => a.id)); },
     update(seconds: number, camera: THREE.OrthographicCamera, agents: LabelAgent[], width: number, height: number, blocked: readonly LabelExclusion[] = []) {
       if (seconds - last < AGENT_LABELS.interval) return; last = seconds;
       uniqueAgentLabelNames(agents, names);
       if (seconds - lastLayout > .2) {
         const hostBox = host.getBoundingClientRect();
-        ui = [...(host.closest('.app')?.querySelectorAll('.world-header, .activity-panel, .world-bottom, .camera-tools, .world-view-toggle, .selection-panel') ?? [])]
+        ui = [...(host.closest('.app')?.querySelectorAll('.world-header, .activity-panel, .world-bottom, .camera-tools, .world-view-toggle, .selection-panel, .official-world-address') ?? [])]
           .filter(node => node instanceof HTMLElement && node.offsetWidth > 0).map(node => { const r = node.getBoundingClientRect(); return { left: r.left - hostBox.left, top: r.top - hostBox.top, width: r.width, height: r.height }; });
         lastLayout = seconds;
       }
-      // Orthographic occlusion depends on view direction, not pan or zoom. Reuse those queries
-      // while following a moving agent instead of starving names outside the first query batch.
-      const cameraKey = camera.quaternion.toArray().map(n => n.toFixed(3)).join(',');
-      let queries = 0;
-      const candidates = agents.map(agent => {
+      const radiusX = AGENT_LABELS.bodyRadius * camera.zoom * width / (camera.right - camera.left);
+      const radiusY = AGENT_LABELS.bodyRadius * camera.zoom * height / (camera.top - camera.bottom);
+      const candidates = agents.flatMap(agent => {
+        point.set(agent.x, .6 + (agent.elevation ?? 0), agent.z).project(camera);
+        const depthRadius = 2 * AGENT_LABELS.bodyRadius / (camera.far - camera.near);
+        if (point.z < -1 - depthRadius || point.z > 1 + depthRadius) return [];
+        const screenBounds = { left: (point.x + 1) * width / 2 - radiusX, top: (1 - point.y) * height / 2 - radiusY, width: 2 * radiusX, height: 2 * radiusY };
         point.set(agent.x, AGENT_LABELS.headHeight + (agent.elevation ?? 0), agent.z).project(camera);
-        return { ...agent, labelName: names.get(agent.id), screenX: (point.x + 1) * width / 2, screenY: (1 - point.y) * height / 2 - 9, depth: point.z };
-      }).filter(a => a.depth >= -1 && a.depth <= 1 && a.screenX >= 0 && a.screenX <= width && a.screenY >= 0 && a.screenY <= height)
-        .sort((a, b) => relevance(b) - relevance(a) || Math.hypot(a.screenX - width / 2, a.screenY - height / 2) - Math.hypot(b.screenX - width / 2, b.screenY - height / 2))
-        .filter(a => {
-          let saved = cache.get(a.id);
-          if (!saved || seconds - saved.at > .25 || saved.camera !== cameraKey || Math.hypot(a.x - saved.x, a.z - saved.z) > .3) {
-            if (queries >= 16 && !a.selected && !a.hovered) return false;
-            point.set(a.x, AGENT_LABELS.occlusionHeight + (a.elevation ?? 0), a.z);
-            saved = { at: seconds, x: a.x, z: a.z, camera: cameraKey, hidden: occluded(point, camera) }; cache.set(a.id, saved); queries++;
-          }
-          return !saved.hidden;
-        });
+        return [{ ...agent, labelName: names.get(agent.id), screenX: (point.x + 1) * width / 2, screenY: (1 - point.y) * height / 2 - 9, screenBounds }];
+      });
       if (import.meta.env.DEV && seconds - lastReport > .25) {
         host.dataset.agentLabelPositions = JSON.stringify(candidates.map(a => {
           point.set(a.x, .73 + (a.elevation ?? 0), a.z).project(camera);
           return { id: a.id, x: (point.x + 1) * width / 2, y: (1 - point.y) * height / 2 };
         })); lastReport = seconds;
       }
-      const shown = chooseAgentLabels(candidates, camera.zoom, width, height, [...ui, ...blocked]);
-      const ids = new Set(shown.map(a => a.id)), active = new Set(agents.map(a => a.id));
-      for (const [id, node] of nodes) { node.hidden = !ids.has(id); if (!active.has(id)) { node.remove(); nodes.delete(id); } }
-      for (const id of cache.keys()) if (!active.has(id)) cache.delete(id);
+      const shown = chooseAgentLabels(candidates, width, height, [...ui, ...blocked], offsets);
+      const ids = new Set(shown.map(a => a.id)), active = roster ?? new Set(agents.map(a => a.id));
+      for (const [id, node] of nodes) { if (node.hidden === ids.has(id)) node.hidden = !ids.has(id); if (!active.has(id)) { node.remove(); nodes.delete(id); } }
+      for (const id of offsets.keys()) if (!active.has(id)) offsets.delete(id);
       for (const a of shown) {
         let node = nodes.get(a.id);
         if (!node) {
@@ -118,21 +118,24 @@ export function createAgentLabels(host: HTMLElement, select: (id: string) => voi
           node.addEventListener('pointerleave', e => { if (!(e.relatedTarget instanceof HTMLCanvasElement)) hover(null); }); node.addEventListener('focus', () => hover(a.id)); node.addEventListener('blur', () => hover(null));
           layer.appendChild(node); nodes.set(a.id, node);
         }
-        node.hidden = false; const identity = agentIdentity(a), focused = !!(a.selected || a.hovered);
+        if (node.hidden) node.hidden = false;
+        const identity = agentIdentity(a), focused = !!(a.selected || a.hovered);
         const wallet = 'observedWallet' in identity ? identity.observedWallet : identity.owner;
-        node.firstElementChild!.textContent = a.labelName!;
-        node.lastElementChild!.textContent = [wallet, a.id].filter(Boolean).join(' · ');
-        node.setAttribute('aria-label', `Inspect agent ${fullAgentIdentity(a)}`); node.title = fullAgentIdentity(a);
-        node.dataset.agentId = a.id; node.dataset.displayName = a.labelName; node.dataset.state = a.state;
-        node.dataset.selected = String(!!a.selected); node.dataset.focused = String(focused);
+        // Most identity text is immutable. Avoid rebuilding text nodes/attributes at 30 Hz.
+        if (node.firstElementChild!.textContent !== a.labelName) node.firstElementChild!.textContent = a.labelName!;
+        const secondary = [wallet, a.id].filter(Boolean).join(' · '), title = fullAgentIdentity(a);
+        if (node.lastElementChild!.textContent !== secondary) node.lastElementChild!.textContent = secondary;
+        if (node.title !== title) { node.setAttribute('aria-label', `Inspect agent ${title}`); node.title = title; }
+        for (const [key, value] of Object.entries({ agentId: a.id, displayName: a.labelName!, state: a.state,
+          selected: String(!!a.selected), focused: String(focused) })) if (node.dataset[key] !== value) node.dataset[key] = value;
         node.dataset.anchorX = a.screenX.toFixed(2); node.dataset.anchorY = a.screenY.toFixed(2);
         node.style.width = focused ? `${a.width}px` : ''; node.style.maxWidth = `${a.width}px`;
         node.style.transform = `translate3d(${a.labelX.toFixed(2)}px,${a.labelY.toFixed(2)}px,0) translate(-50%,-100%)`;
         node.style.setProperty('--agent-label-stem', `${Math.hypot(a.screenX - a.labelX, a.screenY - a.labelY)}px`);
         node.style.setProperty('--agent-label-stem-angle', `${-Math.atan2(a.screenX - a.labelX, a.screenY - a.labelY)}rad`);
       }
-      host.dataset.agentLabels = String(shown.length); host.dataset.agentOcclusionQueries = String(queries);
+      host.dataset.agentLabels = String(shown.length); host.dataset.agentOcclusionQueries = '0';
     },
-    dispose() { layer.remove(); nodes.clear(); cache.clear(); names.clear(); },
+    dispose() { layer.remove(); nodes.clear(); offsets.clear(); names.clear(); },
   };
 }

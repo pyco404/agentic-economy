@@ -13,16 +13,21 @@ const out = here("../dist-bundle/");
 const require=createRequire(import.meta.url);
 const sharpEntry=require.resolve("sharp"),sharpDir=dirname(dirname(sharpEntry));
 await rm(out, { recursive: true, force: true });
-await build({
+const result = await build({
   entryPoints: { main: here("../src/main.ts"), migrate: here("../src/store/migrate.ts") },
   outdir: out,
   outExtension: { ".js": ".mjs" },
   bundle: true,
+  metafile: true,
   platform: "node",
   target: "node22",
   format: "esm",
   conditions: ["@agentic-economy/source"],
-  plugins: [{name: "native-image-decoder",setup(builder){
+  // The upstream native bigint converter has no published security fix. Force the
+  // API-compatible pure-JS entry regardless of build cache/native-addon availability.
+  plugins: [{name: "pure-js-bigint",setup(builder){
+    builder.onResolve({filter:/^bigint-buffer$/},args=>({path:require.resolve("bigint-buffer/dist/browser.js",{paths:[args.resolveDir]})}));
+  }},{name: "native-image-decoder",setup(builder){
     builder.onResolve({filter:/^sharp$/},()=>({path:`./vendor/sharp/${relative(sharpDir,sharpEntry)}`,external:true}));
   }}],
   // Optional native accelerators that `ws` / `pg` probe for with try/require.
@@ -42,6 +47,10 @@ await build({
   legalComments: "linked",
   logLevel: "warning",
 });
+const inputs=Object.keys(result.metafile.inputs);
+if(!inputs.some(p=>p.includes("bigint-buffer/")&&p.endsWith("/dist/browser.js")) ||
+   inputs.some(p=>p.includes("bigint-buffer/")&&p.endsWith("/dist/node.js")))
+  throw new Error("Production bundle must include only the pure-JS bigint converter");
 // Sharp's audited decoder needs its native library. Copy only the dependency
 // closure installed for this build platform; retain licenses and package metadata.
 // The image remains self-contained, without a root node_modules or package manager.

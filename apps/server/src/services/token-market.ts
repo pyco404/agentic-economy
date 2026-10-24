@@ -9,6 +9,7 @@ import type {ChainGateway} from '../chain/types.js';
 import {verifyLaunch} from '../chain/verify.js';
 import {sharingConfigPda} from '../chain/pump.js';
 import {AppError} from '../util/errors.js';
+interface IndexOptions{indexEnabled:boolean;refreshMs:number;pageSize:number;signaturePageSize?:number;pollMs?:number;timeBudgetMs?:number}
 const USDC='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const MAINNET='5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
 const n=z.number().finite().nonnegative().nullish();
@@ -19,10 +20,22 @@ const USDC_MINTS:readonly string[]=Object.values(USDC_QUOTE_MINTS);
 export class TokenMarketService{
  private cache=new Map<string,{at:number;value:Snapshot}>();private tradeCache=new Map<string,{at:number;value:Trades}>();private tradeJobs=new Map<string,Promise<Trades>>();private histories=new Map<string,{at:number;value:History}>();private jobs=new Map<string,Promise<Snapshot>>();private historyJobs=new Map<string,Promise<History>>();
  private timer:NodeJS.Timeout|null=null;private background:Promise<void>|null=null;private indexJobs=new Map<string,Promise<void>>();private usd:SolUsdReference;
+ private stopping=false;
+ private venues=new Map<string,string[]>();private indexOffset={live:0,history:0};private indexTimer:NodeJS.Timeout|null=null;private refreshErrors=0;
  private budget={dex:[] as number[],gecko:[] as number[]};private active=0;
- constructor(private store:Store,private chain:ChainGateway,private network:Snapshot['network'],private fetcher:typeof fetch=fetch,private now=()=>Date.now(),private journal=new MarketJournal(),private options={indexEnabled:true,refreshMs:60000,pageSize:8},private report:(message:string)=>void=()=>{}) {this.usd=new SolUsdReference(fetcher,now);}
- start(){if(this.timer||this.network!=='mainnet-beta')return;const tick=()=>{if(this.background)return;this.background=(async()=>{for(const c of await this.store.allCommunities()){try{await this.snapshot(c.mint);await this.indexJobs.get(c.mint);}catch{/* One token must not block the rest. */}}})().catch(()=>{this.report('Market refresh temporarily unavailable');}).finally(()=>{this.background=null;});};tick();this.timer=setInterval(tick,this.options.refreshMs);this.timer.unref();}
- async stop(){if(this.timer)clearInterval(this.timer);this.timer=null;await this.background;await Promise.allSettled(this.indexJobs.values());}
+ constructor(private store:Store,private chain:ChainGateway,private network:Snapshot['network'],private fetcher:typeof fetch=fetch,private now=()=>Date.now(),private journal=new MarketJournal(),private options:IndexOptions={indexEnabled:true,refreshMs:60000,pageSize:8},private report:(message:string)=>void=()=>{}) {this.usd=new SolUsdReference(fetcher,now);}
+ start(){if(this.timer||this.network!=='mainnet-beta')return;this.stopping=false;const tick=()=>{if(this.background)return;this.background=(async()=>{for(const c of await this.store.allCommunities()){if(this.stopping)break;try{await this.snapshot(c.mint);}catch{/* One token must not block the rest. */}}})().catch(()=>{this.report('Market refresh temporarily unavailable');}).finally(()=>{this.background=null;});};tick();this.timer=setInterval(tick,this.options.refreshMs);this.timer.unref();this.indexTimer=setInterval(()=>{void this.indexOnce('live');void this.indexOnce('history');},this.options.pollMs??5000);this.indexTimer.unref();}
+ telemetry(){return{...this.journal.telemetry(),refreshErrors:this.refreshErrors,snapshotAgeMs:Math.max(0,...[...this.cache.values()].map(c=>this.now()-c.at)),activeJobs:this.indexJobs.size};}
+ /** A fair per-mint turn for each lane. Backfill never owns the live lane's job slot. */
+ indexOnce(phase:'live'|'history'):Promise<void>{
+  if(this.stopping||!this.options.indexEnabled||!this.chain.getMarketTradePage||!this.venues.size)return Promise.resolve();
+  const pending=this.indexJobs.get(phase);if(pending)return pending;
+  const keys=[...this.venues.keys()],mint=keys[this.indexOffset[phase]++%keys.length]!,addresses=this.venues.get(mint)!;
+  const task=this.journal.sync(this.network,mint,addresses,(address,before,until,lane)=>this.chain.getMarketTradePage!(mint,address,before,until,this.options.signaturePageSize??200,{transactionLimit:this.options.pageSize,timeBudgetMs:this.options.timeBudgetMs??15000,lane}),phase)
+   .catch(()=>{this.report(`Market ${phase} page unavailable; committed prefixes retained for retry`);}).finally(()=>this.indexJobs.delete(phase));
+  this.indexJobs.set(phase,task);return task;
+ }
+ async stop(){this.stopping=true;if(this.timer)clearInterval(this.timer);this.timer=null;if(this.indexTimer)clearInterval(this.indexTimer);this.indexTimer=null;await this.background;await Promise.allSettled(this.indexJobs.values());}
  private async json(url:string,kind:'dex'|'gecko'){
   const now=this.now();this.budget[kind]=this.budget[kind].filter(t=>now-t<60000);
   if(this.active>=4||this.budget[kind].length>=(kind==='dex'?240:25))throw new Error('Market provider budget reached');
@@ -31,7 +44,7 @@ export class TokenMarketService{
  async snapshot(mint:string):Promise<Snapshot>{
   const cached=this.cache.get(mint);if(cached&&this.now()-cached.at<30000)return cached.value;
   const running=this.jobs.get(mint);if(running)return running;
-  const job=this.load(mint).then(value=>{if(this.cache.size>=500)this.cache.delete(this.cache.keys().next().value!);this.cache.set(mint,{at:this.now(),value});return value;}).catch(e=>{if(e instanceof AppError)throw e;return cached&&this.now()-cached.at<90000?{...cached.value,status:'stale' as const,reason:'Refresh unavailable. Excluded from market rankings.'}:unavailableMarket(mint,this.network,'Market data temporarily unavailable.');}).finally(()=>this.jobs.delete(mint));this.jobs.set(mint,job);return job;
+  const job=this.load(mint).then(value=>{if(this.cache.size>=500)this.cache.delete(this.cache.keys().next().value!);this.cache.set(mint,{at:this.now(),value});return value;}).catch(e=>{this.refreshErrors++;if(e instanceof AppError)throw e;return cached&&this.now()-cached.at<90000?{...cached.value,status:'stale' as const,reason:'Refresh unavailable. Excluded from market rankings.'}:unavailableMarket(mint,this.network,'Market data temporarily unavailable.');}).finally(()=>this.jobs.delete(mint));this.jobs.set(mint,job);return job;
  }
  private async load(mint:string):Promise<Snapshot>{
   const c=(await this.store.allCommunities()).find(c=>c.mint===mint),l=c?await this.store.getLaunch(c.launchId):null;
@@ -61,9 +74,8 @@ export class TokenMarketService{
     usdReference:usd,valuationBasis:'Spot price × current minted supply; FDV uses the launch supply.',liquidityBasis:state.venue==='pumpswap'?'Actual vault TVL; virtual reserves excluded.':'Real SOL backing on the bonding curve; virtual reserves and unsold tokens excluded.',
     metricSources:{priceSol:'solana_rpc',priceUsd:usd?'solana_rpc + coinbase':'unavailable',marketCapUsd:usd?'solana_rpc + coinbase':'unavailable',fdvUsd:usd?'solana_rpc + coinbase':'unavailable',liquidityUsd:usd?'solana_rpc + coinbase':'unavailable',holders:blank.holderIndex?'helius_das':'solana_rpc',graduationProgress:'solana_rpc'}});
    const addresses=[bondingCurvePda(mint),...(state.venue==='pumpswap'?[state.address]:[])];
-   if(this.options.indexEnabled&&this.chain.getMarketTradePage&&this.indexJobs.size===0){
-    const task=this.journal.sync(this.network,mint,addresses,(address,before,until)=>this.chain.getMarketTradePage!(mint,address,before,until,this.options.pageSize)).catch(()=>{this.report('Market history page unavailable; cursor retained for retry');}).finally(()=>this.indexJobs.delete(mint));this.indexJobs.set(mint,task);
-   }
+   if(this.venues.size>=500&&!this.venues.has(mint))this.venues.delete(this.venues.keys().next().value!);
+   this.venues.set(mint,addresses);void this.indexOnce('live');
    const activity=await this.journal.activity(this.network,mint,addresses).catch(()=>null);
    if(activity){blank.activityCoverage={complete:activity.complete,durable:activity.durable,through:activity.through,reason:activity.reason};
     if(activity.complete){Object.assign(blank,{volume24hSol:activity.volumeSol,volume24hUsd:usd&&activity.volumeSol!==null?activity.volumeSol*usd.price:null,buys24h:activity.buys,sells24h:activity.sells,transactions24h:activity.transactions,sourceAsOf:activity.through,volumeBasis:'Finalized trade notional, fees excluded. USD values use the current SOL/USD reference.'});Object.assign(blank.metricSources!,{volume24hUsd:usd?'solana_rpc + coinbase':'unavailable',buys24h:'solana_rpc',sells24h:'solana_rpc',transactions24h:'solana_rpc'});}

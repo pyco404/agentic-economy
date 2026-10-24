@@ -1,3 +1,5 @@
+import {marketTransaction} from './market-transaction.js';
+import type {MarketReadOptions} from './market-types.js';
 import {MarketReader} from './market-reader.js';
 import { quoteTokenBudget } from './dev-buy-budget.js';
 import { solFromLamports } from '@agentic-economy/shared';
@@ -20,17 +22,33 @@ export class SolanaRpcChain implements ChainGateway {
   readonly source = "solana_rpc" as const;
   private readonly conn: Connection;
 
-  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet";mainnetApproved?:boolean}, private readOptions?: Pick<ConnectionConfig,"fetch">) {
-    this.conn = new Connection(rpcUrl, {commitment:"confirmed", ...readOptions});
+  constructor(rpcUrl: string, private launchOptions?:{enabled:boolean;lookupTable:string|null;localGenesisHash:string|null;cluster:"devnet"|"mainnet-beta"|"localnet";mainnetApproved?:boolean}, private readOptions?: Pick<ConnectionConfig,"fetch"> & {managedReads?:boolean;fetchForLane?:(lane:'live'|'history')=>typeof fetch}) {
+    this.conn = new Connection(rpcUrl, {commitment:"confirmed",...(readOptions?.fetch?{fetch:readOptions.fetch}:{}),...(readOptions?.managedReads?{disableRetryOnRateLimit:true}:{})});
   }
 
   getMarketState(mint:string){return new MarketReader(this.conn).state(mint);}
-  getMarketTradePage(mint:string,address:string,before?:string,until?:string,limit?:number){return new MarketReader(this.conn,this.readMarketTransaction).page(mint,address,before,until,limit);}
+  private marketTransactions=new Map<string,{at:number;value:unknown;bytes:number}>();
+  private marketReads=new Map<string,Promise<unknown>>();private marketBytes=0;
+  getMarketTradePage(mint:string,address:string,before?:string,until?:string,limit?:number,options:MarketReadOptions={}){
+    const fetcher=this.readOptions?.fetchForLane?.(options.lane??'live')??this.readOptions?.fetch??fetch;
+    const deadline=AbortSignal.timeout(options.timeBudgetMs??15000);
+    const pageFetch:typeof fetch=(input,init)=>fetcher(input,{...init,signal:init?.signal?AbortSignal.any([init.signal,deadline]):deadline});
+    const conn=new Connection(this.conn.rpcEndpoint,{commitment:'finalized',fetch:pageFetch,disableRetryOnRateLimit:!!this.readOptions?.managedReads});
+    return new MarketReader(conn,sig=>this.readMarketTransaction(sig,pageFetch)).page(mint,address,before,until,limit,options);
+  }
   /** Market-only raw JSON reads support legacy/v0/v1 without changing launch message handling. */
-  private readonly readMarketTransaction=async(signature:string):Promise<unknown>=>{
-    const response=await (this.readOptions?.fetch??fetch)(this.conn.rpcEndpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getTransaction',params:[signature,{encoding:'json',maxSupportedTransactionVersion:1,commitment:'finalized'}]}),signal:AbortSignal.timeout(10000)});
-    if(!response.ok)throw Error('Market transaction read unavailable');const text=await response.text();if(text.length>4000000)throw Error('Market transaction response too large');
-    const body=JSON.parse(text);if(body.error||!body.result)throw Error('Finalized market transaction unavailable; cursor retained');return body.result;
+  private readonly readMarketTransaction=async(signature:string,fetcher=this.readOptions?.fetch??fetch):Promise<unknown>=>{
+    const old=this.marketTransactions.get(signature);if(old&&Date.now()-old.at<1800000)return structuredClone(old.value);
+    const pending=this.marketReads.get(signature);if(pending)return structuredClone(await pending);
+    const job=(async()=>{
+      const response=await fetcher(this.conn.rpcEndpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getTransaction',params:[signature,{encoding:'json',maxSupportedTransactionVersion:1,commitment:'finalized'}]}),signal:AbortSignal.timeout(10000)});
+      if(!response.ok)throw Error('Market transaction read unavailable');const text=await response.text();if(text.length>4000000)throw Error('Market transaction response too large');
+      const body=JSON.parse(text);if(body.error||!body.result)throw Error('Finalized market transaction unavailable; cursor retained');
+      marketTransaction(body.result,signature);
+      if(old){this.marketBytes-=old.bytes;this.marketTransactions.delete(signature);}
+      if(text.length<=2000000){while(this.marketTransactions.size>=128||this.marketBytes+text.length>8000000){const first=this.marketTransactions.keys().next().value;if(!first)break;this.marketBytes-=this.marketTransactions.get(first)!.bytes;this.marketTransactions.delete(first);}this.marketTransactions.set(signature,{at:Date.now(),value:structuredClone(body.result),bytes:text.length});this.marketBytes+=text.length;}
+      return body.result;
+    })().finally(()=>this.marketReads.delete(signature));this.marketReads.set(signature,job);return structuredClone(await job);
   };
   getGenesisHash(){return this.conn.getGenesisHash();}
   async assertLaunchSubmissionAllowed(){

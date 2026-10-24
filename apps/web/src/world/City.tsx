@@ -1,4 +1,3 @@
-import { createAgentOcclusion } from "./agentOcclusion";
 import { createSocialBubbles, type SpeechAgent } from "./socialBubbles";
 import { visibleAgentSubset } from "./agentVisibility";
 import { WorldReadiness, type WorldPhase } from "./worldReadiness";
@@ -396,9 +395,9 @@ export const City = forwardRef<CityHandle, CityProps>(
       const streetPoint = new THREE.Vector2();
       const demoWalkers = createDemoWalkers(pathNetwork, []);
       let hoveredAgentId: string | null = null;
-      const agentOcclusion = createAgentOcclusion();
+      const agentBounds = new THREE.Sphere(new THREE.Vector3(), 1);
       const labels = createAgentLabels(container, (id) => current.current.onAgentSelect(id),
-        (id) => { hoveredAgentId = id; }, (point, camera) => agentOcclusion.blocked(point, camera));
+        (id) => { hoveredAgentId = id; });
       const bubbles = createSocialBubbles(container, (id) => current.current.onAgentSelect(id));
       const pulseGeometry = new THREE.RingGeometry(0.8, 1, 24).rotateX(
         -Math.PI / 2,
@@ -883,8 +882,6 @@ export const City = forwardRef<CityHandle, CityProps>(
         container.dataset.revealVisible = JSON.stringify(reveal.counts);
         container.dataset.revealPending = String(reveal.jobs.length);
         container.dataset.revealSceneryReady = String(sceneryReady);
-        // Prepare static occlusion before the reveal starts; its 2.6-second animation stays uninterrupted.
-        if (sceneryReady && reveal.staticReady) agentOcclusion.rebuild([...chunks.values()].map(c => c.group), `${geometryBuilds}:${chunks.size}`);
         const actorsReady = reveal.actorsVisible && readiness.presented;
         ambient?.setActorsVisible(reveal.ambientVisible && readiness.presented);
         citizens.meshes.forEach((mesh) => { mesh.visible = actorsReady; });
@@ -926,7 +923,14 @@ export const City = forwardRef<CityHandle, CityProps>(
           cargoCount = 0;
         if (performance.now() - lastAgentSelection > 250 || !renderAgents.length) {
           renderAgents = visibleAgentSubset(agentData.filter(a => a.identity?.kind !== "aeco_observed" || !a.paused),
-            a => frustum.containsPoint(new THREE.Vector3(a.x, 1, a.z)),
+            a => {
+              agentBounds.center.set(a.x, 1, a.z); agentBounds.radius = 4;
+              if (p.demo || frustum.intersectsSphere(agentBounds)) return true;
+              const last = agentPositions.get(a.id);
+              if (!last) return false;
+              agentBounds.center.set(last.x, 1, last.y);
+              return frustum.intersectsSphere(agentBounds);
+            },
             { x: controls.target.x, z: controls.target.z }, p.selectedAgentId);
           lastAgentSelection = performance.now();
         }
@@ -1001,12 +1005,9 @@ export const City = forwardRef<CityHandle, CityProps>(
           const carrying = !p.demo && Object.values(a.work?.cargo ?? {}).some(q => (q ?? 0) > 0);
           if (interacting && !p.paused && !motionPreference.matches) pose.phase += dt * 1.8;
           gait.set(a.id, pose);
-          if (
-            !frustum.containsPoint(
-              new THREE.Vector3(position.x, 0.6 + agentElevation, position.y),
-            )
-          )
-            continue;
+          // Keep partially visible bodies at the viewport edge; names use the same bounds.
+          agentBounds.center.set(streetPoint.x, .6 + agentElevation, streetPoint.y); agentBounds.radius = 1;
+          if (!frustum.intersectsSphere(agentBounds)) continue;
           citizens.set(
             count,
             streetPoint.x,
@@ -1047,8 +1048,8 @@ export const City = forwardRef<CityHandle, CityProps>(
           count++;
         }
         citizens.finish(count);
-        const bubbleIds = bubbles.update(t, camera, actorsReady && p.interactive && !p.paused ? labelAgents.filter(a => !a.selected && !a.hovered) : [], container.clientWidth, container.clientHeight, p.tickMs ?? 500);
-        labels.update(t, camera, actorsReady ? labelAgents.filter(a => a.selected || a.hovered || !bubbleIds.has(a.id)) : [], container.clientWidth, container.clientHeight, bubbles.bounds());
+        bubbles.update(t, camera, actorsReady && p.interactive && !p.paused ? labelAgents.filter(a => !a.selected && !a.hovered) : [], container.clientWidth, container.clientHeight, p.tickMs ?? 500);
+        labels.update(t, camera, actorsReady ? labelAgents : [], container.clientWidth, container.clientHeight, bubbles.bounds());
         container.dataset.agentVisualStates = JSON.stringify(labelAgents.reduce<Record<string, number>>((states, agent) => {
           states[agent.state] = (states[agent.state] ?? 0) + 1; return states;
         }, {}));
@@ -1207,7 +1208,7 @@ export const City = forwardRef<CityHandle, CityProps>(
         controls.removeEventListener("start", stopAutomaticFocus);
         container.removeEventListener("city-reveal-review", previewReveal);
         observer.disconnect();
-        labels.dispose(); bubbles.dispose(); agentOcclusion.dispose();
+        labels.dispose(); bubbles.dispose();
         if (ambient) { scene.remove(ambient.group); disposeGroup(ambient.group, shared); }
         window.removeEventListener("resize", resize);
         renderer.domElement.removeEventListener("pointerdown", down);

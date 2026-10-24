@@ -1,6 +1,6 @@
 import { CityActivityInfo } from "./components/CityActivityInfo";
 import { activityCategory, cityPopulation } from "./api/activityPresentation";
-import { activityFocus, interestingActivity, isSocialActivity } from "./api/socialActivity";
+import { activityFocus, cityHighlights, isSocialActivity } from "./api/socialActivity";
 import { OfficialTokenAddress } from "./components/OfficialTokenAddress";
 import { ProjectLinks } from "./components/ProjectLinks";
 import { WalletButton } from "./components/WalletButton";
@@ -685,10 +685,10 @@ export default function App() {
                           </select>
                         </div>
                         <div className="feed">
-                          {data.activities
+                          {(activityFilter === "all" ? cityHighlights(data.activities) : data.activities)
                             .filter(
                               (a) =>
-                                activityFilter === "all" ? interestingActivity(a) : activityFilter === "social" ? isSocialActivity(a) : a.type === activityFilter,
+                                activityFilter === "all" || (activityFilter === "social" ? isSocialActivity(a) : a.type === activityFilter),
                             )
                             .map((a) => (
                               <div className="feed-item" key={a.id} data-event-id={a.id}>

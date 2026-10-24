@@ -27,13 +27,16 @@ test('observe a real assignment, travel, workplace animation and verified receip
  stage('following');
  await page.screenshot({path:'artifacts/agent-work-travel.png'});
  await expect.poll(async()=>{
-  const report=JSON.parse(await city.getAttribute('data-agent-work')??'[]') as {id:string;taskId:string;working:boolean}[];
-  return report.some(a=>a.id===id&&a.taskId===taskId&&a.working);
+  const report=JSON.parse(await city.getAttribute('data-agent-work')??'[]') as {id:string;taskId:string;working:boolean;effect:boolean}[];
+  return report.some(a=>a.id===id&&a.taskId===taskId&&a.working&&a.effect);
  },{timeout:100000,intervals:[250]}).toBe(true);
  stage("working at entrance");
  const working=(await read()).agents.find(a=>a.id===id)!;
  expect(working.work?.task?.id).toBe(taskId);expect(working.state).toBe('working');expect(working.pos).toEqual({x:place.entrance.x+.5,y:place.entrance.y+.5});
- await expect(page.getByTestId('agent-work-description')).toContainText(`Production shift at ${place.name}`);
+ await expect(page.getByTestId('agent-work-description')).toContainText(`Work shift at ${place.name}`);
+ await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+ expect(Number(await city.getAttribute('data-work-pieces'))).toBeGreaterThan(0);
+ expect(Number(await city.getAttribute('data-work-pieces'))).toBeLessThanOrEqual(256);
  await page.screenshot({path:'artifacts/agent-work-working.png'});
  let receipt:ReturnType<typeof ReceiptPage.parse>['items'][number]|undefined;
  await expect.poll(async()=>{
@@ -46,17 +49,36 @@ test('observe a real assignment, travel, workplace animation and verified receip
  await expect(page.getByRole('region',{name:'Agent work evidence'})).toContainText(receipt!.id,{timeout:15000});
  await page.screenshot({path:'artifacts/agent-work-receipt.png'});
  const evidence=test.info().outputPath('authoritative-work-cycle.json');
- await writeFile(evidence,JSON.stringify({id,taskId,destination:place,working,receipt,events},null,2));
+ await writeFile(evidence,JSON.stringify({id,taskId,destination:place,working,receipt,events,
+  renderer:{drawCalls:await city.getAttribute('data-draw-calls'),frameMs:await city.getAttribute('data-frame-ms'),softwareWebGL:true}},null,2));
  await test.info().attach('authoritative-work-cycle.json',{path:evidence,contentType:'application/json'});
  // A manual camera gesture must safely leave Follow mode.
  await expandWorldControls(page); await page.getByRole('button',{name:'Rotate camera'}).click();await expect(page.getByRole('button',{name:'Follow agent',exact:true})).toBeVisible();
+ const canvas=city.locator('canvas').first();await canvas.focus();
+ const before=await city.getAttribute('data-camera');await canvas.press('ArrowRight');
+ await expect.poll(()=>city.getAttribute('data-camera')).not.toBe(before);
 });
-for(const width of [390,768])test(`work discovery and city links remain usable at ${width}px`,async({page})=>{
- test.setTimeout(120000);await page.setViewportSize({width,height:width===390?844:1024});
+for(const width of [390,690,768])test(`work discovery and city links remain usable at ${width}px`,async({page,request})=>{
+ test.setTimeout(240000);await page.setViewportSize({width,height:width===390?844:1024});
  await page.goto('/?source=backend#economy');
  const facilities=page.getByRole('region',{name:'Participating workplaces'});await expect(facilities.getByRole('button',{name:'View in city'}).first()).toBeVisible({timeout:60000});
  await page.getByRole('button',{name:'flour',exact:true}).click();await expect(facilities).toContainText('Mill');
  await page.screenshot({path:`artifacts/agent-work-economy-${width}.png`});
  await facilities.getByRole('button',{name:'View in city'}).first().click();await expect(page.getByRole('complementary',{name:'Building details',exact:true})).toBeVisible();
+ await page.goto('/?source=backend#economy');
+ let worker:ReturnType<typeof WorldAgentsResponse.parse>['agents'][number]|undefined;
+ await expect.poll(async()=>{
+  const world=WorldAgentsResponse.parse(await(await request.get(api+'/api/v1/world/agents')).json());
+  worker=world.agents.find(a=>a.state==='moving'&&a.work?.task?.kind==='production_shift');return worker?.id;
+ },{timeout:100000,intervals:[500]}).toBeTruthy();
+ const panel=page.getByRole('region',{name:'Current work assignments'});
+ await panel.locator('.task-row').filter({hasText:worker!.displayName??worker!.name}).getByRole('button',{name:'Watch agent'}).click();
+ await page.getByRole('button',{name:'Follow agent',exact:true}).click();
+ const city=page.getByTestId('city-canvas');
+ await expect.poll(async()=>{
+  const states=JSON.parse(await city.getAttribute('data-agent-work')??'[]') as {id:string;effect:boolean}[];
+  return states.some(a=>a.id===worker!.id&&a.effect);
+ },{timeout:90000,intervals:[250]}).toBe(true);
+ await page.screenshot({path:`artifacts/agent-work-active-${width}.png`});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

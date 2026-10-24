@@ -5,4 +5,5 @@ export interface MarketState{
  baseReserveRaw:string;quoteReserveRaw:string;realBaseRaw:string;realQuoteRaw:string;
 }
 export interface MarketTrade extends ChainTrade{eventIndex:number;venue:'bonding_curve'|'pumpswap';pool:string}
-export interface MarketPage{trades:MarketTrade[];signatures:string[];oldestTime:number|null;exhausted:boolean}
+export interface MarketPage{trades:MarketTrade[];signatures:string[];oldestTime:number|null;exhausted:boolean;deferredError?:'transaction_unavailable'}
+export interface MarketReadOptions{transactionLimit?:number;timeBudgetMs?:number;lane?:'live'|'history'}

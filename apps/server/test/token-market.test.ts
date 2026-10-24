@@ -87,3 +87,16 @@ it('reverifies a real Developer Buy launch against its persisted amount and cap 
  launch.execution!.devBuy!.tokenAmount=(BigInt(captured.devBuy.tokenAmount)+1n).toString();await store.updateLaunch(launch,0);
  expect((await new TokenMarketService(store,gateway,'mainnet-beta',fetcher).snapshot(launch.mint)).reason).toContain('evidence');
 });
+
+it('gives multiple mints fair turns and lets live work continue during a stalled historical read',async()=>{
+ const a=await fixture(),b=await fixture();b.launch.id='lch_market02';b.launch.communityId='com_market02';b.community.id='com_market02';b.community.launchId=b.launch.id;await a.store.createLaunch(b.launch);vi.mocked(a.store.allCommunities).mockResolvedValue([a.community,b.community]);
+ const calls:Array<{mint:string;lane:string|undefined}>=[];let block=false,release!:()=>void;const gate=new Promise<void>(r=>{release=r;});let sequence=0;
+ const original=a.gateway.getTransaction;
+ const gateway={...a.gateway,getTransaction:(sig:string)=>sig===b.launch.signature?b.gateway.getTransaction():original(),getFeeRoutingState:(mint:string)=>mint===b.mint?b.gateway.getFeeRoutingState(mint):a.gateway.getFeeRoutingState(mint),
+  getMarketState:async(mint:string)=>({mint,slot:100,decimals:6,supplyRaw:'1000000000000000',totalSupplyRaw:'1000000000000000',venue:'bonding_curve' as const,address:mint,progressPct:1,baseReserveRaw:'1000000000000000',quoteReserveRaw:'30000000000',realBaseRaw:'790000000000000',realQuoteRaw:'1000000'}),
+  getMarketTradePage:async(mint:string,_a:string,_b?:string,_u?:string,_limit?:number,options?:{lane?:string})=>{calls.push({mint,lane:options?.lane});if(block&&options?.lane==='history')await gate;return{trades:[],signatures:[`turn${sequence++}`],oldestTime:Math.floor(Date.now()/1000),exhausted:false};}};
+ const service=new TokenMarketService(a.store,gateway,'mainnet-beta',async()=>Response.json([]));
+ try{await service.snapshot(a.mint);await service.indexOnce('live');await service.snapshot(b.mint);await service.indexOnce('live');block=true;const history=service.indexOnce('history');await new Promise(r=>setTimeout(r,0));const marker=calls.length;
+  await service.indexOnce('live');await service.indexOnce('live');expect(calls.slice(marker).filter(c=>c.lane==='live').map(c=>c.mint)).toEqual(expect.arrayContaining([a.mint,b.mint]));release();await history;block=false;await service.indexOnce('history');expect(calls.filter(c=>c.lane==='history').map(c=>c.mint)).toEqual(expect.arrayContaining([a.mint,b.mint]));
+ }finally{release();await service.stop();}
+});

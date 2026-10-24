@@ -57,3 +57,21 @@ it('indexes authenticated PumpSwap events once by instruction, ignoring forged e
  const page=await new MarketReader(connection,async()=>raw).page(mint,pool.toBase58());
  expect(page.trades).toHaveLength(1);expect(page.trades[0]).toMatchObject({venue:'pumpswap',eventIndex:1,tokenAmount:'1000000',quoteAmount:'10000000',side:'buy'});
 });
+
+it('discovers wide pages of failed transactions without fetching transaction details',async()=>{
+ const connection=conn(),signatures=Array.from({length:200},(_,i)=>({signature:`failed${i}`,slot:200-i,err:{InstructionError:[0,1]},memo:null,blockTime:100}));const list=vi.spyOn(connection,'getSignaturesForAddress').mockResolvedValue(signatures),detail=vi.fn();
+ const page=await new MarketReader(connection,detail).page(mint,sdk.canonicalPumpPoolPda(new PublicKey(mint)).toBase58(),undefined,undefined,200,{transactionLimit:8});expect(page.signatures).toHaveLength(200);expect(page.exhausted).toBe(false);expect(detail).not.toHaveBeenCalled();expect(list.mock.calls[0]?.[1]?.limit).toBe(200);
+});
+it('checkpoints only successful contiguous signatures before a detail failure',async()=>{
+ const connection=conn(),sigs=[{signature:'failed',slot:3,err:{InstructionError:[0,1]},memo:null,blockTime:100},{signature:'unavailable',slot:2,err:null,memo:null,blockTime:90},{signature:'never',slot:1,err:null,memo:null,blockTime:80}];vi.spyOn(connection,'getSignaturesForAddress').mockResolvedValue(sigs);const detail=vi.fn(async()=>{throw Error('upstream URL must not escape');});
+ const page=await new MarketReader(connection,detail).page(mint,sdk.canonicalPumpPoolPda(new PublicKey(mint)).toBase58(),undefined,undefined,200,{transactionLimit:8});expect(page).toMatchObject({signatures:['failed'],trades:[],oldestTime:100,exhausted:false,deferredError:'transaction_unavailable'});expect(detail).toHaveBeenCalledOnce();
+});
+it('bounds successful non-trade detail reads independently of signature discovery',async()=>{
+ const connection=conn(),sigs=Array.from({length:20},(_,i)=>({signature:`sig${i}`,slot:100-i,err:null,memo:null,blockTime:100-i}));vi.spyOn(connection,'getSignaturesForAddress').mockResolvedValue(sigs);
+ const detail=vi.fn(async(signature:string)=>({version:0,slot:1,blockTime:100,transaction:{signatures:[signature],message:{accountKeys:[PublicKey.default.toBase58()],instructions:[]}},meta:{err:null,innerInstructions:[],loadedAddresses:{writable:[],readonly:[]}}}));
+ const page=await new MarketReader(connection,detail).page(mint,sdk.canonicalPumpPoolPda(new PublicKey(mint)).toBase58(),undefined,undefined,200,{transactionLimit:3});expect(detail).toHaveBeenCalledTimes(3);expect(page).toMatchObject({signatures:['sig0','sig1','sig2'],trades:[],oldestTime:98,exhausted:false});
+});
+it('does not begin transaction reads after the page time budget is exhausted',async()=>{
+ const connection=conn();vi.spyOn(connection,'getSignaturesForAddress').mockResolvedValue([{signature:'late',slot:1,err:null,memo:null,blockTime:100}]);const detail=vi.fn(),clock=vi.spyOn(Date,'now').mockReturnValueOnce(0).mockReturnValue(10001);
+ try{await expect(new MarketReader(connection,detail).page(mint,sdk.canonicalPumpPoolPda(new PublicKey(mint)).toBase58(),undefined,undefined,200,{timeBudgetMs:10000})).rejects.toThrow('time budget');expect(detail).not.toHaveBeenCalled();}finally{clock.mockRestore();}
+});

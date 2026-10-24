@@ -6,6 +6,38 @@ import { toAgentSummary } from '../src/sim/view.js';
 import { makeEnv } from './helpers.js';
 import { seedDemo } from '../src/demo-seed.js';
 import { checkLedgerInvariant } from '../src/sim/ledger.js';
+import { alignmentCommands } from '../src/ops/world-alignment.js';
+
+it('replays nine existing workers with exclusive shifts, shared deliveries and event-linked completions after restart',()=>{
+ const layout=generateWorld('agentic-economy-genesis');
+ const engine=new SimEngine(createInitialState(layout),layout);
+ alignmentCommands().forEach((command,index)=>engine.enqueue(command,index+1));
+ for(let n=0;n<120;n++)engine.step();
+ const restarted=new SimEngine(structuredClone(engine.state),layout);
+ let completed=0,working=0,shared=0;
+ const started=performance.now();
+ for(let n=0;n<240;n++){
+  const out=engine.step(), replay=restarted.step();
+  expect(hashState(restarted.state)).toBe(hashState(engine.state));expect(replay.events).toEqual(out.events);
+  const sites=new Map<string,number>();
+  for(const a of Object.values(engine.state.agents)){
+   if(!a.taskId)continue;
+   const task=engine.state.tasks[a.taskId]!;
+   expect(task.claimedBy).toBe(a.id);sites.set(task.toBuildingId,(sites.get(task.toBuildingId)??0)+1);
+   if(a.activity==='working'){
+    working++;expect(a.cell).toEqual(engine.state.buildings[task.toBuildingId]!.entrance);
+    if(task.kind==='production_shift')expect(engine.state.buildings[task.toBuildingId]!.workerAgentId).toBe(a.id);
+   }
+  }
+  shared+=Number([...sites.values()].some(count=>count>1));
+  for(const receipt of out.receipts){
+   completed++;expect(receipt.checks.every(check=>check.passed)).toBe(true);
+   expect(out.events.some(e=>e.type==='task.verified'&&e.data.taskId===receipt.taskId&&e.agentId===receipt.agentId)).toBe(true);
+  }
+ }
+ expect(working).toBeGreaterThan(0);expect(completed).toBeGreaterThan(0);expect(shared).toBeGreaterThan(0);
+ console.info(JSON.stringify({workRehearsal:{ticks:240,completed,workingSamples:working,sharedSiteTicks:shared,replayPairMs:performance.now()-started}}));
+},30000);
 
 it('projects a genuine claim → travel → workplace shift → verified receipt cycle without writing economic state',()=>{
  const layout=generateWorld('work-visibility-test');

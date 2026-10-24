@@ -74,8 +74,9 @@ describe('owned launch execution API (mock RPC, real transaction bytes/signature
   const old=f.signed(ready.transaction);f.expire();
   expect((await f.call('POST',url+'/submit',{transaction:old})).json().expiredReview).toBeDefined();
   // A fresh RPC blockhash must also return a renewed validity height.
-  const build=f.chain.buildLaunchTransaction.bind(f.chain);
-  vi.spyOn(f.chain,'buildLaunchTransaction').mockImplementation(async input=>({...await build(input),lastValidBlockHeight:250}));
+  // Capture the implementation, not the spy wrapper: Vitest 4 reuses existing spies.
+  const builder=vi.mocked(f.chain.buildLaunchTransaction),build=builder.getMockImplementation()!;
+  builder.mockImplementation(async input=>({...await build(input),lastValidBlockHeight:250}));
   const refreshed=await f.call('POST',url+'/refresh-transaction',{messageSha256:hash(p.transaction)});
   expect(refreshed.statusCode).toBe(200);const r=refreshed.json();expect(r.launch.mint).toBe(p.launch.mint);expect(r.launch.id).toBe(p.launch.id);
   expect(r.launch.execution.expiredApprovals).toHaveLength(1);
@@ -92,7 +93,7 @@ describe('owned launch execution API (mock RPC, real transaction bytes/signature
   f.expire();const status=await f.call('GET',url);expect(status.json().launch.status).toBe('expired');expect(status.json().expiredReview).toBeDefined();
   const {submissions}=env!.ctx.launches as unknown as {submissions:SignedLaunchStore};
   expect(await submissions.get(f.creator.publicKey.toBase58(),p.launch.id)).not.toBeNull();
-  const build=f.chain.buildLaunchTransaction.bind(f.chain);vi.spyOn(f.chain,'buildLaunchTransaction').mockImplementation(async input=>({...await build(input),lastValidBlockHeight:250}));
+  const builder=vi.mocked(f.chain.buildLaunchTransaction),build=builder.getMockImplementation()!;builder.mockImplementation(async input=>({...await build(input),lastValidBlockHeight:250}));
   const fresh=await f.call('POST',url+'/refresh-transaction',{messageSha256:hash});expect(fresh.statusCode).toBe(200);
   expect(fresh.json().launch).toMatchObject({id:p.launch.id,mint:p.launch.mint,signature:null,status:'awaiting_signature'});
   expect(fresh.json().launch.execution.expiredApprovals).toHaveLength(1);

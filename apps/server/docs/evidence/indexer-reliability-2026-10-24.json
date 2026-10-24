@@ -1,0 +1,258 @@
+{
+  "checkedAt": "2026-10-24",
+  "timezone": "Africa/Lagos",
+  "baseProductionCommit": "fec13535d865ad39f13044bf6e15b7cf768d0023",
+  "status": "All local verification passed; not deployed",
+  "implementation": {
+    "rpcPolicy": {
+      "scope": "Background reads only, per production process and endpoint; launch gateway unchanged",
+      "concurrency": 2,
+      "maximumHistoryInFlight": 1,
+      "minimumAttemptIntervalMs": 500,
+      "perMethodAttemptsPer10Seconds": 8,
+      "maximumAcceptedQueuedAndActiveJobs": 64,
+      "requestDeadlineMs": 30000,
+      "maximumAttempts": 3,
+      "retry": "Jittered exponential backoff, provider cooldown, numeric/date Retry-After; long cooldown defers rather than retrying early",
+      "fairness": "Round-robin read lanes and independent round-robin per-mint live/history jobs",
+      "allowlist": "Read-only methods; write RPC methods rejected before transport",
+      "helius": "Existing shared weighted credit budget remains; retry-disabled scheduler transport preserves statuses so Helius counts each actual attempt in its own budget"
+    },
+    "caches": {
+      "genesisTTLms": 30000,
+      "normalizedFinalizedTransactionTTLms": 1800000,
+      "normalizedCachePerGatewayMaximumEntries": 256,
+      "normalizedCachePerGatewayBytes": 16000000,
+      "rawMarketCacheMaximumEntries": 128,
+      "rawMarketCacheBytes": 8000000,
+      "rawMarketCacheTTLms": 1800000,
+      "cacheMissesNotStored": [
+        "null",
+        "unavailable",
+        "confirmed-only",
+        "failed execution",
+        "mismatched signature",
+        "malformed market evidence"
+      ],
+      "mutability": "Cloned returns; mutable accounts/pool reserves/routing are not finalized-evidence cached"
+    },
+    "marketReads": {
+      "signatureDiscoveryLimit": 200,
+      "maximumConfigurableSignaturePage": 1000,
+      "transactionDetailBudget": 8,
+      "pollIntervalMs": 5000,
+      "pageDeadlineMs": 15000,
+      "failedSignatures": "Advance contiguous prefix without fetching detail or creating trade events",
+      "nonTradeTransactions": "Decoded but no invented trade rows",
+      "partialFailure": "Only completed validated prefix commits; failing/unprocessed signature is retained for retry"
+    },
+    "persistence": {
+      "schemaChanges": false,
+      "existingEventsRewrittenOrDeleted": false,
+      "networkCallsWithinTransactions": false,
+      "atomicEventAndCursorCommit": true,
+      "sameLaneStaleWriter": "Rejected by cursor compare-and-swap under a short advisory lock",
+      "otherLaneConcurrentProgress": "Merge only independently validated lane fields; never overwrite the other checkpoint",
+      "legacyCursorUpgrade": "Read compatible v1 JSON and persist v2 checkpoint fields in existing cursor documents; no reset or SQL migration",
+      "legacyRollbackCompatibility": "Persist legacy checkpoint mirrors as well as v2 lane fields; old coverage readers see pending live work, and a later new worker adopts checkpoints advanced by an old worker."
+    },
+    "statistics": {
+      "combined24hTotals": "Withheld unless all required venues have complete window coverage, no pending live catchup and a fresh successful head scan",
+      "deduplication": "Unchanged unique(network,mint,signature,event_index), with conflicting evidence rejected",
+      "aggregation": "Cursor coverage, event rows and totals use one MVCC snapshot; distinct transaction counts separate from trade event counts",
+      "usd": "Existing explicitly attributed current SOL/USD valuation retained; no provider totals added together"
+    },
+    "monitoring": {
+      "transport": [
+        "method attempts",
+        "retries",
+        "throttles",
+        "failures",
+        "deadlines",
+        "queue rejection",
+        "queue depth",
+        "active requests",
+        "cooldown",
+        "attempt latency"
+      ],
+      "market": [
+        "live lag",
+        "stale cursors",
+        "backfill pending",
+        "stalled cursors",
+        "consecutive failures per lane",
+        "last success",
+        "snapshot age",
+        "pages/signatures/events observed",
+        "cursor CAS conflicts"
+      ],
+      "treasury": [
+        "last successful run",
+        "consecutive failed iterations"
+      ],
+      "security": "Only allowlisted method names and fixed failure classifications; no URLs, keys, raw provider errors or wallet metric labels",
+      "existingEndpoint": "/metrics; no new dashboard or external alerting service configured",
+      "suggestedAlerts": [
+        {
+          "condition": "ae_market_stale_cursors > 0",
+          "duration": "3 minutes"
+        },
+        {
+          "condition": "ae_market_stalled_cursors > 0",
+          "duration": "10 minutes"
+        },
+        {
+          "condition": "ae_market_consecutive_failures >= 3",
+          "duration": "2 minutes"
+        },
+        {
+          "condition": "rate(ae_rpc_rate_limited_total[5m]) / clamp_min(rate(ae_rpc_requests_total[5m]),0.001) > 0.05",
+          "duration": "5 minutes"
+        }
+      ]
+    }
+  },
+  "measurements": {
+    "kind": "Controlled offline fixture; not post-deployment production measurements",
+    "discovery": {
+      "before": {
+        "signatures": 400,
+        "discoveryRequests": 51,
+        "transactionDetailRequests": 0
+      },
+      "after": {
+        "signatures": 400,
+        "discoveryRequests": 3,
+        "transactionDetailRequests": 0
+      }
+    },
+    "burst": {
+      "providerCapacity": "4 calls per10s,8 simultaneous requests",
+      "before": {
+        "requests": 24,
+        "rateLimitedResponses": 20,
+        "successes": 4,
+        "failures": 4,
+        "maxSuccessfulLatencyMs": 0,
+        "meanSuccessfulLatencyMs": 0
+      },
+      "after": {
+        "requests": 8,
+        "rateLimitedResponses": 0,
+        "successes": 8,
+        "failures": 0,
+        "maxSuccessfulLatencyMs": 10000,
+        "meanSuccessfulLatencyMs": 5000
+      },
+      "schedulerFixtureSettings": {
+        "intervalMs": 0,
+        "methodLimit": 4,
+        "concurrency": 2,
+        "deadlineMs": 30000
+      }
+    },
+    "genesis": {
+      "beforeRequests": 20,
+      "afterRequests": 1
+    }
+  },
+  "measurementInterpretation": {
+    "failedSignatureDiscoveryRequestReductionPct": 94.12,
+    "maximumNonemptySignaturePageIncrease": 25,
+    "burstAttemptReductionPct": 66.67,
+    "latencyTradeoff": "In the controlled8-request/4-per10s fixture, successful scheduled requests take0\u201310s (mean5s); baseline completed only4 immediately and failed4. This is queueing for reliability, not proof of faster production latency.",
+    "productionAfterDataAvailable": false,
+    "baselineDefinition": "Before replays the prior8-signature discovery setting, uncached genesis reads and installed web3.js default retries in the identical offline workload. After uses widened discovery/cache and the new policy; not live before/after telemetry."
+  },
+  "validation": {
+    "unitAndIntegration": {
+      "passed": 742,
+      "skipped": 4,
+      "filesPassed": 132,
+      "serverPassed": 415,
+      "webPassed": 286,
+      "sharedPassed": 34,
+      "worldSpecPassed": 7,
+      "skipReason": "Existing deferred TOKEN/USDC tests; supported launch pairing remains TOKEN/SOL"
+    },
+    "postgres": [
+      "Separate fresh /tmp PostgreSQL16 cluster, private Unix socket, TCP disabled",
+      "No DB transaction held during gated RPC",
+      "Same-lane stale CAS rejection",
+      "Independent concurrent live/history merges",
+      "Legacy v1 cursor continuation",
+      "Duplicate-event conflict rollback",
+      "Actual child-process recovery and signed-receipt restart test",
+      "Temporary cluster stopped; files retained",
+      "Legacy coverage-reader pending-work mirrors and adoption of old-worker completion checkpoints verified"
+    ],
+    "browser": {
+      "status": "passed",
+      "testsPassed": 15,
+      "scope": "Local API/Vite, mocked RPC/Pinata, disposable signing fixtures. Desktop/tablet/folded/unfolded layouts, signing/rejection/expiry recovery, attributed market data and explicit unavailable incomplete24h totals. No physical-wallet or paid transaction claims."
+    },
+    "lint": "passed; two existing frontend cleanup-ref warnings",
+    "typecheck": "all workspaces passed",
+    "builds": "Production frontend and backend TypeScript/bundle passed; pure-JS bigint guard verified",
+    "frontendArtifact": "Byte-identical to deployed fec1353 frontend",
+    "fullSuiteReruns": "Final frozen backend suite:414passed+4existingUSDCskips, plus separate signed-receipt restart1passed. A duplicate fixture ID was corrected during development; later runs include legacy rollback mirrors and persistent partial-failure metrics."
+  },
+  "costs": {
+    "newServices": 0,
+    "newPaidSubscriptions": 0,
+    "additionalFixedSubscriptionUSD": 0,
+    "rpcPrimary": "Existing public Solana endpoint; no silent switch of all reads to Helius",
+    "idleGraduatedTokenLiveDiscoveryEstimate": "Two venues at5s turns = approximately24 signature discovery calls/minute when no queue delays, plus market refresh and other workers",
+    "capacity": "Conservative per-method/per-endpoint limits apply across background consumers; foreground launch RPC remains unchanged",
+    "hosting": "Existing Railway CPU/memory/egress may vary; no precise dollar projection without measured production load and billing data",
+    "caveat": "Existing Helius weighted budget is per process and not an account-wide billing cap or exact archival-credit estimator"
+  },
+  "remainingRisks": [
+    "Production has not received this implementation; production improvements and final coverage need separate approved deployment and observation",
+    "No claim that the complete required on-chain historical range is reconciled; prior audit sample26/26 expected trades matched, full PumpSwap scan was pending",
+    "Provider limits and remaining account credits are external; sustained demand can still defer reads or make values stale",
+    "Scheduling/cache budgets are per process; other projects and brief rolling-deployment overlap are not account-wide coordinated",
+    "Existing high bigint-buffer upstream advisory remains mitigated, not patched; pure-JS production guard preserved",
+    "A permanently unavailable or unsupported successful transaction intentionally stops its contiguous page checkpoint until evidence/parser support is repaired; it is never skipped to manufacture complete coverage."
+  ],
+  "restrictions": {
+    "productionDeployment": false,
+    "productionDatabaseWrites": false,
+    "productionSchemaChanges": false,
+    "productionEnvironmentOrSecretsChanges": false,
+    "treasuryOrWalletPermissionChanges": false,
+    "socialEngineActivated": false,
+    "payoutsActivated": false,
+    "realTransactionsSignedOrBroadcast": false,
+    "newFrontendVisualChanges": false
+  },
+  "changedFiles": [
+    "apps/server/src/chain/background-rpc.ts",
+    "apps/server/test/background-rpc.test.ts",
+    "apps/server/src/chain/background-cache.ts",
+    "apps/server/test/background-cache.test.ts",
+    "apps/server/src/chain/market-types.ts",
+    "apps/server/src/chain/types.ts",
+    "apps/server/src/chain/market-reader.ts",
+    "apps/server/test/market-reader.test.ts",
+    "apps/server/src/chain/solana.ts",
+    "apps/server/test/market-read-cache.test.ts",
+    "apps/server/src/services/market-journal.ts",
+    "apps/server/test/market-journal.test.ts",
+    "apps/server/test/market-journal-postgres.test.ts",
+    "apps/server/test/market-reliability.test.ts",
+    "apps/server/src/services/token-market.ts",
+    "apps/server/test/token-market.test.ts",
+    "apps/server/src/chain/helius.ts",
+    "apps/server/src/config.ts",
+    "apps/server/.env.example",
+    "apps/server/src/services/treasury.ts",
+    "apps/server/src/context.ts",
+    "apps/server/src/services/indexer.ts",
+    "apps/server/src/http/system.ts",
+    "apps/server/test/indexer-metrics.test.ts",
+    "apps/server/test/indexer-throughput.test.ts",
+    "apps/web/tests/token-market.spec.ts",
+    "apps/server/docs/evidence/indexer-reliability-2026-10-24.json"
+  ]
+}

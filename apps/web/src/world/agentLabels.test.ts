@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agentLabelName, chooseAgentLabels, uniqueAgentLabelNames, fullAgentIdentity, type LabelCandidate } from './agentLabels';
+import { agentLabelName, chooseAgentLabels, uniqueAgentLabelNames, fullAgentIdentity, type LabelOffset, type LabelCandidate } from './agentLabels';
 const agent = (id: string, x = 200, y = 200): LabelCandidate => ({ id, name: id, x: 0, z: 0, state: 'idle', screenX: x, screenY: y });
 
 describe('authoritative city labels', () => {
@@ -23,27 +23,43 @@ describe('authoritative city labels', () => {
     const residents = [1, 2].map(n => ({ ...agent(`agt_resident${n}`), identity: { kind: 'house' as const, syntheticName: 'Fern_108' } }));
     expect(new Set(uniqueAgentLabelNames(residents).values()).size).toBe(2);
   });
-  it('keeps a useful distant sample and prioritizes hovered/selected agents', () => {
-    const result = chooseAgentLabels([agent('ordinary', 600), { ...agent('selected'), selected: true }, { ...agent('hovered', 450), hovered: true }], .5, 1000, 800);
-    expect(result[0]!.id).toBe('hovered'); expect(result.some(a => a.id === 'selected')).toBe(true);
-    expect(result.length).toBeLessThanOrEqual(6);
+  it('keeps all crowded identities, including ordinary, hovered and selected agents', () => {
+    const agents = Array.from({ length: 512 }, (_, i) => ({ ...agent(`agt_${i}`, 300, 300), hovered: i === 3, selected: i === 7 }));
+    const placed = chooseAgentLabels(agents, 800, 600);
+    expect(placed).toHaveLength(512);
+    expect(new Set(placed.map(a => a.id)).size).toBe(512);
+    expect(new Set(placed.map(a => a.labelY)).size).toBeGreaterThan(1);
   });
-  it('labels all 65 well-spaced close agents and bounds dense/far scenes', () => {
-    const agents = Array.from({ length: 65 }, (_, i) => agent(`agt_${i}`, 90 + i % 8 * 165, 100 + Math.floor(i / 8) * 80));
-    expect(chooseAgentLabels(agents, 5, 1440, 1000)).toHaveLength(65);
-    expect(chooseAgentLabels(agents, 2, 1440, 1000).length).toBeLessThanOrEqual(32);
-    const packed = chooseAgentLabels(agents.map(a => ({ ...a, screenX: 300, screenY: 300 })), 5, 800, 600);
-    expect(packed.length).toBeLessThan(8);
-    for (const a of packed) for (const b of packed) if (a.id !== b.id) expect(Math.abs(a.labelX - b.labelX) >= (a.width + b.width) / 2 || Math.abs(a.labelY - b.labelY) >= Math.max(a.height, b.height)).toBe(true);
-    expect(chooseAgentLabels([agent('outside', -50)], 5, 800, 600)).toHaveLength(0);
+  it('retains offsets across motion, reordered input, priorities, viewport changes and temporary overlaps', () => {
+    const agents = [agent('first'), agent('second', 205)], remembered = new Map<string, LabelOffset>();
+    chooseAgentLabels(agents, 800, 600, [], remembered);
+    const original = new Map(remembered);
+    for (let frame = 0; frame < 100; frame++) {
+      const placed = chooseAgentLabels(agents.map((a, i) => ({ ...a, screenX: a.screenX + frame * .1,
+        screenY: a.screenY + frame * .05, selected: i === frame % 2 })).reverse(), frame % 2 ? 800 : 344, 600,
+        [{ left: 0, top: 0, width: 800, height: 600 }], remembered);
+      expect(placed).toHaveLength(2); expect(remembered).toEqual(original);
+    }
   });
-  it('avoids UI and speech bounds, repositions close labels and keeps mobile focus within the viewport', () => {
-    const a = { ...agent('agt_focused', 20, 30), hovered: true };
-    const [focused] = chooseAgentLabels([a], 5, 344, 700);
-    expect(focused).toBeDefined(); expect(focused!.labelX - focused!.width / 2).toBeGreaterThanOrEqual(0);
+  it('keeps labels at every edge while any part of the body remains on screen', () => {
+    const edge = (id: string, x: number, y: number, left: number, top: number): LabelCandidate =>
+      ({ ...agent(id, x, y), screenBounds: { left, top, width: 16, height: 16 } });
+    const agents = [edge('left', -5, 200, -8, 192), edge('right', 805, 200, 792, 192),
+      edge('top', 200, -15, 192, -8), edge('bottom', 200, 605, 192, 592), edge('outside', -40, 200, -48, 192)];
+    const placed = chooseAgentLabels(agents, 800, 600);
+    expect(placed.map(a => a.id).sort()).toEqual(['bottom', 'left', 'right', 'top']);
+    for (const a of placed) {
+      expect(a.labelX - a.width / 2).toBeGreaterThanOrEqual(0);
+      expect(a.labelX + a.width / 2).toBeLessThanOrEqual(800);
+      expect(a.labelY - a.height).toBeGreaterThanOrEqual(0);
+      expect(a.labelY).toBeLessThanOrEqual(600);
+    }
+  });
+  it('does not hide labels behind HUD or speech bounds and keeps mobile focus readable', () => {
+    const [focused] = chooseAgentLabels([{ ...agent('agt_focused', 20, 30), hovered: true }], 344, 700);
+    expect(focused!.labelX - focused!.width / 2).toBeGreaterThanOrEqual(0);
     expect(focused!.labelY - focused!.height).toBeGreaterThanOrEqual(0);
-    expect(chooseAgentLabels([agent('blocked')], 2, 800, 600, [{ left: 100, top: 100, width: 300, height: 300 }])).toHaveLength(0);
-    const crowded = chooseAgentLabels([agent('first'), agent('second', 205)], 5, 800, 600);
-    expect(crowded).toHaveLength(2); expect(crowded[1]!.labelY).not.toBe(crowded[0]!.labelY);
+    expect(chooseAgentLabels([agent('blocked')], 800, 600, [{ left: 0, top: 0, width: 800, height: 600 }])).toHaveLength(1);
+    expect(chooseAgentLabels([agent('outside', -50)], 800, 600)).toHaveLength(0);
   });
 });

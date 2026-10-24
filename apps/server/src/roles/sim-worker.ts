@@ -107,7 +107,8 @@ export class SimWorker {
       if (hashState(raw) !== rec.snapshot.hash) throw new Error(`snapshot at tick ${rec.snapshot.tick} failed its integrity hash`);
       state = upgradeState(raw);
     } else state = createInitialState(this.layout);
-    const engine = new SimEngine(state, this.layout);
+    if (state.autonomy && !this.config.localAutonomy) throw new Error('Local autonomous state cannot run outside the isolated prototype');
+    const engine = new SimEngine(state, this.layout, undefined, this.config.localAutonomy);
     const byTick = new Map<number, LoggedCommand[]>();
     for (const c of rec.log) byTick.set(c.tick, [...(byTick.get(c.tick) ?? []), c]);
     const start = engine.tick;

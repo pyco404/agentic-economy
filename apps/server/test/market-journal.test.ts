@@ -15,7 +15,7 @@ describe('finalized market journal',()=>{
   await j.sync('mainnet','mint',['pool'],read);expect(await j.activity('mainnet','mint',['pool'])).toMatchObject({complete:false,volumeSol:null,buys:null});
   await expect(j.sync('mainnet','mint',['pool'],async()=>{throw Error('rate limited')})).rejects.toThrow();
   const finish=vi.fn(async()=>({trades:[],signatures:[],oldestTime:null,exhausted:true}));await j.sync('mainnet','mint',['pool'],finish);
-  expect(finish).toHaveBeenCalledWith('pool','sig',undefined);expect(await j.activity('mainnet','mint',['pool'])).toMatchObject({complete:true,volumeSol:0.1});
+  expect(finish).toHaveBeenCalledWith('pool','sig',undefined,'history');expect(await j.activity('mainnet','mint',['pool'])).toMatchObject({complete:true,volumeSol:0.1});
  });
  it('reports verified zero only for complete empty history and expires stale coverage',async()=>{
   let clock=now;const j=new MarketJournal(undefined,()=>clock);await j.sync('mainnet','mint',['pool'],async()=>({trades:[],signatures:[],oldestTime:null,exhausted:true}));

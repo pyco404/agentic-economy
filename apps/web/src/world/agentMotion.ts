@@ -46,11 +46,15 @@ export function pathBetween(network: PathNetwork, from: THREE.Vector2, to: THREE
 }
 /** Reconnect recovery follows the same connected paths, at the published walking
  * rate, instead of snapping across buildings or water. Null means wait for terrain. */
-export function observedJourney(network: PathNetwork, from: THREE.Vector2, to: THREE.Vector2, tickMs: number) {
+export function observedJourney(network: PathNetwork, from: THREE.Vector2, to: THREE.Vector2, tickMs: number, assigned = false) {
   const path = pathBetween(network, from, to, Math.max(AGENT_MOTION.liveSearchBudget, network.size));
   if (!path) return null;
   const length = path.reduce((sum,p,i)=>sum+(i?p.distanceTo(path[i-1]!):0),0);
-  return { path, duration: Math.max(tickMs, length / 2 * tickMs) };
+  // An assigned worker must catch up to confirmed state after reconnect, rather
+  // than spending an entire short shift replaying old travel. Keep every legal
+  // path segment; never predict a destination or interpolate through buildings.
+  const duration = Math.max(tickMs, length / 2 * tickMs);
+  return { path, duration: assigned ? Math.min(duration, tickMs * 2) : duration };
 }
 export function samplePath(path: THREE.Vector2[], progress: number, out: THREE.Vector2) {
   let length = 0;

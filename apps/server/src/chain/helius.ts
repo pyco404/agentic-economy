@@ -1,3 +1,4 @@
+import {retryAfterMs} from './background-rpc.js';
 import {PublicKey as SolanaKey} from '@solana/web3.js';
 import sdk from './pump-sdk.cjs';
 import WebSocket from 'ws';
@@ -19,7 +20,7 @@ export class HeliusReadBudget {
   private queued = 0; private last = 0; private cooldown = 0;
   private usage: Array<{ at: number; cost: number }> = [];
   constructor(private now = () => Date.now(), private sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))) {}
-  pause(ms: number) { this.cooldown = Math.max(this.cooldown, this.now() + Math.min(60_000, Math.max(500, ms))); }
+  pause(ms: number) { this.cooldown = Math.max(this.cooldown, this.now() + Math.max(500,Number.isFinite(ms)?ms:1000)); }
   run<T>(cost: number, work: () => Promise<T>, signal?: AbortSignal): Promise<T> {
     if (this.queued >= 8) return Promise.reject(new HeliusReadError('budget'));
     this.queued++;
@@ -65,7 +66,7 @@ export class HeliusReader {
           try { response = await this.request(this.#url, { method: 'POST', redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 'aeco-read', method, params }), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(5000)]) : AbortSignal.timeout(5000) }); }
           catch { throw new HeliusReadError('unavailable'); }
           if (response.status === 401 || response.status === 403) throw new HeliusReadError('unauthorized');
-          if (response.status === 429) { this.budget.pause(Number(response.headers.get('retry-after') ?? 1) * 1000); throw new HeliusReadError('rate_limited'); }
+          if (response.status === 429) { this.budget.pause(retryAfterMs(response.headers.get('retry-after'),this.now())||1000); throw new HeliusReadError('rate_limited'); }
           if (!response.ok) throw new HeliusReadError('unavailable');
           let body: { result?: unknown; error?: { code?: number } };
           try { const text = await response.text(); if (text.length > (method === 'getProgramAccounts' ? 16_000_000 : 4_000_000)) throw new Error(); body = JSON.parse(text); } catch { throw new HeliusReadError('unavailable'); }

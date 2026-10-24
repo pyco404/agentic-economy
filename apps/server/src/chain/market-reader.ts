@@ -5,7 +5,7 @@ import {PUMP_PROGRAM_ID,PUMP_AMM_PROGRAM_ID,WRAPPED_SOL_MINT} from '@agentic-eco
 import {bondingCurvePda} from './pump.js';
 import sdk from './pump-sdk.cjs';
 import {pumpTradesFromInner} from './pump-events.js';
-import type {MarketState,MarketTrade,MarketPage} from './market-types.js';
+import type {MarketState,MarketTrade,MarketPage,MarketReadOptions} from './market-types.js';
 
 const TOKEN_PROGRAMS=new Set(['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA','TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']);
 const EVENT_TAG=Buffer.from('e445a52e51cb9a1d','hex');
@@ -40,13 +40,20 @@ export class MarketReader{
   const b=base.data.readBigUInt64LE(64),q=quote.data.readBigUInt64LE(64),effective=q+BigInt(current.virtualQuoteReserves.toString());
   return {...common,slot:aligned.context.slot,venue:'pumpswap',address:poolAddress.toBase58(),baseReserveRaw:positive(b),quoteReserveRaw:positive(effective),realBaseRaw:positive(b),realQuoteRaw:positive(q)};
  }
- async page(mint:string,address:string,before?:string,until?:string,limit=8):Promise<MarketPage>{
+ async page(mint:string,address:string,before?:string,until?:string,limit=8,options:MarketReadOptions={}):Promise<MarketPage>{
+  const started=Date.now(),budget=Math.max(1,Math.min(20,options.transactionLimit??limit));let reads=0;
+  const processed:typeof sigs=[];
+  const result=(exhausted:boolean,deferredError?:MarketPage['deferredError']):MarketPage=>({trades,signatures:processed.map(s=>s.signature),oldestTime:processed.length?Math.min(...processed.map(s=>s.blockTime??Infinity)):null,exhausted,...(deferredError?{deferredError}:{})});
   const allowed=[bondingCurvePda(mint),sdk.canonicalPumpPoolPda(new PublicKey(mint)).toBase58()];
   if(!allowed.includes(address))throw Error('Unverified market address');
-  const sigs=await this.conn.getSignaturesForAddress(new PublicKey(address),{before,until,limit:Math.min(20,Math.max(1,limit))},'finalized');
+  const sigs=await this.conn.getSignaturesForAddress(new PublicKey(address),{before,until,limit:Math.min(1000,Math.max(1,limit))},'finalized');
   const trades:MarketTrade[]=[];
   for(const sig of sigs){
-   if(sig.err)continue;
+   if(Date.now()-started>=(options.timeBudgetMs??15000)){if(processed.length)return result(false);throw Error('Market page time budget exhausted; cursor retained');}
+   if(sig.err){processed.push(sig);continue;}
+   if(reads>=budget)return result(false);
+   reads++;const checkpoint=trades.length;
+   try{
    const tx=marketTransaction(await this.readTransaction(sig.signature),sig.signature);
    const keys={get:(index:number)=>new PublicKey(tx.keys[index]!)};
    const beforeEvents=trades.length;
@@ -72,7 +79,9 @@ export class MarketReader{
     }
    }
    if(trades.length-beforeEvents<expectedTrades)throw Error('Trade event missing or unsupported; cursor retained');
+   processed.push(sig);
+   }catch{trades.splice(checkpoint);if(!processed.length)throw Error('Finalized market transaction unavailable; cursor retained');return result(false,'transaction_unavailable');}
   }
-  return {trades,signatures:sigs.map(s=>s.signature),oldestTime:sigs.length?Math.min(...sigs.map(s=>s.blockTime??Infinity)):null,exhausted:sigs.length<Math.min(20,Math.max(1,limit))};
+  return result(sigs.length<Math.min(1000,Math.max(1,limit)));
  }
 }

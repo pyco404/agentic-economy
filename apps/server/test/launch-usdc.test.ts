@@ -97,9 +97,10 @@ describe.skip('TOKEN/USDC launches through the Launchpad (deferred)',()=>{
  });
 
  it('previews the rent and network fee measured from the prepared transaction when the network reports them',async()=>{
-  const {prepare}=await setup(true),chain=env!.ctx.chain as MockChain&ChainGateway,build=chain.buildLaunchTransaction.bind(chain);
+  const {prepare}=await setup(true),chain=env!.ctx.chain as MockChain&ChainGateway;
+  const builder=vi.mocked(chain.buildLaunchTransaction),build=builder.getMockImplementation()!;
   // Public devnet measurement of a USDC launch (scripts/devnet-readonly-audit.ts).
-  vi.spyOn(chain,'buildLaunchTransaction').mockImplementation(async p=>({...await build(p),estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16057880'}));
+  builder.mockImplementation(async p=>({...await build(p),estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16057880'}));
   const {launch}=(await prepare()).json();
   expect(launch.fees).toMatchObject({estimatedNetworkFeesLamports:'10000',estimatedAccountRentLamports:'16057880',platformLaunchFeeLamports:LAUNCH_FEE_LAMPORTS.toString()});
  });

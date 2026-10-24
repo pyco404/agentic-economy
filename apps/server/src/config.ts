@@ -28,6 +28,7 @@ const Env = z.object({
   TICK_MS: z.coerce.number().int().min(50).max(10_000).default(500),
   SNAPSHOT_EVERY_TICKS: z.coerce.number().int().min(1).default(20),
   SOCIAL_SIMULATION_ENABLED: z.enum(["true", "false"]).default("false"),
+  LOCAL_AUTONOMY_ENABLED: z.enum(["true", "false"]).default("false"),
   SIM_AUTOSTART: z.enum(["true", "false"]).default("true"),
   /** Publish the gzipped state view for API read replicas every N ticks (also on any tick that applied commands). */
   VIEW_EVERY_TICKS: z.coerce.number().int().min(1).default(2),
@@ -119,6 +120,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   // Empty values (e.g. `SOLANA_RPC_URL=` copied from .env.example) mean "unset".
   const e = Env.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined && v !== "")));
   const demo = e.MODE === "demo";
+  if (e.LOCAL_AUTONOMY_ENABLED === 'true' && (!demo || e.SOLANA_CLUSTER !== 'localnet' || e.ROLE !== 'all' || !['127.0.0.1','::1'].includes(e.HOST) || e.DATABASE_URL || e.SOCIAL_SIMULATION_ENABLED !== 'false' || e.PUMP_LAUNCH_ENABLED !== 'false' || e.FEE_ROUTING_VERIFIED !== 'false' || e.MAINNET_LAUNCH_APPROVED !== 'false' || e.PINATA_JWT || e.HELIUS_API_KEY))
+    throw new Error('Local autonomy requires loopback demo/localnet, memory storage, global social and financial execution OFF, and no provider credentials');
   const usesChain = e.ROLE !== "sim"; // the simulation never talks to Solana (least privilege)
   if (!demo && !e.DATABASE_URL) throw new Error(`MODE=${e.MODE} requires DATABASE_URL (Postgres)`);
   if (e.ROLE !== "all" && !e.DATABASE_URL) throw new Error(`ROLE=${e.ROLE} requires DATABASE_URL: separate processes coordinate through Postgres`);
@@ -152,6 +155,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   return {
     aecoCommonAgents: { enabled: e.AECO_COMMON_AGENTS_ENABLED === "true", mint: e.AECO_MINT ?? null, intervalMs: e.AECO_RECONCILE_INTERVAL_MS, excludedWallets: aecoExcluded },
     mode: e.MODE,
+    localAutonomy: e.LOCAL_AUTONOMY_ENABLED === 'true',
     role: e.ROLE as Role,
     launchRegistrationCommitment: e.LAUNCH_REGISTRATION_COMMITMENT ?? (e.MODE === "production" ? "finalized" : "confirmed"),
     host: e.HOST,

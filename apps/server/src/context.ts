@@ -1,3 +1,5 @@
+import {BackgroundRpc} from './chain/background-rpc.js';
+import {cachedBackgroundChain} from './chain/background-cache.js';
 import {MarketJournal} from './services/market-journal.js';
 import { readAecoHolders } from "./chain/aeco-holders.js";
 import { CommonAgentIndexer, isOfficialAecoLaunch } from "./services/common-agents.js";
@@ -26,6 +28,7 @@ import type { Store } from "./store/types.js";
 
 export interface AppContext {
   config: AppConfig;
+  backgroundRpc?:BackgroundRpc;
   store: Store;
   coord: Coordinator;
   chain: ChainGateway;
@@ -89,11 +92,14 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
 
   const runtime = await CityRuntime.create(config, store, coord, logger);
   const auth = new AuthService(store, config);
+  const backgroundRpc=new BackgroundRpc(config.backgroundRpc,fetch,()=>Date.now(),()=>Math.random(),(method,code)=>logger.warn({method,code},'Background RPC read deferred'));
+  const backgroundChain=!overrides.chain&&config.mode!=='demo'&&config.role!=='sim'?cachedBackgroundChain(new SolanaRpcChain(config.solana.rpcUrl!,undefined,{managedReads:true,fetch:backgroundRpc.fetch('live'),fetchForLane:lane=>backgroundRpc.fetch(lane)})):chain;
+  const treasuryChain=!overrides.chain&&config.mode!=='demo'&&config.role!=='sim'?cachedBackgroundChain(new SolanaRpcChain(config.solana.rpcUrl!,undefined,{managedReads:true,fetch:backgroundRpc.fetch('treasury')})):chain;
   const heliusBudget = new HeliusReadBudget();
-  const monitoringReader = config.heliusApiKey && config.role !== 'sim' ? new HeliusReader(config.heliusApiKey, 'mainnet-beta', heliusBudget) : undefined;
-  const marketReader = config.heliusApiKey && config.mode !== 'demo' && config.solana.cluster !== 'localnet' && config.role !== 'sim' ? new HeliusReader(config.heliusApiKey, config.solana.cluster, heliusBudget) : undefined;
-  const marketChain = marketReader ? heliusMarketChain(chain, marketReader) : chain;
-  const treasury = new TreasuryService(store, config, undefined, monitoringReader);
+  const monitoringReader = config.heliusApiKey && config.role !== 'sim' ? new HeliusReader(config.heliusApiKey, 'mainnet-beta', heliusBudget,backgroundRpc.fetch('monitor',false)) : undefined;
+  const marketReader = config.heliusApiKey && config.mode !== 'demo' && config.solana.cluster !== 'localnet' && config.role !== 'sim' ? new HeliusReader(config.heliusApiKey, config.solana.cluster, heliusBudget,backgroundRpc.fetch('holders',false)) : undefined;
+  const marketChain = marketReader ? heliusMarketChain(backgroundChain, marketReader) : backgroundChain;
+  const treasury = new TreasuryService(store, config, undefined, monitoringReader,backgroundRpc.fetch('monitor'));
   const communities = new CommunityService(store, runtime.reader);
   const eligibility = new EligibilityService(chain, communities, config);
   const agents = new AgentService(runtime.reader, runtime.bus, store, config);
@@ -107,7 +113,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
   const runsIndexer = config.role === "indexer" || (config.role === "all" && config.mode !== "demo");
   const indexer = runsIndexer
     ? new IndexerWorker(
-        new TreasuryIndexer(chain, store, treasury, coord, [config.treasuries.agentRewards, config.treasuries.platform], logger),
+        new TreasuryIndexer(treasuryChain, store, treasury, coord, [config.treasuries.agentRewards, config.treasuries.platform], logger),
         coord,
         logger,
         runtime.sim?.holder ?? `indexer:${process.pid}`,
@@ -131,6 +137,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
   const tokenMarket=new TokenMarketService(store,marketChain,config.mode==='demo'?'demo':config.solana.cluster,fetch,()=>Date.now(),new MarketJournal(store instanceof PostgresStore?store.pool:undefined),config.tokenMarket,message=>logger.warn({},message));
   return {
     config,
+    backgroundRpc,
     store,
     coord,
     chain,
@@ -148,6 +155,7 @@ export async function createContext(config: AppConfig, overrides: { store?: Stor
     wsStats: { connections: 0 },
     async close() {
       clearInterval(recoveryPruner);await pruning;
+      backgroundRpc.close();
       await tokenMarket.stop();
       await commonAgentIndexer?.stop();
       await indexer?.stop();

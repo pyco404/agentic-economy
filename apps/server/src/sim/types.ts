@@ -1,4 +1,5 @@
 import type { SocietyState } from "./society.js";
+import type { AutonomousState, Decision } from "./autonomy.js";
 import type {
   AgentPermission,
   AgentStrategy,
@@ -23,6 +24,7 @@ export interface SimState {
   version: 2;
   /** Optional, versioned social state in the existing fenced JSON snapshots. */
   society?: SocietyState;
+  autonomy?: AutonomousState;
   worldSeed: string;
   /** Operator-installed synthetic city groups; never token registrations or observed holders. */
   syntheticCity?: { profile: string; startedTick: number; groups: Array<{ id: string; name: string; description: string }> };
@@ -231,6 +233,8 @@ export interface AecoSnapshot {
   holders: Array<{ wallet: string; balanceRaw: string }>;
 }
 export type SimCommand =
+  | { type: "autonomy.configure"; participants: string[] }
+  | ({ type: "autonomy.decide" } & Decision)
   | { type: "society.configure"; enabled: boolean }
   | ({ type: "aeco.reconcile" } & AecoSnapshot)
   | {
